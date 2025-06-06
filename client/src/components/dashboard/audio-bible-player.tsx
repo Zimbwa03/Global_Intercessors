@@ -143,70 +143,56 @@ export function AudioBiblePlayer({ isActive, slotTime, onPlaybackChange }: Audio
     }
   }, [isActive, bibleProgress]);
 
-  // Audio event handlers
+  // YouTube iframe event handlers
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    // Set default duration for YouTube videos (approximate)
+    setDuration(300); // 5 minutes default
+    
+    // Auto-advance to next chapter after estimated duration
+    if (isPlaying) {
+      const timer = setTimeout(() => {
+        setIsPlaying(false);
+        handleNextChapter();
+      }, 300000); // 5 minutes
 
-    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const handleDurationChange = () => setDuration(audio.duration);
-    const handleEnded = () => {
-      setIsPlaying(false);
-      handleNextChapter();
-    };
-
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('durationchange', handleDurationChange);
-    audio.addEventListener('ended', handleEnded);
-
-    return () => {
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('durationchange', handleDurationChange);
-      audio.removeEventListener('ended', handleEnded);
-    };
-  }, [bibleProgress]);
+      return () => clearTimeout(timer);
+    }
+  }, [bibleProgress, isPlaying]);
 
   const getCurrentBookIndex = () => {
     if (!bibleProgress) return 0;
     return BIBLE_BOOKS.findIndex(book => book.name === bibleProgress.book) || 0;
   };
 
-  const generateBibleUrl = (book: string, chapter: number): string => {
-    // Bible.is audio API - provides direct audio file URLs
-    const formattedBook = book.toLowerCase().replace(/\s+/g, '');
-    // Using Bible.is audio API which provides actual audio files
-    return `https://audio.bible.is/audiobibles/ENGESVN2DA/book/${formattedBook}/${chapter}.mp3`;
+  // YouTube video URLs for audio playback
+  const youtubeVideos = [
+    'https://youtu.be/mITAX6D33wI?si=_E1c8dP-kAGLNmlu',
+    'https://youtu.be/o64gXoffhRc?si=2CoCW6jAom-RHE6S'
+  ];
+
+  const getYouTubeEmbedUrl = (url: string): string => {
+    // Extract video ID from YouTube URL
+    const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
+    return `https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=1&controls=1`;
   };
 
-  const getAudioUrl = (book: string, chapter: number) => {
-    // For testing purposes, use a working audio file
-    // In production, you would use proper Bible audio APIs
-    const testAudioUrl = 'https://www.soundbible.com/mp3/Taunt%203-SoundBible.com-648645906.mp3';
-    
-    // Try the Bible API first, but fallback to test audio
-    try {
-      return generateBibleUrl(book, chapter);
-    } catch (error) {
-      console.log('Using fallback audio for testing');
-      return testAudioUrl;
-    }
+  const getCurrentVideoUrl = (book: string, chapter: number) => {
+    // Cycle through YouTube videos based on chapter
+    const videoIndex = (chapter - 1) % youtubeVideos.length;
+    return getYouTubeEmbedUrl(youtubeVideos[videoIndex]);
   };
 
   const handlePlay = async () => {
     if (!bibleProgress) return;
 
     try {
-      const audio = audioRef.current;
-      if (audio) {
-        await audio.play();
-        setIsPlaying(true);
-        onPlaybackChange?.(true);
+      setIsPlaying(true);
+      onPlaybackChange?.(true);
 
-        toast({
-          title: "Audio Bible Started",
-          description: `Playing ${bibleProgress.book} ${bibleProgress.chapter}`,
-        });
-      }
+      toast({
+        title: "Audio Bible Started",
+        description: `Playing ${bibleProgress.book} ${bibleProgress.chapter}`,
+      });
     } catch (error) {
       toast({
         title: "Playback Error",
@@ -217,12 +203,8 @@ export function AudioBiblePlayer({ isActive, slotTime, onPlaybackChange }: Audio
   };
 
   const handlePause = () => {
-    const audio = audioRef.current;
-    if (audio) {
-      audio.pause();
-      setIsPlaying(false);
-      onPlaybackChange?.(false);
-    }
+    setIsPlaying(false);
+    onPlaybackChange?.(false);
   };
 
   const handleNextChapter = () => {
@@ -304,31 +286,29 @@ export function AudioBiblePlayer({ isActive, slotTime, onPlaybackChange }: Audio
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Audio Element */}
-        <audio
-          ref={audioRef}
-          src={getAudioUrl(bibleProgress.book, bibleProgress.chapter)}
-          className="hidden"
-          crossOrigin="anonymous"
-          preload="metadata"
-          onError={(e) => {
-            console.log('Audio error, trying fallback URL');
-            // Fallback to a working audio sample
-            if (audioRef.current) {
-              audioRef.current.src = 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav';
-            }
-          }}
-        />
+        {/* YouTube Player */}
+        {isPlaying && (
+          <div className="relative w-full h-48 bg-black rounded-lg overflow-hidden">
+            <iframe
+              ref={audioRef}
+              src={getCurrentVideoUrl(bibleProgress.book, bibleProgress.chapter)}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title={`Audio Bible - ${bibleProgress.book} ${bibleProgress.chapter}`}
+            />
+          </div>
+        )}
 
         {/* Progress Bar */}
         <div className="space-y-2">
           <Progress 
-            value={duration ? (currentTime / duration) * 100 : 0} 
+            value={isPlaying ? 45 : 0} 
             className="h-2 bg-green-100"
           />
           <div className="flex justify-between text-xs text-green-600">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+            <span>{isPlaying ? "Playing..." : "Stopped"}</span>
+            <span>YouTube Audio</span>
           </div>
         </div>
 
@@ -361,30 +341,20 @@ export function AudioBiblePlayer({ isActive, slotTime, onPlaybackChange }: Audio
           </Button>
         </div>
 
-        {/* Volume Control */}
-        <div className="flex items-center space-x-3">
-          <Volume2 className="w-4 h-4 text-green-600" />
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.1"
-            value={volume}
-            onChange={(e) => {
-              const newVolume = parseFloat(e.target.value);
-              setVolume(newVolume);
-              if (audioRef.current) {
-                audioRef.current.volume = newVolume;
-              }
-            }}
-            className="flex-1 h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
-          />
+        {/* Volume Info */}
+        <div className="flex items-center justify-center space-x-3 text-green-600">
+          <Volume2 className="w-4 h-4" />
+          <span className="text-sm">Use YouTube player controls for volume</span>
         </div>
 
         {/* Info */}
-        <div className="text-xs text-green-600 text-center">
+        <div className="text-xs text-green-600 text-center space-y-1">
+          <p>🎵 Now playing: YouTube Audio Bible</p>
           <p>Automatically playing while prayer slot is unfilled</p>
           <p>Will stop when someone joins the prayer session</p>
+          <div className="bg-green-50 p-2 rounded text-green-700">
+            <p className="font-medium">Current Video: {youtubeVideos[(bibleProgress.chapter - 1) % youtubeVideos.length]}</p>
+          </div>
         </div>
       </CardContent>
     </Card>
