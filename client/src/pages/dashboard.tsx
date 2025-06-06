@@ -11,6 +11,7 @@ import { NotificationSetup } from "@/components/dashboard/notification-setup";
 import { SlotCoverageMonitor } from "@/components/dashboard/slot-coverage-monitor";
 import { AIBibleChatbook } from "@/components/dashboard/ai-bible-chatbook";
 import { AIPrayerPlanner } from "@/components/dashboard/ai-prayer-planner";
+import { AudioBiblePlayer } from "@/components/dashboard/audio-bible-player";
 
 export default function Dashboard() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -89,6 +90,15 @@ export default function Dashboard() {
         return <AIBibleChatbook />;
       case "prayer-planner":
         return <AIPrayerPlanner />;
+            case "audio-bible":
+        return (
+          <AudioBiblePlayer
+              isActive={true}
+              onPlaybackChange={(isPlaying) => {
+                console.log(`Audio Bible ${isPlaying ? 'started' : 'stopped'}`);
+              }}
+          />
+        );
       default:
         return <DashboardOverview userEmail={user.email} />;
     }
@@ -103,12 +113,12 @@ export default function Dashboard() {
         onSignOut={handleSignOut}
         userEmail={user.email}
       />
-      
+
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-auto">
         {/* Audio Bible Coverage Monitor */}
         <SlotCoverageMonitor />
-        
+
         {renderContent()}
       </main>
     </div>

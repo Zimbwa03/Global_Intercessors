@@ -17,7 +17,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail }: Sideba
     { id: "prayer-slot", label: "Prayer Slot", icon: "fas fa-clock" },
     { id: "notifications", label: "Notifications", icon: "fas fa-bell" },
     { id: "updates", label: "Updates", icon: "fas fa-bullhorn" },
-    { id: "ai-assistant", label: "AI Assistant", icon: "fas fa-robot" },
+    { id: "audio-bible", label: "Audio Bible", icon: "fas fa-volume-up" },
     { id: "bible-chatbook", label: "Bible Chatbook", icon: "fas fa-book" },
     { id: "prayer-planner", label: "Prayer Planner", icon: "fas fa-heart" },
   ];
