@@ -85,6 +85,10 @@ export default function Dashboard() {
         return <UpdatesAnnouncements />;
       case "ai-assistant":
         return <AIPrayerAssistant />;
+      case "bible-chatbook":
+        return <AIBibleChatbook />;
+      case "prayer-planner":
+        return <AIPrayerPlanner />;
       default:
         return <DashboardOverview userEmail={user.email} />;
     }
