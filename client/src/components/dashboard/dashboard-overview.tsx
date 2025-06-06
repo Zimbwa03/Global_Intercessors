@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { supabase } from "@/lib/supabase";
@@ -216,9 +215,9 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="reminders" className="text-base font-medium font-poppins">
+              <label htmlFor="reminders" className="text-base font-medium font-poppins">
                 Prayer Session Reminders
-              </Label>
+              </label>
               <p className="text-sm text-gray-600 mt-1">
                 Get notified 15 minutes before your prayer session
               </p>

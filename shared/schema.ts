@@ -41,6 +41,33 @@ export const prayerSessions = pgTable("prayer_sessions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Attendance log table for Zoom-based tracking
+export const attendanceLog = pgTable("attendance_log", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  slotId: integer("slot_id").notNull(),
+  date: text("date").notNull(), // YYYY-MM-DD format
+  status: text("status").notNull(), // "attended", "missed"
+  zoomJoinTime: timestamp("zoom_join_time"),
+  zoomLeaveTime: timestamp("zoom_leave_time"),
+  zoomMeetingId: text("zoom_meeting_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Zoom meetings table for tracking prayer sessions
+export const zoomMeetings = pgTable("zoom_meetings", {
+  id: serial("id").primaryKey(),
+  meetingId: text("meeting_id").notNull().unique(),
+  meetingUuid: text("meeting_uuid").notNull().unique(),
+  topic: text("topic").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  duration: integer("duration"), // in minutes
+  participantCount: integer("participant_count").default(0),
+  processed: boolean("processed").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -61,6 +88,16 @@ export const insertPrayerSessionSchema = createInsertSchema(prayerSessions).omit
   createdAt: true,
 });
 
+export const insertAttendanceLogSchema = createInsertSchema(attendanceLog).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertZoomMeetingSchema = createInsertSchema(zoomMeetings).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type PrayerSlot = typeof prayerSlots.$inferSelect;
@@ -69,3 +106,7 @@ export type AvailableSlot = typeof availableSlots.$inferSelect;
 export type InsertAvailableSlot = z.infer<typeof insertAvailableSlotSchema>;
 export type PrayerSession = typeof prayerSessions.$inferSelect;
 export type InsertPrayerSession = z.infer<typeof insertPrayerSessionSchema>;
+export type AttendanceLog = typeof attendanceLog.$inferSelect;
+export type InsertAttendanceLog = z.infer<typeof insertAttendanceLogSchema>;
+export type ZoomMeeting = typeof zoomMeetings.$inferSelect;
+export type InsertZoomMeeting = z.infer<typeof insertZoomMeetingSchema>;

@@ -1,0 +1,135 @@
+Excellent. Since **Global Intercessors use Zoom Workplace** for their prayer sessions, we can auto-track slot attendance by **linking Zoom attendance logs** to Supabase.
+
+Let’s build a **system that automatically tracks intercessors' attendance** based on Zoom logs and triggers reminders when they miss their time slots.
+
+---
+
+## ✅ Prompt for Replit: Zoom-Based Auto Attendance Tracker + Reminder System
+
+````prompt
+Build an automated system in Replit using Supabase, Node.js, and Zoom API to track intercessors' attendance in Zoom prayer sessions and trigger reminders when someone misses their scheduled slot.
+
+📦 Requirements:
+- Use Zoom Workplace (Zoom Meetings) as the main prayer platform.
+- Connect to Zoom API to retrieve meeting participants and join times.
+- Each intercessor has a registered `slot_time` (e.g. "22:00–22:30") in Supabase.
+- Automatically compare who was present vs. expected users based on time slots.
+
+🗄 Supabase Tables:
+1. `prayer_slots`:
+   - `id`, `user_id`, `slot_time`, `is_active`, `missed_days`, `last_attended`
+2. `attendance_log`:
+   - `id`, `user_id`, `slot_id`, `date`, `status`
+
+🔑 Required Setup:
+- Zoom JWT or OAuth app
+- Firebase (for push notifications)
+- CRON job that runs every 30 min and matches Zoom logs to Supabase slots
+
+🔧 Core Logic:
+1. **Fetch Zoom Participant Logs:**
+   - Use Zoom API endpoint: `/past_meetings/{meetingUUID}/participants`
+   - Get list of participant emails + join time for each session.
+
+2. **Compare Zoom attendees with Supabase slots:**
+   - Match Zoom `user_email` or `name` with Supabase `user_id` and `slot_time`.
+   - If an intercessor's slot time is within the meeting time but they did NOT attend, log `missed`.
+
+3. **Update `attendance_log`** and increment `missed_days`.
+
+4. **Send Push/Email Reminders:**
+   - If missed 3+ days: Send "⚠️ Reminder to honor your prayer slot."
+   - If missed 5 days: Auto-release the slot and mark it "Available" in `prayer_slots`.
+
+✅ Dependencies to install:
+```bash
+npm install @supabase/supabase-js node-cron dayjs axios
+````
+
+📅 CRON job example:
+
+```js
+import cron from 'node-cron';
+import axios from 'axios';
+import { createClient } from '@supabase/supabase-js';
+import dayjs from 'dayjs';
+
+const supabase = createClient('https://YOUR_URL.supabase.co', 'YOUR_ANON_KEY');
+
+// Zoom token (you need to generate securely)
+const ZOOM_TOKEN = 'YOUR_ZOOM_JWT_OR_OAUTH';
+
+cron.schedule('*/30 * * * *', async () => {
+  const today = dayjs().format('YYYY-MM-DD');
+
+  // Fetch Zoom participants for the day
+  const { data: zoomData } = await axios.get(
+    `https://api.zoom.us/v2/past_meetings/{meetingUUID}/participants`,
+    {
+      headers: { Authorization: `Bearer ${ZOOM_TOKEN}` }
+    }
+  );
+
+  const zoomParticipants = zoomData.participants.map(p => p.email?.toLowerCase());
+
+  // Get all slots for today
+  const { data: slots } = await supabase
+    .from('prayer_slots')
+    .select('*')
+    .eq('is_active', true);
+
+  for (let slot of slots) {
+    const { data: user } = await supabase.from('users').select('*').eq('id', slot.user_id).single();
+    const email = user?.email?.toLowerCase();
+
+    const attended = zoomParticipants.includes(email);
+    const status = attended ? 'attended' : 'missed';
+
+    await supabase.from('attendance_log').insert({
+      user_id: slot.user_id,
+      slot_id: slot.id,
+      date: today,
+      status
+    });
+
+    if (!attended) {
+      const missed = slot.missed_days + 1;
+
+      if (missed >= 5) {
+        await supabase.from('prayer_slots').update({
+          user_id: null,
+          is_active: false,
+          missed_days: 0
+        }).eq('id', slot.id);
+        // Optional: Send push notification about slot release
+      } else {
+        await supabase.from('prayer_slots').update({
+          missed_days: missed
+        }).eq('id', slot.id);
+      }
+    } else {
+      await supabase.from('prayer_slots').update({
+        missed_days: 0,
+        last_attended: new Date().toISOString()
+      }).eq('id', slot.id);
+    }
+  }
+});
+```
+
+---
+
+## 🔒 Security Notes:
+
+* Keep Zoom JWT or OAuth secret in environment variables.
+* Protect webhook endpoints if you use Zoom Webhooks instead of polling API.
+
+---
+
+Ready to proceed to:
+
+* 📍 GPS-based registration for events
+* 📖 Audio Bible fallback system
+* 🧠 AI prayer guide with DeepSeek
+
+Which should we build next?
