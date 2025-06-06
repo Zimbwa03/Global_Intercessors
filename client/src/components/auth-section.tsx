@@ -121,37 +121,37 @@ export function AuthSection() {
   };
 
   return (
-    <section id="auth" className="py-20 bg-gradient-to-br from-brand-neutral to-white">
+    <section id="auth" className="py-20 bg-gradient-to-br from-blue-50 to-white">
       <div className="container mx-auto px-6">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-12">
-            <div className="w-16 h-16 bg-brand-accent rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <div className="w-16 h-16 bg-brand-accent rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-brand-lg">
               <i className="fas fa-door-open text-brand-primary text-2xl"></i>
             </div>
-            <h2 className="text-4xl font-bold text-gray-800 mb-4">Join Our Community</h2>
+            <h2 className="font-poppins text-4xl font-bold text-brand-text mb-4">Join Our Community</h2>
             <p className="text-gray-600 text-lg">Start your spiritual journey with thousands of believers worldwide</p>
           </div>
 
-          <Card className="bg-white rounded-2xl shadow-2xl">
+          <Card className="bg-white rounded-2xl shadow-brand-lg border border-blue-100">
             <CardContent className="p-8">
               {/* Auth Tabs */}
-              <div className="flex mb-8 bg-gray-100 rounded-xl p-1">
+              <div className="flex mb-8 bg-blue-50 rounded-xl p-1">
                 <Button
                   onClick={() => setIsLogin(true)}
-                  className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ${
+                  className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-brand font-poppins ${
                     isLogin 
-                      ? 'bg-brand-primary text-white' 
-                      : 'bg-transparent text-gray-600 hover:text-gray-800 hover:bg-transparent'
+                      ? 'bg-brand-primary text-white shadow-brand' 
+                      : 'bg-transparent text-gray-600 hover:text-brand-primary hover:bg-transparent'
                   }`}
                 >
                   Sign In
                 </Button>
                 <Button
                   onClick={() => setIsLogin(false)}
-                  className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-300 ${
+                  className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-brand font-poppins ${
                     !isLogin 
-                      ? 'bg-brand-primary text-white' 
-                      : 'bg-transparent text-gray-600 hover:text-gray-800 hover:bg-transparent'
+                      ? 'bg-brand-primary text-white shadow-brand' 
+                      : 'bg-transparent text-gray-600 hover:text-brand-primary hover:bg-transparent'
                   }`}
                 >
                   Sign Up
@@ -162,33 +162,33 @@ export function AuthSection() {
               {isLogin ? (
                 <form onSubmit={handleLogin} className="space-y-6">
                   <div>
-                    <Label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</Label>
+                    <Label className="block text-sm font-semibold text-brand-text mb-2 font-poppins">Email Address</Label>
                     <Input
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
                       placeholder="Enter your email"
                     />
                   </div>
                   <div>
-                    <Label className="block text-sm font-semibold text-gray-700 mb-2">Password</Label>
+                    <Label className="block text-sm font-semibold text-brand-text mb-2 font-poppins">Password</Label>
                     <Input
                       type="password"
                       name="password"
                       value={formData.password}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
                       placeholder="Enter your password"
                     />
                   </div>
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-brand-primary text-white py-3 rounded-xl font-semibold hover:bg-green-800 transition-colors duration-300 flex items-center justify-center"
+                    className="w-full bg-brand-accent text-brand-primary py-3 rounded-xl font-semibold hover:bg-brand-accent-dark transition-brand flex items-center justify-center shadow-brand font-poppins"
                   >
                     {isLoading ? (
                       <>
@@ -203,57 +203,57 @@ export function AuthSection() {
               ) : (
                 <form onSubmit={handleSignup} className="space-y-6">
                   <div>
-                    <Label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</Label>
+                    <Label className="block text-sm font-semibold text-brand-text mb-2 font-poppins">Full Name</Label>
                     <Input
                       type="text"
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
                       placeholder="Enter your full name"
                     />
                   </div>
                   <div>
-                    <Label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</Label>
+                    <Label className="block text-sm font-semibold text-brand-text mb-2 font-poppins">Email Address</Label>
                     <Input
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
                       placeholder="Enter your email"
                     />
                   </div>
                   <div>
-                    <Label className="block text-sm font-semibold text-gray-700 mb-2">Password</Label>
+                    <Label className="block text-sm font-semibold text-brand-text mb-2 font-poppins">Password</Label>
                     <Input
                       type="password"
                       name="password"
                       value={formData.password}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
                       placeholder="Create a password"
                     />
                   </div>
                   <div>
-                    <Label className="block text-sm font-semibold text-gray-700 mb-2">Confirm Password</Label>
+                    <Label className="block text-sm font-semibold text-brand-text mb-2 font-poppins">Confirm Password</Label>
                     <Input
                       type="password"
                       name="confirmPassword"
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
                       placeholder="Confirm your password"
                     />
                   </div>
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-brand-primary text-white py-3 rounded-xl font-semibold hover:bg-green-800 transition-colors duration-300 flex items-center justify-center"
+                    className="w-full bg-brand-accent text-brand-primary py-3 rounded-xl font-semibold hover:bg-brand-accent-dark transition-brand flex items-center justify-center shadow-brand font-poppins"
                   >
                     {isLoading ? (
                       <>

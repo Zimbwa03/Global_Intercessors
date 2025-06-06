@@ -7,37 +7,38 @@ interface HeroSectionProps {
 
 export function HeroSection({ onGetStarted, onLearnMore }: HeroSectionProps) {
   return (
-    <section className="gradient-brand text-white py-20 md:py-32">
-      <div className="container mx-auto px-6">
+    <section className="gradient-brand text-white py-20 md:py-32 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-blue-800/10"></div>
+      <div className="container mx-auto px-6 relative">
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-8">
-            <div className="w-20 h-20 bg-brand-accent rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="w-20 h-20 bg-brand-accent rounded-full flex items-center justify-center mx-auto mb-6 shadow-brand-lg transform hover:scale-110 transition-brand">
               <i className="fas fa-globe text-brand-primary text-3xl"></i>
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="font-poppins text-5xl md:text-7xl font-bold mb-6 leading-tight tracking-tight">
               Global Intercessors
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-gray-200 leading-relaxed">
+            <p className="text-xl md:text-2xl mb-8 text-blue-100 leading-relaxed font-medium">
               Uniting the World in Prayer, 24 Hours a Day
             </p>
-            <p className="text-lg md:text-xl mb-12 text-gray-300 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl mb-12 text-blue-200 max-w-2xl mx-auto leading-relaxed">
               Join thousands of believers worldwide in continuous prayer coverage, spiritual growth, and fellowship through our comprehensive prayer platform.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
             <Button 
               onClick={onGetStarted}
-              className="bg-brand-accent text-brand-primary px-8 py-4 rounded-xl font-semibold text-lg hover:bg-yellow-400 transform hover:scale-105 transition-all duration-300 shadow-lg"
+              className="bg-brand-accent text-brand-primary px-8 py-4 rounded-xl font-semibold text-lg hover:bg-brand-accent-dark transform hover:scale-105 transition-brand shadow-brand-lg font-poppins"
             >
-              <i className="fas fa-rocket mr-2"></i>
+              <i className="fas fa-rocket mr-3"></i>
               Join the Prayer Movement
             </Button>
             <Button 
               variant="outline"
               onClick={onLearnMore}
-              className="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-brand-primary transition-all duration-300"
+              className="border-2 border-blue-200 text-blue-100 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-blue-100 hover:text-brand-primary transition-brand shadow-brand font-poppins"
             >
-              <i className="fas fa-play mr-2"></i>
+              <i className="fas fa-play mr-3"></i>
               Learn More
             </Button>
           </div>

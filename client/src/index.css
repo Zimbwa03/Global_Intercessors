@@ -1,57 +1,60 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 20 14% 4%;
-  --muted: 60 5% 96%;
-  --muted-foreground: 25 5% 45%;
+  --background: 220 20% 98%; /* #F9FAFB */
+  --foreground: 222 84% 5%; /* #111827 */
+  --muted: 220 14% 96%;
+  --muted-foreground: 215 16% 47%;
   --popover: 0 0% 100%;
-  --popover-foreground: 20 14% 4%;
+  --popover-foreground: 222 84% 5%;
   --card: 0 0% 100%;
-  --card-foreground: 20 14% 4%;
-  --border: 20 6% 90%;
-  --input: 20 6% 90%;
-  --primary: 167 97% 11%; /* #013C34 */
+  --card-foreground: 222 84% 5%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --primary: 214 88% 33%; /* #1E3A8A */
   --primary-foreground: 0 0% 100%;
-  --secondary: 60 5% 96%;
-  --secondary-foreground: 24 10% 10%;
-  --accent: 44 94% 51%; /* #CFA935 */
-  --accent-foreground: 167 97% 11%;
+  --secondary: 214 95% 88%; /* #BFDBFE */
+  --secondary-foreground: 214 88% 33%;
+  --accent: 38 92% 58%; /* #FBBF24 */
+  --accent-foreground: 214 88% 33%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 60 9% 98%;
-  --ring: 20 14% 4%;
-  --radius: 0.5rem;
+  --ring: 214 88% 33%;
+  --radius: 0.75rem;
   
   /* Custom brand colors */
-  --brand-primary: 167 97% 11%; /* #013C34 */
-  --brand-accent: 44 94% 51%; /* #CFA935 */
-  --brand-neutral: 60 5% 97%; /* #F8F9FA */
+  --brand-primary: 214 88% 33%; /* #1E3A8A */
+  --brand-secondary: 214 95% 88%; /* #BFDBFE */
+  --brand-accent: 38 92% 58%; /* #FBBF24 */
+  --brand-background: 220 20% 98%; /* #F9FAFB */
+  --brand-text: 222 84% 5%; /* #111827 */
 }
 
 .dark {
-  --background: 240 10% 4%;
+  --background: 222 84% 5%;
   --foreground: 0 0% 98%;
-  --muted: 240 4% 16%;
-  --muted-foreground: 240 5% 65%;
-  --popover: 240 10% 4%;
+  --muted: 215 28% 17%;
+  --muted-foreground: 215 20% 65%;
+  --popover: 222 84% 5%;
   --popover-foreground: 0 0% 98%;
-  --card: 240 10% 4%;
+  --card: 222 84% 5%;
   --card-foreground: 0 0% 98%;
-  --border: 240 4% 16%;
-  --input: 240 4% 16%;
-  --primary: 167 97% 11%;
+  --border: 215 28% 17%;
+  --input: 215 28% 17%;
+  --primary: 214 88% 33%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 240 4% 16%;
+  --secondary: 215 28% 17%;
   --secondary-foreground: 0 0% 98%;
-  --accent: 44 94% 51%;
-  --accent-foreground: 167 97% 11%;
+  --accent: 38 92% 58%;
+  --accent-foreground: 214 88% 33%;
   --destructive: 0 63% 31%;
   --destructive-foreground: 0 0% 98%;
-  --ring: 240 5% 84%;
+  --ring: 215 20% 65%;
 }
 
 @layer base {
@@ -61,45 +64,61 @@
 
   body {
     @apply font-inter antialiased bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', 'Poppins', sans-serif;
   }
 }
 
 /* Custom utility classes for brand colors */
 .bg-brand-primary {
-  background-color: #013C34;
+  background-color: #1E3A8A;
+}
+
+.bg-brand-secondary {
+  background-color: #BFDBFE;
 }
 
 .bg-brand-accent {
-  background-color: #CFA935;
+  background-color: #FBBF24;
 }
 
-.bg-brand-neutral {
-  background-color: #F8F9FA;
+.bg-brand-background {
+  background-color: #F9FAFB;
 }
 
 .text-brand-primary {
-  color: #013C34;
+  color: #1E3A8A;
 }
 
 .text-brand-accent {
-  color: #CFA935;
+  color: #FBBF24;
+}
+
+.text-brand-text {
+  color: #111827;
 }
 
 .border-brand-primary {
-  border-color: #013C34;
+  border-color: #1E3A8A;
+}
+
+.border-brand-accent {
+  border-color: #FBBF24;
 }
 
 .hover\:bg-brand-accent:hover {
-  background-color: #CFA935;
+  background-color: #FBBF24;
 }
 
-.hover\:bg-yellow-400:hover {
-  background-color: rgb(250 204 21);
+.hover\:bg-brand-accent-dark:hover {
+  background-color: #F59E0B;
 }
 
 .font-inter {
   font-family: 'Inter', sans-serif;
+}
+
+.font-poppins {
+  font-family: 'Poppins', sans-serif;
 }
 
 /* Smooth scrolling */
@@ -107,7 +126,24 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Custom gradient */
+/* Custom gradients */
 .gradient-brand {
-  background: linear-gradient(135deg, #013C34 0%, #013C34 50%, #0A5D4F 100%);
+  background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 50%, #60A5FA 100%);
+}
+
+.gradient-brand-subtle {
+  background: linear-gradient(135deg, #BFDBFE 0%, #DBEAFE 50%, #EFF6FF 100%);
+}
+
+/* Enhanced shadows and transitions */
+.shadow-brand {
+  box-shadow: 0 4px 6px -1px rgba(30, 58, 138, 0.1), 0 2px 4px -1px rgba(30, 58, 138, 0.06);
+}
+
+.shadow-brand-lg {
+  box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.1), 0 4px 6px -2px rgba(30, 58, 138, 0.05);
+}
+
+.transition-brand {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

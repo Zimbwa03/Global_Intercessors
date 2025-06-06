@@ -24,7 +24,7 @@ export function TestimonialsSection() {
     <section className="py-20 bg-white">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6">What Our Community Says</h2>
+          <h2 className="font-poppins text-4xl md:text-5xl font-bold text-brand-text mb-6">What Our Community Says</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Hear from intercessors around the world about their transformative experiences with our platform.
           </p>
@@ -32,13 +32,13 @@ export function TestimonialsSection() {
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {testimonials.map((testimonial, index) => (
-            <div key={index} className="bg-brand-neutral rounded-2xl p-8 shadow-lg">
+            <div key={index} className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-8 shadow-brand-lg hover:shadow-xl transition-brand border border-blue-100 group">
               <div className="flex items-center mb-6">
-                <div className="w-12 h-12 bg-brand-primary rounded-full flex items-center justify-center mr-4">
-                  <span className="text-brand-accent font-bold text-lg">{testimonial.initials}</span>
+                <div className="w-12 h-12 bg-brand-primary rounded-full flex items-center justify-center mr-4 shadow-brand group-hover:bg-brand-accent transition-brand">
+                  <span className="text-brand-accent group-hover:text-brand-primary font-bold text-lg font-poppins transition-brand">{testimonial.initials}</span>
                 </div>
                 <div>
-                  <h4 className="font-bold text-gray-800">{testimonial.name}</h4>
+                  <h4 className="font-bold text-brand-text font-poppins">{testimonial.name}</h4>
                   <p className="text-gray-600 text-sm">{testimonial.location}</p>
                 </div>
               </div>
@@ -47,7 +47,7 @@ export function TestimonialsSection() {
               </p>
               <div className="flex text-brand-accent">
                 {[...Array(5)].map((_, i) => (
-                  <i key={i} className="fas fa-star"></i>
+                  <i key={i} className="fas fa-star hover:scale-110 transition-brand"></i>
                 ))}
               </div>
             </div>
