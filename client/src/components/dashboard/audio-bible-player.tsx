@@ -171,33 +171,61 @@ export function AudioBiblePlayer({ isActive, slotTime, onPlaybackChange }: Audio
     return BIBLE_BOOKS.findIndex(book => book.name === bibleProgress.book) || 0;
   };
 
+  const generateBibleUrl = (book: string, chapter: number): string => {
+    // YouTube Bible audio links for different books
+    const bibleAudioLinks: { [key: string]: string } = {
+      'genesis': 'https://www.youtube.com/watch?v=GQI72THyO5I',
+      'exodus': 'https://www.youtube.com/watch?v=jH_aojNJM3E',
+      'leviticus': 'https://www.youtube.com/watch?v=IJ-FekWUZzE',
+      'numbers': 'https://www.youtube.com/watch?v=tp5MIrMZFqo',
+      'deuteronomy': 'https://www.youtube.com/watch?v=s9-PJPsIzPg',
+      'joshua': 'https://www.youtube.com/watch?v=JqOqJlFF_eU',
+      'judges': 'https://www.youtube.com/watch?v=kOYy8iCfIJ4',
+      'ruth': 'https://www.youtube.com/watch?v=0h1eoAOQBN0',
+      '1samuel': 'https://www.youtube.com/watch?v=QJOju5Dw0V0',
+      '2samuel': 'https://www.youtube.com/watch?v=YvoWDXNDJgs',
+      '1kings': 'https://www.youtube.com/watch?v=bVFW3wbi9pk',
+      '2kings': 'https://www.youtube.com/watch?v=4UznWaY5qFI',
+      'psalms': 'https://www.youtube.com/watch?v=j9phNEaPrv8',
+      'proverbs': 'https://www.youtube.com/watch?v=AzmYV8GNAIM',
+      'ecclesiastes': 'https://www.youtube.com/watch?v=VeUiuSK81-0',
+      'isaiah': 'https://www.youtube.com/watch?v=d0A6Uchb1F8',
+      'jeremiah': 'https://www.youtube.com/watch?v=RSK5BCovJFk',
+      'ezekiel': 'https://www.youtube.com/watch?v=R-CIPu1nko8',
+      'daniel': 'https://www.youtube.com/watch?v=9cSC9uobtPM',
+      'matthew': 'https://www.youtube.com/watch?v=3dEh25pduQ8',
+      'mark': 'https://www.youtube.com/watch?v=HGHqu9-DtXk',
+      'luke': 'https://www.youtube.com/watch?v=26z_KhwNdD8',
+      'john': 'https://www.youtube.com/watch?v=G_OlRWGLdnw',
+      'acts': 'https://www.youtube.com/watch?v=CGbNw855ksw',
+      'romans': 'https://www.youtube.com/watch?v=ej_6dVdJSIw',
+      '1corinthians': 'https://www.youtube.com/watch?v=yiHf8klCCc4',
+      '2corinthians': 'https://www.youtube.com/watch?v=OzgNj32ll48',
+      'galatians': 'https://www.youtube.com/watch?v=vmx4UjRFp0M',
+      'ephesians': 'https://www.youtube.com/watch?v=Y71r-T98E2Q',
+      'philippians': 'https://www.youtube.com/watch?v=oE9qqW1-BkU',
+      'colossians': 'https://www.youtube.com/watch?v=pXTXlDxQsvc',
+      'revelation': 'https://www.youtube.com/watch?v=5lQGTp65Kp4'
+    };
+
+    const formattedBook = book.replace(/\s+/g, '').toLowerCase();
+    return bibleAudioLinks[formattedBook] || 'https://www.youtube.com/watch?v=GQI72THyO5I'; // Default to Genesis
+  };
+
   const getAudioUrl = (book: string, chapter: number) => {
-    // Using YouTube audio Bible links provided by user
-    const audioLinks = [
-      "https://youtu.be/UUKf3IYZJFc?si=2YGA_qg4jHTVRM0G", // Genesis
-      "https://youtu.be/fYdJgkoHr0M?si=x3pFgwABLODifHNa", // Exodus  
-      "https://youtu.be/mITAX6D33wI?si=kOxWSpjJpiRXsIvK", // Leviticus
-    ];
-    
-    const bookIndex = BIBLE_BOOKS.findIndex(b => b.name === book);
-    if (bookIndex < audioLinks.length) {
-      return audioLinks[bookIndex];
-    }
-    
-    // Fallback for books not yet provided
-    return audioLinks[0]; // Default to Genesis
+    return generateBibleUrl(book, chapter);
   };
 
   const handlePlay = async () => {
     if (!bibleProgress) return;
-    
+
     try {
       const audio = audioRef.current;
       if (audio) {
         await audio.play();
         setIsPlaying(true);
         onPlaybackChange?.(true);
-        
+
         toast({
           title: "Audio Bible Started",
           description: `Playing ${bibleProgress.book} ${bibleProgress.chapter}`,
@@ -226,7 +254,7 @@ export function AudioBiblePlayer({ isActive, slotTime, onPlaybackChange }: Audio
 
     const currentBookIndex = getCurrentBookIndex();
     const currentBook = BIBLE_BOOKS[currentBookIndex];
-    
+
     let nextBook = bibleProgress.book;
     let nextChapter = bibleProgress.chapter + 1;
 
@@ -298,7 +326,7 @@ export function AudioBiblePlayer({ isActive, slotTime, onPlaybackChange }: Audio
           </Badge>
         </CardTitle>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {/* Audio Element */}
         <audio

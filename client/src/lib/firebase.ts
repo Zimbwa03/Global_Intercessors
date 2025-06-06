@@ -1,4 +1,3 @@
-
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
@@ -21,22 +20,42 @@ const messaging = getMessaging(app);
 export { messaging };
 
 // Request notification permission and get FCM token
-export const requestNotificationPermission = async () => {
+export const requestNotificationPermission = async (): Promise<string | null> => {
   try {
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      console.log('Notification permission granted.');
-      
-      // Get FCM token
-      const token = await getToken(messaging, {
-        vapidKey: 'BEpk99Vng919Ris6k3GXiNDU5BuXbh1Gp_7FaK3GHsWca8PoaBHR2-Q3eGKOGT0L_TJBtwHYlVT6wC8hM0j7_N4'
-      });
-      
-      if (token) {
+    // Check if notifications are supported
+    if (!('Notification' in window)) {
+      console.log('This browser does not support notifications');
+      return null;
+    }
+
+    // Check current permission status
+    if (Notification.permission === 'granted') {
+      try {
+        const token = await getToken(messaging, {
+          vapidKey: 'BEpk99Vng919Ris6k3GXiNDU5BuXbh1Gp_7FaK3GHsWca8PoaBHR2-Q3eGKOGT0L_TJBtwHYlVT6wC8hM0j7_N4'
+        });
         console.log('FCM Token:', token);
         return token;
-      } else {
-        console.log('No registration token available.');
+      } catch (tokenError) {
+        console.error('Error getting FCM token:', tokenError);
+        return null;
+      }
+    }
+
+    // Request permission if not already granted
+    const permission = await Notification.requestPermission();
+
+    if (permission === 'granted') {
+      console.log('Notification permission granted.');
+
+      try {
+        const token = await getToken(messaging, {
+          vapidKey: 'BEpk99Vng919Ris6k3GXiNDU5BuXbh1Gp_7FaK3GHsWca8PoaBHR2-Q3eGKOGT0L_TJBtwHYlVT6wC8hM0j7_N4'
+        });
+        console.log('FCM Token:', token);
+        return token;
+      } catch (tokenError) {
+        console.error('Error getting FCM token:', tokenError);
         return null;
       }
     } else {
@@ -44,7 +63,7 @@ export const requestNotificationPermission = async () => {
       return null;
     }
   } catch (error) {
-    console.error('Error getting notification permission:', error);
+    console.error('An error occurred while requesting notification permission:', error);
     return null;
   }
 };

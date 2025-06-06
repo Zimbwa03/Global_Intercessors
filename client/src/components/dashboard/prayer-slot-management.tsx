@@ -48,22 +48,9 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   const { data: prayerSlot, error: slotError, isLoading: isLoadingSlot } = useQuery({
     queryKey: ['prayer-slot', user?.id],
     queryFn: async () => {
-      // Use Supabase to fetch from prayer_slots table
-      const { data, error } = await supabase
-        .from('prayer_slots')
-        .select(`
-          *,
-          intercessors (
-            id,
-            name,
-            email
-          )
-        `)
-        .eq('intercessor_id', user?.id)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      const response = await fetch(`/api/prayer-slot/${user?.id}`);
+      if (!response.ok) throw new Error('Failed to fetch prayer slot');
+      return response.json();
     },
     enabled: !!user?.id,
     refetchInterval: 30000,
@@ -75,14 +62,9 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   const { data: availableSlotsData = [], isLoading: isLoadingSlots } = useQuery({
     queryKey: ['available-slots'],
     queryFn: async () => {
-      // Use Supabase to fetch available prayer slots
-      const { data, error } = await supabase
-        .from('prayer_slots')
-        .select('*')
-        .eq('status', 'free');
-      
-      if (error) throw error;
-      return data || [];
+      const response = await fetch('/api/available-slots');
+      if (!response.ok) throw new Error('Failed to fetch available slots');
+      return response.json();
     },
     refetchInterval: 30000,
     refetchOnWindowFocus: true
@@ -92,23 +74,9 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   const { data: sessionHistory = [] } = useQuery({
     queryKey: ['prayer-sessions', user?.id],
     queryFn: async () => {
-      // Use Supabase to fetch session tracking with intercessor details
-      const { data, error } = await supabase
-        .from('session_tracking')
-        .select(`
-          *,
-          intercessors (
-            id,
-            name,
-            email
-          )
-        `)
-        .eq('intercessor_id', user?.id)
-        .order('session_date', { ascending: false })
-        .limit(7);
-      
-      if (error) throw error;
-      return data || [];
+      const response = await fetch(`/api/prayer-sessions/${user?.id}`);
+      if (!response.ok) throw new Error('Failed to fetch prayer sessions');
+      return response.json();
     },
     enabled: !!user?.id,
     refetchInterval: 10000,
@@ -118,19 +86,15 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   // Skip slot mutation with optimistic updates
   const skipSlotMutation = useMutation({
     mutationFn: async (userId: string) => {
-      // Update prayer slot status to inactive in Supabase
-      const { data, error } = await supabase
-        .from('prayer_slots')
-        .update({ 
-          status: 'inactive',
-          last_attended: new Date().toISOString()
-        })
-        .eq('intercessor_id', userId)
-        .select()
-        .single();
-      
-      if (error) throw new Error(error.message || 'Failed to skip prayer slot');
-      return data;
+      const response = await fetch('/api/prayer-slot/skip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId })
+      });
+      if (!response.ok) throw new Error('Failed to skip prayer slot');
+      return response.json();
     },
     onMutate: async (userId) => {
       // Cancel any outgoing refetches
@@ -179,28 +143,15 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   // Change slot mutation with optimistic updates
   const changeSlotMutation = useMutation({
     mutationFn: async ({ userId, newSlotTime, currentSlotTime }: { userId: string; newSlotTime: string; currentSlotTime?: string }) => {
-      // First, free up the current slot if it exists
-      if (currentSlotTime) {
-        await supabase
-          .from('prayer_slots')
-          .update({ status: 'free', intercessor_id: null })
-          .eq('slot_time', currentSlotTime);
-      }
-
-      // Then assign the new slot
-      const { data, error } = await supabase
-        .from('prayer_slots')
-        .update({ 
-          intercessor_id: userId,
-          status: 'active',
-          last_attended: new Date().toISOString()
-        })
-        .eq('slot_time', newSlotTime)
-        .select()
-        .single();
-      
-      if (error) throw new Error(error.message || 'Failed to change prayer slot');
-      return data;
+      const response = await fetch('/api/prayer-slot/change', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, newSlotTime, currentSlotTime })
+      });
+      if (!response.ok) throw new Error('Failed to change prayer slot');
+      return response.json();
     },
     onMutate: async ({ userId, newSlotTime }) => {
       // Cancel any outgoing refetches
