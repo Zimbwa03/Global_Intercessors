@@ -319,6 +319,166 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Bible Chatbook endpoint
+  app.post("/api/bible-chat", async (req: Request, res: Response) => {
+    try {
+      const { phrase, version = "KJV", chapter, verse } = req.body;
+      
+      let prompt = `User has typed: "${phrase}"\nVersion selected: ${version}\n`;
+      
+      if (chapter && verse) {
+        prompt += `Chapter: ${chapter}\nVerse: ${verse}\n\nGive the full verse in ${version}, a clear explanation of its meaning, and provide one practical prayer point based on it.`;
+      } else {
+        prompt += `\nProvide a relevant Bible verse from ${version} related to "${phrase}" with a clear explanation and one practical prayer point.`;
+      }
+      
+      prompt += `\n\nReturn the response in JSON format with these fields:
+      {
+        "verse": "the actual Bible verse text",
+        "reference": "book chapter:verse",
+        "version": "${version}",
+        "explanation": "clear explanation of the verse meaning",
+        "prayerPoint": "one practical prayer point based on this verse"
+      }`;
+
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 800,
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`DeepSeek API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices[0].message.content;
+      
+      try {
+        const parsedResponse = JSON.parse(aiResponse);
+        res.json(parsedResponse);
+      } catch (parseError) {
+        // Fallback if JSON parsing fails
+        res.json({
+          verse: "Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you with my righteous right hand.",
+          reference: "Isaiah 41:10",
+          version: version,
+          explanation: aiResponse,
+          prayerPoint: "Lord, help me to trust in Your presence and strength in every situation I face."
+        });
+      }
+    } catch (error) {
+      console.error('Bible chat error:', error);
+      res.status(500).json({ error: 'Failed to generate Bible response' });
+    }
+  });
+
+  // AI Prayer Planner endpoint
+  app.post("/api/prayer-planner", async (req: Request, res: Response) => {
+    try {
+      const { category } = req.body;
+      
+      const categoryMap: { [key: string]: string } = {
+        nation: "Nation & Government",
+        healing: "Healing & Health", 
+        deliverance: "Deliverance & Freedom",
+        revival: "Revival & Awakening",
+        family: "Family & Relationships",
+        finance: "Financial Breakthrough",
+        protection: "Protection & Safety",
+        wisdom: "Wisdom & Guidance",
+        church: "Church & Ministry",
+        missions: "Missions & Evangelism"
+      };
+
+      const categoryName = categoryMap[category] || category;
+      
+      const prompt = `Generate 5 structured and powerful Christian prayer points under the theme "${categoryName}". Each point should include:
+      1. A clear title
+      2. A detailed prayer content
+      3. One supporting Bible verse (from KJV, NIV, or ESV)
+      4. The Bible reference
+      5. A brief explanation of how the verse relates to the prayer
+
+      Return the response in JSON format:
+      {
+        "category": "${categoryName}",
+        "prayerPoints": [
+          {
+            "title": "prayer point title",
+            "content": "detailed prayer content",
+            "bibleVerse": "actual verse text",
+            "reference": "Book Chapter:Verse",
+            "explanation": "how this verse supports the prayer"
+          }
+        ],
+        "totalPoints": 5
+      }`;
+
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 1500,
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`DeepSeek API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices[0].message.content;
+      
+      try {
+        const parsedResponse = JSON.parse(aiResponse);
+        res.json(parsedResponse);
+      } catch (parseError) {
+        // Fallback response
+        res.json({
+          category: categoryName,
+          prayerPoints: [
+            {
+              title: "Divine Intervention",
+              content: "Lord, we ask for Your divine intervention in this area. Move mightily according to Your will and purpose.",
+              bibleVerse: "The effectual fervent prayer of a righteous man availeth much.",
+              reference: "James 5:16",
+              explanation: "This verse reminds us that passionate, heartfelt prayer from those who are right with God has tremendous power and produces wonderful results."
+            }
+          ],
+          totalPoints: 1
+        });
+      }
+    } catch (error) {
+      console.error('Prayer planner error:', error);
+      res.status(500).json({ error: 'Failed to generate prayer plan' });
+    }
+  });
+
   app.get("/api/slot-coverage/check", async (req: Request, res: Response) => {
     try {
       const now = new Date();

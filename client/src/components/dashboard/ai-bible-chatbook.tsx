@@ -34,11 +34,13 @@ export function AIBibleChatbook() {
       chapter?: string;
       verse?: string;
     }) => {
-      return apiRequest("/api/bible-chat", {
+      const response = await fetch("/api/bible-chat", {
         method: "POST",
         body: JSON.stringify(data),
         headers: { "Content-Type": "application/json" }
       });
+      if (!response.ok) throw new Error('Failed to generate Bible response');
+      return response.json();
     },
     onSuccess: (data) => {
       setResponse(data);

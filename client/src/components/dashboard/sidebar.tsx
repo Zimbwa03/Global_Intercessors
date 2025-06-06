@@ -18,6 +18,8 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail }: Sideba
     { id: "notifications", label: "Notifications", icon: "fas fa-bell" },
     { id: "updates", label: "Updates", icon: "fas fa-bullhorn" },
     { id: "ai-assistant", label: "AI Assistant", icon: "fas fa-robot" },
+    { id: "bible-chatbook", label: "Bible Chatbook", icon: "fas fa-book" },
+    { id: "prayer-planner", label: "Prayer Planner", icon: "fas fa-heart" },
   ];
 
   return (

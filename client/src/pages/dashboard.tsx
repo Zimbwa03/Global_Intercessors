@@ -9,6 +9,8 @@ import { UpdatesAnnouncements } from "@/components/dashboard/updates-announcemen
 import { AIPrayerAssistant } from "@/components/dashboard/ai-prayer-assistant";
 import { NotificationSetup } from "@/components/dashboard/notification-setup";
 import { SlotCoverageMonitor } from "@/components/dashboard/slot-coverage-monitor";
+import { AIBibleChatbook } from "@/components/dashboard/ai-bible-chatbook";
+import { AIPrayerPlanner } from "@/components/dashboard/ai-prayer-planner";
 
 export default function Dashboard() {
   const [user, setUser] = useState<AuthUser | null>(null);
