@@ -1,0 +1,95 @@
+Perfect! Let’s create a **professional landing page** + **authentication flow** using **Replit UI prompts**, integrating Supabase Auth and your **Global Intercessors branding**.
+
+---
+
+## 🎨 Brand Colors (Based on Your Logo)
+
+Extracted from your logo:
+
+* **Primary Color**: `#013C34` (Deep Green)
+* **Secondary Color**: `#FFFFFF` (White)
+* **Accent Color**: `#CFA935` (Gold – for crown/lion emphasis)
+
+---
+
+## 🌐 Landing Page Features
+
+* Hero Section: Vision + Call-to-Action
+* Features Overview
+* Testimonials or Vision Statement
+* Authentication Buttons (Login / Sign Up)
+* Responsive, mobile-friendly design
+
+---
+
+## ✨ UI Prompt (for Replit AI)
+
+> Copy & paste this into your Replit AI prompt bar:
+
+---
+
+```
+Create a modern and professional landing page with authentication using Supabase. Use the following brand colors:
+- Primary Color: #013C34 (background)
+- Text Color: #FFFFFF
+- Accent: #CFA935 (for highlights, buttons, icons)
+
+Page Structure:
+1. Hero Section:
+   - Title: “Global Intercessors”
+   - Subtitle: “Uniting the World in Prayer, 24 Hours a Day”
+   - Background color: #013C34
+   - Button: “Join the Prayer Movement” (scrolls to Auth section)
+
+2. Features Section:
+   - Title: “Why Join?”
+   - Three Cards:
+     - “Track Your Prayer Attendance”
+     - “Join Global Events & Fasts”
+     - “Use AI Tools to Structure Prayer”
+
+3. Authentication Section:
+   - Supabase Auth (Email + Password)
+   - “Login” and “Sign Up” Tabs
+   - Use Supabase JavaScript client
+   - After login, redirect to `/dashboard`
+
+4. Footer:
+   - Social links (placeholders)
+   - Contact info
+   - Copyright “© Global Intercessors 2025”
+
+Styling:
+- Use TailwindCSS for layout
+- Rounded corners, clean professional layout
+- Apply gold (#CFA935) for buttons and icon highlights
+```
+
+---
+
+## ✅ After It Generates Code
+
+Make sure:
+
+1. You've installed Supabase client library in Replit:
+
+```bash
+npm install @supabase/supabase-js
+```
+
+2. You add your **Supabase project URL and anon key** in a `supabase.js` file:
+
+```js
+// supabase.js
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = 'https://your-project-url.supabase.co';
+const supabaseKey = 'your-anon-key';
+export const supabase = createClient(supabaseUrl, supabaseKey);
+```
+
+3. Hook up the login/sign-up form to `supabase.auth.signInWithPassword()` and `supabase.auth.signUp()`.
+
+---
+
+Would you like me to generate the **entire HTML + JS + TailwindCSS code** for this directly here in Replit-ready format?
