@@ -44,9 +44,9 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       return response.json();
     },
     enabled: !!user?.id,
-    refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
+    refetchInterval: 30000, // Reduced to 30 seconds to allow optimistic updates
     refetchOnWindowFocus: true,
-    staleTime: 0 // Always consider data stale for real-time updates
+    staleTime: 10000 // Keep data fresh for 10 seconds to prevent immediate overwrites
   });
 
   // Fetch available slots with real-time updates
@@ -106,8 +106,10 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       return { previousSlot };
     },
     onSuccess: (data) => {
-      // Update with actual server response
+      // Update with actual server response and mark as fresh
       queryClient.setQueryData(['prayer-slot', user?.id], data);
+      // Set a longer stale time to prevent immediate overwrites
+      queryClient.setQueryDefaults(['prayer-slot', user?.id], { staleTime: 30000 });
       toast({
         title: "Slot Skipped Successfully",
         description: "Your prayer slot has been paused for 5 days.",
@@ -125,8 +127,10 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       });
     },
     onSettled: () => {
-      // Always refetch after settled
-      queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
+      // Delay refetch to allow UI to show the update
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
+      }, 2000);
     }
   });
 
@@ -163,8 +167,10 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       return { previousSlot };
     },
     onSuccess: (data) => {
-      // Update with actual server response
+      // Update with actual server response and mark as fresh
       queryClient.setQueryData(['prayer-slot', user?.id], data);
+      // Set a longer stale time to prevent immediate overwrites
+      queryClient.setQueryDefaults(['prayer-slot', user?.id], { staleTime: 30000 });
       queryClient.invalidateQueries({ queryKey: ['available-slots'] });
       setIsChangeSlotModalOpen(false);
       toast({
@@ -184,9 +190,11 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       });
     },
     onSettled: () => {
-      // Always refetch after settled
-      queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
-      queryClient.invalidateQueries({ queryKey: ['available-slots'] });
+      // Delay refetch to allow UI to show the update
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
+        queryClient.invalidateQueries({ queryKey: ['available-slots'] });
+      }, 2000);
     }
   });
 
