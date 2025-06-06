@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import isBetween from 'dayjs/plugin/isBetween';
+import isBetween from 'dayjs/plugin/isBetween.js';
 import { supabaseAdmin } from '../supabase.js';
 
 dayjs.extend(isBetween);
