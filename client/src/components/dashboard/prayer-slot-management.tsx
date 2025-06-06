@@ -62,27 +62,27 @@ export function PrayerSlotManagement() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Prayer Slot Management</h2>
+        <h2 className="text-2xl font-bold text-brand-text mb-2 font-poppins">Prayer Slot Management</h2>
         <p className="text-gray-600">Manage your committed prayer time and schedule</p>
       </div>
 
       {/* Current Slot Status */}
-      <Card className="shadow-lg">
+      <Card className="shadow-brand-lg border border-blue-100">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
               <i className="fas fa-clock text-brand-accent text-sm"></i>
             </div>
-            Current Prayer Slot
+            <span className="font-poppins">Current Prayer Slot</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-brand-neutral rounded-lg p-6">
+          <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg p-6 border border-blue-100">
             <div className="text-center mb-4">
-              <h3 className="text-3xl font-bold text-brand-primary mb-2">{currentSlot}</h3>
+              <h3 className="text-3xl font-bold text-brand-primary mb-2 font-poppins">{currentSlot}</h3>
               <div className={`inline-flex items-center px-3 py-1 rounded-full border ${getStatusColor(slotStatus)}`}>
                 <i className="fas fa-circle mr-2 text-xs"></i>
-                <span className="font-semibold">{slotStatus}</span>
+                <span className="font-semibold font-poppins">{slotStatus}</span>
               </div>
             </div>
             
@@ -91,7 +91,7 @@ export function PrayerSlotManagement() {
                 <Button 
                   onClick={handleRequestSkip}
                   variant="outline"
-                  className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+                  className="border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-primary transition-brand font-poppins"
                 >
                   <i className="fas fa-pause mr-2"></i>
                   Request Skip (5 days)
@@ -101,7 +101,7 @@ export function PrayerSlotManagement() {
               {slotStatus === "On Leave" && (
                 <Button 
                   onClick={handleReactivateSlot}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-brand-primary hover:bg-blue-800 text-white transition-brand font-poppins"
                 >
                   <i className="fas fa-play mr-2"></i>
                   Reactivate Slot
@@ -111,7 +111,7 @@ export function PrayerSlotManagement() {
               <Button 
                 onClick={() => setIsChangingSlot(!isChangingSlot)}
                 variant="outline"
-                className="border-brand-primary text-brand-primary hover:bg-brand-neutral"
+                className="border-brand-primary text-brand-primary hover:bg-blue-50 transition-brand font-poppins"
               >
                 <i className="fas fa-edit mr-2"></i>
                 Change Time Slot
@@ -121,11 +121,11 @@ export function PrayerSlotManagement() {
 
           {/* Change Slot Interface */}
           {isChangingSlot && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <h4 className="font-semibold text-gray-800 mb-3">Select New Prayer Slot</h4>
+            <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-200 rounded-lg p-4">
+              <h4 className="font-semibold text-brand-text mb-3 font-poppins">Select New Prayer Slot</h4>
               <div className="space-y-3">
                 <Select onValueChange={handleSlotChange}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full border-blue-200 focus:ring-brand-primary focus:border-brand-primary">
                     <SelectValue placeholder="Choose a new time slot" />
                   </SelectTrigger>
                   <SelectContent>
@@ -139,7 +139,7 @@ export function PrayerSlotManagement() {
                 <Button 
                   onClick={() => setIsChangingSlot(false)}
                   variant="outline"
-                  className="w-full"
+                  className="w-full border-gray-300 hover:bg-gray-50 transition-brand font-poppins"
                 >
                   Cancel
                 </Button>
@@ -150,23 +150,23 @@ export function PrayerSlotManagement() {
       </Card>
 
       {/* Slot Information */}
-      <Card className="shadow-lg">
+      <Card className="shadow-brand-lg border border-blue-100">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
               <i className="fas fa-info-circle text-brand-accent text-sm"></i>
             </div>
-            Slot Guidelines
+            <span className="font-poppins">Slot Guidelines</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3 text-sm text-gray-600">
             <div className="flex items-start">
-              <i className="fas fa-check-circle text-green-600 mr-3 mt-0.5"></i>
+              <i className="fas fa-check-circle text-brand-primary mr-3 mt-0.5"></i>
               <p>Commit to 30 minutes of focused prayer during your assigned slot</p>
             </div>
             <div className="flex items-start">
-              <i className="fas fa-clock text-blue-600 mr-3 mt-0.5"></i>
+              <i className="fas fa-clock text-brand-accent mr-3 mt-0.5"></i>
               <p>You can request to skip your slot for up to 5 consecutive days</p>
             </div>
             <div className="flex items-start">
@@ -174,7 +174,7 @@ export function PrayerSlotManagement() {
               <p>Missing 5 days in a row will auto-release your slot to other intercessors</p>
             </div>
             <div className="flex items-start">
-              <i className="fas fa-users text-purple-600 mr-3 mt-0.5"></i>
+              <i className="fas fa-users text-brand-primary mr-3 mt-0.5"></i>
               <p>Your commitment helps maintain 24/7 global prayer coverage</p>
             </div>
           </div>
@@ -182,13 +182,13 @@ export function PrayerSlotManagement() {
       </Card>
 
       {/* Prayer Session History */}
-      <Card className="shadow-lg">
+      <Card className="shadow-brand-lg border border-blue-100">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
               <i className="fas fa-history text-brand-accent text-sm"></i>
             </div>
-            Recent Prayer Sessions
+            <span className="font-poppins">Recent Prayer Sessions</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
