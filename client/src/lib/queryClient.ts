@@ -12,8 +12,11 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  // Ensure method is a string
+  const httpMethod = typeof method === 'string' ? method.toUpperCase() : 'GET';
+  
   const res = await fetch(url, {
-    method,
+    method: httpMethod,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
