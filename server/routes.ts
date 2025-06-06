@@ -515,6 +515,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin API Routes
+  app.get("/api/admin/prayer-slots", async (req: Request, res: Response) => {
+    try {
+      const { data: slots, error } = await supabaseAdmin
+        .from('prayer_slots')
+        .select(`
+          id,
+          slot_time,
+          status,
+          user_id,
+          users (
+            email,
+            user_metadata
+          )
+        `);
+
+      if (error) throw error;
+
+      const slotsWithUsers = slots?.map(slot => ({
+        id: slot.id,
+        slotTime: slot.slot_time,
+        status: slot.status,
+        userId: slot.user_id,
+        userEmail: slot.users?.email,
+        userName: slot.users?.user_metadata?.full_name
+      })) || [];
+
+      res.json(slotsWithUsers);
+    } catch (error) {
+      console.error('Error fetching prayer slots:', error);
+      res.status(500).json({ error: 'Failed to fetch prayer slots' });
+    }
+  });
+
+  app.get("/api/admin/intercessors", async (req: Request, res: Response) => {
+    try {
+      const { data: users, error } = await supabaseAdmin
+        .from('users')
+        .select(`
+          id,
+          email,
+          user_metadata,
+          created_at,
+          prayer_slots (
+            slot_time,
+            status
+          )
+        `)
+        .eq('role', 'intercessor');
+
+      if (error) throw error;
+
+      const intercessors = users?.map(user => ({
+        id: user.id,
+        email: user.email,
+        name: user.user_metadata?.full_name || 'Unknown',
+        createdAt: user.created_at,
+        prayerSlot: user.prayer_slots?.[0]?.slot_time,
+        slotStatus: user.prayer_slots?.[0]?.status
+      })) || [];
+
+      res.json(intercessors);
+    } catch (error) {
+      console.error('Error fetching intercessors:', error);
+      res.status(500).json({ error: 'Failed to fetch intercessors' });
+    }
+  });
+
+  app.get("/api/admin/fasting-registrations", async (req: Request, res: Response) => {
+    try {
+      const { data: registrations, error } = await supabaseAdmin
+        .from('fasting_registrations')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      res.json(registrations || []);
+    } catch (error) {
+      console.error('Error fetching fasting registrations:', error);
+      res.status(500).json({ error: 'Failed to fetch fasting registrations' });
+    }
+  });
+
+  app.post("/api/admin/updates", async (req: Request, res: Response) => {
+    try {
+      const { title, description } = req.body;
+
+      if (!title || !description) {
+        return res.status(400).json({ error: 'Title and description are required' });
+      }
+
+      const { data: newUpdate, error } = await supabaseAdmin
+        .from('updates')
+        .insert([
+          {
+            title,
+            description,
+            date: new Date().toISOString(),
+            type: 'general'
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      res.json(newUpdate);
+    } catch (error) {
+      console.error('Error creating update:', error);
+      res.status(500).json({ error: 'Failed to create update' });
+    }
+  });
+
+  app.post("/api/admin/zoom-link", async (req: Request, res: Response) => {
+    try {
+      const { link } = req.body;
+
+      if (!link) {
+        return res.status(400).json({ error: 'Zoom link is required' });
+      }
+
+      const { data: zoomSession, error } = await supabaseAdmin
+        .from('zoom_meetings')
+        .insert([
+          {
+            meeting_url: link,
+            created_at: new Date().toISOString(),
+            is_active: true
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      res.json({ message: 'Zoom link saved successfully', session: zoomSession });
+    } catch (error) {
+      console.error('Error saving zoom link:', error);
+      res.status(500).json({ error: 'Failed to save zoom link' });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

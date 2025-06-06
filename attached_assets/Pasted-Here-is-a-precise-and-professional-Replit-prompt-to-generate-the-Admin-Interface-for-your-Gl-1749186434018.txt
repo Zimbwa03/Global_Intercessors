@@ -1,0 +1,77 @@
+Here is a **precise and professional Replit prompt** to generate the **Admin Interface** for your Global Intercessors app — tightly integrated with Supabase, styled with your brand colors, and role-gated:
+
+---
+
+## ✅ REPLIT PROMPT: Generate Admin Interface for Global Intercessors App
+
+> I am building a professional prayer scheduling and fasting registration app called **Global Intercessors**, already connected to Supabase. Please generate the **Admin Interface** using:
+>
+> * **Frontend**: React + Tailwind CSS (use brand color `#2855AE`)
+> * **Backend**: Node.js (if required)
+> * **Auth & DB**: Supabase (already set up with correct tables)
+>
+> ### 🎯 Admin Interface Must Include:
+>
+> #### 1. 🔐 Admin Login
+>
+> * Login form for admin users only
+> * Use Supabase Auth (email/password)
+> * Check if logged-in user has `role = "admin"` from `intercessors` table or dedicated `admins` table
+> * Redirect non-admins to intercessor dashboard
+>
+> #### 2. 📊 Admin Dashboard (after login)
+>
+> Must show:
+>
+> * 📅 **Slot Overview Table**
+>
+>   * List of all 24-hour slots from `slots` table
+>   * Show which intercessor is assigned, their name and email
+>   * Highlight missed slots from `session_tracking`
+>   * Filter by time and intercessor
+> * 🙋 **All Intercessors View**
+>
+>   * Name, email, phone, slot time, attendance count, missed days
+>   * Button to send reminder email or notification (use Firebase integration)
+> * 🔄 **Fasting Registration List**
+>
+>   * Pull from `fasting_registrations` table
+>   * Show name, phone, GPS coordinates, cost estimate
+>   * Allow admin to export to CSV
+> * 📣 **Updates Manager**
+>
+>   * Create updates with `title`, `description`, and `date`
+>   * Save to `updates` table
+>   * Push announcement via Firebase (optional)
+> * 🔗 **Zoom Workspace Tracker**
+>
+>   * Text input to paste Zoom link
+>   * Button to mark current Zoom session as "active"
+>   * Save `zoom_sessions` with timestamp
+>
+> #### 3. 🔐 Route Protection
+>
+> * Ensure all `/admin/*` routes require:
+>
+>   * Logged-in user
+>   * `role = "admin"`
+> * Redirect unauthorized users to login page or intercessor dashboard
+>
+> #### 4. 📱 Responsive UI
+>
+> * Use Tailwind CSS with brand blue `#2855AE`
+> * Use a sidebar or tabbed layout for navigation: Dashboard | Intercessors | Fasting | Zoom | Updates
+> * Include admin name on navbar and logout button
+>
+> #### 5. 🔧 Supabase Config
+>
+> * Use Supabase client to:
+>
+>   * Fetch from `slots`, `intercessors`, `fasting_registrations`, `updates`, `session_tracking`, `admins`
+>   * Auth: validate admin role
+>
+> ⚠️ All data should load dynamically and reflect Supabase table schema. Avoid dummy placeholders. Keep the code clean and modular.
+
+---
+
+Would you like me to now **generate the React components** for the Admin UI starting with the **Admin Login page**?
