@@ -1,0 +1,96 @@
+Great! Now that you've set up the **Landing Page with Authentication**, the **next prompt** is to create the **Dashboard Page** — this is where logged-in intercessors land.
+
+---
+
+## 🧭 Dashboard Features (MVP Version)
+
+Let’s focus on creating a clean, dynamic Dashboard with the following sections:
+
+### 👤 User Panel
+
+* Display: Welcome `[user.email]`
+* Logout Button (with Supabase)
+
+### 📅 Prayer Slot
+
+* Show: Current Slot (e.g., "22:00 - 22:30")
+* Status: Active / Missed / On Leave
+* Button to:
+
+  * Change Slot
+  * Request Skip
+
+### ⏰ Slot Status & Reminders
+
+* Show: "Next slot in X hours"
+* Reminder toggle: On/Off
+* Missed 5 slots → auto-release slot
+
+### 📢 Announcements
+
+* From Admin: show updates like "3 Days, 3 Nights Fasting"
+* Register button → Opens modal to capture:
+
+  * Name
+  * Phone
+  * Google Maps Location (Geo API)
+  * Transport cost estimate
+
+### 📖 AI Prayer Assistant
+
+* Input Box: “What would you like to pray for?”
+* Output: Bible Verses + Prayer points
+* Uses DeepSeek AI API + Bible API
+
+---
+
+## ✨ UI Prompt for Replit
+
+Paste this into Replit AI prompt:
+
+---
+
+```
+Create a responsive and professional Dashboard for the Global Intercessors app.
+
+1. Layout:
+- Left sidebar: Navigation (Dashboard, Prayer Slot, Updates, AI Assistant, Logout)
+- Main content panel (shows based on selected nav item)
+
+2. Dashboard Page:
+- Welcome message with user email (from Supabase)
+- Slot Info card:
+  - Time: e.g. "22:00 - 22:30"
+  - Status: “Active” or “Missed” or “On Leave”
+  - Button: “Request Skip” (greys out slot for 5 days)
+  - Auto-release if missed 5 days in a row
+- Countdown: “Your next session starts in [hh:mm:ss]”
+- Toggle: Enable Reminder (localStorage toggle or Supabase)
+
+3. Updates Page:
+- Show latest announcements (e.g. 3-day fast)
+- Button: “Register for Event”
+- Modal form to collect:
+  - Full Name
+  - Phone Number
+  - Google Location (geolocation input)
+  - Estimate Transport Cost
+
+4. AI Prayer Assistant:
+- Input: "Guide my prayer for strength"
+- Output: Bible Verses (multiple versions) and structured points
+- Uses DeepSeek API
+
+5. Logout Button:
+- Calls Supabase auth.signOut()
+
+Use TailwindCSS for styling.
+Primary Color: #013C34
+Accent: #CFA935
+Text: White on dark background.
+Use modern card layout and smooth transitions.
+```
+
+---
+
+Would you like me to manually generate the **code files for each section (e.g., dashboard.js, ai.js, updates.js)** and the **routing logic** here for you next?
