@@ -34,31 +34,50 @@ export default function PrayerSlotManagement() {
   }, []);
 
   // Fetch user's prayer slot
-  const { data: prayerSlot, isLoading: isLoadingSlot } = useQuery({
+  const { data: prayerSlot, isLoading: isLoadingSlot } = useQuery<PrayerSlot>({
     queryKey: ['prayer-slot', user?.id],
-    queryFn: () => apiRequest(`/api/prayer-slot/${user?.id}`),
+    queryFn: async () => {
+      const response = await fetch(`/api/prayer-slot/${user?.id}`);
+      if (!response.ok) throw new Error('Failed to fetch prayer slot');
+      return response.json();
+    },
     enabled: !!user?.id
   });
 
   // Fetch available slots
-  const { data: availableSlots = [], isLoading: isLoadingSlots } = useQuery({
+  const { data: availableSlots = [], isLoading: isLoadingSlots } = useQuery<AvailableSlot[]>({
     queryKey: ['available-slots'],
-    queryFn: () => apiRequest('/api/available-slots')
+    queryFn: async () => {
+      const response = await fetch('/api/available-slots');
+      if (!response.ok) throw new Error('Failed to fetch available slots');
+      return response.json();
+    }
   });
 
   // Fetch prayer session history
-  const { data: sessionHistory = [] } = useQuery({
+  const { data: sessionHistory = [] } = useQuery<PrayerSession[]>({
     queryKey: ['prayer-sessions', user?.id],
-    queryFn: () => apiRequest(`/api/prayer-sessions/${user?.id}?limit=7`),
+    queryFn: async () => {
+      const response = await fetch(`/api/prayer-sessions/${user?.id}?limit=7`);
+      if (!response.ok) throw new Error('Failed to fetch prayer sessions');
+      return response.json();
+    },
     enabled: !!user?.id
   });
 
   // Skip slot mutation
   const skipSlotMutation = useMutation({
-    mutationFn: (userId: string) => apiRequest('/api/prayer-slot/skip', {
-      method: 'POST',
-      body: JSON.stringify({ userId })
-    }),
+    mutationFn: async (userId: string) => {
+      const response = await fetch('/api/prayer-slot/skip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId })
+      });
+      if (!response.ok) throw new Error('Failed to skip prayer slot');
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
       toast({
@@ -77,11 +96,17 @@ export default function PrayerSlotManagement() {
 
   // Change slot mutation
   const changeSlotMutation = useMutation({
-    mutationFn: ({ userId, newSlotTime, currentSlotTime }: { userId: string; newSlotTime: string; currentSlotTime: string }) => 
-      apiRequest('/api/prayer-slot/change', {
+    mutationFn: async ({ userId, newSlotTime, currentSlotTime }: { userId: string; newSlotTime: string; currentSlotTime?: string }) => {
+      const response = await fetch('/api/prayer-slot/change', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ userId, newSlotTime, currentSlotTime })
-      }),
+      });
+      if (!response.ok) throw new Error('Failed to change prayer slot');
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
       queryClient.invalidateQueries({ queryKey: ['available-slots'] });

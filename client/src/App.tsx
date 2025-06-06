@@ -13,6 +13,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/prayer-slot-management" component={PrayerSlotManagement} />
       <Route component={NotFound} />
     </Switch>
   );
