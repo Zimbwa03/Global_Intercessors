@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,28 +36,33 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     getCurrentUser();
   }, []);
 
-  // Fetch user's prayer slot
-  const { data: prayerSlot, isLoading: isLoadingSlot } = useQuery({
+  // Fetch user's prayer slot with automatic refetching
+  const { data: prayerSlot, isLoading: isLoadingSlot, error: slotError } = useQuery({
     queryKey: ['prayer-slot', user?.id],
     queryFn: async () => {
       const response = await fetch(`/api/prayer-slot/${user?.id}`);
       if (!response.ok) throw new Error('Failed to fetch prayer slot');
       return response.json();
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
+    refetchOnWindowFocus: true,
+    staleTime: 0 // Always consider data stale for real-time updates
   });
 
-  // Fetch available slots
+  // Fetch available slots with real-time updates
   const { data: availableSlots = [], isLoading: isLoadingSlots } = useQuery({
     queryKey: ['available-slots'],
     queryFn: async () => {
       const response = await fetch('/api/available-slots');
       if (!response.ok) throw new Error('Failed to fetch available slots');
       return response.json();
-    }
+    },
+    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchOnWindowFocus: true
   });
 
-  // Fetch prayer session history
+  // Fetch prayer session history with real-time updates
   const { data: sessionHistory = [] } = useQuery({
     queryKey: ['prayer-sessions', user?.id],
     queryFn: async () => {
@@ -64,10 +70,12 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       if (!response.ok) throw new Error('Failed to fetch prayer sessions');
       return response.json();
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchOnWindowFocus: true
   });
 
-  // Skip slot mutation
+  // Skip slot mutation with optimistic updates
   const skipSlotMutation = useMutation({
     mutationFn: async (userId: string) => {
       const response = await fetch('/api/prayer-slot/skip', {
@@ -77,26 +85,53 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         },
         body: JSON.stringify({ userId })
       });
-      if (!response.ok) throw new Error('Failed to skip prayer slot');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Failed to skip prayer slot');
+      }
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
+    onMutate: async (userId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['prayer-slot', userId] });
+      
+      // Snapshot the previous value
+      const previousSlot = queryClient.getQueryData(['prayer-slot', userId]);
+      
+      // Optimistically update to the new value
+      queryClient.setQueryData(['prayer-slot', userId], (old: any) => ({
+        ...old,
+        status: 'skipped'
+      }));
+      
+      return { previousSlot };
+    },
+    onSuccess: (data) => {
+      // Update with actual server response
+      queryClient.setQueryData(['prayer-slot', user?.id], data);
       toast({
         title: "Slot Skipped Successfully",
         description: "Your prayer slot has been paused for 5 days.",
       });
     },
-    onError: () => {
+    onError: (error, userId, context) => {
+      // Rollback on error
+      if (context?.previousSlot) {
+        queryClient.setQueryData(['prayer-slot', userId], context.previousSlot);
+      }
       toast({
         title: "Error",
-        description: "Failed to skip prayer slot. Please try again.",
+        description: error.message || "Failed to skip prayer slot. Please try again.",
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      // Always refetch after settled
+      queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
     }
   });
 
-  // Change slot mutation
+  // Change slot mutation with optimistic updates
   const changeSlotMutation = useMutation({
     mutationFn: async ({ userId, newSlotTime, currentSlotTime }: { userId: string; newSlotTime: string; currentSlotTime?: string }) => {
       const response = await fetch('/api/prayer-slot/change', {
@@ -106,11 +141,31 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         },
         body: JSON.stringify({ userId, newSlotTime, currentSlotTime })
       });
-      if (!response.ok) throw new Error('Failed to change prayer slot');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Failed to change prayer slot');
+      }
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
+    onMutate: async ({ userId, newSlotTime }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['prayer-slot', userId] });
+      
+      // Snapshot the previous value
+      const previousSlot = queryClient.getQueryData(['prayer-slot', userId]);
+      
+      // Optimistically update to the new value
+      queryClient.setQueryData(['prayer-slot', userId], (old: any) => ({
+        ...old,
+        slotTime: newSlotTime,
+        status: 'active'
+      }));
+      
+      return { previousSlot };
+    },
+    onSuccess: (data) => {
+      // Update with actual server response
+      queryClient.setQueryData(['prayer-slot', user?.id], data);
       queryClient.invalidateQueries({ queryKey: ['available-slots'] });
       setIsChangeSlotModalOpen(false);
       toast({
@@ -118,12 +173,21 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         description: "Your prayer slot has been updated.",
       });
     },
-    onError: () => {
+    onError: (error, { userId }, context) => {
+      // Rollback on error
+      if (context?.previousSlot) {
+        queryClient.setQueryData(['prayer-slot', userId], context.previousSlot);
+      }
       toast({
         title: "Error",
-        description: "Failed to change prayer slot. Please try again.",
+        description: error.message || "Failed to change prayer slot. Please try again.",
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      // Always refetch after settled
+      queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
+      queryClient.invalidateQueries({ queryKey: ['available-slots'] });
     }
   });
 
@@ -194,14 +258,26 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   };
 
   const handleChangeSlot = (newSlotTime: string) => {
-    if (user?.id && prayerSlot?.slotTime) {
+    if (user?.id) {
       changeSlotMutation.mutate({
         userId: user.id,
         newSlotTime,
-        currentSlotTime: prayerSlot.slotTime
+        currentSlotTime: prayerSlot?.slotTime
       });
     }
   };
+
+  if (!user) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <AlertCircle className="w-12 h-12 text-brand-primary mx-auto mb-4" />
+          <h2 className="text-xl font-poppins font-semibold text-brand-text mb-2">Authentication Required</h2>
+          <p className="text-gray-600">Please log in to access your prayer slot management.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoadingSlot) {
     return (
@@ -214,7 +290,23 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     );
   }
 
-
+  if (slotError) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-poppins font-semibold text-red-600 mb-2">Error Loading Slot</h2>
+          <p className="text-gray-600 mb-4">Failed to load your prayer slot. Please try again.</p>
+          <Button 
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['prayer-slot'] })}
+            className="bg-brand-primary hover:bg-blue-800 text-white font-poppins"
+          >
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -374,7 +466,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         <CardHeader>
           <CardTitle className="flex items-center">
             <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
-              <i className="fas fa-info-circle text-brand-accent text-sm"></i>
+              <AlertCircle className="w-4 h-4 text-brand-accent" />
             </div>
             <span className="font-poppins">Slot Guidelines</span>
           </CardTitle>
@@ -382,19 +474,19 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         <CardContent>
           <div className="space-y-3 text-sm text-gray-600">
             <div className="flex items-start">
-              <i className="fas fa-check-circle text-brand-primary mr-3 mt-0.5"></i>
+              <CheckCircle2 className="w-4 h-4 text-brand-primary mr-3 mt-0.5" />
               <p>Commit to 30 minutes of focused prayer during your assigned slot</p>
             </div>
             <div className="flex items-start">
-              <i className="fas fa-clock text-brand-accent mr-3 mt-0.5"></i>
+              <Clock className="w-4 h-4 text-brand-accent mr-3 mt-0.5" />
               <p>You can request to skip your slot for up to 5 consecutive days</p>
             </div>
             <div className="flex items-start">
-              <i className="fas fa-exclamation-triangle text-yellow-600 mr-3 mt-0.5"></i>
+              <AlertCircle className="w-4 h-4 text-yellow-600 mr-3 mt-0.5" />
               <p>Missing 5 days in a row will auto-release your slot to other intercessors</p>
             </div>
             <div className="flex items-start">
-              <i className="fas fa-users text-brand-primary mr-3 mt-0.5"></i>
+              <Calendar className="w-4 h-4 text-brand-primary mr-3 mt-0.5" />
               <p>Your commitment helps maintain 24/7 global prayer coverage</p>
             </div>
           </div>
@@ -434,7 +526,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                     </Badge>
                     {session.duration && (
                       <p className="text-xs text-gray-500 mt-1">{session.duration} min</p>
-                    )}
+                    </div>
                   </div>
                 </div>
               ))
