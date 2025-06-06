@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { supabase } from "@/lib/supabase";
 
 interface DashboardOverviewProps {
   userEmail?: string;
@@ -23,11 +26,32 @@ const getUserName = (email: string) => {
 };
 
 export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
-  const [prayerSlot, setPrayerSlot] = useState({ time: "22:00 - 22:30", status: "Active" });
-  const [remindersEnabled, setRemindersEnabled] = useState(false);
-  const [nextSession, setNextSession] = useState({ hours: 0, minutes: 0, seconds: 0 });
-  const [missedDays, setMissedDays] = useState(0);
   const { toast } = useToast();
+  const [remindersEnabled, setRemindersEnabled] = useState(true);
+  const [nextSession, setNextSession] = useState({ hours: 2, minutes: 15, seconds: 30 });
+  const [user, setUser] = useState<any>(null);
+
+  // Get current user
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getCurrentUser();
+  }, []);
+
+  // Fetch user's prayer slot with real-time updates
+  const { data: prayerSlot } = useQuery({
+    queryKey: ['prayer-slot', user?.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/prayer-slot/${user?.id}`);
+      if (!response.ok) throw new Error('Failed to fetch prayer slot');
+      return response.json();
+    },
+    enabled: !!user?.id,
+    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchOnWindowFocus: true
+  });
 
   useEffect(() => {
     // Load reminder preference from localStorage
@@ -41,16 +65,16 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
       const now = new Date();
       const nextSlot = new Date();
       nextSlot.setHours(22, 0, 0, 0);
-      
+
       if (now.getHours() >= 22) {
         nextSlot.setDate(nextSlot.getDate() + 1);
       }
-      
+
       const diff = nextSlot.getTime() - now.getTime();
       const hours = Math.floor(diff / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      
+
       setNextSession({ hours, minutes, seconds });
     };
 
@@ -72,7 +96,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
   };
 
   const handleRequestSkip = () => {
-    setPrayerSlot(prev => ({ ...prev, status: "On Leave" }));
+    //setPrayerSlot(prev => ({ ...prev, status: "On Leave" }));
     toast({
       title: "Skip Requested",
       description: "Your prayer slot has been marked as 'On Leave' for 5 days"
@@ -130,13 +154,19 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
           <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg p-4 border border-blue-100">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h3 className="text-2xl font-bold text-brand-primary font-poppins">{prayerSlot.time}</h3>
-                <div className="flex items-center mt-1">
-                  <i className={`${getStatusIcon(prayerSlot.status)} ${getStatusColor(prayerSlot.status)} mr-2`}></i>
-                  <span className={`font-semibold ${getStatusColor(prayerSlot.status)} font-poppins`}>
-                    {prayerSlot.status}
-                  </span>
-                </div>
+                {prayerSlot?.data ? (
+                  <>
+                    <h3 className="text-2xl font-bold text-brand-primary font-poppins">{prayerSlot?.data?.time}</h3>
+                    <div className="flex items-center mt-1">
+                      <i className={`${getStatusIcon(prayerSlot?.data?.status)} ${getStatusColor(prayerSlot?.data?.status)} mr-2`}></i>
+                      <span className={`font-semibold ${getStatusColor(prayerSlot?.data?.status)} font-poppins`}>
+                        {prayerSlot?.data?.status}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <p>Loading prayer slot...</p>
+                )}
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-600">Next session in:</p>
@@ -147,8 +177,8 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                 </p>
               </div>
             </div>
-            
-            {prayerSlot.status === "Active" && (
+
+            {prayerSlot?.data?.status === "Active" && (
               <Button 
                 onClick={handleRequestSkip}
                 variant="outline"
@@ -160,7 +190,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
             )}
           </div>
 
-          {missedDays > 0 && (
+          {/*missedDays > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
               <p className="text-red-700 text-sm">
                 <i className="fas fa-exclamation-triangle mr-2"></i>
@@ -168,7 +198,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                 {missedDays >= 4 && " Your slot will be auto-released after 5 missed days."}
               </p>
             </div>
-          )}
+          )*/}
         </CardContent>
       </Card>
 

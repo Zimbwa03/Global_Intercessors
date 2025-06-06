@@ -36,7 +36,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   }, []);
 
   // Fetch user's prayer slot with automatic refetching
-  const { data: prayerSlot, isLoading, error } = useQuery({
+  const { data: prayerSlot, isLoading: isLoadingSlot, error } = useQuery({
     queryKey: ['prayer-slot', user?.id],
     queryFn: async () => {
       const response = await fetch(`/api/prayer-slot/${user?.id}`);
@@ -286,7 +286,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     );
   }
 
-  if (isLoading) {
+  if (isLoadingSlot) {
     return (
       <div className="space-y-6">
         <div className="text-center py-12">
