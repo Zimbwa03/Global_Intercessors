@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { supabaseAdmin } from "./supabase";
 
 // In-memory storage for prayer slots (will be replaced with Supabase later)
 const prayerSlots = new Map();

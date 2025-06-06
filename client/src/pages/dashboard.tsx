@@ -7,6 +7,7 @@ import { DashboardOverview } from "@/components/dashboard/dashboard-overview";
 import { PrayerSlotManagement } from "@/components/dashboard/prayer-slot-management";
 import { UpdatesAnnouncements } from "@/components/dashboard/updates-announcements";
 import { AIPrayerAssistant } from "@/components/dashboard/ai-prayer-assistant";
+import { NotificationSetup } from "@/components/dashboard/notification-setup";
 
 export default function Dashboard() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -75,6 +76,8 @@ export default function Dashboard() {
         return <DashboardOverview userEmail={user.email} />;
       case "prayer-slot":
         return <PrayerSlotManagement userEmail={user.email} />;
+      case "notifications":
+        return <NotificationSetup />;
       case "updates":
         return <UpdatesAnnouncements />;
       case "ai-assistant":
