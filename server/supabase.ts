@@ -7,9 +7,11 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 if (!supabaseUrl || !supabaseServiceRoleKey) {
   console.error('Supabase environment variables not found:', {
     url: !!supabaseUrl,
-    key: !!supabaseServiceRoleKey
+    key: !!supabaseServiceRoleKey,
+    env: process.env
   });
-  throw new Error('Missing Supabase environment variables');
+  console.error('Available environment variables:', Object.keys(process.env));
+  throw new Error('Missing Supabase environment variables. Need SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
 }
 
 // Create Supabase client with service role key for server-side operations
