@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { Play, Pause, SkipForward, SkipBack, Volume2, Book } from "lucide-react";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { supabase } from "@/lib/supabase";
 
 interface AudioBiblePlayerProps {
@@ -19,7 +19,6 @@ interface BibleBook {
   chapters: number;
 }
 
-// Bible structure with chapter counts
 const BIBLE_BOOKS: BibleBook[] = [
   { name: "Genesis", chapters: 50 },
   { name: "Exodus", chapters: 40 },
@@ -92,114 +91,90 @@ const BIBLE_BOOKS: BibleBook[] = [
 export function AudioBiblePlayer({ isActive, slotTime, onPlaybackChange }: AudioBiblePlayerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(0.7);
   const [user, setUser] = useState<any>(null);
+  const [selectedBook, setSelectedBook] = useState("Genesis");
+  const [selectedChapter, setSelectedChapter] = useState(1);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+
+  // YouTube audio Bible links provided by user
+  const bibleVideos = [
+    {
+      id: "UUKf3IYZJFc",
+      title: "Genesis - Complete Book",
+      embedUrl: "https://www.youtube.com/embed/UUKf3IYZJFc?autoplay=1&controls=1&rel=0"
+    },
+    {
+      id: "fYdJgkoHr0M", 
+      title: "Exodus - Complete Book",
+      embedUrl: "https://www.youtube.com/embed/fYdJgkoHr0M?autoplay=1&controls=1&rel=0"
+    },
+    {
+      id: "mITAX6D33wI",
+      title: "Leviticus - Complete Book", 
+      embedUrl: "https://www.youtube.com/embed/mITAX6D33wI?autoplay=1&controls=1&rel=0"
+    }
+  ];
 
   // Get current user
   useEffect(() => {
-    const getCurrentUser = async () => {
+    const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
     };
-    getCurrentUser();
+    getUser();
   }, []);
 
-  // Fetch current Bible progress
-  const { data: bibleProgress, isLoading } = useQuery({
-    queryKey: ['bible-progress'],
-    queryFn: async () => {
-      const response = await fetch('/api/audio-bible/progress');
-      if (!response.ok) throw new Error('Failed to fetch Bible progress');
-      return response.json();
-    },
-    refetchInterval: 30000,
-    enabled: isActive
+  // Bible progress query
+  const { data: bibleProgress, refetch: refetchProgress } = useQuery({
+    queryKey: ["/api/audio-bible/progress"],
+    enabled: !!user?.email,
   });
 
-  // Update progress mutation
-  const updateProgressMutation = useMutation({
-    mutationFn: async ({ book, chapter, verse }: { book: string; chapter: number; verse?: number }) => {
-      const response = await fetch('/api/audio-bible/progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ book, chapter, verse, slotTime })
+  // Progress mutation
+  const progressMutation = useMutation({
+    mutationFn: async (data: { book: string; chapter: number; currentTime: number; totalTime: number }) => {
+      return apiRequest({
+        url: "/api/audio-bible/progress",
+        method: "POST",
+        data,
       });
-      if (!response.ok) throw new Error('Failed to update progress');
-      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bible-progress'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ["/api/audio-bible/progress"] });
+    },
   });
 
-  // Auto-start playback when active
+  // Auto-start when slot is active
   useEffect(() => {
-    if (isActive && bibleProgress && !isPlaying) {
+    if (isActive && !isPlaying) {
       handlePlay();
     }
-  }, [isActive, bibleProgress]);
+  }, [isActive]);
 
-  // YouTube iframe event handlers
-  useEffect(() => {
-    // Set default duration for YouTube videos (approximate)
-    setDuration(300); // 5 minutes default
+  const getCurrentVideo = () => {
+    const bookIndex = BIBLE_BOOKS.findIndex(book => book.name === selectedBook);
+    const videoIndex = Math.min(bookIndex, bibleVideos.length - 1);
+    return bibleVideos[videoIndex] || bibleVideos[0];
+  };
+
+  const handlePlay = () => {
+    setIsPlaying(true);
+    onPlaybackChange?.(true);
     
-    // Auto-advance to next chapter after estimated duration
-    if (isPlaying) {
-      const timer = setTimeout(() => {
-        setIsPlaying(false);
-        handleNextChapter();
-      }, 300000); // 5 minutes
+    toast({
+      title: "Audio Bible Started",
+      description: `Playing ${getCurrentVideo().title} for unfilled prayer slot ${slotTime}`,
+    });
 
-      return () => clearTimeout(timer);
-    }
-  }, [bibleProgress, isPlaying]);
-
-  const getCurrentBookIndex = () => {
-    if (!bibleProgress) return 0;
-    return BIBLE_BOOKS.findIndex(book => book.name === bibleProgress.book) || 0;
-  };
-
-  // YouTube video URLs for audio playback
-  const youtubeVideos = [
-    'https://youtu.be/mITAX6D33wI?si=_E1c8dP-kAGLNmlu',
-    'https://youtu.be/o64gXoffhRc?si=2CoCW6jAom-RHE6S'
-  ];
-
-  const getYouTubeEmbedUrl = (url: string): string => {
-    // Extract video ID from YouTube URL
-    const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
-    return `https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=1&controls=1`;
-  };
-
-  const getCurrentVideoUrl = (book: string, chapter: number) => {
-    // Cycle through YouTube videos based on chapter
-    const videoIndex = (chapter - 1) % youtubeVideos.length;
-    return getYouTubeEmbedUrl(youtubeVideos[videoIndex]);
-  };
-
-  const handlePlay = async () => {
-    if (!bibleProgress) return;
-
-    try {
-      setIsPlaying(true);
-      onPlaybackChange?.(true);
-
-      toast({
-        title: "Audio Bible Started",
-        description: `Playing ${bibleProgress.book} ${bibleProgress.chapter}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Playback Error",
-        description: "Unable to start audio playback",
-        variant: "destructive",
-      });
-    }
+    // Save progress
+    progressMutation.mutate({
+      book: selectedBook,
+      chapter: selectedChapter,
+      currentTime: 0,
+      totalTime: 0
+    });
   };
 
   const handlePause = () => {
@@ -207,155 +182,170 @@ export function AudioBiblePlayer({ isActive, slotTime, onPlaybackChange }: Audio
     onPlaybackChange?.(false);
   };
 
-  const handleNextChapter = () => {
-    if (!bibleProgress) return;
-
-    const currentBookIndex = getCurrentBookIndex();
-    const currentBook = BIBLE_BOOKS[currentBookIndex];
-
-    let nextBook = bibleProgress.book;
-    let nextChapter = bibleProgress.chapter + 1;
-
-    // Move to next book if current book is finished
-    if (nextChapter > currentBook.chapters) {
-      const nextBookIndex = (currentBookIndex + 1) % BIBLE_BOOKS.length;
-      nextBook = BIBLE_BOOKS[nextBookIndex].name;
-      nextChapter = 1;
-    }
-
-    updateProgressMutation.mutate({ book: nextBook, chapter: nextChapter });
+  const handleNextVideo = () => {
+    const nextIndex = (currentVideoIndex + 1) % bibleVideos.length;
+    setCurrentVideoIndex(nextIndex);
+    const nextBook = BIBLE_BOOKS[Math.min(nextIndex, BIBLE_BOOKS.length - 1)];
+    setSelectedBook(nextBook.name);
+    setSelectedChapter(1);
   };
 
-  const handlePreviousChapter = () => {
-    if (!bibleProgress) return;
-
-    const currentBookIndex = getCurrentBookIndex();
-    let prevBook = bibleProgress.book;
-    let prevChapter = bibleProgress.chapter - 1;
-
-    // Move to previous book if at chapter 1
-    if (prevChapter < 1) {
-      const prevBookIndex = currentBookIndex === 0 ? BIBLE_BOOKS.length - 1 : currentBookIndex - 1;
-      prevBook = BIBLE_BOOKS[prevBookIndex].name;
-      prevChapter = BIBLE_BOOKS[prevBookIndex].chapters;
-    }
-
-    updateProgressMutation.mutate({ book: prevBook, chapter: prevChapter });
+  const handlePreviousVideo = () => {
+    const prevIndex = currentVideoIndex > 0 ? currentVideoIndex - 1 : bibleVideos.length - 1;
+    setCurrentVideoIndex(prevIndex);
+    const prevBook = BIBLE_BOOKS[Math.min(prevIndex, BIBLE_BOOKS.length - 1)];
+    setSelectedBook(prevBook.name);
+    setSelectedChapter(1);
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  if (!isActive) {
-    return null;
-  }
-
-  if (isLoading || !bibleProgress) {
-    return (
-      <Card className="shadow-brand-lg border border-green-100">
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-3">
-            <div className="animate-spin rounded-full h-6 w-6 border-2 border-green-600 border-t-transparent"></div>
-            <p className="text-green-700">Loading Audio Bible...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const selectedBookData = BIBLE_BOOKS.find(book => book.name === selectedBook);
+  const currentVideo = getCurrentVideo();
 
   return (
-    <Card className="shadow-brand-lg border border-green-100 bg-gradient-to-r from-green-50 to-emerald-50">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center mr-3 shadow-brand">
-              <Book className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <span className="font-poppins text-green-800">📖 Audio Bible Playing</span>
-              <p className="text-sm text-green-600">{bibleProgress.book} {bibleProgress.chapter}</p>
-            </div>
-          </div>
-          <Badge variant="secondary" className="bg-green-100 text-green-800 font-poppins">
-            Slot Coverage Active
-          </Badge>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <i className="fas fa-bible text-blue-600"></i>
+          <span>Audio Bible Player</span>
+          {isActive && (
+            <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold">
+              LIVE - Unfilled Slot
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Book and Chapter Selection */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Bible Book</label>
+            <Select value={selectedBook} onValueChange={setSelectedBook}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a book" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60 overflow-y-auto">
+                {BIBLE_BOOKS.map((book) => (
+                  <SelectItem key={book.name} value={book.name}>
+                    {book.name} ({book.chapters} chapters)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2">Chapter</label>
+            <Select 
+              value={selectedChapter.toString()} 
+              onValueChange={(value) => setSelectedChapter(parseInt(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select chapter" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60 overflow-y-auto">
+                {Array.from({ length: selectedBookData?.chapters || 1 }, (_, i) => i + 1).map((chapter) => (
+                  <SelectItem key={chapter} value={chapter.toString()}>
+                    Chapter {chapter}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-      <CardContent className="space-y-4">
+        {/* Current Video Info */}
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h3 className="font-semibold text-blue-800 mb-2">Now Playing</h3>
+          <p className="text-blue-600">{currentVideo.title}</p>
+          <p className="text-sm text-blue-500 mt-1">
+            {selectedBook} Chapter {selectedChapter}
+          </p>
+        </div>
+
         {/* YouTube Player */}
-        {isPlaying && (
-          <div className="relative w-full h-48 bg-black rounded-lg overflow-hidden">
-            <iframe
-              ref={audioRef}
-              src={getCurrentVideoUrl(bibleProgress.book, bibleProgress.chapter)}
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              title={`Audio Bible - ${bibleProgress.book} ${bibleProgress.chapter}`}
-            />
-          </div>
-        )}
-
-        {/* Progress Bar */}
-        <div className="space-y-2">
-          <Progress 
-            value={isPlaying ? 45 : 0} 
-            className="h-2 bg-green-100"
+        <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+          <iframe
+            ref={iframeRef}
+            src={isPlaying ? currentVideo.embedUrl : ""}
+            className="absolute top-0 left-0 w-full h-full rounded-lg"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            title={currentVideo.title}
           />
-          <div className="flex justify-between text-xs text-green-600">
-            <span>{isPlaying ? "Playing..." : "Stopped"}</span>
-            <span>YouTube Audio</span>
-          </div>
         </div>
 
         {/* Controls */}
         <div className="flex items-center justify-center space-x-4">
           <Button
-            onClick={handlePreviousChapter}
             variant="outline"
             size="sm"
-            className="border-green-300 text-green-700 hover:bg-green-100"
+            onClick={handlePreviousVideo}
+            disabled={progressMutation.isPending}
           >
-            <SkipBack className="w-4 h-4" />
+            <i className="fas fa-step-backward mr-2"></i>
+            Previous
           </Button>
-
+          
+          {!isPlaying ? (
+            <Button
+              onClick={handlePlay}
+              disabled={progressMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <i className="fas fa-play mr-2"></i>
+              Play Audio Bible
+            </Button>
+          ) : (
+            <Button
+              onClick={handlePause}
+              variant="outline"
+              className="border-red-500 text-red-500 hover:bg-red-50"
+            >
+              <i className="fas fa-pause mr-2"></i>
+              Pause
+            </Button>
+          )}
+          
           <Button
-            onClick={isPlaying ? handlePause : handlePlay}
-            size="sm"
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-          </Button>
-
-          <Button
-            onClick={handleNextChapter}
             variant="outline"
             size="sm"
-            className="border-green-300 text-green-700 hover:bg-green-100"
+            onClick={handleNextVideo}
+            disabled={progressMutation.isPending}
           >
-            <SkipForward className="w-4 h-4" />
+            <i className="fas fa-step-forward mr-2"></i>
+            Next
           </Button>
         </div>
 
-        {/* Volume Info */}
-        <div className="flex items-center justify-center space-x-3 text-green-600">
-          <Volume2 className="w-4 h-4" />
-          <span className="text-sm">Use YouTube player controls for volume</span>
-        </div>
-
-        {/* Info */}
-        <div className="text-xs text-green-600 text-center space-y-1">
-          <p>🎵 Now playing: YouTube Audio Bible</p>
-          <p>Automatically playing while prayer slot is unfilled</p>
-          <p>Will stop when someone joins the prayer session</p>
-          <div className="bg-green-50 p-2 rounded text-green-700">
-            <p className="font-medium">Current Video: {youtubeVideos[(bibleProgress.chapter - 1) % youtubeVideos.length]}</p>
+        {/* Progress Info */}
+        {bibleProgress && (
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h4 className="font-semibold text-gray-800 mb-2">Your Progress</h4>
+            <p className="text-sm text-gray-600">
+              Last: {bibleProgress.book} Chapter {bibleProgress.chapter}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Last updated: {new Date(bibleProgress.updatedAt).toLocaleDateString()}
+            </p>
           </div>
-        </div>
+        )}
+
+        {/* Fallback Info */}
+        {isActive && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <i className="fas fa-exclamation-triangle text-yellow-400"></i>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  <strong>Automatic Fallback Active:</strong> This audio Bible is playing because slot {slotTime} is currently unfilled. 
+                  The audio will continue until an intercessor joins the prayer slot.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
