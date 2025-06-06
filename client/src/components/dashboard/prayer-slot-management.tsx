@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,14 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   const [isChangeSlotModalOpen, setIsChangeSlotModalOpen] = useState(false);
   const [countdown, setCountdown] = useState<CountdownTime>({ hours: 0, minutes: 0, seconds: 0 });
   const [user, setUser] = useState<any>(null);
+  const [availableSlots, setAvailableSlots] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<string>('');
+  const [currentSlot, setCurrentSlot] = useState<any>(null);
+  const [isLoadingSlot, setIsLoadingSlot] = useState(false);
+
+  // Get userId from localStorage or use a default
+  const userId = localStorage.getItem('userId') || 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f';
 
   // Get current user
   useEffect(() => {
@@ -38,7 +46,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   }, []);
 
   // Fetch user's prayer slot with automatic refetching
-  const { data: prayerSlot, isLoading: isLoadingSlot, error } = useQuery({
+  const { data: prayerSlot, error } = useQuery({
     queryKey: ['prayer-slot', user?.id],
     queryFn: async () => {
       const response = await fetch(`/api/prayer-slot/${user?.id}`);
@@ -52,7 +60,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   });
 
   // Fetch available slots with real-time updates
-  const { data: availableSlots = [], isLoading: isLoadingSlots } = useQuery({
+  const { data: availableSlotsData = [], isLoading: isLoadingSlots } = useQuery({
     queryKey: ['available-slots'],
     queryFn: async () => {
       const response = await fetch('/api/available-slots');
@@ -75,6 +83,61 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     refetchInterval: 10000, // Refetch every 10 seconds
     refetchOnWindowFocus: true
   });
+
+  useEffect(() => {
+    const fetchAvailableSlots = async () => {
+      try {
+        const response = await fetch('/api/available-slots');
+        if (!response.ok) {
+          throw new Error('Failed to fetch available slots');
+        }
+        const data = await response.json();
+        setAvailableSlots(data);
+      } catch (error) {
+        console.error('Error fetching available slots:', error);
+      }
+    };
+
+    const fetchSessions = async () => {
+      try {
+        const response = await fetch(`/api/prayer-sessions/${userId}?limit=7`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch prayer sessions');
+        }
+        const data = await response.json();
+        setSessions(data);
+      } catch (error) {
+        console.error('Error fetching prayer sessions:', error);
+      }
+    };
+
+    const fetchCurrentSlot = async () => {
+      setIsLoadingSlot(true);
+      try {
+        const response = await fetch(`/api/prayer-slot/${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentSlot(data);
+
+          // Schedule notifications for the current slot
+          if (data && data.status === 'active') {
+            notificationService.scheduleSlotReminders(data);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching current slot:', error);
+      } finally {
+        setIsLoadingSlot(false);
+      }
+    };
+
+    fetchAvailableSlots();
+    fetchSessions();
+    fetchCurrentSlot();
+
+    // Initialize notification service
+    notificationService.initialize();
+  }, []);
 
   // Skip slot mutation with optimistic updates
   const skipSlotMutation = useMutation({
@@ -164,7 +227,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         ...old,
         slotTime: newSlotTime,
         status: 'active'
-      }));
+            }));
 
       return { previousSlot };
     },
@@ -306,7 +369,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-poppins font-semibold text-red-600 mb-2">Error Loading Slot</h2>
           <p className="text-gray-600 mb-4">Failed to load your prayer slot. Please try again.</p>
-          <Button 
+          <Button
             onClick={() => queryClient.invalidateQueries({ queryKey: ['prayer-slot'] })}
             className="bg-brand-primary hover:bg-blue-800 text-white font-poppins"
           >
@@ -385,7 +448,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   {prayerSlot.status === 'active' && (
-                    <Button 
+                    <Button
                       onClick={handleSkipSlot}
                       disabled={skipSlotMutation.isPending}
                       variant="outline"
@@ -398,7 +461,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
 
                   <Dialog open={isChangeSlotModalOpen} onOpenChange={setIsChangeSlotModalOpen}>
                     <DialogTrigger asChild>
-                      <Button 
+                      <Button
                         variant="outline"
                         className="border-brand-primary text-brand-primary hover:bg-blue-50 transition-brand font-poppins"
                       >
@@ -526,8 +589,8 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
           <div className="space-y-3">
             {sessionHistory.length > 0 ? (
               sessionHistory.map((session: any, index: number) => (
-                <div 
-                  key={session.id} 
+                <div
+                  key={session.id}
                   className="flex items-center justify-between py-3 px-4 bg-gradient-to-r from-blue-50 to-white rounded-lg border border-blue-100"
                 >
                   <div className="flex items-center gap-3">
