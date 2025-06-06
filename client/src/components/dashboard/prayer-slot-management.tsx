@@ -27,11 +27,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   const [isChangeSlotModalOpen, setIsChangeSlotModalOpen] = useState(false);
   const [countdown, setCountdown] = useState<CountdownTime>({ hours: 0, minutes: 0, seconds: 0 });
   const [user, setUser] = useState<any>(null);
-  const [availableSlots, setAvailableSlots] = useState<any[]>([]);
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [selectedSlot, setSelectedSlot] = useState<string>('');
-  const [currentSlot, setCurrentSlot] = useState<any>(null);
-  const [isLoadingSlot, setIsLoadingSlot] = useState(false);
 
   // Get userId from localStorage or use a default
   const userId = localStorage.getItem('userId') || 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f';

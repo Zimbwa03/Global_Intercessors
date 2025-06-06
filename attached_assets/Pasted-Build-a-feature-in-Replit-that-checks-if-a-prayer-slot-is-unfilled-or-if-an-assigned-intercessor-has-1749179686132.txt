@@ -1,0 +1,66 @@
+Build a feature in Replit that checks if a prayer slot is unfilled or if an assigned intercessor has missed their time. If no one is praying, automatically play an Audio Bible segment in the app.
+
+📦 What to build:
+1. Use Supabase to check if a slot is assigned and if the assigned intercessor logged in within ±5 mins of the slot.
+2. If no one is present, trigger playback of an audio Bible stream.
+3. Display “📖 Audio Bible Playing: [Book] [Chapter]” visibly in the app UI.
+
+🧠 Smart playback:
+- Rotate through Bible chapters sequentially.
+- Resume from where last left off (store state in Supabase).
+- User can manually stop/resume playback if needed.
+
+🗄 Supabase Tables:
+
+### `prayer_slots`
+| Field       | Type        |
+|-------------|-------------|
+| id          | UUID (PK)   |
+| slot_time   | time        |
+| user_id     | UUID (FK)   |
+| is_active   | boolean     |
+| last_attended | timestamptz |
+
+### `audio_bible_progress`
+| Field       | Type      |
+|-------------|-----------|
+| id          | UUID (PK) |
+| book        | text      |
+| chapter     | int       |
+| last_played | timestamptz |
+
+📤 Data flow:
+- On slot check, compare `slot_time` and `last_attended`.
+- If no attendance within ±5 mins → trigger audio.
+- Use a URL to stream audio from e.g., `https://your-bucket.bibleaudio.com/genesis_1.mp3`.
+
+🔊 Audio Playback Sample (Frontend Code):
+
+```html
+<div id="audioBiblePlayer" style="display: none;">
+  <p>📖 Audio Bible Playing: Genesis 1</p>
+  <audio controls autoplay id="bibleAudio">
+    <source src="https://your-bucket.bibleaudio.com/genesis_1.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+</div>
+
+<script>
+  async function checkAndPlayAudio() {
+    const now = new Date();
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+
+    const { data: slot } = await supabase
+      .from('prayer_slots')
+      .select('*')
+      .eq('slot_time', `${hour}:${minute < 30 ? '00' : '30'}`)
+      .maybeSingle();
+
+    if (!slot || !slot.user_id || !slot.last_attended || Math.abs(new Date(slot.last_attended) - now) > 5 * 60000) {
+      document.getElementById('audioBiblePlayer').style.display = 'block';
+    }
+  }
+
+  setInterval(checkAndPlayAudio, 60000); // Check every minute
+</script>

@@ -68,6 +68,20 @@ export const zoomMeetings = pgTable("zoom_meetings", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Audio Bible progress table for tracking playback state
+export const audioBibleProgress = pgTable("audio_bible_progress", {
+  id: serial("id").primaryKey(),
+  book: text("book").notNull(),
+  chapter: integer("chapter").notNull(),
+  verse: integer("verse").default(1),
+  lastPlayed: timestamp("last_played").defaultNow().notNull(),
+  totalBooks: integer("total_books").default(66),
+  totalChapters: integer("total_chapters").notNull(),
+  isActive: boolean("is_active").default(false),
+  slotTime: text("slot_time"), // Which slot triggered this playback
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -98,6 +112,11 @@ export const insertZoomMeetingSchema = createInsertSchema(zoomMeetings).omit({
   createdAt: true,
 });
 
+export const insertAudioBibleProgressSchema = createInsertSchema(audioBibleProgress).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type PrayerSlot = typeof prayerSlots.$inferSelect;
@@ -110,3 +129,5 @@ export type AttendanceLog = typeof attendanceLog.$inferSelect;
 export type InsertAttendanceLog = z.infer<typeof insertAttendanceLogSchema>;
 export type ZoomMeeting = typeof zoomMeetings.$inferSelect;
 export type InsertZoomMeeting = z.infer<typeof insertZoomMeetingSchema>;
+export type AudioBibleProgress = typeof audioBibleProgress.$inferSelect;
+export type InsertAudioBibleProgress = z.infer<typeof insertAudioBibleProgressSchema>;
