@@ -1,0 +1,131 @@
+Absolutely. Below is a **Replit Agent Prompt** that integrates everything important for your **Global Intercession App** — covering **authentication, admin dashboard, intercessor tools, DeepSeek AI chatbook, fasting event registration, reminders, and Supabase integration**.
+
+---
+
+## ✅ **GLOBAL INTERCESSION APP – FULL STACK PROMPT FOR REPLIT AGENT**
+
+**PROMPT:**
+
+> I am building a professional, spiritual 24-hour prayer scheduling and fasting management app for **Global Intercessors**, using:
+>
+> * **Frontend**: React + Tailwind CSS
+> * **Backend**: Node.js / Express
+> * **Database + Auth**: Supabase
+> * **Push Notifications**: Firebase
+> * **AI Tool**: DeepSeek AI (Paid API)
+> * **Zoom Integration**: Admin-controlled
+> * **Platform**: Replit
+>
+> Use my brand color: `#2855AE` (Modern Spiritual Blue). Ensure this theme is applied consistently across all UI components.
+>
+> ### SYSTEM MODULES TO BUILD
+>
+> #### 1. 🌐 **Authentication System**
+>
+> * Use **Supabase Auth** for email/password sign-up/login
+> * Differentiate users by **role** (`admin`, `intercessor`) using a `role` column
+> * Intercessors register via `/signup`
+> * Admins log in via `/admin/login`
+>
+> #### 2. 👤 **Intercessor Dashboard**
+>
+> * Show:
+>
+>   * Assigned prayer slot (e.g., `22:00–22:30`)
+>   * Slot countdown timer
+>   * Prayer reminders: push notifications (30 min & 15 min before)
+>   * Button to mark session as **attended**
+> * If inactive for 5 days, **free the slot automatically**
+>
+> #### 3. 🔔 **Firebase Notifications**
+>
+> * Send local push reminders to intercessors:
+>
+>   * 30 minutes before slot
+>   * 15 minutes before slot
+>   * Notification if slot was skipped (optional)
+>
+> #### 4. 📚 **AI-Powered Bible Chatbook**
+>
+> * Intercessor inputs a phrase (e.g. “Peace in times of war”)
+> * Select:
+>
+>   * Chapter or verse
+>   * Bible version (NIV, KJV, etc.)
+> * Use **DeepSeek AI** to generate:
+>
+>   * Relevant Bible passages
+>   * Suggested prayer points
+>
+> #### 5. 🗓️ **Admin Dashboard**
+>
+> * Admin login and see:
+>
+>   * All intercessors
+>   * Slot schedule (24-hour prayer map)
+>   * Missed slots / attendance
+>   * Push announcements to users
+>   * Manage fasting registrations
+>
+> #### 6. 🗺️ **Fasting Event Registration**
+>
+> * Intercessors register for 3-day fasting
+> * Provide:
+>
+>   * Name, phone
+>   * Pickup location (use Google Maps to get GPS location)
+>   * Automatically calculate transport reimbursement
+> * Admin sees total registered, can export data
+>
+> #### 7. 🎥 **Zoom Integration (Admin)**
+>
+> * Allow admin to paste Zoom meeting link
+> * Track when Zoom room is opened (basic timestamp log)
+> * When intercessor is present at Zoom and it matches their slot, mark attendance automatically
+>
+> #### 8. 🔄 **Supabase Table Connections**
+>
+> Connect the app to Supabase using the following **confirmed tables**:
+>
+> * `intercessors(id, email, name, phone, slot_time, attendance_count, missed_days, role)`
+> * `slots(id, time_range, is_taken, intercessor_id)`
+> * `session_tracking(id, intercessor_id, slot_time, date, attended)`
+> * `admins(id, name, email)`
+> * `updates(id, title, description, date)`
+> * `fasting_registrations(id, name, phone, location, gps_coords, cost_estimate, registered_at)`
+>
+> Use Supabase URL: `YOUR_SUPABASE_URL`
+> Use Service Role Key: `YOUR_SERVICE_ROLE_KEY`
+> (I'll replace those myself.)
+>
+> #### 9. 🌙 **Fallback Audio (if slot is empty)**
+>
+> * If no intercessor is assigned to a time slot, automatically play an audio Bible file
+> * Store audio in a folder like `public/audioBible/`
+>
+> #### 10. 💻 Deployment
+>
+> * Must work on Replit with `.env` file for API keys
+> * Code must be modular, scalable, and professional
+> * Use Tailwind for UI, React Hooks, and clean folder structure
+> * Protect admin routes from regular users
+> * Use Firebase for push notifications (link to project setup)
+>
+> ---
+>
+> Please generate the **complete starting code**, including:
+>
+> * Supabase DB connection in backend
+> * Auth UI and logic
+> * Intercessor dashboard
+> * Admin dashboard shell
+> * Reminder logic
+> * DeepSeek AI integration
+> * Fasting registration form with map
+> * All routes and components separated cleanly
+>
+> This is a professional-grade app — generate only efficient, structured code with correct table usage. Do not use mock placeholders. Connect everything as real as possible using provided names.
+
+---
+
+Would you like me to now **run this as code output** or **guide you step-by-step through each module** (starting with auth or intercessor dashboard)?
