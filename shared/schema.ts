@@ -8,6 +8,15 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
 });
 
+// Admin users table for role-based access
+export const adminUsers = pgTable("admin_users", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  role: text("role").notNull().default("admin"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Prayer slots table for managing user prayer assignments
 export const prayerSlots = pgTable("prayer_slots", {
   id: serial("id").primaryKey(),

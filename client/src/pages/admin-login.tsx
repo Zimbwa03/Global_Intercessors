@@ -29,17 +29,14 @@ export default function AdminLogin() {
 
       // Check if user has admin role
       const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('role')
+        .from('admin_users')
+        .select('*')
         .eq('email', email)
+        .eq('is_active', true)
         .single();
 
-      if (userError) {
-        console.error('Error checking user role:', userError);
-        throw new Error('Unable to verify admin privileges');
-      }
-
-      if (userData?.role !== 'admin') {
+      if (userError || !userData) {
+        console.error('Error checking admin role:', userError);
         await supabase.auth.signOut();
         throw new Error('Access denied. Admin privileges required.');
       }

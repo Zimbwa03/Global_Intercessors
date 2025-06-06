@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import PrayerSlotManagement from "@/pages/prayer-slot-management";
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
+import CreateAdmin from "@/pages/create-admin";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/prayer-slot-management" component={PrayerSlotManagement} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
+      <Route path="/create-admin" component={CreateAdmin} />
       <Route component={NotFound} />
     </Switch>
   );

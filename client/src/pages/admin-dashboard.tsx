@@ -57,12 +57,13 @@ export default function AdminDashboard() {
 
       // Verify admin role
       const { data: userData, error } = await supabase
-        .from('users')
-        .select('id, email, role')
+        .from('admin_users')
+        .select('*')
         .eq('email', user.email)
+        .eq('is_active', true)
         .single();
 
-      if (error || userData?.role !== 'admin') {
+      if (error || !userData) {
         toast({
           title: "Access Denied",
           description: "Admin privileges required",

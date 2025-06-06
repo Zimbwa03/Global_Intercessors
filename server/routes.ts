@@ -658,6 +658,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin user management endpoint
+  app.post("/api/admin/create-admin", async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+      }
+
+      // Check if admin already exists
+      const { data: existingAdmin } = await supabaseAdmin
+        .from('admin_users')
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      if (existingAdmin) {
+        return res.status(409).json({ error: 'Admin user already exists' });
+      }
+
+      // Create new admin user
+      const { data: newAdmin, error } = await supabaseAdmin
+        .from('admin_users')
+        .insert([
+          {
+            email,
+            role: 'admin',
+            is_active: true
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      res.json({ message: 'Admin user created successfully', admin: newAdmin });
+    } catch (error) {
+      console.error('Error creating admin user:', error);
+      res.status(500).json({ error: 'Failed to create admin user' });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

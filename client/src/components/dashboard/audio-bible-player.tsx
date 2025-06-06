@@ -130,6 +130,7 @@ export function AudioBiblePlayer({ isActive, slotTime, onPlaybackChange }: Audio
   const { data: bibleProgress, refetch: refetchProgress } = useQuery({
     queryKey: ["/api/audio-bible/progress"],
     enabled: !!user?.email,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Progress mutation
