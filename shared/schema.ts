@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, uuid, numeric, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -82,6 +82,18 @@ export const audioBibleProgress = pgTable("audio_bible_progress", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Fasting registration table
+export const fastingRegistrations = pgTable("fasting_registrations", {
+  id: text("id").primaryKey(),
+  fullName: text("full_name").notNull(),
+  phoneNumber: text("phone_number").notNull(),
+  region: text("region").notNull(),
+  travelCost: text("travel_cost").default("0"),
+  gpsLatitude: text("gps_latitude"),
+  gpsLongitude: text("gps_longitude"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -117,6 +129,11 @@ export const insertAudioBibleProgressSchema = createInsertSchema(audioBibleProgr
   createdAt: true,
 });
 
+export const insertFastingRegistrationSchema = createInsertSchema(fastingRegistrations).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type PrayerSlot = typeof prayerSlots.$inferSelect;
@@ -131,3 +148,5 @@ export type ZoomMeeting = typeof zoomMeetings.$inferSelect;
 export type InsertZoomMeeting = z.infer<typeof insertZoomMeetingSchema>;
 export type AudioBibleProgress = typeof audioBibleProgress.$inferSelect;
 export type InsertAudioBibleProgress = z.infer<typeof insertAudioBibleProgressSchema>;
+export type FastingRegistration = typeof fastingRegistrations.$inferSelect;
+export type InsertFastingRegistration = z.infer<typeof insertFastingRegistrationSchema>;
