@@ -181,18 +181,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.params;
       const limit = parseInt(req.query.limit as string) || 10;
       
-      // Mock session history
-      const sessions = Array.from({ length: limit }, (_, i) => ({
-        id: i + 1,
-        userId: userId,
-        slotTime: "22:00–22:30",
-        sessionDate: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
-        status: Math.random() > 0.2 ? "completed" : "missed",
-        duration: Math.random() > 0.2 ? 30 : null,
-        createdAt: new Date().toISOString()
-      }));
+      // Fetch from session_tracking table with intercessor details
+      const { data: sessions, error } = await supabaseAdmin
+        .from('session_tracking')
+        .select(`
+          *,
+          intercessors (
+            id,
+            name,
+            email
+          )
+        `)
+        .eq('intercessor_id', userId)
+        .order('session_date', { ascending: false })
+        .limit(limit);
 
-      res.json(sessions);
+      if (error) throw error;
+
+      res.json(sessions || []);
     } catch (error) {
       console.error("Error fetching prayer sessions:", error);
       res.status(500).json({ error: "Failed to fetch prayer sessions" });

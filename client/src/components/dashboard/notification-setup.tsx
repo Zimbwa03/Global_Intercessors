@@ -44,12 +44,30 @@ export function NotificationSetup() {
   const { data: attendanceStats } = useQuery({
     queryKey: ['attendance-stats', user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/attendance/${user?.id}?limit=30`);
-      if (!response.ok) throw new Error('Failed to fetch attendance stats');
-      return response.json();
+      // Use Supabase to fetch session tracking data for attendance stats
+      const { data, error } = await supabase
+        .from('session_tracking')
+        .select('*')
+        .eq('intercessor_id', user?.id)
+        .order('session_date', { ascending: false })
+        .limit(30);
+      
+      if (error) throw error;
+      
+      // Calculate attendance statistics
+      const totalSessions = data?.length || 0;
+      const attendedSessions = data?.filter(session => session.attended).length || 0;
+      const attendanceRate = totalSessions > 0 ? (attendedSessions / totalSessions) * 100 : 0;
+      
+      return {
+        totalSessions,
+        attendedSessions,
+        missedSessions: totalSessions - attendedSessions,
+        attendanceRate: Math.round(attendanceRate)
+      };
     },
     enabled: !!user?.id,
-    refetchInterval: 300000, // Refetch every 5 minutes
+    refetchInterval: 300000,
   });
 
   // Manual attendance processing
