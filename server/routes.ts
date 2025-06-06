@@ -177,6 +177,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Zoom attendance tracking endpoints
+  app.get("/api/attendance/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const { limit = 30 } = req.query;
+      
+      // Query attendance from Supabase
+      const { data: attendance, error } = await supabaseAdmin
+        .from('attendance_log')
+        .select('*')
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+        .limit(Number(limit));
+
+      if (error) throw error;
+      
+      res.json(attendance || []);
+    } catch (error) {
+      console.error('Error fetching attendance:', error);
+      res.status(500).json({ error: 'Failed to fetch attendance data' });
+    }
+  });
+
+  app.post("/api/attendance/manual-process", async (req: Request, res: Response) => {
+    try {
+      const { zoomAttendanceTracker } = await import('./services/zoomAttendanceTracker');
+      await zoomAttendanceTracker.manualProcess();
+      res.json({ message: 'Manual attendance processing triggered successfully' });
+    } catch (error) {
+      console.error('Error in manual attendance processing:', error);
+      res.status(500).json({ error: 'Failed to process attendance manually' });
+    }
+  });
+
+  app.get("/api/zoom-meetings", async (req: Request, res: Response) => {
+    try {
+      const { from, to, processed } = req.query;
+      
+      let query = supabaseAdmin.from('zoom_meetings').select('*');
+      
+      if (from) {
+        query = query.gte('start_time', from);
+      }
+      if (to) {
+        query = query.lte('start_time', to);
+      }
+      if (processed !== undefined) {
+        query = query.eq('processed', processed === 'true');
+      }
+      
+      const { data: meetings, error } = await query
+        .order('start_time', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      
+      res.json(meetings || []);
+    } catch (error) {
+      console.error('Error fetching Zoom meetings:', error);
+      res.status(500).json({ error: 'Failed to fetch Zoom meetings' });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
