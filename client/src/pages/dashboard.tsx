@@ -74,7 +74,7 @@ export default function Dashboard() {
       case "dashboard":
         return <DashboardOverview userEmail={user.email} />;
       case "prayer-slot":
-        return <PrayerSlotManagement />;
+        return <PrayerSlotManagement userEmail={user.email} />;
       case "updates":
         return <UpdatesAnnouncements />;
       case "ai-assistant":

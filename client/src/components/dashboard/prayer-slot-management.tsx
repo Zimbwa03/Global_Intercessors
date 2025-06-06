@@ -59,6 +59,17 @@ export function PrayerSlotManagement() {
     }
   };
 
+  if (isLoadingSlot) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-brand-text font-poppins">Loading your prayer slot...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>

@@ -9,6 +9,19 @@ interface DashboardOverviewProps {
   userEmail?: string;
 }
 
+// Get time-based greeting
+const getTimeBasedGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return { text: "Good Morning", emoji: "🌅" };
+  if (hour < 17) return { text: "Good Afternoon", emoji: "☀️" };
+  return { text: "Good Evening", emoji: "🌙" };
+};
+
+// Extract username from email
+const getUserName = (email: string) => {
+  return email.split('@')[0];
+};
+
 export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
   const [prayerSlot, setPrayerSlot] = useState({ time: "22:00 - 22:30", status: "Active" });
   const [remindersEnabled, setRemindersEnabled] = useState(false);
@@ -88,8 +101,19 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
     <div className="space-y-6">
       {/* Welcome Header */}
       <div className="gradient-brand text-white rounded-2xl p-6 shadow-brand-lg">
-        <h1 className="text-3xl font-bold mb-2 font-poppins">Welcome back!</h1>
-        <p className="text-blue-100">{userEmail}</p>
+        {userEmail ? (
+          <>
+            <h1 className="text-3xl font-bold mb-2 font-poppins">
+              {getTimeBasedGreeting().text}, {getUserName(userEmail)}! {getTimeBasedGreeting().emoji}
+            </h1>
+            <p className="text-blue-100">Ready for your prayer session today</p>
+          </>
+        ) : (
+          <>
+            <h1 className="text-3xl font-bold mb-2 font-poppins">Welcome back!</h1>
+            <p className="text-blue-100">Loading your information...</p>
+          </>
+        )}
       </div>
 
       {/* Prayer Slot Card */}
