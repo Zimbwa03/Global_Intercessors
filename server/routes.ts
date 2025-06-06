@@ -325,9 +325,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentHour = now.getHours();
       const currentMinute = now.getMinutes();
       
-      // Determine current slot time (30-minute slots)
+      // Determine current slot time (30-minute slots) - use simple time format
       const slotMinute = currentMinute < 30 ? '00' : '30';
-      const currentSlotTime = `${currentHour.toString().padStart(2, '0')}:${slotMinute}–${currentHour.toString().padStart(2, '0')}:${slotMinute === '00' ? '30' : '59'}`;
+      const currentSlotTime = `${currentHour.toString().padStart(2, '0')}:${slotMinute}`;
       
       // Check if slot is assigned and if user is present
       const { data: slot, error } = await supabaseAdmin

@@ -1,0 +1,76 @@
+Great — the next prompt in your plan is:
+
+---
+
+## ✨ **AI-Powered Prayer Point Planner**
+
+> Use DeepSeek AI to guide intercessors in structuring prayer points while waiting for their prayer slot.
+
+---
+
+### ✅ Prompt for Replit: AI Prayer Planner using DeepSeek API
+
+````prompt
+Create a prayer point planner using the DeepSeek AI API. When a user is waiting for their prayer slot, they can open the “AI Prayer Planner” tab in the app to receive structured prayer points based on their selected category (e.g., Nation, Healing, Deliverance, Revival, Family).
+
+🧠 Prompt behavior:
+- Use DeepSeek API to generate 5 powerful, Biblically grounded prayer points.
+- Include 1–2 Bible verses (from various versions) per point.
+- Output should be structured with headers, verses, and short explanation.
+
+⚙️ How it works:
+1. User selects a prayer category (dropdown).
+2. App sends that as a prompt to DeepSeek AI API.
+3. Display results in a clean prayer list format with copy/share options.
+
+📤 Example DeepSeek Prompt (API Call Input):
+
+```text
+Generate 5 structured and powerful Christian prayer points under the theme "Deliverance". Each point should be supported with Bible verses (from KJV, NIV, or ESV) and a short explanation. Use clear headings.
+````
+
+📦 Dependencies:
+
+```bash
+npm install axios
+```
+
+🌐 Example API Call (DeepSeek):
+
+```javascript
+import axios from 'axios';
+
+async function getPrayerPoints(category) {
+  const response = await axios.post(
+    'https://api.deepseek.com/v1/chat/completions',
+    {
+      model: 'deepseek-chat',
+      messages: [
+        {
+          role: 'user',
+          content: `Generate 5 structured and powerful Christian prayer points under the theme "${category}". Each point should include 1-2 Bible verses from KJV, NIV, or ESV, and a short explanation.`,
+        },
+      ],
+    },
+    {
+      headers: {
+        'Authorization': 'Bearer YOUR_DEEPSEEK_API_KEY',
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  return response.data.choices[0].message.content;
+}
+```
+
+📋 UI Suggestions:
+
+* Dropdown: Choose Prayer Category
+* Button: “Generate Prayer Points”
+* Display in card layout with verse styling
+* Optional: Add share to WhatsApp or copy button
+
+---
+
+Would you like to implement this now, or go to the next feature prompt (e.g., **3 Days and 3 Nights Fasting Registration & Tracking**)?

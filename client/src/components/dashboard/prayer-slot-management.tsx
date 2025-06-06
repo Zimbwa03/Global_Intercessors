@@ -45,7 +45,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   }, []);
 
   // Fetch user's prayer slot with automatic refetching
-  const { data: prayerSlot, error } = useQuery({
+  const { data: prayerSlot, error: slotError, isLoading: isLoadingSlot } = useQuery({
     queryKey: ['prayer-slot', user?.id],
     queryFn: async () => {
       const response = await fetch(`/api/prayer-slot/${user?.id}`);
@@ -426,7 +426,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                             {isLoadingSlots ? (
                               <SelectItem value="loading" disabled>Loading slots...</SelectItem>
                             ) : (
-                              availableSlots.map((slot: any) => (
+                              availableSlotsData.map((slot: any) => (
                                 <SelectItem key={slot.id} value={slot.slotTime}>
                                   {slot.slotTime}
                                 </SelectItem>
@@ -467,7 +467,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                           {isLoadingSlots ? (
                             <SelectItem value="loading" disabled>Loading slots...</SelectItem>
                           ) : (
-                            availableSlots.map((slot: any) => (
+                            availableSlotsData.map((slot: any) => (
                               <SelectItem key={slot.id} value={slot.slotTime}>
                                 {slot.slotTime}
                               </SelectItem>
