@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 20 14% 4%;
+  --muted: 60 5% 96%;
+  --muted-foreground: 25 5% 45%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14% 4%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14% 4%;
+  --border: 20 6% 90%;
+  --input: 20 6% 90%;
+  --primary: 167 97% 11%; /* #013C34 */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 60 5% 96%;
+  --secondary-foreground: 24 10% 10%;
+  --accent: 44 94% 51%; /* #CFA935 */
+  --accent-foreground: 167 97% 11%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 60 9% 98%;
+  --ring: 20 14% 4%;
+  --radius: 0.5rem;
+  
+  /* Custom brand colors */
+  --brand-primary: 167 97% 11%; /* #013C34 */
+  --brand-accent: 44 94% 51%; /* #CFA935 */
+  --brand-neutral: 60 5% 97%; /* #F8F9FA */
+}
+
+.dark {
+  --background: 240 10% 4%;
+  --foreground: 0 0% 98%;
+  --muted: 240 4% 16%;
+  --muted-foreground: 240 5% 65%;
+  --popover: 240 10% 4%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 4%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 4% 16%;
+  --input: 240 4% 16%;
+  --primary: 167 97% 11%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4% 16%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 44 94% 51%;
+  --accent-foreground: 167 97% 11%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 240 5% 84%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-inter antialiased bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+/* Custom utility classes for brand colors */
+.bg-brand-primary {
+  background-color: #013C34;
+}
+
+.bg-brand-accent {
+  background-color: #CFA935;
+}
+
+.bg-brand-neutral {
+  background-color: #F8F9FA;
+}
+
+.text-brand-primary {
+  color: #013C34;
+}
+
+.text-brand-accent {
+  color: #CFA935;
+}
+
+.border-brand-primary {
+  border-color: #013C34;
+}
+
+.hover\:bg-brand-accent:hover {
+  background-color: #CFA935;
+}
+
+.hover\:bg-yellow-400:hover {
+  background-color: rgb(250 204 21);
+}
+
+.font-inter {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom gradient */
+.gradient-brand {
+  background: linear-gradient(135deg, #013C34 0%, #013C34 50%, #0A5D4F 100%);
+}
