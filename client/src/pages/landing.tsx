@@ -25,37 +25,38 @@ export default function Landing() {
   return (
     <div className="min-h-screen">
       {/* Header/Navigation */}
-      <header className="bg-brand-primary text-white shadow-lg">
-        <nav className="container mx-auto px-6 py-4">
+      <header className="bg-brand-primary text-white shadow-brand-lg relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-800/30 to-blue-900/20"></div>
+        <nav className="container mx-auto px-6 py-4 relative">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-brand-accent rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-brand-accent rounded-full flex items-center justify-center shadow-brand">
                 <i className="fas fa-praying-hands text-brand-primary text-lg"></i>
               </div>
-              <h1 className="text-2xl font-bold">Global Intercessors</h1>
+              <h1 className="text-2xl font-bold font-poppins">Global Intercessors</h1>
             </div>
             <div className="hidden md:flex items-center space-x-6">
               <button 
                 onClick={() => scrollToSection('features')}
-                className="hover:text-brand-accent transition-colors duration-300"
+                className="hover:text-brand-accent transition-brand font-medium"
               >
                 Features
               </button>
               <button 
                 onClick={() => scrollToSection('contact')}
-                className="hover:text-brand-accent transition-colors duration-300"
+                className="hover:text-brand-accent transition-brand font-medium"
               >
                 About
               </button>
               <button 
                 onClick={() => scrollToSection('contact')}
-                className="hover:text-brand-accent transition-colors duration-300"
+                className="hover:text-brand-accent transition-brand font-medium"
               >
                 Contact
               </button>
               <Button 
                 onClick={scrollToAuth}
-                className="bg-brand-accent text-brand-primary px-6 py-2 rounded-lg font-semibold hover:bg-yellow-400 transition-colors duration-300"
+                className="bg-brand-accent text-brand-primary px-6 py-2 rounded-lg font-semibold hover:bg-brand-accent-dark transition-brand shadow-brand font-poppins"
               >
                 Get Started
               </Button>
@@ -70,14 +71,14 @@ export default function Landing() {
           
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <div className="md:hidden mt-4 pt-4 border-t border-green-700">
+            <div className="md:hidden mt-4 pt-4 border-t border-blue-700/50">
               <div className="flex flex-col space-y-4">
                 <button 
                   onClick={() => {
                     scrollToSection('features');
                     setIsMobileMenuOpen(false);
                   }}
-                  className="text-left hover:text-brand-accent transition-colors duration-300"
+                  className="text-left hover:text-brand-accent transition-brand font-medium"
                 >
                   Features
                 </button>
@@ -86,7 +87,7 @@ export default function Landing() {
                     scrollToSection('contact');
                     setIsMobileMenuOpen(false);
                   }}
-                  className="text-left hover:text-brand-accent transition-colors duration-300"
+                  className="text-left hover:text-brand-accent transition-brand font-medium"
                 >
                   About
                 </button>
@@ -95,7 +96,7 @@ export default function Landing() {
                     scrollToSection('contact');
                     setIsMobileMenuOpen(false);
                   }}
-                  className="text-left hover:text-brand-accent transition-colors duration-300"
+                  className="text-left hover:text-brand-accent transition-brand font-medium"
                 >
                   Contact
                 </button>
@@ -104,7 +105,7 @@ export default function Landing() {
                     scrollToAuth();
                     setIsMobileMenuOpen(false);
                   }}
-                  className="bg-brand-accent text-brand-primary px-6 py-2 rounded-lg font-semibold hover:bg-yellow-400 transition-colors duration-300 w-fit"
+                  className="bg-brand-accent text-brand-primary px-6 py-2 rounded-lg font-semibold hover:bg-brand-accent-dark transition-brand w-fit shadow-brand font-poppins"
                 >
                   Get Started
                 </Button>

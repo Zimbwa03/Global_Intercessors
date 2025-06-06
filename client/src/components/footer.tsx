@@ -27,17 +27,18 @@ export function Footer() {
   ];
 
   return (
-    <footer id="contact" className="bg-brand-primary text-white py-16">
-      <div className="container mx-auto px-6">
+    <footer id="contact" className="bg-brand-primary text-white py-16 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-800/30 to-blue-900/50"></div>
+      <div className="container mx-auto px-6 relative">
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           <div className="md:col-span-2">
             <div className="flex items-center space-x-3 mb-6">
-              <div className="w-12 h-12 bg-brand-accent rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-brand-accent rounded-full flex items-center justify-center shadow-brand">
                 <i className="fas fa-praying-hands text-brand-primary text-xl"></i>
               </div>
-              <h3 className="text-2xl font-bold">Global Intercessors</h3>
+              <h3 className="text-2xl font-bold font-poppins">Global Intercessors</h3>
             </div>
-            <p className="text-gray-200 leading-relaxed mb-6 max-w-md">
+            <p className="text-blue-100 leading-relaxed mb-6 max-w-md">
               Uniting believers worldwide in continuous prayer, spiritual growth, and fellowship. Join our mission to cover the earth with prayer 24 hours a day.
             </p>
             <div className="flex space-x-4">
@@ -45,7 +46,7 @@ export function Footer() {
                 <a
                   key={index}
                   href={social.href}
-                  className="w-10 h-10 bg-brand-accent rounded-full flex items-center justify-center text-brand-primary hover:bg-yellow-400 transition-colors duration-300"
+                  className="w-10 h-10 bg-brand-accent rounded-full flex items-center justify-center text-brand-primary hover:bg-brand-accent-dark transition-brand shadow-brand transform hover:scale-110"
                 >
                   <i className={social.icon}></i>
                 </a>
@@ -54,13 +55,13 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-lg font-semibold mb-6">Quick Links</h4>
+            <h4 className="text-lg font-semibold mb-6 font-poppins">Quick Links</h4>
             <ul className="space-y-3">
               {quickLinks.map((link, index) => (
                 <li key={index}>
                   <a
                     href={link.href}
-                    className="text-gray-200 hover:text-brand-accent transition-colors duration-300"
+                    className="text-blue-200 hover:text-brand-accent transition-brand"
                   >
                     {link.name}
                   </a>
@@ -70,27 +71,27 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-lg font-semibold mb-6">Contact Info</h4>
+            <h4 className="text-lg font-semibold mb-6 font-poppins">Contact Info</h4>
             <div className="space-y-3">
               {contactInfo.map((contact, index) => (
                 <div key={index} className="flex items-center">
                   <i className={`${contact.icon} text-brand-accent mr-3`}></i>
-                  <span className="text-gray-200">{contact.text}</span>
+                  <span className="text-blue-200">{contact.text}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="border-t border-green-700 pt-8">
+        <div className="border-t border-blue-700/50 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-200 mb-4 md:mb-0">© 2025 Global Intercessors. All rights reserved.</p>
+            <p className="text-blue-200 mb-4 md:mb-0">© 2025 Global Intercessors. All rights reserved.</p>
             <div className="flex space-x-6">
               {legalLinks.map((link, index) => (
                 <a
                   key={index}
                   href={link.href}
-                  className="text-gray-200 hover:text-brand-accent transition-colors duration-300"
+                  className="text-blue-200 hover:text-brand-accent transition-brand"
                 >
                   {link.name}
                 </a>

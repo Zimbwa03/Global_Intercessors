@@ -87,36 +87,36 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
-      <div className="bg-brand-primary text-white rounded-2xl p-6">
-        <h1 className="text-3xl font-bold mb-2">Welcome back!</h1>
-        <p className="text-gray-200">{userEmail}</p>
+      <div className="gradient-brand text-white rounded-2xl p-6 shadow-brand-lg">
+        <h1 className="text-3xl font-bold mb-2 font-poppins">Welcome back!</h1>
+        <p className="text-blue-100">{userEmail}</p>
       </div>
 
       {/* Prayer Slot Card */}
-      <Card className="shadow-lg">
+      <Card className="shadow-brand-lg border border-blue-100">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
               <i className="fas fa-clock text-brand-accent text-sm"></i>
             </div>
-            Your Prayer Slot
+            <span className="font-poppins">Your Prayer Slot</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-brand-neutral rounded-lg p-4">
+          <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg p-4 border border-blue-100">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h3 className="text-2xl font-bold text-brand-primary">{prayerSlot.time}</h3>
+                <h3 className="text-2xl font-bold text-brand-primary font-poppins">{prayerSlot.time}</h3>
                 <div className="flex items-center mt-1">
                   <i className={`${getStatusIcon(prayerSlot.status)} ${getStatusColor(prayerSlot.status)} mr-2`}></i>
-                  <span className={`font-semibold ${getStatusColor(prayerSlot.status)}`}>
+                  <span className={`font-semibold ${getStatusColor(prayerSlot.status)} font-poppins`}>
                     {prayerSlot.status}
                   </span>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-600">Next session in:</p>
-                <p className="text-lg font-bold text-brand-primary">
+                <p className="text-lg font-bold text-brand-primary font-poppins">
                   {String(nextSession.hours).padStart(2, '0')}:
                   {String(nextSession.minutes).padStart(2, '0')}:
                   {String(nextSession.seconds).padStart(2, '0')}
@@ -128,7 +128,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
               <Button 
                 onClick={handleRequestSkip}
                 variant="outline"
-                className="w-full border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+                className="w-full border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-primary transition-brand font-poppins"
               >
                 <i className="fas fa-pause mr-2"></i>
                 Request Skip (5 days)
@@ -149,19 +149,19 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
       </Card>
 
       {/* Reminder Settings */}
-      <Card className="shadow-lg">
+      <Card className="shadow-brand-lg border border-blue-100">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3">
+            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
               <i className="fas fa-bell text-brand-accent text-sm"></i>
             </div>
-            Reminder Settings
+            <span className="font-poppins">Reminder Settings</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="reminders" className="text-base font-medium">
+              <Label htmlFor="reminders" className="text-base font-medium font-poppins">
                 Prayer Session Reminders
               </Label>
               <p className="text-sm text-gray-600 mt-1">
@@ -179,42 +179,42 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
 
       {/* Quick Stats */}
       <div className="grid md:grid-cols-3 gap-4">
-        <Card className="shadow-lg">
+        <Card className="shadow-brand-lg border border-blue-100 hover:shadow-xl transition-brand group">
           <CardContent className="p-4">
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                <i className="fas fa-calendar-check text-blue-600"></i>
+              <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand group-hover:bg-brand-accent transition-brand">
+                <i className="fas fa-calendar-check text-brand-accent group-hover:text-brand-primary transition-brand"></i>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-800">12</p>
+                <p className="text-2xl font-bold text-brand-text font-poppins">12</p>
                 <p className="text-sm text-gray-600">Sessions This Month</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg">
+        <Card className="shadow-brand-lg border border-blue-100 hover:shadow-xl transition-brand group">
           <CardContent className="p-4">
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                <i className="fas fa-fire text-green-600"></i>
+              <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand group-hover:bg-brand-accent transition-brand">
+                <i className="fas fa-fire text-brand-accent group-hover:text-brand-primary transition-brand"></i>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-800">7</p>
+                <p className="text-2xl font-bold text-brand-text font-poppins">7</p>
                 <p className="text-sm text-gray-600">Day Streak</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg">
+        <Card className="shadow-brand-lg border border-blue-100 hover:shadow-xl transition-brand group">
           <CardContent className="p-4">
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                <i className="fas fa-users text-purple-600"></i>
+              <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand group-hover:bg-brand-accent transition-brand">
+                <i className="fas fa-users text-brand-accent group-hover:text-brand-primary transition-brand"></i>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-800">245</p>
+                <p className="text-2xl font-bold text-brand-text font-poppins">245</p>
                 <p className="text-sm text-gray-600">Global Intercessors</p>
               </div>
             </div>
