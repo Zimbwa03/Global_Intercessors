@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,16 +93,16 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     onMutate: async (userId) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['prayer-slot', userId] });
-      
+
       // Snapshot the previous value
       const previousSlot = queryClient.getQueryData(['prayer-slot', userId]);
-      
+
       // Optimistically update to the new value
       queryClient.setQueryData(['prayer-slot', userId], (old: any) => ({
         ...old,
         status: 'skipped'
       }));
-      
+
       return { previousSlot };
     },
     onSuccess: (data) => {
@@ -150,17 +149,17 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     onMutate: async ({ userId, newSlotTime }) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['prayer-slot', userId] });
-      
+
       // Snapshot the previous value
       const previousSlot = queryClient.getQueryData(['prayer-slot', userId]);
-      
+
       // Optimistically update to the new value
       queryClient.setQueryData(['prayer-slot', userId], (old: any) => ({
         ...old,
         slotTime: newSlotTime,
         status: 'active'
       }));
-      
+
       return { previousSlot };
     },
     onSuccess: (data) => {
@@ -199,10 +198,10 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       const now = new Date();
       const [startTime] = prayerSlot.slotTime.split('–');
       const [hours, minutes] = startTime.split(':').map(Number);
-      
+
       const nextSession = new Date();
       nextSession.setHours(hours, minutes, 0, 0);
-      
+
       // If the time has passed today, set for tomorrow
       if (nextSession <= now) {
         nextSession.setDate(nextSession.getDate() + 1);
@@ -376,7 +375,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                       {skipSlotMutation.isPending ? 'Processing...' : 'Request Skip (5 days)'}
                     </Button>
                   )}
-                  
+
                   <Dialog open={isChangeSlotModalOpen} onOpenChange={setIsChangeSlotModalOpen}>
                     <DialogTrigger asChild>
                       <Button 
@@ -526,6 +525,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                     </Badge>
                     {session.duration && (
                       <p className="text-xs text-gray-500 mt-1">{session.duration} min</p>
+                      )}
                     </div>
                   </div>
                 </div>
