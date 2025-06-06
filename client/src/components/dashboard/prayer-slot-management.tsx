@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Clock, Calendar, AlertCircle, RotateCcw, Edit3, CheckCircle2, XCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { NotificationSetup } from './notification-setup';
 import { notificationService } from '@/lib/notificationService';
 
 interface CountdownTime {
@@ -331,9 +330,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         <h2 className="text-2xl font-bold text-brand-text mb-2 font-poppins">Prayer Slot Management</h2>
         <p className="text-gray-600">Manage your committed prayer time and schedule</p>
       </div>
-
-      {/* Notification Setup */}
-      <NotificationSetup />
 
       {/* Current Slot Status */}
       <Card className="shadow-brand-lg border border-blue-100">

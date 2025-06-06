@@ -7,6 +7,9 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { supabase } from "@/lib/supabase";
+import { SlotCoverageMonitor } from './slot-coverage-monitor';
+import { AudioBiblePlayer } from './audio-bible-player';
+import { NotificationSetup } from './notification-setup';
 
 interface DashboardOverviewProps {
   userEmail?: string;

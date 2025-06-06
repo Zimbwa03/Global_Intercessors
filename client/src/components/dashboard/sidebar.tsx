@@ -28,7 +28,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail }: Sideba
       isCollapsed ? "w-16" : "w-64"
     )}>
       <div className="absolute inset-0 bg-gradient-to-b from-blue-800/30 to-blue-900/30"></div>
-      
+
       {/* Header */}
       <div className="p-4 border-b border-blue-700/50 relative">
         <div className="flex items-center justify-between">
