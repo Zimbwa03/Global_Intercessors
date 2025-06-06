@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { supabase } from "@/lib/supabase";
@@ -105,18 +106,18 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Active": return "text-green-600";
-      case "Missed": return "text-red-600";
-      case "On Leave": return "text-yellow-600";
+      case "active": return "text-green-600";
+      case "missed": return "text-red-600";
+      case "skipped": return "text-yellow-600";
       default: return "text-gray-600";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "Active": return "fas fa-check-circle";
-      case "Missed": return "fas fa-times-circle";
-      case "On Leave": return "fas fa-pause-circle";
+      case "active": return "fas fa-check-circle";
+      case "missed": return "fas fa-times-circle";
+      case "skipped": return "fas fa-pause-circle";
       default: return "fas fa-circle";
     }
   };
@@ -154,13 +155,13 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
           <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg p-4 border border-blue-100">
             <div className="flex items-center justify-between mb-3">
               <div>
-                {prayerSlot?.data ? (
+                {prayerSlot ? (
                   <>
-                    <h3 className="text-2xl font-bold text-brand-primary font-poppins">{prayerSlot?.data?.time}</h3>
+                    <h3 className="text-2xl font-bold text-brand-primary font-poppins">{prayerSlot.slotTime}</h3>
                     <div className="flex items-center mt-1">
-                      <i className={`${getStatusIcon(prayerSlot?.data?.status)} ${getStatusColor(prayerSlot?.data?.status)} mr-2`}></i>
-                      <span className={`font-semibold ${getStatusColor(prayerSlot?.data?.status)} font-poppins`}>
-                        {prayerSlot?.data?.status}
+                      <i className={`${getStatusIcon(prayerSlot.status)} ${getStatusColor(prayerSlot.status)} mr-2`}></i>
+                      <span className={`font-semibold ${getStatusColor(prayerSlot.status)} font-poppins`}>
+                        {prayerSlot.status}
                       </span>
                     </div>
                   </>
@@ -178,7 +179,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
               </div>
             </div>
 
-            {prayerSlot?.data?.status === "Active" && (
+            {prayerSlot?.status === "active" && (
               <Button 
                 onClick={handleRequestSkip}
                 variant="outline"
