@@ -172,9 +172,20 @@ export function AudioBiblePlayer({ isActive, slotTime, onPlaybackChange }: Audio
   };
 
   const getAudioUrl = (book: string, chapter: number) => {
-    // Using free Bible audio API - you can replace with your preferred source
-    const bookSlug = book.toLowerCase().replace(/\s+/g, '');
-    return `https://audio-bible.s3.amazonaws.com/${bookSlug}_${chapter.toString().padStart(3, '0')}.mp3`;
+    // Using YouTube audio Bible links provided by user
+    const audioLinks = [
+      "https://youtu.be/UUKf3IYZJFc?si=2YGA_qg4jHTVRM0G", // Genesis
+      "https://youtu.be/fYdJgkoHr0M?si=x3pFgwABLODifHNa", // Exodus  
+      "https://youtu.be/mITAX6D33wI?si=kOxWSpjJpiRXsIvK", // Leviticus
+    ];
+    
+    const bookIndex = BIBLE_BOOKS.findIndex(b => b.name === book);
+    if (bookIndex < audioLinks.length) {
+      return audioLinks[bookIndex];
+    }
+    
+    // Fallback for books not yet provided
+    return audioLinks[0]; // Default to Genesis
   };
 
   const handlePlay = async () => {
