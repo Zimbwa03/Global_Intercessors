@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
+import PrayerSlotManagement from "@/pages/prayer-slot-management";
 
 function Router() {
   return (

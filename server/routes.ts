@@ -1,13 +1,141 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+  // Prayer Slot Management API Routes
+  
+  // Get user's current prayer slot
+  app.get("/api/prayer-slot/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      
+      // For now using mock data - will need Supabase connection
+      const mockSlot = {
+        id: 1,
+        userId: userId,
+        userEmail: "user@example.com",
+        slotTime: "22:00–22:30",
+        status: "active",
+        missedCount: 0,
+        skipStartDate: null,
+        skipEndDate: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+      res.json(mockSlot);
+    } catch (error) {
+      console.error("Error fetching prayer slot:", error);
+      res.status(500).json({ error: "Failed to fetch prayer slot" });
+    }
+  });
+
+  // Get available slots
+  app.get("/api/available-slots", async (req: Request, res: Response) => {
+    try {
+      // Generate 48 time slots (30-minute intervals for 24 hours)
+      const availableSlots = [];
+      for (let hour = 0; hour < 24; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          const endHour = minute === 30 ? hour + 1 : hour;
+          const endMinute = minute === 30 ? 0 : 30;
+          const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+          
+          availableSlots.push({
+            id: hour * 2 + (minute / 30) + 1,
+            slotTime: `${startTime}–${endTime}`,
+            isAvailable: Math.random() > 0.3, // Random availability for demo
+            timezone: "UTC"
+          });
+        }
+      }
+
+      res.json(availableSlots.filter(slot => slot.isAvailable));
+    } catch (error) {
+      console.error("Error fetching available slots:", error);
+      res.status(500).json({ error: "Failed to fetch available slots" });
+    }
+  });
+
+  // Request to skip prayer slot
+  app.post("/api/prayer-slot/skip", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.body;
+      
+      const skipStartDate = new Date();
+      const skipEndDate = new Date();
+      skipEndDate.setDate(skipEndDate.getDate() + 5);
+
+      const updatedSlot = {
+        id: 1,
+        userId: userId,
+        userEmail: "user@example.com",
+        slotTime: "22:00–22:30",
+        status: "skipped",
+        missedCount: 0,
+        skipStartDate: skipStartDate.toISOString(),
+        skipEndDate: skipEndDate.toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      res.json(updatedSlot);
+    } catch (error) {
+      console.error("Error skipping prayer slot:", error);
+      res.status(500).json({ error: "Failed to skip prayer slot" });
+    }
+  });
+
+  // Change prayer slot
+  app.post("/api/prayer-slot/change", async (req: Request, res: Response) => {
+    try {
+      const { userId, newSlotTime } = req.body;
+
+      const updatedSlot = {
+        id: 1,
+        userId: userId,
+        userEmail: "user@example.com",
+        slotTime: newSlotTime,
+        status: "active",
+        missedCount: 0,
+        skipStartDate: null,
+        skipEndDate: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      res.json(updatedSlot);
+    } catch (error) {
+      console.error("Error changing prayer slot:", error);
+      res.status(500).json({ error: "Failed to change prayer slot" });
+    }
+  });
+
+  // Get prayer session history
+  app.get("/api/prayer-sessions/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      // Mock session history
+      const sessions = Array.from({ length: limit }, (_, i) => ({
+        id: i + 1,
+        userId: userId,
+        slotTime: "22:00–22:30",
+        sessionDate: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
+        status: Math.random() > 0.2 ? "completed" : "missed",
+        duration: Math.random() > 0.2 ? 30 : null,
+        createdAt: new Date().toISOString()
+      }));
+
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching prayer sessions:", error);
+      res.status(500).json({ error: "Failed to fetch prayer sessions" });
+    }
+  });
 
   const httpServer = createServer(app);
 
