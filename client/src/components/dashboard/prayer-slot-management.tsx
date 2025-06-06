@@ -525,8 +525,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                     </Badge>
                     {session.duration && (
                       <p className="text-xs text-gray-500 mt-1">{session.duration} min</p>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
               ))
