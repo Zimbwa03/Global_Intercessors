@@ -2,6 +2,9 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 
+// In-memory storage for prayer slots (will be replaced with Supabase later)
+const prayerSlots = new Map();
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Prayer Slot Management API Routes
   
@@ -10,21 +13,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       
-      // For now using mock data - will need Supabase connection
-      const mockSlot = {
-        id: 1,
-        userId: userId,
-        userEmail: "user@example.com",
-        slotTime: "22:00–22:30",
-        status: "active",
-        missedCount: 0,
-        skipStartDate: null,
-        skipEndDate: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      // Get from in-memory storage or create default
+      let userSlot = prayerSlots.get(userId);
+      if (!userSlot) {
+        userSlot = {
+          id: 1,
+          userId: userId,
+          userEmail: "user@example.com",
+          slotTime: "22:00–22:30",
+          status: "active",
+          missedCount: 0,
+          skipStartDate: null,
+          skipEndDate: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        prayerSlots.set(userId, userSlot);
+      }
 
-      res.json(mockSlot);
+      res.json(userSlot);
     } catch (error) {
       console.error("Error fetching prayer slot:", error);
       res.status(500).json({ error: "Failed to fetch prayer slot" });
@@ -64,22 +71,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.body;
       
+      // Get existing slot or create default
+      let userSlot = prayerSlots.get(userId);
+      if (!userSlot) {
+        userSlot = {
+          id: 1,
+          userId: userId,
+          userEmail: "user@example.com",
+          slotTime: "22:00–22:30",
+          status: "active",
+          missedCount: 0,
+          skipStartDate: null,
+          skipEndDate: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+      }
+
       const skipStartDate = new Date();
       const skipEndDate = new Date();
       skipEndDate.setDate(skipEndDate.getDate() + 5);
 
+      // Update the slot
       const updatedSlot = {
-        id: 1,
-        userId: userId,
-        userEmail: "user@example.com",
-        slotTime: "22:00–22:30",
+        ...userSlot,
         status: "skipped",
-        missedCount: 0,
         skipStartDate: skipStartDate.toISOString(),
         skipEndDate: skipEndDate.toISOString(),
-        createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
+
+      // Store the updated slot
+      prayerSlots.set(userId, updatedSlot);
 
       res.json(updatedSlot);
     } catch (error) {
@@ -93,18 +116,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId, newSlotTime } = req.body;
 
+      // Get existing slot or create default
+      let userSlot = prayerSlots.get(userId);
+      if (!userSlot) {
+        userSlot = {
+          id: 1,
+          userId: userId,
+          userEmail: "user@example.com",
+          slotTime: "22:00–22:30",
+          status: "active",
+          missedCount: 0,
+          skipStartDate: null,
+          skipEndDate: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+      }
+
+      // Update the slot
       const updatedSlot = {
-        id: 1,
-        userId: userId,
-        userEmail: "user@example.com",
+        ...userSlot,
         slotTime: newSlotTime,
         status: "active",
-        missedCount: 0,
         skipStartDate: null,
         skipEndDate: null,
-        createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
+
+      // Store the updated slot
+      prayerSlots.set(userId, updatedSlot);
 
       res.json(updatedSlot);
     } catch (error) {
