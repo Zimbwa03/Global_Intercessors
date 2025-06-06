@@ -36,12 +36,16 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   // Get userId from localStorage or use a default
   const userId = localStorage.getItem('userId') || 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f';
 
-  // Get current user
+  // Get current user and initialize notification service
   useEffect(() => {
     const getCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
     };
+    
+    // Initialize notification service
+    notificationService.initialize();
+    
     getCurrentUser();
   }, []);
 
@@ -83,61 +87,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     refetchInterval: 10000, // Refetch every 10 seconds
     refetchOnWindowFocus: true
   });
-
-  useEffect(() => {
-    const fetchAvailableSlots = async () => {
-      try {
-        const response = await fetch('/api/available-slots');
-        if (!response.ok) {
-          throw new Error('Failed to fetch available slots');
-        }
-        const data = await response.json();
-        setAvailableSlots(data);
-      } catch (error) {
-        console.error('Error fetching available slots:', error);
-      }
-    };
-
-    const fetchSessions = async () => {
-      try {
-        const response = await fetch(`/api/prayer-sessions/${userId}?limit=7`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch prayer sessions');
-        }
-        const data = await response.json();
-        setSessions(data);
-      } catch (error) {
-        console.error('Error fetching prayer sessions:', error);
-      }
-    };
-
-    const fetchCurrentSlot = async () => {
-      setIsLoadingSlot(true);
-      try {
-        const response = await fetch(`/api/prayer-slot/${userId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setCurrentSlot(data);
-
-          // Schedule notifications for the current slot
-          if (data && data.status === 'active') {
-            notificationService.scheduleSlotReminders(data);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching current slot:', error);
-      } finally {
-        setIsLoadingSlot(false);
-      }
-    };
-
-    fetchAvailableSlots();
-    fetchSessions();
-    fetchCurrentSlot();
-
-    // Initialize notification service
-    notificationService.initialize();
-  }, []);
 
   // Skip slot mutation with optimistic updates
   const skipSlotMutation = useMutation({
@@ -263,7 +212,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     }
   });
 
-  // Calculate countdown to next prayer session
+  // Calculate countdown to next prayer session and schedule notifications
   useEffect(() => {
     if (!prayerSlot?.slotTime) return;
 
@@ -291,6 +240,11 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         seconds: Math.max(0, secondsLeft)
       });
     };
+
+    // Schedule notifications when prayer slot is active
+    if (prayerSlot && prayerSlot.status === 'active') {
+      notificationService.scheduleSlotReminders(prayerSlot);
+    }
 
     updateCountdown();
     const interval = setInterval(updateCountdown, 1000);
@@ -380,12 +334,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     );
   }
 
-  // Schedule notifications when current slot changes
-  useEffect(() => {
-    if (prayerSlot && prayerSlot.status === 'active') {
-      notificationService.scheduleSlotReminders(prayerSlot);
-    }
-  }, [prayerSlot]);
+  
 
   return (
     <div className="space-y-6">
