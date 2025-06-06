@@ -311,7 +311,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     );
   }
 
-  if (error) {
+  if (slotError) {
     return (
       <div className="space-y-6">
         <div className="text-center py-12">

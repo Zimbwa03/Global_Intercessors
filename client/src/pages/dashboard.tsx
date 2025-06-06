@@ -8,6 +8,7 @@ import { PrayerSlotManagement } from "@/components/dashboard/prayer-slot-managem
 import { UpdatesAnnouncements } from "@/components/dashboard/updates-announcements";
 import { AIPrayerAssistant } from "@/components/dashboard/ai-prayer-assistant";
 import { NotificationSetup } from "@/components/dashboard/notification-setup";
+import { SlotCoverageMonitor } from "@/components/dashboard/slot-coverage-monitor";
 
 export default function Dashboard() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -99,6 +100,9 @@ export default function Dashboard() {
       
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-auto">
+        {/* Audio Bible Coverage Monitor */}
+        <SlotCoverageMonitor />
+        
         {renderContent()}
       </main>
     </div>
