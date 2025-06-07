@@ -82,9 +82,9 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       return data;
     },
     enabled: !!user?.id,
-    refetchInterval: 10000, // Refetch every 10 seconds (same as dashboard)
-    refetchOnWindowFocus: true,
-    staleTime: 0 // Always consider data stale
+    refetchInterval: 30000, // Refetch every 30 seconds to reduce flickering
+    refetchOnWindowFocus: false, // Disable refetch on focus to prevent flicker
+    staleTime: 20000 // Cache data for 20 seconds
   });
 
   // Extract the prayer slot from the response
@@ -366,7 +366,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
             <AnimatePresence mode="wait">
               {prayerSlot && prayerSlot.slotTime ? (
                 <motion.div 
-                  key={`prayer-slot-${prayerSlot.id}-${prayerSlot.slotTime}`}
+                  key={`prayer-slot-${prayerSlot.slotTime}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
