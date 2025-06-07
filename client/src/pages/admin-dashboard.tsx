@@ -388,7 +388,7 @@ export default function AdminDashboard() {
               <div className="p-3 bg-gray-50 rounded-lg">
                 <Label className="text-sm font-medium text-gray-700">Current Zoom Link:</Label>
                 <p className="text-sm text-gray-600 mt-1 break-all">
-                  {(currentZoomLink as string) || "No zoom link set"}
+                  {String(currentZoomLink || "No zoom link set")}
                 </p>
               </div>
             )}
