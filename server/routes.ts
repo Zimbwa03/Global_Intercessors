@@ -263,26 +263,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Failed to check existing slot" });
       }
 
-      // Ensure user profile exists before creating slot
+      // Ensure user profile exists before creating slot - use direct SQL to bypass RLS
       try {
         const { data: existingProfile } = await supabaseAdmin
-          .from('user_profiles')
-          .select('id')
-          .eq('id', userId)
-          .single();
+          .rpc('check_user_profile_exists', { user_id: userId });
 
         if (!existingProfile) {
           console.log('Creating user profile for new user...');
+          
+          // Use raw SQL to bypass RLS policies for service role operations
           const { error: profileError } = await supabaseAdmin
-            .from('user_profiles')
-            .insert([{
-              id: userId,
-              email: userEmail,
-              full_name: '',
-              role: 'intercessor',
-              is_active: true,
-              created_at: new Date().toISOString()
-            }]);
+            .rpc('create_user_profile_service', {
+              user_id: userId,
+              user_email: userEmail,
+              user_full_name: '',
+              user_role: 'intercessor'
+            });
 
           if (profileError) {
             console.error("Error creating user profile:", profileError);
@@ -321,26 +317,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedSlot = data;
       } else {
         console.log('Creating new slot for user');
-        // Create new slot
+        // Create new slot using service role function to bypass RLS
         const { data, error } = await supabaseAdmin
-          .from('prayer_slots')
-          .insert([{
+          .rpc('create_prayer_slot_service', {
             user_id: userId,
             user_email: userEmail,
             slot_time: newSlotTime,
-            status: 'active',
-            missed_count: 0,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }])
-          .select()
-          .single();
+            slot_status: 'active'
+          });
 
         if (error) {
           console.error("Database error creating slot:", error);
           return res.status(500).json({ error: "Failed to create prayer slot" });
         }
-        updatedSlot = data;
+        
+        // Get the created slot data
+        const { data: createdSlot, error: fetchError } = await supabaseAdmin
+          .from('prayer_slots')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('slot_time', newSlotTime)
+          .single();
+        
+        if (fetchError) {
+          console.error("Error fetching created slot:", fetchError);
+          return res.status(500).json({ error: "Failed to fetch created prayer slot" });
+        }
+        
+        updatedSlot = createdSlot;
       }
 
       // Format response
