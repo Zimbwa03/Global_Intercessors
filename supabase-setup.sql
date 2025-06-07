@@ -1,6 +1,13 @@
 -- Global Intercessors Database Setup Script
 -- Run this in your Supabase SQL Editor
 
+-- Create users table (for basic user management)
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  username TEXT NOT NULL UNIQUE,
+  password TEXT NOT NULL
+);
+
 -- Create admin_users table
 CREATE TABLE IF NOT EXISTS admin_users (
   id SERIAL PRIMARY KEY,
@@ -60,36 +67,39 @@ CREATE TABLE IF NOT EXISTS attendance_log (
 CREATE TABLE IF NOT EXISTS zoom_meetings (
   id SERIAL PRIMARY KEY,
   meeting_id TEXT NOT NULL UNIQUE,
-  topic TEXT,
-  start_time TIMESTAMP,
+  meeting_uuid TEXT NOT NULL UNIQUE,
+  topic TEXT NOT NULL,
+  start_time TIMESTAMP NOT NULL,
+  end_time TIMESTAMP,
   duration INTEGER,
-  participants_count INTEGER DEFAULT 0,
+  participant_count INTEGER DEFAULT 0,
+  processed BOOLEAN DEFAULT false,
   created_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 
 -- Create audio_bible_progress table
 CREATE TABLE IF NOT EXISTS audio_bible_progress (
   id SERIAL PRIMARY KEY,
-  user_id TEXT NOT NULL,
   book TEXT NOT NULL,
   chapter INTEGER NOT NULL,
   verse INTEGER DEFAULT 1,
-  current_time REAL DEFAULT 0,
-  total_time REAL DEFAULT 0,
-  updated_at TIMESTAMP DEFAULT NOW() NOT NULL,
-  UNIQUE(user_id, book, chapter)
+  last_played TIMESTAMP DEFAULT NOW() NOT NULL,
+  total_books INTEGER DEFAULT 66,
+  total_chapters INTEGER NOT NULL,
+  is_active BOOLEAN DEFAULT false,
+  slot_time TEXT,
+  created_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 
 -- Create fasting_registrations table
 CREATE TABLE IF NOT EXISTS fasting_registrations (
-  id SERIAL PRIMARY KEY,
+  id TEXT PRIMARY KEY,
   full_name TEXT NOT NULL,
   phone_number TEXT NOT NULL,
   region TEXT NOT NULL,
-  travel_cost NUMERIC(10,2) NOT NULL,
-  gps_latitude REAL,
-  gps_longitude REAL,
-  agreed_to_gps BOOLEAN NOT NULL DEFAULT false,
+  travel_cost TEXT DEFAULT '0',
+  gps_latitude TEXT,
+  gps_longitude TEXT,
   created_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 
@@ -146,6 +156,7 @@ INSERT INTO available_slots (slot_time, is_available) VALUES
 ON CONFLICT (slot_time) DO NOTHING;
 
 -- Enable Row Level Security (RLS) for all tables
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prayer_slots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE available_slots ENABLE ROW LEVEL SECURITY;
@@ -154,6 +165,11 @@ ALTER TABLE attendance_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE zoom_meetings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audio_bible_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fasting_registrations ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for users table
+CREATE POLICY "Users can view their own profile" ON users FOR SELECT USING (auth.uid()::text = id::text);
+CREATE POLICY "Users can insert their own profile" ON users FOR INSERT WITH CHECK (auth.uid()::text = id::text);
+CREATE POLICY "Users can update their own profile" ON users FOR UPDATE USING (auth.uid()::text = id::text);
 
 -- Create policies for admin_users table
 CREATE POLICY "Enable read access for all users" ON admin_users FOR SELECT USING (true);
@@ -181,7 +197,8 @@ CREATE POLICY "Enable read access for authenticated users" ON zoom_meetings FOR 
 CREATE POLICY "Enable all for authenticated users" ON zoom_meetings FOR ALL USING (auth.role() = 'authenticated');
 
 -- Create policies for audio_bible_progress table
-CREATE POLICY "Users can manage their own progress" ON audio_bible_progress FOR ALL USING (user_id = auth.uid()::text);
+CREATE POLICY "Enable read access for authenticated users" ON audio_bible_progress FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all for authenticated users" ON audio_bible_progress FOR ALL USING (auth.role() = 'authenticated');
 
 -- Create policies for fasting_registrations table
 CREATE POLICY "Enable read access for all users" ON fasting_registrations FOR SELECT USING (true);
