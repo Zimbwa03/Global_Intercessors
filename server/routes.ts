@@ -655,34 +655,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/prayer-slots", async (req: Request, res: Response) => {
     try {
-      const { data: slots, error } = await supabaseAdmin
+      // Get all available time slots
+      const { data: availableSlots, error: availableError } = await supabaseAdmin
+        .from('available_slots')
+        .select('*')
+        .order('slot_time');
+
+      if (availableError) throw availableError;
+
+      // Get all prayer slot assignments
+      const { data: assignedSlots, error: assignedError } = await supabaseAdmin
         .from('prayer_slots')
         .select('*');
 
-      if (error) throw error;
+      if (assignedError) throw assignedError;
 
-      // Get user details from auth.users for each slot
-      const slotsWithUsers = await Promise.all(slots?.map(async (slot) => {
-        let userEmail = slot.user_email;
-        let userName = null;
-        
-        if (slot.user_id) {
-          const { data: user } = await supabaseAdmin.auth.admin.getUserById(slot.user_id);
-          if (user?.user) {
-            userEmail = user.user.email;
-            userName = user.user.user_metadata?.full_name;
-          }
+      // Create a map of assigned slots
+      const assignmentMap = new Map();
+      if (assignedSlots) {
+        for (const slot of assignedSlots) {
+          assignmentMap.set(slot.slot_time, slot);
         }
+      }
 
-        return {
-          id: slot.id,
-          slotTime: slot.slot_time,
-          status: slot.status,
-          userId: slot.user_id,
-          userEmail: userEmail,
-          userName: userName
-        };
-      }) || []);
+      // Build complete slot list with assignment status
+      const slotsWithUsers = await Promise.all(
+        availableSlots?.map(async (availableSlot) => {
+          const assignment = assignmentMap.get(availableSlot.slot_time);
+          let userEmail = null;
+          let userName = null;
+          let userId = null;
+          let status = 'available';
+
+          if (assignment) {
+            userId = assignment.user_id;
+            userEmail = assignment.user_email;
+            status = assignment.status;
+
+            // Get fresh user data from auth
+            if (assignment.user_id) {
+              try {
+                const { data: user } = await supabaseAdmin.auth.admin.getUserById(assignment.user_id);
+                if (user?.user) {
+                  userEmail = user.user.email;
+                  userName = user.user.user_metadata?.full_name || user.user.user_metadata?.name;
+                }
+              } catch (authError) {
+                console.error(`Error fetching user ${assignment.user_id}:`, authError);
+              }
+            }
+          }
+
+          return {
+            id: assignment?.id || `available_${availableSlot.id}`,
+            slotTime: availableSlot.slot_time,
+            status: status,
+            userId: userId,
+            userEmail: userEmail,
+            userName: userName || (userEmail ? 'Unknown Name' : null)
+          };
+        }) || []
+      );
 
       res.json(slotsWithUsers);
     } catch (error) {
@@ -693,41 +726,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/intercessors", async (req: Request, res: Response) => {
     try {
-      // Get all prayer slots with user assignments
-      const { data: slots, error } = await supabaseAdmin
+      // Get all authenticated users from Supabase Auth
+      const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+
+      if (authError) throw authError;
+
+      // Get all prayer slots to map to users
+      const { data: slots, error: slotsError } = await supabaseAdmin
         .from('prayer_slots')
-        .select('*')
-        .not('user_id', 'is', null);
+        .select('*');
 
-      if (error) throw error;
+      if (slotsError) console.error('Error fetching slots:', slotsError);
 
-      // Get unique users and their details from auth
-      const uniqueUsers = new Map();
-      
-      for (const slot of slots || []) {
-        if (slot.user_id && !uniqueUsers.has(slot.user_id)) {
-          try {
-            const { data: user } = await supabaseAdmin.auth.admin.getUserById(slot.user_id);
-            if (user?.user) {
-              uniqueUsers.set(slot.user_id, {
-                id: slot.user_id,
-                email: user.user.email,
-                name: user.user.user_metadata?.full_name || 'Unknown',
-                phone: user.user.user_metadata?.phone || '',
-                region: user.user.user_metadata?.region || '',
-                createdAt: user.user.created_at,
-                prayerSlot: slot.slot_time,
-                slotStatus: slot.status
-              });
-            }
-          } catch (authError) {
-            console.error(`Error fetching user ${slot.user_id}:`, authError);
-          }
+      // Create a map of user slots
+      const userSlots = new Map();
+      slots?.forEach(slot => {
+        if (slot.user_id) {
+          userSlots.set(slot.user_id, {
+            slotTime: slot.slot_time,
+            status: slot.status,
+            createdAt: slot.created_at
+          });
         }
-      }
+      });
 
-      const intercessors = Array.from(uniqueUsers.values());
-      res.json(intercessors);
+      // Filter out admin users and format intercessors
+      const intercessors = await Promise.all(
+        authUsers.users
+          .filter(user => user.email && user.email !== 'admin@globalintercessors.org') // Filter out admin users
+          .map(async (user) => {
+            const slot = userSlots.get(user.id);
+            
+            // Check if user is admin
+            const { data: adminCheck } = await supabaseAdmin
+              .from('admin_users')
+              .select('email')
+              .eq('email', user.email)
+              .single();
+
+            // Skip if user is admin
+            if (adminCheck) return null;
+
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.user_metadata?.full_name || user.user_metadata?.name || 'Unknown',
+              phone: user.user_metadata?.phone || user.phone || '',
+              region: user.user_metadata?.region || '',
+              createdAt: user.created_at,
+              prayerSlot: slot?.slotTime || 'Not assigned',
+              slotStatus: slot?.status || 'inactive',
+              lastSignIn: user.last_sign_in_at,
+              emailConfirmed: user.email_confirmed_at ? true : false
+            };
+          })
+      );
+
+      // Filter out null values (admin users)
+      const filteredIntercessors = intercessors.filter(intercessor => intercessor !== null);
+
+      res.json(filteredIntercessors);
     } catch (error) {
       console.error('Error fetching intercessors:', error);
       res.status(500).json({ error: 'Failed to fetch intercessors' });

@@ -457,6 +457,12 @@ export default function AdminDashboard() {
                           Status
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Email Verified
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Last Login
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Joined
                         </th>
                       </tr>
@@ -477,7 +483,7 @@ export default function AdminDashboard() {
                             {intercessor.region || "Not specified"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {intercessor.prayerSlot || "Not assigned"}
+                            {intercessor.prayerSlot}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -485,8 +491,20 @@ export default function AdminDashboard() {
                                 ? "bg-green-100 text-green-800" 
                                 : "bg-gray-100 text-gray-800"
                             }`}>
-                              {intercessor.slotStatus || "Inactive"}
+                              {intercessor.slotStatus === "active" ? "Active" : "Inactive"}
                             </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              intercessor.emailConfirmed 
+                                ? "bg-green-100 text-green-800" 
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}>
+                              {intercessor.emailConfirmed ? "Verified" : "Pending"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {intercessor.lastSignIn ? new Date(intercessor.lastSignIn).toLocaleDateString() : "Never"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {new Date(intercessor.createdAt).toLocaleDateString()}
