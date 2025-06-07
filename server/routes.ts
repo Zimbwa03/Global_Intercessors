@@ -296,19 +296,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (existingSlot) {
         console.log('Updating existing slot:', existingSlot.id);
-        // Update existing slot
+        // Update existing slot using service function
         const { data, error } = await supabaseAdmin
-          .from('prayer_slots')
-          .update({
-            slot_time: newSlotTime,
-            status: 'active',
-            skip_start_date: null,
-            skip_end_date: null,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', userId)
-          .select()
-          .single();
+          .rpc('update_prayer_slot_service', {
+            p_user_id: userId,
+            p_slot_time: newSlotTime,
+            p_status: 'active'
+          });
 
         if (error) {
           console.error("Database error updating slot:", error);
@@ -320,10 +314,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create new slot using service role function to bypass RLS
         const { data, error } = await supabaseAdmin
           .rpc('create_prayer_slot_service', {
-            user_id: userId,
-            user_email: userEmail,
-            slot_time: newSlotTime,
-            slot_status: 'active'
+            p_user_id: userId,
+            p_user_email: userEmail,
+            p_slot_time: newSlotTime,
+            p_status: 'active'
           });
 
         if (error) {

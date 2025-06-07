@@ -213,3 +213,79 @@ CREATE POLICY "Enable all for authenticated users" ON fasting_registrations FOR 
 CREATE POLICY "Enable read access for all users" ON updates FOR SELECT USING (true);
 CREATE POLICY "Enable insert for authenticated users only" ON updates FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Enable all for authenticated users" ON updates FOR ALL USING (auth.role() = 'authenticated');
+
+-- Create service functions to bypass RLS for legitimate operations
+CREATE OR REPLACE FUNCTION create_prayer_slot_service(
+  p_user_id TEXT,
+  p_user_email TEXT,
+  p_slot_time TEXT,
+  p_status TEXT DEFAULT 'active'
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  new_slot_id INTEGER;
+  result json;
+BEGIN
+  -- Insert new prayer slot bypassing RLS
+  INSERT INTO prayer_slots (user_id, user_email, slot_time, status, created_at, updated_at)
+  VALUES (p_user_id, p_user_email, p_slot_time, p_status, NOW(), NOW())
+  RETURNING id INTO new_slot_id;
+  
+  -- Return the created slot
+  SELECT json_build_object(
+    'id', id,
+    'user_id', user_id,
+    'user_email', user_email,
+    'slot_time', slot_time,
+    'status', status,
+    'missed_count', missed_count,
+    'created_at', created_at,
+    'updated_at', updated_at
+  ) INTO result
+  FROM prayer_slots
+  WHERE id = new_slot_id;
+  
+  RETURN result;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION update_prayer_slot_service(
+  p_user_id TEXT,
+  p_slot_time TEXT,
+  p_status TEXT DEFAULT NULL
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  result json;
+BEGIN
+  -- Update existing prayer slot bypassing RLS
+  UPDATE prayer_slots 
+  SET 
+    slot_time = p_slot_time,
+    status = COALESCE(p_status, status),
+    updated_at = NOW()
+  WHERE user_id = p_user_id;
+  
+  -- Return the updated slot
+  SELECT json_build_object(
+    'id', id,
+    'user_id', user_id,
+    'user_email', user_email,
+    'slot_time', slot_time,
+    'status', status,
+    'missed_count', missed_count,
+    'created_at', created_at,
+    'updated_at', updated_at
+  ) INTO result
+  FROM prayer_slots
+  WHERE user_id = p_user_id;
+  
+  RETURN result;
+END;
+$$;
