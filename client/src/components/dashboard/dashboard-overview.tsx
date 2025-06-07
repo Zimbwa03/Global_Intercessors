@@ -60,30 +60,52 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
     if (savedReminders) {
       setRemindersEnabled(JSON.parse(savedReminders));
     }
+  }, []);
 
-    // Calculate time until next session (simplified countdown)
+  // Calculate countdown to next prayer session based on actual slot time
+  useEffect(() => {
+    if (!prayerSlot?.slotTime || prayerSlot.status !== 'active') {
+      setNextSession({ hours: 0, minutes: 0, seconds: 0 });
+      return;
+    }
+
     const calculateNextSession = () => {
       const now = new Date();
-      const nextSlot = new Date();
-      nextSlot.setHours(22, 0, 0, 0);
+      const [startTime] = prayerSlot.slotTime.split('–');
+      const [hours, minutes] = startTime.split(':').map(Number);
 
-      if (now.getHours() >= 22) {
+      // Create next session time
+      const nextSlot = new Date();
+      nextSlot.setHours(hours, minutes, 0, 0);
+
+      // If the time has passed today, set for tomorrow
+      if (nextSlot <= now) {
         nextSlot.setDate(nextSlot.getDate() + 1);
       }
 
-      const diff = nextSlot.getTime() - now.getTime();
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      const timeDiff = nextSlot.getTime() - now.getTime();
 
-      setNextSession({ hours, minutes, seconds });
+      if (timeDiff <= 0) {
+        setNextSession({ hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60));
+      const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+      const secondsLeft = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+      setNextSession({
+        hours: Math.max(0, hoursLeft),
+        minutes: Math.max(0, minutesLeft),
+        seconds: Math.max(0, secondsLeft)
+      });
     };
 
     calculateNextSession();
     const interval = setInterval(calculateNextSession, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [prayerSlot?.slotTime, prayerSlot?.status]);
 
   const handleReminderToggle = (enabled: boolean) => {
     setRemindersEnabled(enabled);
@@ -161,22 +183,27 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                     <div className="flex items-center mt-1">
                       <i className={`${getStatusIcon(prayerSlot.status)} ${getStatusColor(prayerSlot.status)} mr-2`}></i>
                       <span className={`font-semibold ${getStatusColor(prayerSlot.status)} font-poppins`}>
-                        {prayerSlot.status}
+                        {prayerSlot.status.charAt(0).toUpperCase() + prayerSlot.status.slice(1)}
                       </span>
                     </div>
                   </>
                 ) : (
-                  <p>Loading prayer slot...</p>
+                  <div>
+                    <p className="text-gray-600">No prayer slot assigned</p>
+                    <p className="text-sm text-gray-500 mt-1">Please select a slot in Prayer Slot Management</p>
+                  </div>
                 )}
               </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600">Next session in:</p>
-                <p className="text-lg font-bold text-brand-primary font-poppins">
-                  {String(nextSession.hours).padStart(2, '0')}:
-                  {String(nextSession.minutes).padStart(2, '0')}:
-                  {String(nextSession.seconds).padStart(2, '0')}
-                </p>
-              </div>
+              {prayerSlot?.status === 'active' && (
+                <div className="text-right">
+                  <p className="text-sm text-gray-600">Next session in:</p>
+                  <p className="text-lg font-bold text-brand-primary font-poppins">
+                    {String(nextSession.hours).padStart(2, '0')}:
+                    {String(nextSession.minutes).padStart(2, '0')}:
+                    {String(nextSession.seconds).padStart(2, '0')}
+                  </p>
+                </div>
+              )}
             </div>
 
             {prayerSlot?.status === "active" && (
