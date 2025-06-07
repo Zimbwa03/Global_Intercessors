@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { supabase } from "@/lib/supabase";
@@ -91,6 +92,7 @@ const BIBLE_BOOKS: BibleBook[] = [
 export function AudioBiblePlayer({ isActive, slotTime, onPlaybackChange }: AudioBiblePlayerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [user, setUser] = useState<any>(null);

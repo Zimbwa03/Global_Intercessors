@@ -6,6 +6,7 @@ import { AuthSection } from "@/components/auth-section";
 import { TestimonialsSection } from "@/components/testimonials-section";
 import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Landing() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

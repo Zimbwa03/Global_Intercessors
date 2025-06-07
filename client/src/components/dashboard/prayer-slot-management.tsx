@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Clock, Calendar, AlertCircle, RotateCcw, Edit3, CheckCircle2, XCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { notificationService } from '@/lib/notificationService';
@@ -23,6 +24,7 @@ interface PrayerSlotManagementProps {
 export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [isChangeSlotModalOpen, setIsChangeSlotModalOpen] = useState(false);
   const [countdown, setCountdown] = useState<CountdownTime>({ hours: 0, minutes: 0, seconds: 0 });
   const [user, setUser] = useState<any>(null);
@@ -325,38 +327,55 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-brand-text mb-2 font-poppins">Prayer Slot Management</h2>
-        <p className="text-gray-600">Manage your committed prayer time and schedule</p>
+    <div className={`space-y-6 ${isMobile ? 'px-2' : ''}`}>
+      <div className="text-center md:text-left">
+        <h2 className={`font-bold text-brand-text mb-2 font-poppins ${isMobile ? 'text-xl' : 'text-2xl'}`}>
+          Prayer Slot Management
+        </h2>
+        <p className={`text-gray-600 ${isMobile ? 'text-sm' : ''}`}>
+          Manage your committed prayer time and schedule
+        </p>
       </div>
 
-      {/* Current Slot Status */}
-      <Card className="shadow-brand-lg border border-blue-100">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
-              <Clock className="w-4 h-4 text-brand-accent" />
+      {/* Current Slot Status - Mobile Optimized */}
+      <Card className={`shadow-brand-lg border border-blue-100 ${isMobile ? 'mx-0' : ''}`}>
+        <CardHeader className={isMobile ? 'pb-4' : ''}>
+          <CardTitle className={`flex items-center ${isMobile ? 'text-lg' : ''}`}>
+            <div className={`bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand ${
+              isMobile ? 'w-6 h-6' : 'w-8 h-8'
+            }`}>
+              <Clock className={`text-brand-accent ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
             </div>
             <span className="font-poppins">Current Prayer Slot</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg p-6 border border-blue-100">
+          <div className={`bg-gradient-to-br from-blue-50 to-white rounded-lg border border-blue-100 ${
+            isMobile ? 'p-4' : 'p-6'
+          }`}>
             {prayerSlot ? (
               <div className="text-center mb-4">
-                <h3 className="text-3xl font-bold text-brand-primary mb-2 font-poppins">{prayerSlot.slotTime}</h3>
+                <h3 className={`font-bold text-brand-primary mb-2 font-poppins ${
+                  isMobile ? 'text-2xl' : 'text-3xl'
+                }`}>
+                  {prayerSlot.slotTime}
+                </h3>
                 <div className="flex items-center justify-center gap-2 mb-4">
                   {getStatusIcon(prayerSlot.status)}
-                  <Badge variant={getStatusBadgeVariant(prayerSlot.status)} className="font-poppins">
+                  <Badge variant={getStatusBadgeVariant(prayerSlot.status)} 
+                         className={`font-poppins ${isMobile ? 'text-xs px-2 py-1' : ''}`}>
                     {prayerSlot.status.charAt(0).toUpperCase() + prayerSlot.status.slice(1)}
                   </Badge>
                 </div>
 
                 {prayerSlot.status === 'active' && (
                   <div className="mb-4">
-                    <p className="text-sm text-gray-600 mb-2">Next session in:</p>
-                    <div className="text-2xl font-bold text-brand-primary font-poppins">
+                    <p className={`text-gray-600 mb-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                      Next session in:
+                    </p>
+                    <div className={`font-bold text-brand-primary font-poppins ${
+                      isMobile ? 'text-xl' : 'text-2xl'
+                    }`}>
                       {String(countdown.hours).padStart(2, '0')}:
                       {String(countdown.minutes).padStart(2, '0')}:
                       {String(countdown.seconds).padStart(2, '0')}
@@ -365,31 +384,35 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                 )}
 
                 {prayerSlot.missedCount > 0 && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                  <div className={`bg-red-50 border border-red-200 rounded-lg mb-4 ${
+                    isMobile ? 'p-2' : 'p-3'
+                  }`}>
                     <div className="flex items-center gap-2 text-red-700">
-                      <AlertCircle className="w-4 h-4" />
-                      <span className="font-semibold">
+                      <AlertCircle className={isMobile ? 'w-3 h-3' : 'w-4 h-4'} />
+                      <span className={`font-semibold ${isMobile ? 'text-sm' : ''}`}>
                         Missed {prayerSlot.missedCount} day(s)
                       </span>
                     </div>
                     {prayerSlot.missedCount >= 4 && (
-                      <p className="text-sm text-red-600 mt-1">
+                      <p className={`text-red-600 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                         Warning: Your slot will be auto-released after 5 missed days.
                       </p>
                     )}
                   </div>
                 )}
 
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'}`}>
                   {prayerSlot.status === 'active' && (
                     <Button
                       onClick={handleSkipSlot}
                       disabled={skipSlotMutation.isPending}
                       variant="outline"
-                      className="border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-primary transition-brand font-poppins"
+                      className={`border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-primary transition-brand font-poppins ${
+                        isMobile ? 'h-12 text-sm' : ''
+                      }`}
                     >
-                      <RotateCcw className="w-4 h-4 mr-2" />
-                      {skipSlotMutation.isPending ? 'Processing...' : 'Request Skip (5 days)'}
+                      <RotateCcw className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                      {skipSlotMutation.isPending ? 'Processing...' : isMobile ? 'Skip (5 days)' : 'Request Skip (5 days)'}
                     </Button>
                   )}
 
@@ -397,10 +420,12 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                     <DialogTrigger asChild>
                       <Button
                         variant="outline"
-                        className="border-brand-primary text-brand-primary hover:bg-blue-50 transition-brand font-poppins"
+                        className={`border-brand-primary text-brand-primary hover:bg-blue-50 transition-brand font-poppins ${
+                          isMobile ? 'h-12 text-sm' : ''
+                        }`}
                       >
-                        <Edit3 className="w-4 h-4 mr-2" />
-                        Change Time Slot
+                        <Edit3 className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                        {isMobile ? 'Change Slot' : 'Change Time Slot'}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-md">
