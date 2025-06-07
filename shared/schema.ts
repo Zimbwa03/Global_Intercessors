@@ -97,6 +97,16 @@ export const fastingRegistrations = pgTable("fasting_registrations", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Updates table for admin announcements
+export const updates = pgTable("updates", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  date: timestamp("date").notNull(),
+  type: text("type").notNull().default("general"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertPrayerSlotSchema = createInsertSchema(prayerSlots).omit({
   id: true,
   createdAt: true,
@@ -132,6 +142,11 @@ export const insertFastingRegistrationSchema = createInsertSchema(fastingRegistr
   createdAt: true,
 });
 
+export const insertUpdatesSchema = createInsertSchema(updates).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type PrayerSlot = typeof prayerSlots.$inferSelect;
 export type InsertPrayerSlot = z.infer<typeof insertPrayerSlotSchema>;
 export type AvailableSlot = typeof availableSlots.$inferSelect;
@@ -146,3 +161,5 @@ export type AudioBibleProgress = typeof audioBibleProgress.$inferSelect;
 export type InsertAudioBibleProgress = z.infer<typeof insertAudioBibleProgressSchema>;
 export type FastingRegistration = typeof fastingRegistrations.$inferSelect;
 export type InsertFastingRegistration = z.infer<typeof insertFastingRegistrationSchema>;
+export type Updates = typeof updates.$inferSelect;
+export type InsertUpdates = z.infer<typeof insertUpdatesSchema>;

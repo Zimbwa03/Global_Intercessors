@@ -520,27 +520,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { data: slots, error } = await supabaseAdmin
         .from('prayer_slots')
-        .select(`
-          id,
-          slot_time,
-          status,
-          user_id,
-          users (
-            email,
-            user_metadata
-          )
-        `);
+        .select('*');
 
       if (error) throw error;
 
-      const slotsWithUsers = slots?.map(slot => ({
-        id: slot.id,
-        slotTime: slot.slot_time,
-        status: slot.status,
-        userId: slot.user_id,
-        userEmail: slot.users?.email,
-        userName: slot.users?.user_metadata?.full_name
-      })) || [];
+      // Get user details from auth.users for each slot
+      const slotsWithUsers = await Promise.all(slots?.map(async (slot) => {
+        let userEmail = slot.user_email;
+        let userName = null;
+        
+        if (slot.user_id) {
+          const { data: user } = await supabaseAdmin.auth.admin.getUserById(slot.user_id);
+          if (user?.user) {
+            userEmail = user.user.email;
+            userName = user.user.user_metadata?.full_name;
+          }
+        }
+
+        return {
+          id: slot.id,
+          slotTime: slot.slot_time,
+          status: slot.status,
+          userId: slot.user_id,
+          userEmail: userEmail,
+          userName: userName
+        };
+      }) || []);
 
       res.json(slotsWithUsers);
     } catch (error) {
@@ -551,38 +556,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/intercessors", async (req: Request, res: Response) => {
     try {
-      const { data: users, error } = await supabaseAdmin
-        .from('user_profiles')
-        .select(`
-          id,
-          email,
-          full_name,
-          role,
-          phone_number,
-          region,
-          is_active,
-          created_at,
-          prayer_slots (
-            slot_time,
-            status
-          )
-        `)
-        .eq('role', 'intercessor')
-        .eq('is_active', true);
+      // Get all prayer slots with user assignments
+      const { data: slots, error } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*')
+        .not('user_id', 'is', null);
 
       if (error) throw error;
 
-      const intercessors = users?.map(user => ({
-        id: user.id,
-        email: user.email,
-        name: user.full_name || 'Unknown',
-        phone: user.phone_number,
-        region: user.region,
-        createdAt: user.created_at,
-        prayerSlot: user.prayer_slots?.[0]?.slot_time,
-        slotStatus: user.prayer_slots?.[0]?.status
-      })) || [];
+      // Get unique users and their details from auth
+      const uniqueUsers = new Map();
+      
+      for (const slot of slots || []) {
+        if (slot.user_id && !uniqueUsers.has(slot.user_id)) {
+          try {
+            const { data: user } = await supabaseAdmin.auth.admin.getUserById(slot.user_id);
+            if (user?.user) {
+              uniqueUsers.set(slot.user_id, {
+                id: slot.user_id,
+                email: user.user.email,
+                name: user.user.user_metadata?.full_name || 'Unknown',
+                phone: user.user.user_metadata?.phone || '',
+                region: user.user.user_metadata?.region || '',
+                createdAt: user.user.created_at,
+                prayerSlot: slot.slot_time,
+                slotStatus: slot.status
+              });
+            }
+          } catch (authError) {
+            console.error(`Error fetching user ${slot.user_id}:`, authError);
+          }
+        }
+      }
 
+      const intercessors = Array.from(uniqueUsers.values());
       res.json(intercessors);
     } catch (error) {
       console.error('Error fetching intercessors:', error);
