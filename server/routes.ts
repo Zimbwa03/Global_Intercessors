@@ -76,20 +76,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.params;
       console.log('Fetching prayer slot for user:', userId);
 
-      // Use service role to bypass RLS and query directly with elevated permissions
-      const { data: slots, error } = await supabaseAdmin
-        .from('prayer_slots')
-        .select('*')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false })
-        .limit(1);
+      // Use the same service function that successfully creates slots for retrieval
+      const { data: slotData, error } = await supabaseAdmin
+        .rpc('get_user_prayer_slot', { 
+          p_user_id: userId
+        });
 
       if (error) {
-        console.error('Database error fetching prayer slot:', error);
+        console.error('Service function failed:', error);
         return res.status(500).json({ error: 'Failed to fetch prayer slot' });
       }
 
-      const slotData = slots && slots.length > 0 ? slots[0] : null;
+      const slotResult = slotData;
 
       console.log('Prayer slot data retrieved:', slotData);
 
