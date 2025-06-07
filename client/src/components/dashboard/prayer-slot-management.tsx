@@ -366,7 +366,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
             <AnimatePresence mode="wait">
               {prayerSlot && prayerSlot.slotTime ? (
                 <motion.div 
-                  key={prayerSlot.slotTime}
+                  key={`prayer-slot-${prayerSlot.id}-${prayerSlot.slotTime}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
@@ -411,7 +411,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                         }}
                       >
                         <motion.span
-                          key={countdown.hours}
+                          key={`hours-${countdown.hours}-${Date.now()}`}
                           animate={{ opacity: [0.5, 1] }}
                           transition={{ duration: 0.3 }}
                         >
@@ -419,7 +419,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                         </motion.span>
                         :
                         <motion.span
-                          key={countdown.minutes}
+                          key={`minutes-${countdown.minutes}-${Date.now()}`}
                           animate={{ opacity: [0.5, 1] }}
                           transition={{ duration: 0.3, delay: 0.1 }}
                         >
@@ -427,7 +427,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                         </motion.span>
                         :
                         <motion.span
-                          key={countdown.seconds}
+                          key={`seconds-${countdown.seconds}-${Date.now()}`}
                           animate={{ 
                             opacity: [0.5, 1],
                             color: countdown.seconds % 2 === 0 ? "#1e40af" : "#3b82f6"
@@ -514,6 +514,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                 </motion.div>
               ) : (
                 <motion.div 
+                  key="no-prayer-slot"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3 }}
