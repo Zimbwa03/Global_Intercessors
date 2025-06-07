@@ -78,12 +78,12 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     queryKey: ['prayer-slot', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      
+
       const response = await fetch(`/api/prayer-slot/${user.id}`);
       if (!response.ok) {
         throw new Error('Failed to fetch prayer slot');
       }
-      
+
       const data = await response.json();
       return data.prayerSlot;
     },
@@ -98,7 +98,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       if (!response.ok) {
         throw new Error('Failed to fetch available slots');
       }
-      
+
       const data = await response.json();
       return data.availableSlots;
     },
@@ -108,7 +108,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   const skipSlotMutation = useMutation({
     mutationFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
-      
+
       const response = await fetch('/api/prayer-slot/skip', {
         method: 'POST',
         headers: {
@@ -142,11 +142,11 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
 
   // Change slot mutation
   const changeSlotMutation = useMutation({
-    mutationFn: async (newSlotTime: string) => {
+    mutationFn: async (data: { newSlotTime: string; userEmail?: string }) => {
       if (!user?.id) throw new Error('User not authenticated');
-      
+
       setIsSlotChanging(true);
-      
+
       const response = await fetch('/api/prayer-slot/change', {
         method: 'POST',
         headers: {
@@ -154,8 +154,8 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         },
         body: JSON.stringify({ 
           userId: user.id, 
-          newSlotTime,
-          userEmail: user.email || userEmail
+          newSlotTime: data.newSlotTime,
+          userEmail: data.userEmail || userEmail || user.email 
         }),
       });
 
@@ -166,15 +166,15 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
 
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       setSlotChangeSuccess(true);
       setTimeout(() => setSlotChangeSuccess(false), 2000);
-      
+
       toast({
         title: "Slot Updated",
         description: "Your prayer slot has been successfully updated.",
       });
-      
+
       // Force refetch the prayer slot data
       queryClient.invalidateQueries({ queryKey: ['prayer-slot', user?.id] });
       queryClient.refetchQueries({ queryKey: ['prayer-slot', user?.id] });
@@ -193,8 +193,14 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     },
   });
 
+  // Helper function to get status text safely
+  const getStatusText = (status: string | undefined) => {
+    if (!status || typeof status !== 'string') return 'Unknown';
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
+
   const handleChangeSlot = (newSlotTime: string) => {
-    changeSlotMutation.mutate(newSlotTime);
+    changeSlotMutation.mutate({ newSlotTime });
   };
 
   const handleSkipSlot = () => {
@@ -438,8 +444,8 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                               {isLoadingSlots ? (
                                 <SelectItem value="loading" disabled>Loading slots...</SelectItem>
                               ) : (
-                                availableSlotsData.map((slot: any) => (
-                                  <SelectItem key={slot.id} value={slot.slotTime}>
+                                availableSlotsData.map((slot: any, index: number) => (
+                                  <SelectItem key={`slot-${slot.id}-${slot.slotTime}-${index}`} value={slot.slotTime}>
                                     {slot.slotTime}
                                   </SelectItem>
                                 ))
