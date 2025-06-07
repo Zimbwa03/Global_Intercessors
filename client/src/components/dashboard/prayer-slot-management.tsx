@@ -59,22 +59,60 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Subscribe to countdown service
+  // Calculate countdown to next prayer session based on actual slot time
   useEffect(() => {
-    const unsubscribe = countdownService.subscribe((time: CountdownTime) => {
-      setCountdown(time);
-    });
+    if (!prayerSlot?.slotTime || prayerSlot.status !== 'active') {
+      setCountdown({ hours: 0, minutes: 0, seconds: 0 });
+      return;
+    }
 
-    countdownService.start();
+    const calculateNextSession = () => {
+      const now = new Date();
+      const [startTime] = prayerSlot.slotTime.split('–');
+      const [hours, minutes] = startTime.split(':').map(Number);
 
-    return () => {
-      unsubscribe();
-      countdownService.stop();
+      // Create next session time
+      const nextSlot = new Date();
+      nextSlot.setHours(hours, minutes, 0, 0);
+
+      // If the time has passed today, set for tomorrow
+      if (nextSlot <= now) {
+        nextSlot.setDate(nextSlot.getDate() + 1);
+      }
+
+      const timeDiff = nextSlot.getTime() - now.getTime();
+
+      if (timeDiff <= 0) {
+        setCountdown({ hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60));
+      const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+      const secondsLeft = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+      setCountdown({
+        hours: Math.max(0, hoursLeft),
+        minutes: Math.max(0, minutesLeft),
+        seconds: Math.max(0, secondsLeft)
+      });
     };
-  }, []);
+
+    calculateNextSession();
+    const interval = setInterval(calculateNextSession, 1000);
+
+    return () => clearInterval(interval);
+  }, [prayerSlot?.slotTime, prayerSlot?.status]);
+
+  // Trigger refetch when user changes (same as dashboard)
+  useEffect(() => {
+    if (user?.id) {
+      queryClient.invalidateQueries({ queryKey: ['prayer-slot', user?.id] });
+    }
+  }, [user?.id, queryClient]);
 
   // Fetch current prayer slot
-  const { data: prayerSlot, isLoading: isLoadingSlot, error: slotError } = useQuery({
+  const { data: prayerSlotResponse, isLoading: isLoadingSlot, error: slotError } = useQuery({
     queryKey: ['prayer-slot', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -85,10 +123,17 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       }
 
       const data = await response.json();
-      return data.prayerSlot;
+      console.log('Prayer slot management response:', data);
+      return data;
     },
     enabled: !!user?.id,
+    refetchInterval: 10000, // Refetch every 10 seconds (same as dashboard)
+    refetchOnWindowFocus: true,
+    staleTime: 0 // Always consider data stale
   });
+
+  // Extract the prayer slot from the response
+  const prayerSlot = prayerSlotResponse?.prayerSlot;
 
   // Fetch available slots
   const { data: availableSlotsData = [], isLoading: isLoadingSlots } = useQuery({
@@ -328,12 +373,19 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                   transition={{ duration: 0.3 }}
                   className="text-center"
                 >
-                  <SlotTransition
-                    status={prayerSlot.status}
-                    slotTime={prayerSlot.slotTime}
-                    isChanging={isSlotChanging || changeSlotMutation.isPending}
-                    className="mb-4"
-                  />
+                  <div className="mb-4">
+                    <h3 className={`font-bold text-brand-primary font-poppins mb-2 ${
+                      isMobile ? 'text-2xl' : 'text-3xl'
+                    }`}>
+                      {prayerSlot.slotTime}
+                    </h3>
+                    <div className="flex items-center justify-center gap-2">
+                      {getStatusIcon(prayerSlot.status)}
+                      <Badge variant={getStatusBadgeVariant(prayerSlot.status)} className="font-poppins">
+                        {getStatusText(prayerSlot.status)}
+                      </Badge>
+                    </div>
+                  </div>
 
                   {prayerSlot.status === 'active' && (
                     <motion.div 
