@@ -70,20 +70,23 @@ export default function AdminLogin() {
 
       console.log('Admin record found:', adminData);
 
-      // Check if user already has an auth account - try to sign in first
+      // Try to sign in with the provided credentials
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (signInError) {
-        // Check if it's a user not found error or invalid credentials
-        if (signInError.message.includes('Invalid login credentials') && 
-            !signInError.message.includes('Email not confirmed')) {
+        // If it's invalid credentials, the auth account exists but wrong password
+        if (signInError.message.includes('Invalid login credentials')) {
+          throw new Error('Invalid password. Please enter the correct password for your admin account.');
+        } else if (signInError.message.includes('Email not confirmed')) {
+          throw new Error('Your admin account exists but email is not confirmed. Please check your email for the confirmation link.');
+        } else if (signInError.message.includes('User not found') || 
+                   signInError.message.includes('Invalid email')) {
+          console.log('Auth account not found, creating new auth account...');
           
-          console.log('Invalid credentials - checking if auth account exists...');
-          
-          // Try to sign up (first time setup for this admin)
+          // Try to create new auth account for this admin
           const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
@@ -122,14 +125,13 @@ export default function AdminLogin() {
               description: "Your admin authentication account has been created and you're now logged in.",
             });
           }
-        } else if (signInError.message.includes('Email not confirmed')) {
-          throw new Error('Your admin account exists but email is not confirmed. Please check your email for the confirmation link.');
         } else {
           // Other auth errors
           throw new Error(`Login failed: ${signInError.message}`);
         }
       } else {
         // Sign in was successful
+        console.log('Login successful:', signInData.user?.email);
         toast({
           title: "Welcome Back",
           description: "Successfully logged in to admin panel.",
