@@ -107,17 +107,20 @@ export default function AdminDashboard() {
   const [newUpdate, setNewUpdate] = useState({ title: "", description: "" });
   const [zoomLink, setZoomLink] = useState("");
   
-  // Memoize the form handlers to prevent unnecessary re-renders
+  // Stable form handlers to prevent re-renders and input flickering
   const handleUpdateTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewUpdate(prev => ({ ...prev, title: e.target.value }));
+    const value = e.target.value;
+    setNewUpdate(prev => ({ ...prev, title: value }));
   }, []);
   
   const handleUpdateDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setNewUpdate(prev => ({ ...prev, description: e.target.value }));
+    const value = e.target.value;
+    setNewUpdate(prev => ({ ...prev, description: value }));
   }, []);
   
   const handleZoomLinkChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setZoomLink(e.target.value);
+    const value = e.target.value;
+    setZoomLink(value);
   }, []);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [, setLocation] = useLocation();
@@ -701,7 +704,7 @@ export default function AdminDashboard() {
     </div>
   );
 
-  const ManagementTab = () => (
+  const ManagementTab = useCallback(() => (
     <div className="space-y-6">
       {/* Post Updates */}
       <AnimatedCard animationType="fadeIn" delay={0.1}>
@@ -717,21 +720,25 @@ export default function AdminDashboard() {
               <Label htmlFor="updateTitle">Update Title</Label>
               <Input
                 id="updateTitle"
+                name="updateTitle"
                 value={newUpdate.title}
                 onChange={handleUpdateTitleChange}
                 placeholder="Enter update title..."
                 className="mt-1"
+                autoComplete="off"
               />
             </div>
             <div>
               <Label htmlFor="updateDescription">Description</Label>
               <Textarea
                 id="updateDescription"
+                name="updateDescription"
                 value={newUpdate.description}
                 onChange={handleUpdateDescriptionChange}
                 placeholder="Enter update description..."
                 rows={4}
                 className="mt-1"
+                autoComplete="off"
               />
             </div>
             <Button 
@@ -770,10 +777,12 @@ export default function AdminDashboard() {
               <Label htmlFor="zoomLink">New Zoom Link</Label>
               <Input
                 id="zoomLink"
+                name="zoomLink"
                 value={zoomLink}
                 onChange={handleZoomLinkChange}
                 placeholder="https://zoom.us/j/..."
                 className="mt-1"
+                autoComplete="off"
               />
             </div>
             <Button 
@@ -828,7 +837,21 @@ export default function AdminDashboard() {
         </CardContent>
       </AnimatedCard>
     </div>
-  );
+  ), [
+    newUpdate.title,
+    newUpdate.description,
+    zoomLink,
+    currentZoomLink,
+    handleCreateUpdate,
+    handleUpdateZoomLink,
+    handleUpdateTitleChange,
+    handleUpdateDescriptionChange,
+    handleZoomLinkChange,
+    createUpdateMutation.isPending,
+    updateZoomLinkMutation.isPending,
+    updatesLoading,
+    updates
+  ]);
 
   const renderTabContent = () => {
     switch (activeTab) {
