@@ -179,10 +179,10 @@ CREATE POLICY "Enable read access for all users" ON admin_users FOR SELECT USING
 CREATE POLICY "Enable insert for admin creation" ON admin_users FOR INSERT WITH CHECK (true);
 CREATE POLICY "Enable update for admins" ON admin_users FOR UPDATE USING (true);
 
--- Create policies for prayer_slots table
-CREATE POLICY "Users can view their own prayer slots" ON prayer_slots FOR SELECT USING (user_id = auth.uid()::text OR EXISTS (SELECT 1 FROM admin_users WHERE email = auth.jwt() ->> 'email'));
-CREATE POLICY "Users can insert their own prayer slots" ON prayer_slots FOR INSERT WITH CHECK (user_id = auth.uid()::text);
-CREATE POLICY "Users can update their own prayer slots" ON prayer_slots FOR UPDATE USING (user_id = auth.uid()::text OR EXISTS (SELECT 1 FROM admin_users WHERE email = auth.jwt() ->> 'email'));
+-- Create policies for prayer_slots table (allow service role access)
+CREATE POLICY "Users can view their own prayer slots" ON prayer_slots FOR SELECT USING (user_id = auth.uid()::text OR auth.role() = 'service_role' OR EXISTS (SELECT 1 FROM admin_users WHERE email = auth.jwt() ->> 'email'));
+CREATE POLICY "Users can insert their own prayer slots" ON prayer_slots FOR INSERT WITH CHECK (user_id = auth.uid()::text OR auth.role() = 'service_role');
+CREATE POLICY "Users can update their own prayer slots" ON prayer_slots FOR UPDATE USING (user_id = auth.uid()::text OR auth.role() = 'service_role' OR EXISTS (SELECT 1 FROM admin_users WHERE email = auth.jwt() ->> 'email'));
 
 -- Create policies for available_slots table
 CREATE POLICY "Enable read access for all users" ON available_slots FOR SELECT USING (true);
@@ -300,6 +300,91 @@ DECLARE
   result json;
 BEGIN
   -- Get the most recent prayer slot for the user
+  SELECT json_build_object(
+    'id', id,
+    'user_id', user_id,
+    'user_email', user_email,
+    'slot_time', slot_time,
+    'status', status,
+    'missed_count', missed_count,
+    'skip_start_date', skip_start_date,
+    'skip_end_date', skip_end_date,
+    'created_at', created_at,
+    'updated_at', updated_at
+  ) INTO result
+  FROM prayer_slots
+  WHERE user_id = p_user_id
+  ORDER BY updated_at DESC
+  LIMIT 1;
+  
+  RETURN result;
+END;
+$$;
+
+-- Updated change_prayer_slot function to handle retrieval mode
+CREATE OR REPLACE FUNCTION change_prayer_slot(
+  p_user_id TEXT,
+  p_slot_time TEXT,
+  p_user_email TEXT
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  result json;
+  user_email_to_use TEXT;
+BEGIN
+  -- If parameters are null, just return existing slot (retrieval mode)
+  IF p_slot_time IS NULL AND p_user_email IS NULL THEN
+    SELECT json_build_object(
+      'id', id,
+      'user_id', user_id,
+      'user_email', user_email,
+      'slot_time', slot_time,
+      'status', status,
+      'missed_count', missed_count,
+      'skip_start_date', skip_start_date,
+      'skip_end_date', skip_end_date,
+      'created_at', created_at,
+      'updated_at', updated_at
+    ) INTO result
+    FROM prayer_slots
+    WHERE user_id = p_user_id
+    ORDER BY updated_at DESC
+    LIMIT 1;
+    
+    RETURN result;
+  END IF;
+
+  -- Determine email to use
+  user_email_to_use := COALESCE(p_user_email, '');
+
+  -- Check if user already has a slot
+  IF EXISTS (SELECT 1 FROM prayer_slots WHERE user_id = p_user_id) THEN
+    -- Update existing slot
+    UPDATE prayer_slots 
+    SET 
+      slot_time = p_slot_time,
+      user_email = user_email_to_use,
+      status = 'active',
+      updated_at = NOW()
+    WHERE user_id = p_user_id;
+  ELSE
+    -- Create new slot
+    INSERT INTO prayer_slots (user_id, user_email, slot_time, status, missed_count, created_at, updated_at)
+    VALUES (
+      p_user_id,
+      user_email_to_use,
+      p_slot_time,
+      'active',
+      0,
+      NOW(),
+      NOW()
+    );
+  END IF;
+  
+  -- Return the updated/created slot
   SELECT json_build_object(
     'id', id,
     'user_id', user_id,

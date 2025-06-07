@@ -76,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.params;
       console.log('Fetching prayer slot for user:', userId);
 
-      // Create a simple query that uses the service role's elevated permissions
+      // Use service role to bypass RLS and query directly with elevated permissions
       const { data: slots, error } = await supabaseAdmin
         .from('prayer_slots')
         .select('*')
