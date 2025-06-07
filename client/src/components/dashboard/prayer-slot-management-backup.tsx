@@ -15,7 +15,6 @@ import { AnimatedCard } from '@/components/ui/animated-card';
 import { SlotTransition } from '@/components/ui/slot-transition';
 import { motion, AnimatePresence } from 'framer-motion';
 
-
 interface CountdownTime {
   hours: number;
   minutes: number;
