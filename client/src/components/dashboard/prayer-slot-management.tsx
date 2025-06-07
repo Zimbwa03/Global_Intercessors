@@ -10,6 +10,10 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Clock, Calendar, AlertCircle, RotateCcw, Edit3, CheckCircle2, XCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { notificationService } from '@/lib/notificationService';
+import { countdownService } from '@/lib/countdownService';
+import { AnimatedCard } from '@/components/ui/animated-card';
+import { SlotTransition } from '@/components/ui/slot-transition';
+import { motion, AnimatePresence } from 'framer-motion';
 
 
 interface CountdownTime {
@@ -29,6 +33,8 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   const [isChangeSlotModalOpen, setIsChangeSlotModalOpen] = useState(false);
   const [countdown, setCountdown] = useState<CountdownTime>({ hours: 0, minutes: 0, seconds: 0 });
   const [user, setUser] = useState<any>(null);
+  const [isSlotChanging, setIsSlotChanging] = useState(false);
+  const [slotChangeSuccess, setSlotChangeSuccess] = useState(false);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   // Get current user and initialize notification service
