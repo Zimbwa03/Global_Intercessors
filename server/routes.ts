@@ -40,44 +40,71 @@ const prayerSlots = new Map();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Prayer Slot Management API Routes
-  
-  // Get user's current prayer slot
+
+  // Get user's prayer slot
   app.get("/api/prayer-slot/:userId", async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
-      
-      // Get from Supabase database
-      const { data: userSlot, error } = await supabaseAdmin
+
+      console.log('Fetching prayer slot for user:', userId);
+
+      const { data: prayerSlot, error } = await supabaseAdmin
         .from('prayer_slots')
         .select('*')
         .eq('user_id', userId)
-        .eq('status', 'active')
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error("Database error:", error);
+        console.error("Error fetching prayer slot:", error);
         return res.status(500).json({ error: "Failed to fetch prayer slot" });
       }
 
-      // If no slot found, return null instead of creating default
-      if (!userSlot) {
+      if (!prayerSlot) {
+        console.log('No prayer slot found for user:', userId);
         return res.json(null);
       }
 
-      // Format response to match expected structure
+      // Check if slot is in skip period
+      let currentStatus = prayerSlot.status;
+      if (prayerSlot.skip_start_date && prayerSlot.skip_end_date) {
+        const now = new Date();
+        const skipStart = new Date(prayerSlot.skip_start_date);
+        const skipEnd = new Date(prayerSlot.skip_end_date);
+
+        if (now >= skipStart && now <= skipEnd) {
+          currentStatus = 'skipped';
+        } else if (now > skipEnd && prayerSlot.status === 'skipped') {
+          // Skip period ended, reactivate slot
+          const { error: updateError } = await supabaseAdmin
+            .from('prayer_slots')
+            .update({ 
+              status: 'active',
+              skip_start_date: null,
+              skip_end_date: null 
+            })
+            .eq('user_id', userId);
+
+          if (!updateError) {
+            currentStatus = 'active';
+          }
+        }
+      }
+
+      // Format response
       const formattedSlot = {
-        id: userSlot.id,
-        userId: userSlot.user_id,
-        userEmail: userSlot.user_email,
-        slotTime: userSlot.slot_time,
-        status: userSlot.status,
-        missedCount: userSlot.missed_count,
-        skipStartDate: userSlot.skip_start_date,
-        skipEndDate: userSlot.skip_end_date,
-        createdAt: userSlot.created_at,
-        updatedAt: userSlot.updated_at
+        id: prayerSlot.id,
+        userId: prayerSlot.user_id,
+        userEmail: prayerSlot.user_email,
+        slotTime: prayerSlot.slot_time,
+        status: currentStatus,
+        missedCount: prayerSlot.missed_count || 0,
+        skipStartDate: prayerSlot.skip_start_date,
+        skipEndDate: prayerSlot.skip_end_date,
+        createdAt: prayerSlot.created_at,
+        updatedAt: prayerSlot.updated_at
       };
 
+      console.log('Prayer slot found and formatted:', formattedSlot);
       res.json(formattedSlot);
     } catch (error) {
       console.error("Error fetching prayer slot:", error);
@@ -109,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const endMinute = minute === 30 ? 0 : 30;
           const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
           const slotTime = `${startTime}–${endTime}`;
-          
+
           // Only include slots that are not occupied
           if (!occupiedTimes.has(slotTime)) {
             availableSlots.push({
@@ -205,20 +232,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Auth error details:", authError);
           // Continue anyway - we'll try to get email from user_profiles table
         }
-        
+
         if (authUser?.user?.email) {
           userEmail = authUser.user.email;
           console.log('User found in auth:', { userId, userEmail });
         } else {
           console.log('User not found in auth, checking user_profiles table...');
-          
+
           // Try to get user email from user_profiles table as fallback
           const { data: userProfile, error: profileError } = await supabaseAdmin
             .from('user_profiles')
             .select('email')
             .eq('id', userId)
             .single();
-            
+
           if (userProfile?.email) {
             userEmail = userProfile.email;
             console.log('User found in profiles:', { userId, userEmail });
@@ -270,7 +297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (!existingProfile) {
           console.log('Creating user profile for new user...');
-          
+
           // Use raw SQL to bypass RLS policies for service role operations
           const { error: profileError } = await supabaseAdmin
             .rpc('create_user_profile_service', {
@@ -324,7 +351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Database error creating slot:", error);
           return res.status(500).json({ error: "Failed to create prayer slot" });
         }
-        
+
         // Get the created slot data
         const { data: createdSlot, error: fetchError } = await supabaseAdmin
           .from('prayer_slots')
@@ -332,12 +359,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .eq('user_id', userId)
           .eq('slot_time', newSlotTime)
           .single();
-        
+
         if (fetchError) {
           console.error("Error fetching created slot:", fetchError);
           return res.status(500).json({ error: "Failed to fetch created prayer slot" });
         }
-        
+
         updatedSlot = createdSlot;
       }
 
@@ -371,7 +398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const limit = parseInt(req.query.limit as string) || 10;
-      
+
       // Generate mock session history for now
       const mockSessions = Array.from({ length: Math.min(limit, 7) }, (_, i) => {
         const date = new Date();
@@ -399,7 +426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const { limit = 30 } = req.query;
-      
+
       // Generate mock attendance data for now
       const mockAttendance = Array.from({ length: Math.min(Number(limit), 30) }, (_, i) => {
         const date = new Date();
@@ -413,7 +440,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           created_at: date.toISOString()
         };
       });
-      
+
       res.json(mockAttendance);
     } catch (error) {
       console.error('Error fetching attendance:', error);
@@ -435,9 +462,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/zoom-meetings", async (req: Request, res: Response) => {
     try {
       const { from, to, processed } = req.query;
-      
+
       let query = supabaseAdmin.from('zoom_meetings').select('*');
-      
+
       if (from) {
         query = query.gte('start_time', from);
       }
@@ -447,13 +474,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (processed !== undefined) {
         query = query.eq('processed', processed === 'true');
       }
-      
+
       const { data: meetings, error } = await query
         .order('start_time', { ascending: false })
         .limit(100);
 
       if (error) throw error;
-      
+
       res.json(meetings || []);
     } catch (error) {
       console.error('Error fetching Zoom meetings:', error);
@@ -473,7 +500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isActive: false,
         totalChapters: 50
       };
-      
+
       res.json(defaultProgress);
     } catch (error) {
       console.error('Error fetching Bible progress:', error);
@@ -484,7 +511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/audio-bible/progress", async (req: Request, res: Response) => {
     try {
       const { book, chapter, verse = 1, slotTime } = req.body;
-      
+
       const progressData = {
         book,
         chapter,
@@ -494,7 +521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         slotTime,
         totalChapters: getBibleBookChapters(book)
       };
-      
+
       // For now, just return the data (can be stored in Supabase later)
       res.json(progressData);
     } catch (error) {
@@ -507,15 +534,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/bible-chat", async (req: Request, res: Response) => {
     try {
       const { phrase, version = "KJV", chapter, verse } = req.body;
-      
+
       let prompt = `User has typed: "${phrase}"\nVersion selected: ${version}\n`;
-      
+
       if (chapter && verse) {
         prompt += `Chapter: ${chapter}\nVerse: ${verse}\n\nGive the full verse in ${version}, a clear explanation of its meaning, and provide one practical prayer point based on it.`;
       } else {
         prompt += `\nProvide a relevant Bible verse from ${version} related to "${phrase}" with a clear explanation and one practical prayer point.`;
       }
-      
+
       prompt += `\n\nReturn the response in JSON format with these fields. Use natural, conversational language without asterisks or special formatting:
       {
         "verse": "the actual Bible verse text",
@@ -550,7 +577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const data = await response.json();
       const aiResponse = data.choices[0].message.content;
-      
+
       try {
         const parsedResponse = JSON.parse(aiResponse);
         // Clean all text fields from markdown formatting
@@ -582,7 +609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/prayer-planner", async (req: Request, res: Response) => {
     try {
       const { category } = req.body;
-      
+
       const categoryMap: { [key: string]: string } = {
         nation: "Nation & Government",
         healing: "Healing & Health", 
@@ -597,7 +624,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const categoryName = categoryMap[category] || category;
-      
+
       const prompt = `Generate 5 structured and powerful Christian prayer points under the theme "${categoryName}". Each point should include:
       1. A clear title
       2. A detailed prayer content
@@ -647,7 +674,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const data = await response.json();
       const aiResponse = data.choices[0].message.content;
-      
+
       try {
         const parsedResponse = JSON.parse(aiResponse);
         // Clean all text fields from markdown formatting
@@ -690,11 +717,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const now = new Date();
       const currentHour = now.getHours();
       const currentMinute = now.getMinutes();
-      
+
       // Determine current slot time (30-minute slots) - use simple time format
       const slotMinute = currentMinute < 30 ? '00' : '30';
       const currentSlotTime = `${currentHour.toString().padStart(2, '0')}:${slotMinute}`;
-      
+
       // Check if slot is assigned and if user is present
       const { data: slot, error } = await supabaseAdmin
         .from('prayer_slots')
@@ -704,18 +731,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
-      
+
       let needsCoverage = true;
-      
+
       if (slot) {
         // Check if user attended within last 5 minutes
         const lastAttended = slot.last_attended ? new Date(slot.last_attended) : null;
         const timeDiff = lastAttended ? Math.abs(now.getTime() - lastAttended.getTime()) : Infinity;
         const fiveMinutes = 5 * 60 * 1000;
-        
+
         needsCoverage = timeDiff > fiveMinutes;
       }
-      
+
       res.json({
         needsCoverage,
         currentSlotTime,
@@ -729,7 +756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin API Routes
-  
+
   // Get admin updates/announcements
   app.get("/api/admin/updates", async (req: Request, res: Response) => {
     try {
@@ -794,7 +821,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 if (user?.user) {
                   userEmail = user.user.email;
                   userName = user.user.user_metadata?.full_name || user.user.user_metadata?.name;
-                }
+                }```text
+
               } catch (authError) {
                 console.error(`Error fetching user ${assignment.user_id}:`, authError);
               }
@@ -851,7 +879,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .filter(user => user.email && user.email !== 'admin@globalintercessors.org') // Filter out admin users
           .map(async (user) => {
             const slot = userSlots.get(user.id);
-            
+
             // Check if user is admin
             const { data: adminCheck } = await supabaseAdmin
               .from('admin_users')

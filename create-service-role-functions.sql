@@ -42,31 +42,60 @@ $$;
 
 -- Function to create prayer slot with service role privileges
 CREATE OR REPLACE FUNCTION create_prayer_slot_service(
-  user_id TEXT,
-  user_email TEXT,
-  slot_time TEXT,
-  slot_status TEXT DEFAULT 'active'
+  p_user_id TEXT,
+  p_user_email TEXT,
+  p_slot_time TEXT,
+  p_status TEXT DEFAULT 'active'
 )
-RETURNS INTEGER
+RETURNS json
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
   new_slot_id INTEGER;
+  result json;
 BEGIN
-  INSERT INTO prayer_slots (user_id, user_email, slot_time, status, missed_count, created_at, updated_at)
-  VALUES (
-    user_id,
-    user_email,
-    slot_time,
-    slot_status,
-    0,
-    NOW(),
-    NOW()
-  )
-  RETURNING id INTO new_slot_id;
+  -- Check if user already has a slot
+  IF EXISTS (SELECT 1 FROM prayer_slots WHERE user_id = p_user_id) THEN
+    -- Update existing slot instead of creating new one
+    UPDATE prayer_slots 
+    SET 
+      slot_time = p_slot_time,
+      user_email = p_user_email,
+      status = p_status,
+      updated_at = NOW()
+    WHERE user_id = p_user_id
+    RETURNING id INTO new_slot_id;
+  ELSE
+    -- Create new slot
+    INSERT INTO prayer_slots (user_id, user_email, slot_time, status, missed_count, created_at, updated_at)
+    VALUES (
+      p_user_id,
+      p_user_email,
+      p_slot_time,
+      p_status,
+      0,
+      NOW(),
+      NOW()
+    )
+    RETURNING id INTO new_slot_id;
+  END IF;
   
-  RETURN new_slot_id;
+  -- Return the slot data
+  SELECT json_build_object(
+    'id', id,
+    'user_id', user_id,
+    'user_email', user_email,
+    'slot_time', slot_time,
+    'status', status,
+    'missed_count', missed_count,
+    'created_at', created_at,
+    'updated_at', updated_at
+  ) INTO result
+  FROM prayer_slots
+  WHERE id = new_slot_id;
+  
+  RETURN result;
 END;
 $$;
 
