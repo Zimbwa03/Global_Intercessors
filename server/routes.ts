@@ -38,12 +38,31 @@ function getBibleBookChapters(bookName: string): number {
 // Helper function to get user email
 async function getUserEmail(userId: string): Promise<string | null> {
   try {
-    const { data: user, error } = await supabaseAdmin.auth.admin.getUserById(userId);
-    if (error || !user) {
-      console.error('Error fetching user:', error);
+    // First try to get user from existing prayer slots
+    const { data: existingSlot, error: slotError } = await supabaseAdmin
+      .from('prayer_slots')
+      .select('user_email')
+      .eq('user_id', userId)
+      .single();
+
+    if (!slotError && existingSlot?.user_email) {
+      console.log('Found user email from existing slot:', existingSlot.user_email);
+      return existingSlot.user_email;
+    }
+
+    // If not found in slots, try to get from auth (this might fail due to permissions)
+    try {
+      const { data: user, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+      if (error) {
+        console.error('Auth API error (expected if service role not configured):', error.message);
+        // This is expected if service role doesn't have auth permissions
+        return null;
+      }
+      return user?.email || null;
+    } catch (authError) {
+      console.error('Auth fetch failed (using fallback):', authError);
       return null;
     }
-    return user.email || null;
   } catch (error) {
     console.error('Error in getUserEmail:', error);
     return null;
@@ -139,19 +158,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Change prayer slot
   app.post("/api/prayer-slot/change", async (req: Request, res: Response) => {
     try {
-      const { userId, newSlotTime } = req.body;
-      console.log('Handling slot change:', { userId, newSlotTime });
+      const { userId, newSlotTime, userEmail: providedEmail } = req.body;
+      console.log('Handling slot change:', { userId, newSlotTime, providedEmail });
 
       if (!userId || !newSlotTime) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      const userEmail = await getUserEmail(userId);
+      // Try to get user email, but use a fallback if not available
+      let userEmail = await getUserEmail(userId);
+      
+      // If we can't get email from auth, use provided email or generate a temporary one
       if (!userEmail) {
-        return res.status(400).json({ error: 'User not found' });
+        if (providedEmail) {
+          userEmail = providedEmail;
+        } else {
+          // Generate a placeholder email - this should be replaced when user profile is properly set up
+          userEmail = `user-${userId}@placeholder.local`;
+        }
+        console.log('Using fallback email:', userEmail);
       }
 
-      console.log('Attempting to change/create prayer slot:', { userId, newSlotTime });
+      console.log('Attempting to change/create prayer slot:', { userId, newSlotTime, userEmail });
 
       // Use the service function to create/update the prayer slot
       const { data, error } = await supabaseAdmin.rpc('create_prayer_slot_service', {

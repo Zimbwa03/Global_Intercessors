@@ -154,7 +154,8 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         },
         body: JSON.stringify({ 
           userId: user.id, 
-          newSlotTime 
+          newSlotTime,
+          userEmail: user.email || userEmail
         }),
       });
 
