@@ -704,6 +704,7 @@ export default function AdminDashboard() {
     </div>
   );
 
+  // Define ManagementTab as a memoized component at the top level
   const ManagementTab = useCallback(() => (
     <div className="space-y-6">
       {/* Post Updates */}
@@ -864,7 +865,7 @@ export default function AdminDashboard() {
       case "fasting":
         return <FastingTab />;
       case "management":
-        return <ManagementTab />;
+        return ManagementTab();
       default:
         return <OverviewTab />;
     }
