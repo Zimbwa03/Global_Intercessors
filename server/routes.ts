@@ -76,18 +76,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.params;
       console.log('Fetching prayer slot for user:', userId);
 
-      // Use the update service function which can return existing slot data
-      const { data: slotData, error } = await supabaseAdmin
-        .rpc('update_prayer_slot_service', { 
-          p_user_id: userId, 
-          p_slot_time: '',  // empty string maintains current slot
-          p_status: null     // null maintains current status
-        });
+      // Create a simple query that uses the service role's elevated permissions
+      const { data: slots, error } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1);
 
       if (error) {
         console.error('Database error fetching prayer slot:', error);
         return res.status(500).json({ error: 'Failed to fetch prayer slot' });
       }
+
+      const slotData = slots && slots.length > 0 ? slots[0] : null;
 
       console.log('Prayer slot data retrieved:', slotData);
 

@@ -120,10 +120,10 @@ AS $$
 DECLARE
   result json;
 BEGIN
-  -- Update existing prayer slot bypassing RLS
+  -- Update existing prayer slot bypassing RLS (only update non-empty values)
   UPDATE prayer_slots 
   SET 
-    slot_time = p_slot_time,
+    slot_time = CASE WHEN p_slot_time IS NOT NULL AND p_slot_time != '' THEN p_slot_time ELSE slot_time END,
     status = COALESCE(p_status, status),
     updated_at = NOW()
   WHERE user_id = p_user_id;
