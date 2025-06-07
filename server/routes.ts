@@ -719,6 +719,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Email is required' });
       }
 
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+      }
+
       // Check if admin already exists
       const { data: existingAdmin } = await supabaseAdmin
         .from('admin_users')
@@ -737,18 +743,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
           {
             email,
             role: 'admin',
-            is_active: true
+            is_active: true,
+            created_at: new Date().toISOString()
           }
         ])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error creating admin:', error);
+        throw error;
+      }
 
-      res.json({ message: 'Admin user created successfully', admin: newAdmin });
+      console.log('Admin user created successfully:', newAdmin);
+
+      res.json({ 
+        message: 'Admin user created successfully', 
+        admin: newAdmin,
+        instructions: {
+          step1: 'Admin role created in database',
+          step2: 'Now go to /admin/login and create a Supabase Auth account with this same email',
+          step3: 'After creating the auth account, you can log in as admin'
+        }
+      });
     } catch (error) {
       console.error('Error creating admin user:', error);
-      res.status(500).json({ error: 'Failed to create admin user' });
+      res.status(500).json({ 
+        error: 'Failed to create admin user',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        tip: 'Make sure Supabase environment variables are configured'
+      });
     }
   });
 

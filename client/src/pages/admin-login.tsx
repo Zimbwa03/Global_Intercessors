@@ -19,35 +19,68 @@ export default function AdminLogin() {
     setIsLoading(true);
 
     try {
-      // Authenticate with Supabase
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (authError) throw authError;
-
-      // Check if user has admin role
-      const { data: userData, error: userError } = await supabase
+      // First check if admin role exists
+      const { data: adminData, error: adminCheckError } = await supabase
         .from('admin_users')
         .select('*')
         .eq('email', email)
         .eq('is_active', true)
         .single();
 
-      if (userError || !userData) {
-        console.error('Error checking admin role:', userError);
-        await supabase.auth.signOut();
-        throw new Error('Access denied. Admin privileges required.');
+      if (adminCheckError || !adminData) {
+        throw new Error('Access denied. Email not found in admin users. Please use /create-admin first.');
+      }
+
+      // Try to sign in first
+      let authData, authError;
+      const signInResult = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      authData = signInResult.data;
+      authError = signInResult.error;
+
+      // If sign in fails, try to sign up (first time)
+      if (authError && authError.message.includes('Invalid')) {
+        console.log('Sign in failed, attempting sign up for first-time admin...');
+        
+        const signUpResult = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              role: 'admin',
+              full_name: 'Admin User'
+            }
+          }
+        });
+
+        authData = signUpResult.data;
+        authError = signUpResult.error;
+
+        if (!authError && authData.user) {
+          toast({
+            title: "Admin Account Created",
+            description: "Your admin account has been created successfully. You are now logged in.",
+          });
+        }
+      }
+
+      if (authError) throw authError;
+
+      if (!authData.user) {
+        throw new Error('Authentication failed');
       }
 
       toast({
-        title: "Admin Login Successful",
+        title: "Admin Login Successful", 
         description: "Welcome to the Global Intercessors Admin Panel",
       });
 
       setLocation("/admin/dashboard");
     } catch (error: any) {
+      console.error('Admin login error:', error);
       toast({
         title: "Login Failed",
         description: error.message || "Invalid credentials or insufficient privileges",
@@ -81,6 +114,9 @@ export default function AdminLogin() {
                 required
                 className="mt-1"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Use the same email added via /create-admin
+              </p>
             </div>
             
             <div>
@@ -90,10 +126,13 @@ export default function AdminLogin() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter admin password"
+                placeholder="Create password for new account"
                 required
                 className="mt-1"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                First time? This will create your auth account
+              </p>
             </div>
 
             <Button
@@ -109,11 +148,21 @@ export default function AdminLogin() {
               ) : (
                 <>
                   <i className="fas fa-sign-in-alt mr-2"></i>
-                  Admin Login
+                  Admin Login / Sign Up
                 </>
               )}
             </Button>
           </form>
+
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm">
+            <h4 className="font-semibold text-blue-800 mb-2">First Time Login?</h4>
+            <ol className="text-blue-700 space-y-1 text-xs">
+              <li>1. Your email must be added via /create-admin first</li>
+              <li>2. Enter your email and create a new password</li>
+              <li>3. This will create your Supabase Auth account</li>
+              <li>4. Future logins use the same credentials</li>
+            </ol>
+          </div>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">
