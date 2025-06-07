@@ -96,6 +96,16 @@ CREATE TABLE IF NOT EXISTS fasting_registrations (
   created_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 
+-- Create updates table for admin announcements
+CREATE TABLE IF NOT EXISTS updates (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  date TIMESTAMP NOT NULL,
+  type TEXT NOT NULL DEFAULT 'general',
+  created_at TIMESTAMP DEFAULT NOW() NOT NULL
+);
+
 -- Insert sample available prayer slots (24-hour coverage)
 INSERT INTO available_slots (slot_time, is_available) VALUES 
   ('00:00–00:30', true),
@@ -157,6 +167,7 @@ ALTER TABLE attendance_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE zoom_meetings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audio_bible_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fasting_registrations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE updates ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for admin_users table
 CREATE POLICY "Enable read access for all users" ON admin_users FOR SELECT USING (true);
@@ -191,3 +202,8 @@ CREATE POLICY "Enable all for authenticated users" ON audio_bible_progress FOR A
 CREATE POLICY "Enable read access for all users" ON fasting_registrations FOR SELECT USING (true);
 CREATE POLICY "Enable insert for all users" ON fasting_registrations FOR INSERT WITH CHECK (true);
 CREATE POLICY "Enable all for authenticated users" ON fasting_registrations FOR ALL USING (auth.role() = 'authenticated');
+
+-- Create policies for updates table
+CREATE POLICY "Enable read access for all users" ON updates FOR SELECT USING (true);
+CREATE POLICY "Enable insert for authenticated users only" ON updates FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Enable all for authenticated users" ON updates FOR ALL USING (auth.role() = 'authenticated');

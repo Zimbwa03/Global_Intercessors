@@ -131,13 +131,13 @@ class ZoomAttendanceTracker {
 
       // Store meeting data
       const meetingData = {
-        meetingId: meeting.id.toString(),
-        meetingUuid: meeting.uuid,
+        meeting_id: meeting.id.toString(),
+        meeting_uuid: meeting.uuid,
         topic: meeting.topic,
-        startTime: new Date(meeting.start_time),
-        endTime: meeting.end_time ? new Date(meeting.end_time) : null,
+        start_time: new Date(meeting.start_time),
+        end_time: meeting.end_time ? new Date(meeting.end_time) : null,
         duration: meeting.duration,
-        participantCount: participants.length,
+        participant_count: participants.length,
         processed: true
       };
 
@@ -210,13 +210,13 @@ class ZoomAttendanceTracker {
       if (slotTimeMatch) {
         // Log attendance
         const attendanceData = {
-          userId: user.id,
-          slotId: prayerSlot.id,
+          user_id: user.id,
+          slot_id: prayerSlot.id,
           date: meetingStart.format('YYYY-MM-DD'),
           status: 'attended',
-          zoomJoinTime: new Date(participant.join_time),
-          zoomLeaveTime: new Date(participant.leave_time),
-          zoomMeetingId: meeting.id.toString()
+          zoom_join_time: new Date(participant.join_time),
+          zoom_leave_time: new Date(participant.leave_time),
+          zoom_meeting_id: meeting.id.toString()
         };
 
         await supabaseAdmin
@@ -302,13 +302,13 @@ class ZoomAttendanceTracker {
     try {
       // Log missed attendance
       const missedAttendance = {
-        userId: slot.user_id,
-        slotId: slot.id,
+        user_id: slot.user_id,
+        slot_id: slot.id,
         date: date,
         status: 'missed',
-        zoomJoinTime: null,
-        zoomLeaveTime: null,
-        zoomMeetingId: null
+        zoom_join_time: null,
+        zoom_leave_time: null,
+        zoom_meeting_id: null
       };
 
       await supabaseAdmin
