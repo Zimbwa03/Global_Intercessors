@@ -15,7 +15,7 @@ import {
   PointElement,
   LineElement,
 } from 'chart.js';
-import { Bar, Doughnut, Line } from 'react-chartjs-2';
+import { Bar, Line } from 'react-chartjs-2';
 import { 
   Clock, 
   Users, 
@@ -193,30 +193,7 @@ export function MobileCharts({
     }
   };
 
-  const doughnutOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: {
-          font: {
-            size: isMobile ? 10 : 12
-          },
-          padding: isMobile ? 8 : 12,
-          usePointStyle: true
-        }
-      },
-      tooltip: {
-        titleFont: {
-          size: isMobile ? 11 : 13
-        },
-        bodyFont: {
-          size: isMobile ? 10 : 12
-        }
-      }
-    }
-  };
+  // Mobile-optimized list visualization for regions
 
   // Compact stats cards for mobile
   const StatCard = ({ icon: Icon, label, value, color, trend }: {
@@ -375,11 +352,29 @@ export function MobileCharts({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={isMobile ? "h-32" : "h-40"}>
+            <div className="space-y-2">
               {regionData.labels.length > 0 ? (
-                <Doughnut data={regionData} options={doughnutOptions} />
+                regionData.labels.slice(0, isMobile ? 4 : 6).map((region, index) => {
+                  const count = regionData.datasets[0].data[index];
+                  const percentage = Math.round((count / fastingRegistrations.length) * 100);
+                  return (
+                    <div key={region} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 flex-1">
+                        <div 
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: regionData.datasets[0].backgroundColor[index] }}
+                        />
+                        <span className="text-sm text-gray-700 truncate">{region}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium">{count}</span>
+                        <span className="text-xs text-gray-500">({percentage}%)</span>
+                      </div>
+                    </div>
+                  );
+                })
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-500">
+                <div className="flex items-center justify-center h-20 text-gray-500">
                   No regional data available
                 </div>
               )}
