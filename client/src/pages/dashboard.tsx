@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { supabase, type AuthUser } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { DashboardOverview } from "@/components/dashboard/dashboard-overview";
 import { PrayerSlotManagement } from "@/components/dashboard/prayer-slot-management";
@@ -12,13 +13,17 @@ import { SlotCoverageMonitor } from "@/components/dashboard/slot-coverage-monito
 import { AIBibleChatbook } from "@/components/dashboard/ai-bible-chatbook";
 import { AIPrayerPlanner } from "@/components/dashboard/ai-prayer-planner";
 import { AudioBiblePlayer } from "@/components/dashboard/audio-bible-player";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export default function Dashboard() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const getUser = async () => {
@@ -104,9 +109,76 @@ export default function Dashboard() {
     }
   };
 
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-brand-neutral">
+        {/* Mobile Header */}
+        <header className="bg-brand-primary text-white p-4 flex items-center justify-between shadow-lg">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-brand-accent rounded-full flex items-center justify-center">
+              <i className="fas fa-praying-hands text-brand-primary text-sm"></i>
+            </div>
+            <h1 className="font-bold text-lg font-poppins">Global Intercessors</h1>
+          </div>
+          
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-white hover:bg-blue-700/50">
+                <i className="fas fa-bars"></i>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-80 p-0">
+              <Sidebar 
+                activeTab={activeTab}
+                onTabChange={(tab) => {
+                  setActiveTab(tab);
+                  setMobileMenuOpen(false);
+                }}
+                onSignOut={handleSignOut}
+                userEmail={user.email}
+                isMobile={true}
+              />
+            </SheetContent>
+          </Sheet>
+        </header>
+
+        {/* Mobile Navigation Pills */}
+        <div className="bg-white border-b p-3 overflow-x-auto">
+          <div className="flex space-x-2 min-w-max">
+            {[
+              { id: "dashboard", label: "Dashboard", icon: "fas fa-home" },
+              { id: "prayer-slot", label: "Prayer", icon: "fas fa-clock" },
+              { id: "audio-bible", label: "Audio", icon: "fas fa-volume-up" },
+              { id: "ai-assistant", label: "AI Help", icon: "fas fa-robot" },
+              { id: "notifications", label: "Alerts", icon: "fas fa-bell" },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`flex flex-col items-center px-3 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                  activeTab === item.id
+                    ? "bg-brand-primary text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                <i className={`${item.icon} text-sm mb-1`}></i>
+                <span className="text-xs font-medium">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Mobile Content */}
+        <main className="p-4 pb-20">
+          {renderContent()}
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-brand-neutral flex">
-      {/* Sidebar */}
+      {/* Desktop Sidebar */}
       <Sidebar 
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -114,7 +186,7 @@ export default function Dashboard() {
         userEmail={user.email}
       />
 
-      {/* Main Content */}
+      {/* Desktop Main Content */}
       <main className="flex-1 p-6 overflow-auto">
         {renderContent()}
       </main>
