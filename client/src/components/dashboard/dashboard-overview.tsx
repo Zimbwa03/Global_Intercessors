@@ -42,17 +42,20 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
   }, []);
 
   // Fetch user's prayer slot with real-time updates
-  const { data: prayerSlot } = useQuery({
+  const { data: prayerSlotResponse } = useQuery({
     queryKey: ['prayer-slot', user?.id],
     queryFn: async () => {
       const response = await fetch(`/api/prayer-slot/${user?.id}`);
       if (!response.ok) throw new Error('Failed to fetch prayer slot');
-      return response.json();
+      const data = await response.json();
+      return data;
     },
     enabled: !!user?.id,
     refetchInterval: 30000, // Refetch every 30 seconds
     refetchOnWindowFocus: true
   });
+
+  const prayerSlot = prayerSlotResponse?.prayerSlot;
 
   useEffect(() => {
     // Load reminder preference from localStorage

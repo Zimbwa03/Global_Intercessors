@@ -49,15 +49,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error("Error fetching prayer slot:", error);
-        return res.status(500).json({ error: "Failed to fetch prayer slot" });
+        console.error('Database error:', error);
+        return res.status(500).json({ error: 'Failed to fetch prayer slot' });
       }
 
-      console.log('Prayer slot data:', slot);
-      res.json({ prayerSlot: slot });
+      console.log('Prayer slot raw data:', slot);
+
+      // Format the response to match frontend expectations
+      const formattedSlot = slot ? {
+        id: slot.id,
+        userId: slot.user_id,
+        userEmail: slot.user_email,
+        slotTime: slot.slot_time,
+        status: slot.status,
+        missedCount: slot.missed_count || 0,
+        skipStartDate: slot.skip_start_date,
+        skipEndDate: slot.skip_end_date,
+        createdAt: slot.created_at,
+        updatedAt: slot.updated_at
+      } : null;
+
+      console.log('Formatted prayer slot:', formattedSlot);
+
+      res.json({ prayerSlot: formattedSlot });
     } catch (error) {
-      console.error("Error fetching prayer slot:", error);
-      res.status(500).json({ error: "Failed to fetch prayer slot" });
+      console.error('Error fetching prayer slot:', error);
+      res.status(500).json({ error: 'Failed to fetch prayer slot' });
     }
   });
 
@@ -85,7 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const endMinute = minute === 30 ? 0 : 30;
           const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
           const slotTime = `${startTime}–${endTime}`;
-          
+
           // Only include slots that are not occupied
           if (!occupiedTimes.has(slotTime)) {
             availableSlots.push({
@@ -108,60 +125,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/prayer-slot/change", async (req: Request, res: Response) => {
     try {
       const { userId, newSlotTime } = req.body;
+      console.log('Handling slot change:', { userId, newSlotTime });
 
       if (!userId || !newSlotTime) {
-        return res.status(400).json({ error: "User ID and new slot time are required" });
+        return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      // Check if user already has a slot
-      const { data: existingSlot, error: existingError } = await supabaseAdmin
-        .from('prayer_slots')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (existingError && existingError.code !== 'PGRST116') {
-        console.error("Error checking existing slot:", existingError);
-        return res.status(500).json({ error: "Failed to check existing slot" });
+      const userEmail = await getUserEmail(userId);
+      if (!userEmail) {
+        return res.status(400).json({ error: 'User not found' });
       }
 
-      // Get user's email from Supabase Auth
-      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId);
-      const userEmail = authUser?.user?.email || 'unknown@example.com';
+      console.log('Attempting to change/create prayer slot:', { userId, newSlotTime });
 
-      let updatedSlot;
-      if (existingSlot) {
-        // Update existing slot using service function
-        const { data, error } = await supabaseAdmin
-          .rpc('update_prayer_slot_service', {
-            p_user_id: userId,
-            p_slot_time: newSlotTime,
-            p_status: 'active'
-          });
+      // Use the service function to create/update the prayer slot
+      const { data, error } = await supabaseAdmin.rpc('create_prayer_slot_service', {
+        p_user_id: userId,
+        p_user_email: userEmail,
+        p_slot_time: newSlotTime,
+        p_status: 'active'
+      });
 
-        if (error) {
-          console.error("Database error updating slot:", error);
-          return res.status(500).json({ error: "Failed to update prayer slot" });
-        }
-        updatedSlot = data;
-      } else {
-        // Create new slot using service function
-        const { data, error } = await supabaseAdmin
-          .rpc('create_prayer_slot_service', {
-            p_user_id: userId,
-            p_user_email: userEmail,
-            p_slot_time: newSlotTime,
-            p_status: 'active'
-          });
-
-        if (error) {
-          console.error("Database error creating slot:", error);
-          return res.status(500).json({ error: "Failed to create prayer slot" });
-        }
-        updatedSlot = data;
+      if (error) {
+        console.error("Database error creating slot:", error);
+        return res.status(500).json({ error: "Failed to create prayer slot" });
       }
 
-      res.json(updatedSlot);
+      console.log('Prayer slot service response:', data);
+
+      // Format the response to match frontend expectations
+      const formattedSlot = {
+        id: data.id,
+        userId: data.user_id,
+        userEmail: data.user_email,
+        slotTime: data.slot_time,
+        status: data.status,
+        missedCount: data.missed_count || 0,
+        skipStartDate: data.skip_start_date,
+        skipEndDate: data.skip_end_date,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+
+      console.log('Formatted slot response:', formattedSlot);
+
+      res.json(formattedSlot);
     } catch (error) {
       console.error('Prayer slot change error:', error);
       res.status(500).json({ error: 'Failed to change prayer slot' });
