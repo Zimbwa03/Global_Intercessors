@@ -35,6 +35,21 @@ function getBibleBookChapters(bookName: string): number {
   return bibleBooks[bookName] || 1;
 }
 
+// Helper function to get user email
+async function getUserEmail(userId: string): Promise<string | null> {
+  try {
+    const { data: user, error } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (error || !user) {
+      console.error('Error fetching user:', error);
+      return null;
+    }
+    return user.email || null;
+  } catch (error) {
+    console.error('Error in getUserEmail:', error);
+    return null;
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get user's prayer slot
   app.get("/api/prayer-slot/:userId", async (req: Request, res: Response) => {

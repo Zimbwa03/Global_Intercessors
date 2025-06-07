@@ -42,18 +42,27 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
   }, []);
 
   // Fetch user's prayer slot with real-time updates
-  const { data: prayerSlotResponse } = useQuery({
+  const { data: prayerSlotResponse, refetch: refetchPrayerSlot } = useQuery({
     queryKey: ['prayer-slot', user?.id],
     queryFn: async () => {
       const response = await fetch(`/api/prayer-slot/${user?.id}`);
       if (!response.ok) throw new Error('Failed to fetch prayer slot');
       const data = await response.json();
+      console.log('Dashboard prayer slot response:', data);
       return data;
     },
     enabled: !!user?.id,
-    refetchInterval: 30000, // Refetch every 30 seconds
-    refetchOnWindowFocus: true
+    refetchInterval: 10000, // Refetch every 10 seconds (more frequent)
+    refetchOnWindowFocus: true,
+    staleTime: 0 // Always consider data stale
   });
+
+  // Trigger a manual refetch when user changes
+  useEffect(() => {
+    if (user?.id) {
+      refetchPrayerSlot();
+    }
+  }, [user?.id, refetchPrayerSlot]);
 
   const prayerSlot = prayerSlotResponse?.prayerSlot;
 

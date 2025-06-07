@@ -165,7 +165,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setSlotChangeSuccess(true);
       setTimeout(() => setSlotChangeSuccess(false), 2000);
       
@@ -174,7 +174,9 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         description: "Your prayer slot has been successfully updated.",
       });
       
-      queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
+      // Force refetch the prayer slot data
+      queryClient.invalidateQueries({ queryKey: ['prayer-slot', user?.id] });
+      queryClient.refetchQueries({ queryKey: ['prayer-slot', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['available-slots'] });
       setIsChangeSlotModalOpen(false);
     },
