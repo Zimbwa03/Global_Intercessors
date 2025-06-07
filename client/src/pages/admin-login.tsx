@@ -19,7 +19,7 @@ export default function AdminLogin() {
     setIsLoading(true);
 
     try {
-      // First check if admin role exists
+      // First check if admin role exists in database
       const { data: adminData, error: adminCheckError } = await supabase
         .from('admin_users')
         .select('*')
@@ -31,46 +31,59 @@ export default function AdminLogin() {
         throw new Error('Access denied. Email not found in admin users. Please use /create-admin first.');
       }
 
-      // Try to sign in first
-      let authData, authError;
-      const signInResult = await supabase.auth.signInWithPassword({
+      console.log('Admin record found:', adminData);
+
+      // Get current session first
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (currentSession?.user?.email === email) {
+        // User is already logged in with the correct email
+        toast({
+          title: "Admin Login Successful", 
+          description: "Welcome to the Global Intercessors Admin Panel",
+        });
+        setLocation("/admin/dashboard");
+        return;
+      }
+
+      // Try to sign in with password
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      authData = signInResult.data;
-      authError = signInResult.error;
-
-      // If sign in fails, try to sign up (first time)
-      if (authError && authError.message.includes('Invalid')) {
-        console.log('Sign in failed, attempting sign up for first-time admin...');
+      if (signInError) {
+        // If sign in fails, try to sign up (first time setup)
+        console.log('Sign in failed, attempting sign up for admin...');
         
-        const signUpResult = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               role: 'admin',
-              full_name: 'Admin User'
+              full_name: adminData.email.split('@')[0] // Use email prefix as name
             }
           }
         });
 
-        authData = signUpResult.data;
-        authError = signUpResult.error;
+        if (signUpError) {
+          throw new Error(`Authentication failed: ${signUpError.message}`);
+        }
 
-        if (!authError && authData.user) {
+        if (signUpData.user) {
           toast({
             title: "Admin Account Created",
-            description: "Your admin account has been created successfully. You are now logged in.",
+            description: "Your admin account has been created successfully.",
           });
         }
       }
 
-      if (authError) throw authError;
-
-      if (!authData.user) {
-        throw new Error('Authentication failed');
+      // Check if we have a valid user session
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Authentication failed - no user session');
       }
 
       toast({
@@ -79,6 +92,7 @@ export default function AdminLogin() {
       });
 
       setLocation("/admin/dashboard");
+      
     } catch (error: any) {
       console.error('Admin login error:', error);
       toast({
