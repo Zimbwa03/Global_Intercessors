@@ -64,7 +64,7 @@ export function AuthSection() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Password Mismatch",
@@ -98,15 +98,42 @@ export function AuthSection() {
 
       if (error) {
         toast({
-          title: "Registration Failed",
+          title: "Signup Failed",
           description: error.message,
           variant: "destructive"
         });
-      } else {
-        toast({
-          title: "Success!",
-          description: "Account created successfully! Please check your email to verify your account.",
-        });
+      } else if (data.user) {
+        // Create user profile in database
+        try {
+          const response = await fetch('/api/users/create-profile', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: data.user.id,
+              email: data.user.email,
+              fullName: formData.name
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to create user profile');
+          }
+
+          toast({
+            title: "Account Created!",
+            description: "Please check your email to verify your account.",
+          });
+        } catch (profileError) {
+          console.error('Error creating user profile:', profileError);
+          toast({
+            title: "Account Created!",
+            description: "Account created but profile setup incomplete. Please contact support if issues persist.",
+            variant: "destructive"
+          });
+        }
+
         setFormData({ name: "", email: "", password: "", confirmPassword: "" });
       }
     } catch (error) {

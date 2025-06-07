@@ -552,25 +552,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/intercessors", async (req: Request, res: Response) => {
     try {
       const { data: users, error } = await supabaseAdmin
-        .from('users')
+        .from('user_profiles')
         .select(`
           id,
           email,
-          user_metadata,
+          full_name,
+          role,
+          phone_number,
+          region,
+          is_active,
           created_at,
           prayer_slots (
             slot_time,
             status
           )
         `)
-        .eq('role', 'intercessor');
+        .eq('role', 'intercessor')
+        .eq('is_active', true);
 
       if (error) throw error;
 
       const intercessors = users?.map(user => ({
         id: user.id,
         email: user.email,
-        name: user.user_metadata?.full_name || 'Unknown',
+        name: user.full_name || 'Unknown',
+        phone: user.phone_number,
+        region: user.region,
         createdAt: user.created_at,
         prayerSlot: user.prayer_slots?.[0]?.slot_time,
         slotStatus: user.prayer_slots?.[0]?.status
@@ -655,6 +662,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error saving zoom link:', error);
       res.status(500).json({ error: 'Failed to save zoom link' });
+    }
+  });
+
+  // User profile creation endpoint
+  app.post("/api/users/create-profile", async (req: Request, res: Response) => {
+    try {
+      const { userId, email, fullName } = req.body;
+
+      if (!userId || !email) {
+        return res.status(400).json({ error: 'User ID and email are required' });
+      }
+
+      // Check if user profile already exists
+      const { data: existingUser } = await supabaseAdmin
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (existingUser) {
+        return res.json({ message: 'User profile already exists', user: existingUser });
+      }
+
+      // Create new user profile
+      const { data: newUser, error } = await supabaseAdmin
+        .from('user_profiles')
+        .insert([
+          {
+            id: userId,
+            email,
+            full_name: fullName || '',
+            role: 'intercessor',
+            is_active: true,
+            created_at: new Date().toISOString()
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      res.json({ message: 'User profile created successfully', user: newUser });
+    } catch (error) {
+      console.error('Error creating user profile:', error);
+      res.status(500).json({ error: 'Failed to create user profile' });
     }
   });
 

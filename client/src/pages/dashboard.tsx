@@ -29,7 +29,29 @@ export default function Dashboard() {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        setUser(user as AuthUser);
+        // Fetch user profile from database
+        try {
+          const { data: userProfile, error } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+          if (error && error.code !== 'PGRST116') {
+            console.error('Error fetching user profile:', error);
+          }
+
+          // Combine auth user with profile data
+          const enrichedUser = {
+            ...user,
+            profile: userProfile || null
+          } as AuthUser & { profile: any };
+
+          setUser(enrichedUser);
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+          setUser(user as AuthUser);
+        }
       } else {
         navigate("/");
       }
