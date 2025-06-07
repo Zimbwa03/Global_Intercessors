@@ -1,6 +1,13 @@
 
+
 -- Service role functions to bypass RLS policies
 -- Run this in your Supabase SQL Editor
+
+-- Drop existing functions first to avoid conflicts
+DROP FUNCTION IF EXISTS create_prayer_slot_service(TEXT, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS create_prayer_slot_service(TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS check_user_profile_exists(UUID);
+DROP FUNCTION IF EXISTS create_user_profile_service(UUID, TEXT, TEXT, TEXT);
 
 -- Function to check if user profile exists
 CREATE OR REPLACE FUNCTION check_user_profile_exists(user_id UUID)
@@ -41,6 +48,7 @@ END;
 $$;
 
 -- Function to create prayer slot with service role privileges
+-- Fixed parameter order to match the calling code
 CREATE OR REPLACE FUNCTION create_prayer_slot_service(
   p_user_id TEXT,
   p_user_email TEXT,
@@ -99,7 +107,48 @@ BEGIN
 END;
 $$;
 
+-- Function to update prayer slot with service role privileges
+CREATE OR REPLACE FUNCTION update_prayer_slot_service(
+  p_user_id TEXT,
+  p_slot_time TEXT,
+  p_status TEXT DEFAULT NULL
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  result json;
+BEGIN
+  -- Update existing prayer slot bypassing RLS
+  UPDATE prayer_slots 
+  SET 
+    slot_time = p_slot_time,
+    status = COALESCE(p_status, status),
+    updated_at = NOW()
+  WHERE user_id = p_user_id;
+  
+  -- Return the updated slot
+  SELECT json_build_object(
+    'id', id,
+    'user_id', user_id,
+    'user_email', user_email,
+    'slot_time', slot_time,
+    'status', status,
+    'missed_count', missed_count,
+    'created_at', created_at,
+    'updated_at', updated_at
+  ) INTO result
+  FROM prayer_slots
+  WHERE user_id = p_user_id;
+  
+  RETURN result;
+END;
+$$;
+
 -- Grant execute permissions to the service role
 GRANT EXECUTE ON FUNCTION check_user_profile_exists(UUID) TO service_role;
 GRANT EXECUTE ON FUNCTION create_user_profile_service(UUID, TEXT, TEXT, TEXT) TO service_role;
 GRANT EXECUTE ON FUNCTION create_prayer_slot_service(TEXT, TEXT, TEXT, TEXT) TO service_role;
+GRANT EXECUTE ON FUNCTION update_prayer_slot_service(TEXT, TEXT, TEXT) TO service_role;
+
