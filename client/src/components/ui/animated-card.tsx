@@ -56,6 +56,7 @@ export function AnimatedCard({
     <AnimatePresence mode="wait">
       {isVisible && (
         <motion.div
+          key={`animated-card-${animationType}-${Date.now()}`}
           initial="hidden"
           animate="visible"
           exit="exit"
