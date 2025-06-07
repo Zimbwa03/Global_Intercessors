@@ -181,9 +181,9 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                   <>
                     <h3 className="text-2xl font-bold text-brand-primary font-poppins">{prayerSlot.slotTime}</h3>
                     <div className="flex items-center mt-1">
-                      <i className={`${getStatusIcon(prayerSlot.status)} ${getStatusColor(prayerSlot.status)} mr-2`}></i>
-                      <span className={`font-semibold ${getStatusColor(prayerSlot.status)} font-poppins`}>
-                        {prayerSlot.status.charAt(0).toUpperCase() + prayerSlot.status.slice(1)}
+                      <i className={`${getStatusIcon(prayerSlot?.status || 'inactive')} ${getStatusColor(prayerSlot?.status || 'inactive')} mr-2`}></i>
+                      <span className={`font-semibold ${getStatusColor(prayerSlot?.status || 'inactive')} font-poppins`}>
+                        {prayerSlot?.status ? prayerSlot.status.charAt(0).toUpperCase() + prayerSlot.status.slice(1) : 'No Status'}
                       </span>
                     </div>
                   </>
