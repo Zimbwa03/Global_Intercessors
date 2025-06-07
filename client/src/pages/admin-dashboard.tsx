@@ -81,25 +81,34 @@ export default function AdminDashboard() {
   }, []);
 
   // Fetch prayer slots
-  const { data: prayerSlots, isLoading: slotsLoading } = useQuery({
+  const { data: prayerSlotsResponse, isLoading: slotsLoading } = useQuery({
     queryKey: ["/api/admin/prayer-slots"],
     queryFn: () => apiRequest({ url: "/api/admin/prayer-slots" }),
     enabled: !!adminUser,
   });
 
+  // Ensure prayerSlots is always an array
+  const prayerSlots = Array.isArray(prayerSlotsResponse) ? prayerSlotsResponse : [];
+
   // Fetch fasting registrations
-  const { data: fastingRegistrations, isLoading: fastingLoading } = useQuery({
+  const { data: fastingRegistrationsResponse, isLoading: fastingLoading } = useQuery({
     queryKey: ["/api/admin/fasting-registrations"],
     queryFn: () => apiRequest({ url: "/api/admin/fasting-registrations" }),
     enabled: !!adminUser,
   });
 
+  // Ensure fastingRegistrations is always an array
+  const fastingRegistrations = Array.isArray(fastingRegistrationsResponse) ? fastingRegistrationsResponse : [];
+
   // Fetch intercessors
-  const { data: intercessors, isLoading: intercessorsLoading } = useQuery({
+  const { data: intercessorsResponse, isLoading: intercessorsLoading } = useQuery({
     queryKey: ["/api/admin/intercessors"],
     queryFn: () => apiRequest({ url: "/api/admin/intercessors" }),
     enabled: !!adminUser,
   });
+
+  // Ensure intercessors is always an array
+  const intercessors = Array.isArray(intercessorsResponse) ? intercessorsResponse : [];
 
   // Create update mutation
   const createUpdateMutation = useMutation({
@@ -167,7 +176,7 @@ export default function AdminDashboard() {
   };
 
   const exportFastingData = () => {
-    if (!fastingRegistrations?.length) return;
+    if (!fastingRegistrations.length) return;
 
     const csvContent = [
       ["Name", "Phone", "Region", "Travel Cost", "GPS Latitude", "GPS Longitude", "Registered At"],
@@ -278,7 +287,7 @@ export default function AdminDashboard() {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Active Slots</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      {prayerSlots?.filter((slot: PrayerSlot) => slot.status === "taken").length || 0}
+                      {prayerSlots.filter((slot: PrayerSlot) => slot.status === "taken").length}
                     </p>
                   </div>
                 </div>
@@ -294,7 +303,7 @@ export default function AdminDashboard() {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Total Intercessors</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      {intercessors?.length || 0}
+                      {intercessors.length}
                     </p>
                   </div>
                 </div>
@@ -310,7 +319,7 @@ export default function AdminDashboard() {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Fasting Registrations</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      {fastingRegistrations?.length || 0}
+                      {fastingRegistrations.length}
                     </p>
                   </div>
                 </div>
@@ -326,7 +335,7 @@ export default function AdminDashboard() {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Unfilled Slots</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      {prayerSlots?.filter((slot: PrayerSlot) => slot.status === "available").length || 0}
+                      {prayerSlots.filter((slot: PrayerSlot) => slot.status === "available").length}
                     </p>
                   </div>
                 </div>
@@ -365,7 +374,7 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {prayerSlots?.map((slot: PrayerSlot) => (
+                      {prayerSlots.map((slot: PrayerSlot) => (
                         <tr key={slot.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {slot.slotTime}
@@ -402,7 +411,7 @@ export default function AdminDashboard() {
                 <CardTitle>Fasting Event Registrations</CardTitle>
                 <Button
                   onClick={exportFastingData}
-                  disabled={!fastingRegistrations?.length}
+                  disabled={!fastingRegistrations.length}
                   className="bg-green-600 hover:bg-green-700"
                 >
                   <i className="fas fa-download mr-2"></i>
@@ -441,7 +450,7 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {fastingRegistrations?.map((reg: FastingRegistration) => (
+                      {fastingRegistrations.map((reg: FastingRegistration) => (
                         <tr key={reg.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {reg.full_name}
