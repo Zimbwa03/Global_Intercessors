@@ -289,3 +289,34 @@ BEGIN
   RETURN result;
 END;
 $$;
+
+-- Function to get user's prayer slot (bypasses RLS)
+CREATE OR REPLACE FUNCTION get_user_prayer_slot(p_user_id TEXT)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  result json;
+BEGIN
+  -- Get the most recent prayer slot for the user
+  SELECT json_build_object(
+    'id', id,
+    'user_id', user_id,
+    'user_email', user_email,
+    'slot_time', slot_time,
+    'status', status,
+    'missed_count', missed_count,
+    'skip_start_date', skip_start_date,
+    'skip_end_date', skip_end_date,
+    'created_at', created_at,
+    'updated_at', updated_at
+  ) INTO result
+  FROM prayer_slots
+  WHERE user_id = p_user_id
+  ORDER BY updated_at DESC
+  LIMIT 1;
+  
+  RETURN result;
+END;
+$$;

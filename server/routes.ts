@@ -58,7 +58,7 @@ async function getUserEmail(userId: string): Promise<string | null> {
         // This is expected if service role doesn't have auth permissions
         return null;
       }
-      return user?.user?.email || null;
+      return (user?.user as any)?.email || null;
     } catch (authError) {
       console.error('Auth fetch failed (using fallback):', authError);
       return null;
@@ -76,13 +76,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.params;
       console.log('Fetching prayer slot for user:', userId);
 
-      // Direct query with proper ordering to get the most recent slot
-      const { data: slots, error } = await supabaseAdmin
-        .from('prayer_slots')
-        .select('*')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false })
-        .limit(1);
+      // Use dedicated retrieval function to bypass RLS policies
+      const { data: slotData, error } = await supabaseAdmin
+        .rpc('get_user_prayer_slot', { 
+          p_user_id: userId
+        });
 
       if (error) {
         console.error('Database error fetching prayer slot:', error);
