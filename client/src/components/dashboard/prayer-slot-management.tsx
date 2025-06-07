@@ -418,49 +418,101 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         </p>
       </div>
 
-      {/* Current Slot Status - Mobile Optimized */}
-      <Card className={`shadow-brand-lg border border-blue-100 ${isMobile ? 'mx-0' : ''}`}>
+      {/* Current Slot Status with Animations */}
+      <AnimatedCard 
+        animationType="slideIn" 
+        delay={0.2}
+        className={`shadow-brand-lg border border-blue-100 ${isMobile ? 'mx-0' : ''}`}
+      >
         <CardHeader className={isMobile ? 'pb-4' : ''}>
           <CardTitle className={`flex items-center ${isMobile ? 'text-lg' : ''}`}>
-            <div className={`bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand ${
-              isMobile ? 'w-6 h-6' : 'w-8 h-8'
-            }`}>
+            <motion.div 
+              className={`bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand ${
+                isMobile ? 'w-6 h-6' : 'w-8 h-8'
+              }`}
+              animate={{
+                rotate: slotChangeSuccess ? [0, 360] : 0,
+                scale: slotChangeSuccess ? [1, 1.2, 1] : 1
+              }}
+              transition={{ duration: 0.6, ease: "easeInOut" }}
+            >
               <Clock className={`text-brand-accent ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-            </div>
+            </motion.div>
             <span className="font-poppins">Current Prayer Slot</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg border border-blue-100">
+            <AnimatePresence mode="wait">
               {prayerSlot && prayerSlot.slotTime ? (
-              <div className="text-center mb-4">
-                <h3 className={`font-bold text-brand-primary mb-2 font-poppins ${
-                  isMobile ? 'text-2xl' : 'text-3xl'
-                }`}>
-                  {prayerSlot.slotTime}
-                </h3>
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  {getStatusIcon(prayerSlot.status)}
-                  <Badge variant={getStatusBadgeVariant(prayerSlot.status)} 
-                         className={`font-poppins ${isMobile ? 'text-xs px-2 py-1' : ''}`}>
-                    {prayerSlot.status.charAt(0).toUpperCase() + prayerSlot.status.slice(1)}
-                  </Badge>
-                </div>
+                <motion.div 
+                  key={prayerSlot.slotTime}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-center mb-4 p-4"
+                >
+                  <SlotTransition
+                    status={prayerSlot.status}
+                    slotTime={prayerSlot.slotTime}
+                    isChanging={isSlotChanging || changeSlotMutation.isPending}
+                    className="mb-4"
+                  />
 
-                {prayerSlot.status === 'active' && (
-                  <div className="mb-4">
-                    <p className={`text-gray-600 mb-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                      Next session in:
-                    </p>
-                    <div className={`font-bold text-brand-primary font-poppins ${
-                      isMobile ? 'text-xl' : 'text-2xl'
-                    }`}>
-                      {String(countdown.hours).padStart(2, '0')}:
-                      {String(countdown.minutes).padStart(2, '0')}:
-                      {String(countdown.seconds).padStart(2, '0')}
-                    </div>
-                  </div>
-                )}
+                  {prayerSlot.status === 'active' && (
+                    <motion.div 
+                      className="mb-4"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.3, duration: 0.4 }}
+                    >
+                      <p className={`text-gray-600 mb-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                        Next session in:
+                      </p>
+                      <motion.div 
+                        className={`font-bold text-brand-primary font-poppins ${
+                          isMobile ? 'text-xl' : 'text-2xl'
+                        }`}
+                        key={`${countdown.hours}-${countdown.minutes}-${countdown.seconds}`}
+                        animate={{
+                          scale: [1, 1.05, 1],
+                          opacity: [0.8, 1, 0.8]
+                        }}
+                        transition={{
+                          duration: 1,
+                          ease: "easeInOut"
+                        }}
+                      >
+                        <motion.span
+                          key={countdown.hours}
+                          animate={{ opacity: [0.5, 1] }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          {String(countdown.hours).padStart(2, '0')}
+                        </motion.span>
+                        :
+                        <motion.span
+                          key={countdown.minutes}
+                          animate={{ opacity: [0.5, 1] }}
+                          transition={{ duration: 0.3, delay: 0.1 }}
+                        >
+                          {String(countdown.minutes).padStart(2, '0')}
+                        </motion.span>
+                        :
+                        <motion.span
+                          key={countdown.seconds}
+                          animate={{ 
+                            opacity: [0.5, 1],
+                            color: countdown.seconds % 2 === 0 ? "#1e40af" : "#3b82f6"
+                          }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          {String(countdown.seconds).padStart(2, '0')}
+                        </motion.span>
+                      </motion.div>
+                    </motion.div>
+                  )}
 
                 {prayerSlot.missedCount > 0 && (
                   <div className={`bg-red-50 border border-red-200 rounded-lg mb-4 ${
@@ -535,8 +587,8 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                     </DialogContent>
                   </Dialog>
                 </div>
-              </div>
-            ) : (
+                </motion.div>
+              ) : (
               <div className="text-center py-8">
                 <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-gray-700 mb-2 font-poppins">No Prayer Slot Assigned</h3>
@@ -577,9 +629,10 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                 </Dialog>
               </div>
             )}
+            </AnimatePresence>
           </div>
         </CardContent>
-      </Card>
+      </AnimatedCard>
 
       {/* Slot Information */}
       <Card className="shadow-brand-lg border border-blue-100">
