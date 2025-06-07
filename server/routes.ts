@@ -130,6 +130,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate 48 time slots (30-minute intervals for 24 hours)
       const availableSlots = [];
+      let slotId = 1;
+      
       for (let hour = 0; hour < 24; hour++) {
         for (let minute = 0; minute < 60; minute += 30) {
           const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
@@ -141,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Only include slots that are not occupied
           if (!occupiedTimes.has(slotTime)) {
             availableSlots.push({
-              id: hour * 2 + (minute / 30) + 1,
+              id: slotId++,
               slotTime,
               timezone: "UTC"
             });

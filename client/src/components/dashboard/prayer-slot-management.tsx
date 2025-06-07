@@ -445,7 +445,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                                 <SelectItem value="loading" disabled>Loading slots...</SelectItem>
                               ) : (
                                 availableSlotsData.map((slot: any, index: number) => (
-                                  <SelectItem key={`slot-${slot.id}-${slot.slotTime}-${index}`} value={slot.slotTime}>
+                                  <SelectItem key={`change-slot-${slot.id}-${index}`} value={slot.slotTime}>
                                     {slot.slotTime}
                                   </SelectItem>
                                 ))
@@ -490,8 +490,8 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                             {isLoadingSlots ? (
                               <SelectItem value="loading" disabled>Loading slots...</SelectItem>
                             ) : (
-                              availableSlotsData.map((slot: any) => (
-                                <SelectItem key={slot.id} value={slot.slotTime}>
+                              availableSlotsData.map((slot: any, index: number) => (
+                                <SelectItem key={`select-slot-${slot.id}-${index}`} value={slot.slotTime}>
                                   {slot.slotTime}
                                 </SelectItem>
                               ))
