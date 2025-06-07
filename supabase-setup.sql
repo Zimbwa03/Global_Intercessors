@@ -1,13 +1,6 @@
 -- Global Intercessors Database Setup Script
 -- Run this in your Supabase SQL Editor
 
--- Create users table (for basic user management)
-CREATE TABLE IF NOT EXISTS users (
-  id SERIAL PRIMARY KEY,
-  username TEXT NOT NULL UNIQUE,
-  password TEXT NOT NULL
-);
-
 -- Create admin_users table
 CREATE TABLE IF NOT EXISTS admin_users (
   id SERIAL PRIMARY KEY,
@@ -156,7 +149,6 @@ INSERT INTO available_slots (slot_time, is_available) VALUES
 ON CONFLICT (slot_time) DO NOTHING;
 
 -- Enable Row Level Security (RLS) for all tables
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prayer_slots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE available_slots ENABLE ROW LEVEL SECURITY;
@@ -165,11 +157,6 @@ ALTER TABLE attendance_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE zoom_meetings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audio_bible_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fasting_registrations ENABLE ROW LEVEL SECURITY;
-
--- Create policies for users table
-CREATE POLICY "Users can view their own profile" ON users FOR SELECT USING (auth.uid()::text = id::text);
-CREATE POLICY "Users can insert their own profile" ON users FOR INSERT WITH CHECK (auth.uid()::text = id::text);
-CREATE POLICY "Users can update their own profile" ON users FOR UPDATE USING (auth.uid()::text = id::text);
 
 -- Create policies for admin_users table
 CREATE POLICY "Enable read access for all users" ON admin_users FOR SELECT USING (true);
