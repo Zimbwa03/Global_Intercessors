@@ -47,7 +47,7 @@ interface MobileChartsProps {
   updates: any[];
 }
 
-export function MobileCharts({ 
+function MobileCharts({ 
   prayerSlots, 
   intercessors, 
   fastingRegistrations, 
@@ -467,3 +467,5 @@ export function MobileCharts({
     </div>
   );
 }
+
+export default MobileCharts;
