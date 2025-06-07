@@ -4,16 +4,43 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { 
+  Users, 
+  Clock, 
+  Calendar, 
+  Shield, 
+  Settings, 
+  BarChart3, 
+  RefreshCw,
+  LogOut,
+  Menu,
+  X,
+  MapPin,
+  Phone,
+  Mail,
+  AlertCircle,
+  CheckCircle,
+  Activity,
+  Plus,
+  Link as LinkIcon,
+  Download
+} from "lucide-react";
+import { AnimatedCard } from "@/components/ui/animated-card";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface AdminUser {
   id: string;
   email: string;
   role: string;
+  is_active: boolean;
 }
 
 interface PrayerSlot {
@@ -23,6 +50,8 @@ interface PrayerSlot {
   userId: string;
   userEmail?: string;
   userName?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface FastingRegistration {
@@ -36,14 +65,51 @@ interface FastingRegistration {
   created_at: string;
 }
 
+interface Intercessor {
+  id: string;
+  email: string;
+  name?: string;
+  created_at: string;
+  prayer_slot?: string;
+}
+
+interface AdminUpdate {
+  id: string;
+  title: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
+const MobileNavButton = ({ icon: Icon, label, isActive, onClick }: {
+  icon: any;
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    className={`flex flex-col items-center justify-center p-3 rounded-lg transition-all duration-200 ${
+      isActive 
+        ? 'bg-brand-primary text-white shadow-lg' 
+        : 'text-gray-600 hover:bg-gray-100'
+    }`}
+  >
+    <Icon size={20} className="mb-1" />
+    <span className="text-xs font-medium">{label}</span>
+  </button>
+);
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [newUpdate, setNewUpdate] = useState({ title: "", description: "" });
   const [zoomLink, setZoomLink] = useState("");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   // Check admin authentication
   useEffect(() => {
@@ -78,90 +144,103 @@ export default function AdminDashboard() {
     };
 
     checkAdminAuth();
-  }, []);
+  }, [setLocation, toast]);
 
   // Fetch prayer slots
-  const { data: prayerSlotsResponse, isLoading: slotsLoading } = useQuery({
+  const { data: prayerSlotsResponse, isLoading: slotsLoading, refetch: refetchSlots } = useQuery({
     queryKey: ["/api/admin/prayer-slots"],
-    queryFn: () => apiRequest({ url: "/api/admin/prayer-slots" }),
+    queryFn: async () => {
+      const response = await apiRequest({ url: "/api/admin/prayer-slots" });
+      return response;
+    },
     enabled: !!adminUser,
+    refetchInterval: 30000,
   });
 
-  // Ensure prayerSlots is always an array
   const prayerSlots = Array.isArray(prayerSlotsResponse) ? prayerSlotsResponse : [];
 
   // Fetch fasting registrations
-  const { data: fastingRegistrationsResponse, isLoading: fastingLoading } = useQuery({
+  const { data: fastingRegistrationsResponse, isLoading: fastingLoading, refetch: refetchFasting } = useQuery({
     queryKey: ["/api/admin/fasting-registrations"],
-    queryFn: () => apiRequest({ url: "/api/admin/fasting-registrations" }),
+    queryFn: async () => {
+      const response = await apiRequest({ url: "/api/admin/fasting-registrations" });
+      return response;
+    },
     enabled: !!adminUser,
+    refetchInterval: 30000,
   });
 
-  // Ensure fastingRegistrations is always an array
   const fastingRegistrations = Array.isArray(fastingRegistrationsResponse) ? fastingRegistrationsResponse : [];
 
   // Fetch intercessors
-  const { data: intercessorsResponse, isLoading: intercessorsLoading } = useQuery({
+  const { data: intercessorsResponse, isLoading: intercessorsLoading, refetch: refetchIntercessors } = useQuery({
     queryKey: ["/api/admin/intercessors"],
-    queryFn: () => apiRequest({ url: "/api/admin/intercessors" }),
+    queryFn: async () => {
+      const response = await apiRequest({ url: "/api/admin/intercessors" });
+      return response;
+    },
     enabled: !!adminUser,
+    refetchInterval: 30000,
   });
 
-  // Ensure intercessors is always an array
   const intercessors = Array.isArray(intercessorsResponse) ? intercessorsResponse : [];
 
   // Fetch admin updates
-  const { data: updatesResponse, isLoading: updatesLoading } = useQuery({
+  const { data: updatesResponse, isLoading: updatesLoading, refetch: refetchUpdates } = useQuery({
     queryKey: ["/api/admin/updates"],
-    queryFn: () => apiRequest({ url: "/api/admin/updates" }),
+    queryFn: async () => {
+      const response = await apiRequest({ url: "/api/admin/updates" });
+      return response;
+    },
     enabled: !!adminUser,
+    refetchInterval: 30000,
   });
 
-  // Ensure updates is always an array
-  const adminUpdates = Array.isArray(updatesResponse) ? updatesResponse : [];
+  const updates = Array.isArray(updatesResponse) ? updatesResponse : [];
 
-  // Fetch current zoom link
-  const { data: currentZoomSession } = useQuery({
+  // Get current Zoom link
+  const { data: currentZoomLink } = useQuery({
     queryKey: ["/api/admin/zoom-link"],
-    queryFn: () => apiRequest({ url: "/api/admin/zoom-link" }),
+    queryFn: async () => {
+      const response = await apiRequest({ url: "/api/admin/zoom-link" });
+      return response;
+    },
     enabled: !!adminUser,
   });
 
-  // Create update mutation
+  // Mutations for admin actions
   const createUpdateMutation = useMutation({
-    mutationFn: async (data: { title: string; description: string }) => {
+    mutationFn: async (updateData: { title: string; description: string }) => {
       return apiRequest({
         url: "/api/admin/updates",
         method: "POST",
-        data,
+        body: updateData,
       });
     },
     onSuccess: () => {
-      toast({
-        title: "Update Created",
-        description: "Announcement has been published successfully",
-      });
+      toast({ title: "Success", description: "Update posted successfully" });
       setNewUpdate({ title: "", description: "" });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/updates"] });
     },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to post update", variant: "destructive" });
+    },
   });
 
-  // Save Zoom link mutation
-  const saveZoomMutation = useMutation({
+  const updateZoomLinkMutation = useMutation({
     mutationFn: async (link: string) => {
       return apiRequest({
         url: "/api/admin/zoom-link",
         method: "POST",
-        data: { link },
+        body: { zoomLink: link },
       });
     },
     onSuccess: () => {
-      toast({
-        title: "Zoom Link Saved",
-        description: "Workspace link has been updated",
-      });
-      setZoomLink("");
+      toast({ title: "Success", description: "Zoom link updated successfully" });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/zoom-link"] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update Zoom link", variant: "destructive" });
     },
   });
 
@@ -170,602 +249,654 @@ export default function AdminDashboard() {
     setLocation("/admin/login");
   };
 
-  const handleCreateUpdate = () => {
+  const handleCreateUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!newUpdate.title.trim() || !newUpdate.description.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in both title and description",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Please fill in all fields", variant: "destructive" });
       return;
     }
     createUpdateMutation.mutate(newUpdate);
   };
 
-  const handleSaveZoomLink = () => {
+  const handleUpdateZoomLink = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!zoomLink.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter a valid Zoom link",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Please enter a valid Zoom link", variant: "destructive" });
       return;
     }
-    saveZoomMutation.mutate(zoomLink);
+    updateZoomLinkMutation.mutate(zoomLink);
   };
 
-  const exportFastingData = () => {
-    if (!fastingRegistrations.length) return;
-
+  const exportToCSV = (data: any[], filename: string, headers: string[]) => {
     const csvContent = [
-      ["Name", "Phone", "Region", "Travel Cost", "GPS Latitude", "GPS Longitude", "Registered At"],
-      ...fastingRegistrations.map((reg: FastingRegistration) => [
-        reg.full_name,
-        reg.phone_number,
-        reg.region,
-        reg.travel_cost,
-        reg.gps_latitude || "",
-        reg.gps_longitude || "",
-        new Date(reg.created_at).toLocaleDateString()
-      ])
-    ].map(row => row.join(",")).join("\n");
+      headers.join(','),
+      ...data.map(item => headers.map(header => {
+        const key = header.toLowerCase().replace(' ', '_');
+        return `"${item[key] || ''}"`;
+      }).join(','))
+    ].join('\n');
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `fasting-registrations-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
 
+  const handleExportFasting = () => {
+    if (fastingRegistrations.length === 0) {
+      toast({ title: "No Data", description: "No fasting registrations to export" });
+      return;
+    }
+    
+    exportToCSV(
+      fastingRegistrations,
+      'fasting-registrations.csv',
+      ['Full Name', 'Phone Number', 'Region', 'Travel Cost', 'Created At']
+    );
+    
     toast({
       title: "Export Complete",
       description: "Fasting registrations exported to CSV",
     });
   };
 
+  const refreshAllData = () => {
+    refetchSlots();
+    refetchFasting();
+    refetchIntercessors();
+    refetchUpdates();
+    toast({ title: "Data Refreshed", description: "All data has been refreshed" });
+  };
+
   if (!adminUser) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
-          <p className="text-gray-600">Verifying admin access...</p>
-        </div>
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <AnimatedCard animationType="fadeIn" className="w-full max-w-md">
+          <CardContent className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Verifying Admin Access</h2>
+            <p className="text-gray-600">Please wait while we authenticate your credentials...</p>
+          </CardContent>
+        </AnimatedCard>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-blue-600 text-white p-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <i className="fas fa-shield-alt text-2xl"></i>
-            <div>
-              <h1 className="text-xl font-bold">Global Intercessors Admin</h1>
-              <p className="text-blue-200 text-sm">Management Dashboard</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm">Welcome, {adminUser.email}</span>
-            <Button
-              onClick={handleSignOut}
-              variant="outline"
-              size="sm"
-              className="text-blue-600 border-white hover:bg-blue-50"
-            >
-              <i className="fas fa-sign-out-alt mr-2"></i>
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </div>
+  const OverviewTab = () => {
+    const activeSlots = prayerSlots.filter(slot => slot.status === 'active').length;
+    const totalIntercessors = intercessors.length;
+    const totalFastingRegistrations = fastingRegistrations.length;
+    const recentUpdates = updates.slice(0, 3);
 
-      {/* Navigation */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto">
-          <nav className="flex space-x-8">
-            {[
-              { id: "overview", label: "Dashboard", icon: "fas fa-chart-line" },
-              { id: "slots", label: "Prayer Slots", icon: "fas fa-clock" },
-              { id: "intercessors", label: "Intercessors", icon: "fas fa-users" },
-              { id: "fasting", label: "Fasting Events", icon: "fas fa-moon" },
-              { id: "zoom", label: "Zoom Workspace", icon: "fas fa-video" },
-              { id: "updates", label: "Updates", icon: "fas fa-bullhorn" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-4 py-4 border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                <i className={tab.icon}></i>
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </nav>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-7xl mx-auto p-6">
-        {activeTab === "overview" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <i className="fas fa-clock text-blue-600"></i>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Active Slots</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {prayerSlots.filter((slot: PrayerSlot) => slot.status === "taken").length}
-                    </p>
-                  </div>
+    return (
+      <div className="space-y-6">
+        {/* Stats Cards */}
+        <div className={`grid gap-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
+          <AnimatedCard animationType="slideIn" delay={0.1}>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Clock className="w-4 h-4 text-blue-600" />
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <i className="fas fa-users text-green-600"></i>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Intercessors</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {intercessors.length}
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Active Slots</p>
+                  <p className="text-2xl font-bold text-gray-900">{activeSlots}</p>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <i className="fas fa-moon text-purple-600"></i>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Fasting Registrations</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {fastingRegistrations.length}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <div className="p-2 bg-red-100 rounded-lg">
-                    <i className="fas fa-exclamation-triangle text-red-600"></i>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Unfilled Slots</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {prayerSlots.filter((slot: PrayerSlot) => slot.status === "available").length}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {activeTab === "slots" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Prayer Slot Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {slotsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <i className="fas fa-spinner fa-spin text-2xl text-blue-600"></i>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Time Slot
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Intercessor
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Contact
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {prayerSlots.map((slot: PrayerSlot) => (
-                        <tr key={slot.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {slot.slotTime}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              slot.status === "taken" 
-                                ? "bg-green-100 text-green-800" 
-                                : "bg-red-100 text-red-800"
-                            }`}>
-                              {slot.status === "taken" ? "Assigned" : "Available"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {slot.userName || "Not assigned"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {slot.userEmail || "-"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {activeTab === "intercessors" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Registered Intercessors</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {intercessorsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <i className="fas fa-spinner fa-spin text-2xl text-blue-600"></i>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Email
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Phone
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Region
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Prayer Slot
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Email Verified
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Last Login
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Joined
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {intercessors.map((intercessor: any) => (
-                        <tr key={intercessor.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {intercessor.name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {intercessor.email}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {intercessor.phone || "Not provided"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {intercessor.region || "Not specified"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {intercessor.prayerSlot}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              intercessor.slotStatus === "active" 
-                                ? "bg-green-100 text-green-800" 
-                                : "bg-gray-100 text-gray-800"
-                            }`}>
-                              {intercessor.slotStatus === "active" ? "Active" : "Inactive"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              intercessor.emailConfirmed 
-                                ? "bg-green-100 text-green-800" 
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}>
-                              {intercessor.emailConfirmed ? "Verified" : "Pending"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {intercessor.lastSignIn ? new Date(intercessor.lastSignIn).toLocaleDateString() : "Never"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(intercessor.createdAt).toLocaleDateString()}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {activeTab === "fasting" && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Fasting Event Registrations</CardTitle>
-                <Button
-                  onClick={exportFastingData}
-                  disabled={!fastingRegistrations.length}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <i className="fas fa-download mr-2"></i>
-                  Export CSV
-                </Button>
               </div>
-            </CardHeader>
-            <CardContent>
-              {fastingLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <i className="fas fa-spinner fa-spin text-2xl text-blue-600"></i>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Phone
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Region
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Travel Cost
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          GPS Verified
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Registered
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {fastingRegistrations.map((reg: FastingRegistration) => (
-                        <tr key={reg.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {reg.full_name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {reg.phone_number}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {reg.region}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            ${reg.travel_cost}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              reg.gps_latitude && reg.gps_longitude
-                                ? "bg-green-100 text-green-800" 
-                                : "bg-red-100 text-red-800"
-                            }`}>
-                              {reg.gps_latitude && reg.gps_longitude ? "Verified" : "Pending"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(reg.created_at).toLocaleDateString()}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
             </CardContent>
-          </Card>
-        )}
+          </AnimatedCard>
 
-        {activeTab === "zoom" && (
-          <div className="space-y-6">
-            {/* Current Session Info */}
-            {currentZoomSession && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Current Zoom Session</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Meeting ID</p>
-                      <p className="text-lg font-mono text-gray-900">{currentZoomSession.meeting_id}</p>
+          <AnimatedCard animationType="slideIn" delay={0.2}>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Users className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Intercessors</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalIntercessors}</p>
+                </div>
+              </div>
+            </CardContent>
+          </AnimatedCard>
+
+          <AnimatedCard animationType="slideIn" delay={0.3}>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Calendar className="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Fasting</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalFastingRegistrations}</p>
+                </div>
+              </div>
+            </CardContent>
+          </AnimatedCard>
+
+          <AnimatedCard animationType="slideIn" delay={0.4}>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Activity className="w-4 h-4 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Updates</p>
+                  <p className="text-2xl font-bold text-gray-900">{updates.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </AnimatedCard>
+        </div>
+
+        {/* Recent Activity */}
+        <AnimatedCard animationType="fadeIn" delay={0.5}>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <BarChart3 className="w-5 h-5 mr-2" />
+              Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentUpdates.length > 0 ? (
+                recentUpdates.map((update, index) => (
+                  <div key={update.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="p-1 bg-brand-primary rounded-full">
+                      <CheckCircle className="w-3 h-3 text-white" />
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Topic</p>
-                      <p className="text-lg text-gray-900">{currentZoomSession.topic}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Created</p>
-                      <p className="text-lg text-gray-900">
-                        {new Date(currentZoomSession.created_at).toLocaleDateString()}
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">{update.title}</h4>
+                      <p className="text-sm text-gray-600 mt-1">{update.description}</p>
+                      <p className="text-xs text-gray-500 mt-2">
+                        {new Date(update.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Participants</p>
-                      <p className="text-lg text-gray-900">{currentZoomSession.participant_count || 0}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-center py-8">No recent updates</p>
+              )}
+            </div>
+          </CardContent>
+        </AnimatedCard>
+      </div>
+    );
+  };
+
+  const PrayerSlotsTab = () => (
+    <div className="space-y-6">
+      <AnimatedCard animationType="fadeIn">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center">
+              <Clock className="w-5 h-5 mr-2" />
+              Prayer Slots Management
+            </span>
+            <Badge variant="secondary">{prayerSlots.length} Total</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {slotsLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+              <p>Loading prayer slots...</p>
+            </div>
+          ) : prayerSlots.length > 0 ? (
+            <ScrollArea className="h-96">
+              <div className="space-y-4">
+                {prayerSlots.map((slot) => (
+                  <div key={slot.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={slot.status === 'active' ? 'default' : 'secondary'}>
+                          {slot.status}
+                        </Badge>
+                        <span className="font-semibold">{slot.slotTime}</span>
+                      </div>
+                      <span className="text-sm text-gray-500">
+                        {new Date(slot.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <p><Mail className="w-4 h-4 inline mr-1" />{slot.userEmail || 'No email'}</p>
+                      <p className="mt-1">User ID: {slot.userId}</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                ))}
+              </div>
+            </ScrollArea>
+          ) : (
+            <p className="text-gray-500 text-center py-8">No prayer slots found</p>
+          )}
+        </CardContent>
+      </AnimatedCard>
+    </div>
+  );
 
-            {/* Add New Session */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Zoom Workspace Management</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="zoomLink">Zoom Meeting Link</Label>
-                  <Input
-                    id="zoomLink"
-                    value={zoomLink}
-                    onChange={(e) => setZoomLink(e.target.value)}
-                    placeholder="https://zoom.us/j/..."
-                    className="mt-1"
-                  />
-                </div>
-                <Button
-                  onClick={handleSaveZoomLink}
-                  disabled={saveZoomMutation.isPending}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {saveZoomMutation.isPending ? (
-                    <>
-                      <i className="fas fa-spinner fa-spin mr-2"></i>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <i className="fas fa-save mr-2"></i>
-                      Save Zoom Link
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {activeTab === "updates" && (
-          <div className="space-y-6">
-            {/* Create new update */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Create Announcement</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="updateTitle">Title</Label>
-                  <Input
-                    id="updateTitle"
-                    value={newUpdate.title}
-                    onChange={(e) => setNewUpdate({ ...newUpdate, title: e.target.value })}
-                    placeholder="Announcement title"
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="updateDescription">Description</Label>
-                  <Textarea
-                    id="updateDescription"
-                    value={newUpdate.description}
-                    onChange={(e) => setNewUpdate({ ...newUpdate, description: e.target.value })}
-                    placeholder="Announcement content"
-                    rows={4}
-                    className="mt-1"
-                  />
-                </div>
-                <Button
-                  onClick={handleCreateUpdate}
-                  disabled={createUpdateMutation.isPending}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {createUpdateMutation.isPending ? (
-                    <>
-                      <i className="fas fa-spinner fa-spin mr-2"></i>
-                      Publishing...
-                    </>
-                  ) : (
-                    <>
-                      <i className="fas fa-bullhorn mr-2"></i>
-                      Publish Update
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Existing updates */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Announcements</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {updatesLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <i className="fas fa-spinner fa-spin text-2xl text-blue-600"></i>
-                  </div>
-                ) : adminUpdates.length === 0 ? (
-                  <div className="text-center py-8">
-                    <i className="fas fa-bullhorn text-4xl text-gray-300 mb-4"></i>
-                    <p className="text-gray-500">No announcements yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {adminUpdates.map((update: any) => (
-                      <div key={update.id} className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              {update.title}
-                            </h3>
-                            <p className="text-gray-600 mt-2">
-                              {update.description}
-                            </p>
-                            <div className="flex items-center mt-3 text-sm text-gray-500">
-                              <i className="fas fa-calendar mr-2"></i>
-                              {new Date(update.date || update.created_at).toLocaleDateString()}
-                              <span className="mx-2">•</span>
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {update.type || 'General'}
-                              </span>
-                            </div>
-                          </div>
+  const IntercessorsTab = () => (
+    <div className="space-y-6">
+      <AnimatedCard animationType="fadeIn">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center">
+              <Users className="w-5 h-5 mr-2" />
+              Registered Intercessors
+            </span>
+            <Badge variant="secondary">{intercessors.length} Total</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {intercessorsLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+              <p>Loading intercessors...</p>
+            </div>
+          ) : intercessors.length > 0 ? (
+            <ScrollArea className="h-96">
+              <div className="space-y-4">
+                {intercessors.map((intercessor) => (
+                  <div key={intercessor.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center">
+                          <Users className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">{intercessor.name || 'Anonymous'}</p>
+                          <p className="text-sm text-gray-600">{intercessor.email}</p>
                         </div>
                       </div>
-                    ))}
+                      <span className="text-sm text-gray-500">
+                        {new Date(intercessor.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {intercessor.prayer_slot && (
+                      <div className="mt-2">
+                        <Badge variant="outline">{intercessor.prayer_slot}</Badge>
+                      </div>
+                    )}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          ) : (
+            <p className="text-gray-500 text-center py-8">No intercessors found</p>
+          )}
+        </CardContent>
+      </AnimatedCard>
+    </div>
+  );
+
+  const FastingTab = () => (
+    <div className="space-y-6">
+      <AnimatedCard animationType="fadeIn">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center">
+              <Calendar className="w-5 h-5 mr-2" />
+              Fasting Registrations
+            </span>
+            <div className="flex items-center space-x-2">
+              <Badge variant="secondary">{fastingRegistrations.length} Total</Badge>
+              <Button
+                onClick={handleExportFasting}
+                size="sm"
+                variant="outline"
+                className="flex items-center"
+              >
+                <Download className="w-4 h-4 mr-1" />
+                Export
+              </Button>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {fastingLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+              <p>Loading fasting registrations...</p>
+            </div>
+          ) : fastingRegistrations.length > 0 ? (
+            <ScrollArea className="h-96">
+              <div className="space-y-4">
+                {fastingRegistrations.map((registration) => (
+                  <div key={registration.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-gray-900">{registration.full_name}</h4>
+                      <span className="text-sm text-gray-500">
+                        {new Date(registration.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-center text-gray-600">
+                        <Phone className="w-4 h-4 mr-2" />
+                        {registration.phone_number}
+                      </div>
+                      <div className="flex items-center text-gray-600">
+                        <MapPin className="w-4 h-4 mr-2" />
+                        {registration.region}
+                      </div>
+                      <div className="flex items-center text-gray-600">
+                        <span className="font-medium mr-2">Travel Cost:</span>
+                        ${registration.travel_cost}
+                      </div>
+                      {(registration.gps_latitude && registration.gps_longitude) && (
+                        <div className="flex items-center text-gray-600">
+                          <span className="font-medium mr-2">GPS:</span>
+                          {registration.gps_latitude}, {registration.gps_longitude}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          ) : (
+            <p className="text-gray-500 text-center py-8">No fasting registrations found</p>
+          )}
+        </CardContent>
+      </AnimatedCard>
+    </div>
+  );
+
+  const ManagementTab = () => (
+    <div className="space-y-6">
+      {/* Post Updates */}
+      <AnimatedCard animationType="fadeIn" delay={0.1}>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Plus className="w-5 h-5 mr-2" />
+            Post New Update
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleCreateUpdate} className="space-y-4">
+            <div>
+              <Label htmlFor="updateTitle">Update Title</Label>
+              <Input
+                id="updateTitle"
+                value={newUpdate.title}
+                onChange={(e) => setNewUpdate({ ...newUpdate, title: e.target.value })}
+                placeholder="Enter update title..."
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="updateDescription">Description</Label>
+              <Textarea
+                id="updateDescription"
+                value={newUpdate.description}
+                onChange={(e) => setNewUpdate({ ...newUpdate, description: e.target.value })}
+                placeholder="Enter update description..."
+                rows={4}
+                className="mt-1"
+              />
+            </div>
+            <Button 
+              type="submit" 
+              disabled={createUpdateMutation.isPending}
+              className="w-full"
+            >
+              {createUpdateMutation.isPending ? (
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4 mr-2" />
+              )}
+              Post Update
+            </Button>
+          </form>
+        </CardContent>
+      </AnimatedCard>
+
+      {/* Zoom Link Management */}
+      <AnimatedCard animationType="fadeIn" delay={0.2}>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <LinkIcon className="w-5 h-5 mr-2" />
+            Zoom Link Management
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {currentZoomLink && (
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">Current Zoom Link:</p>
+              <p className="text-blue-600 font-mono text-sm break-all">{currentZoomLink.zoomLink}</p>
+            </div>
+          )}
+          <form onSubmit={handleUpdateZoomLink} className="space-y-4">
+            <div>
+              <Label htmlFor="zoomLink">New Zoom Link</Label>
+              <Input
+                id="zoomLink"
+                value={zoomLink}
+                onChange={(e) => setZoomLink(e.target.value)}
+                placeholder="https://zoom.us/j/..."
+                className="mt-1"
+              />
+            </div>
+            <Button 
+              type="submit" 
+              disabled={updateZoomLinkMutation.isPending}
+              className="w-full"
+            >
+              {updateZoomLinkMutation.isPending ? (
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <LinkIcon className="w-4 h-4 mr-2" />
+              )}
+              Update Zoom Link
+            </Button>
+          </form>
+        </CardContent>
+      </AnimatedCard>
+
+      {/* Recent Updates List */}
+      <AnimatedCard animationType="fadeIn" delay={0.3}>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <BarChart3 className="w-5 h-5 mr-2" />
+            Recent Updates
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {updatesLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+              <p>Loading updates...</p>
+            </div>
+          ) : updates.length > 0 ? (
+            <ScrollArea className="h-64">
+              <div className="space-y-4">
+                {updates.map((update) => (
+                  <div key={update.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold text-gray-900">{update.title}</h4>
+                      <span className="text-sm text-gray-500">
+                        {new Date(update.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">{update.description}</p>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          ) : (
+            <p className="text-gray-500 text-center py-8">No updates found</p>
+          )}
+        </CardContent>
+      </AnimatedCard>
+    </div>
+  );
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "overview":
+        return <OverviewTab />;
+      case "slots":
+        return <PrayerSlotsTab />;
+      case "intercessors":
+        return <IntercessorsTab />;
+      case "fasting":
+        return <FastingTab />;
+      case "management":
+        return <ManagementTab />;
+      default:
+        return <OverviewTab />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Shield className="w-6 h-6 text-brand-primary" />
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">Admin Portal</h1>
+                <p className="text-xs text-gray-500">Global Intercessors</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                onClick={refreshAllData}
+                size="sm"
+                variant="ghost"
+                className="p-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={handleSignOut}
+                size="sm"
+                variant="ghost"
+                className="p-2"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Header */}
+      {!isMobile && (
+        <div className="bg-brand-primary text-white p-6">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Shield className="w-8 h-8" />
+              <div>
+                <h1 className="text-2xl font-bold">Global Intercessors Admin</h1>
+                <p className="text-blue-100 text-sm">Management Dashboard</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm">Welcome, {adminUser.email}</span>
+              <Button
+                onClick={refreshAllData}
+                variant="outline"
+                size="sm"
+                className="text-brand-primary border-white hover:bg-blue-50"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+              <Button
+                onClick={handleSignOut}
+                variant="outline"
+                size="sm"
+                className="text-brand-primary border-white hover:bg-blue-50"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto p-4">
+        {/* Mobile Navigation */}
+        {isMobile ? (
+          <div className="grid grid-cols-5 gap-2 mb-6 bg-white rounded-lg p-3 shadow-sm">
+            <MobileNavButton
+              icon={BarChart3}
+              label="Overview"
+              isActive={activeTab === "overview"}
+              onClick={() => setActiveTab("overview")}
+            />
+            <MobileNavButton
+              icon={Clock}
+              label="Slots"
+              isActive={activeTab === "slots"}
+              onClick={() => setActiveTab("slots")}
+            />
+            <MobileNavButton
+              icon={Users}
+              label="Members"
+              isActive={activeTab === "intercessors"}
+              onClick={() => setActiveTab("intercessors")}
+            />
+            <MobileNavButton
+              icon={Calendar}
+              label="Fasting"
+              isActive={activeTab === "fasting"}
+              onClick={() => setActiveTab("fasting")}
+            />
+            <MobileNavButton
+              icon={Settings}
+              label="Manage"
+              isActive={activeTab === "management"}
+              onClick={() => setActiveTab("management")}
+            />
+          </div>
+        ) : (
+          /* Desktop Navigation */
+          <div className="flex space-x-1 mb-6 bg-white rounded-lg p-2 shadow-sm">
+            {[
+              { id: "overview", label: "Overview", icon: BarChart3 },
+              { id: "slots", label: "Prayer Slots", icon: Clock },
+              { id: "intercessors", label: "Intercessors", icon: Users },
+              { id: "fasting", label: "Fasting Program", icon: Calendar },
+              { id: "management", label: "Management", icon: Settings },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <Button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  variant={activeTab === tab.id ? "default" : "ghost"}
+                  className={`flex items-center space-x-2 px-4 py-2 ${
+                    activeTab === tab.id 
+                      ? "bg-brand-primary text-white shadow-md" 
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                </Button>
+              );
+            })}
           </div>
         )}
+
+        {/* Tab Content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+          >
+            {renderTabContent()}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
