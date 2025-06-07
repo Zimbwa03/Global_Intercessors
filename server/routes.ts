@@ -76,11 +76,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.params;
       console.log('Fetching prayer slot for user:', userId);
 
-      // Use dedicated retrieval function to bypass RLS policies
-      const { data: slotData, error } = await supabaseAdmin
-        .rpc('get_user_prayer_slot', { 
-          p_user_id: userId
-        });
+      // Direct query with service role permissions to bypass RLS
+      const { data: slots, error } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1);
 
       if (error) {
         console.error('Database error fetching prayer slot:', error);
