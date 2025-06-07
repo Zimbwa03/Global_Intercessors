@@ -46,25 +46,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       
-      // Get from in-memory storage or create default
-      let userSlot = prayerSlots.get(userId);
-      if (!userSlot) {
-        userSlot = {
-          id: 1,
-          userId: userId,
-          userEmail: "user@example.com",
-          slotTime: "22:00–22:30",
-          status: "active",
-          missedCount: 0,
-          skipStartDate: null,
-          skipEndDate: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        prayerSlots.set(userId, userSlot);
+      // Get from Supabase database
+      const { data: userSlot, error } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error("Database error:", error);
+        return res.status(500).json({ error: "Failed to fetch prayer slot" });
       }
 
-      res.json(userSlot);
+      // If no slot found, return null instead of creating default
+      if (!userSlot) {
+        return res.json(null);
+      }
+
+      // Format response to match expected structure
+      const formattedSlot = {
+        id: userSlot.id,
+        userId: userSlot.user_id,
+        userEmail: userSlot.user_email,
+        slotTime: userSlot.slot_time,
+        status: userSlot.status,
+        missedCount: userSlot.missed_count,
+        skipStartDate: userSlot.skip_start_date,
+        skipEndDate: userSlot.skip_end_date,
+        createdAt: userSlot.created_at,
+        updatedAt: userSlot.updated_at
+      };
+
+      res.json(formattedSlot);
     } catch (error) {
       console.error("Error fetching prayer slot:", error);
       res.status(500).json({ error: "Failed to fetch prayer slot" });
@@ -118,41 +132,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/prayer-slot/skip", async (req: Request, res: Response) => {
     try {
       const { userId } = req.body;
-      
-      // Get existing slot or create default
-      let userSlot = prayerSlots.get(userId);
-      if (!userSlot) {
-        userSlot = {
-          id: 1,
-          userId: userId,
-          userEmail: "user@example.com",
-          slotTime: "22:00–22:30",
-          status: "active",
-          missedCount: 0,
-          skipStartDate: null,
-          skipEndDate: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
+
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
       }
 
       const skipStartDate = new Date();
       const skipEndDate = new Date();
       skipEndDate.setDate(skipEndDate.getDate() + 5);
 
-      // Update the slot
-      const updatedSlot = {
-        ...userSlot,
-        status: "skipped",
-        skipStartDate: skipStartDate.toISOString(),
-        skipEndDate: skipEndDate.toISOString(),
-        updatedAt: new Date().toISOString()
+      // Update the slot in Supabase
+      const { data: updatedSlot, error } = await supabaseAdmin
+        .from('prayer_slots')
+        .update({
+          status: 'skipped',
+          skip_start_date: skipStartDate.toISOString(),
+          skip_end_date: skipEndDate.toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Database error skipping slot:", error);
+        return res.status(500).json({ error: "Failed to skip prayer slot" });
+      }
+
+      if (!updatedSlot) {
+        return res.status(404).json({ error: "No active prayer slot found" });
+      }
+
+      // Format response
+      const formattedSlot = {
+        id: updatedSlot.id,
+        userId: updatedSlot.user_id,
+        userEmail: updatedSlot.user_email,
+        slotTime: updatedSlot.slot_time,
+        status: updatedSlot.status,
+        missedCount: updatedSlot.missed_count,
+        skipStartDate: updatedSlot.skip_start_date,
+        skipEndDate: updatedSlot.skip_end_date,
+        createdAt: updatedSlot.created_at,
+        updatedAt: updatedSlot.updated_at
       };
 
-      // Store the updated slot
-      prayerSlots.set(userId, updatedSlot);
-
-      res.json(updatedSlot);
+      res.json(formattedSlot);
     } catch (error) {
       console.error("Error skipping prayer slot:", error);
       res.status(500).json({ error: "Failed to skip prayer slot" });
@@ -162,39 +188,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Change prayer slot
   app.post("/api/prayer-slot/change", async (req: Request, res: Response) => {
     try {
-      const { userId, newSlotTime } = req.body;
+      const { userId, newSlotTime, currentSlotTime } = req.body;
 
-      // Get existing slot or create default
-      let userSlot = prayerSlots.get(userId);
-      if (!userSlot) {
-        userSlot = {
-          id: 1,
-          userId: userId,
-          userEmail: "user@example.com",
-          slotTime: "22:00–22:30",
-          status: "active",
-          missedCount: 0,
-          skipStartDate: null,
-          skipEndDate: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
+      if (!userId || !newSlotTime) {
+        return res.status(400).json({ error: "User ID and new slot time are required" });
       }
 
-      // Update the slot
-      const updatedSlot = {
-        ...userSlot,
-        slotTime: newSlotTime,
-        status: "active",
-        skipStartDate: null,
-        skipEndDate: null,
-        updatedAt: new Date().toISOString()
+      // Get user email from auth
+      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
+      const userEmail = authUser?.user?.email || 'unknown@example.com';
+
+      // Check if user already has a slot
+      const { data: existingSlot } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      let updatedSlot;
+
+      if (existingSlot) {
+        // Update existing slot
+        const { data, error } = await supabaseAdmin
+          .from('prayer_slots')
+          .update({
+            slot_time: newSlotTime,
+            status: 'active',
+            skip_start_date: null,
+            skip_end_date: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId)
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Database error updating slot:", error);
+          return res.status(500).json({ error: "Failed to update prayer slot" });
+        }
+        updatedSlot = data;
+      } else {
+        // Create new slot
+        const { data, error } = await supabaseAdmin
+          .from('prayer_slots')
+          .insert([{
+            user_id: userId,
+            user_email: userEmail,
+            slot_time: newSlotTime,
+            status: 'active',
+            missed_count: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }])
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Database error creating slot:", error);
+          return res.status(500).json({ error: "Failed to create prayer slot" });
+        }
+        updatedSlot = data;
+      }
+
+      // Format response
+      const formattedSlot = {
+        id: updatedSlot.id,
+        userId: updatedSlot.user_id,
+        userEmail: updatedSlot.user_email,
+        slotTime: updatedSlot.slot_time,
+        status: updatedSlot.status,
+        missedCount: updatedSlot.missed_count,
+        skipStartDate: updatedSlot.skip_start_date,
+        skipEndDate: updatedSlot.skip_end_date,
+        createdAt: updatedSlot.created_at,
+        updatedAt: updatedSlot.updated_at
       };
 
-      // Store the updated slot
-      prayerSlots.set(userId, updatedSlot);
-
-      res.json(updatedSlot);
+      res.json(formattedSlot);
     } catch (error) {
       console.error("Error changing prayer slot:", error);
       res.status(500).json({ error: "Failed to change prayer slot" });

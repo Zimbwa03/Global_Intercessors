@@ -39,10 +39,10 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
     };
-    
+
     // Initialize notification service
     notificationService.initialize();
-    
+
     getCurrentUser();
   }, []);
 
@@ -207,7 +207,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   useEffect(() => {
     // Start the global countdown service
     countdownService.start();
-    
+
     // Subscribe to countdown updates
     const unsubscribe = countdownService.subscribe((time) => {
       setCountdown(time);
@@ -222,6 +222,50 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       unsubscribe();
     };
   }, [prayerSlot]);
+
+  // Calculate countdown to next prayer session
+  useEffect(() => {
+    if (!prayerSlot?.slotTime || prayerSlot.status !== 'active') {
+      setCountdown({ hours: 0, minutes: 0, seconds: 0 });
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = new Date();
+      const [startTime] = prayerSlot.slotTime.split('–');
+      const [hours, minutes] = startTime.split(':').map(Number);
+
+      // Create next session time
+      const nextSession = new Date();
+      nextSession.setHours(hours, minutes, 0, 0);
+
+      // If the time has passed today, set for tomorrow
+      if (nextSession <= now) {
+        nextSession.setDate(nextSession.getDate() + 1);
+      }
+
+      const timeDiff = nextSession.getTime() - now.getTime();
+
+      if (timeDiff <= 0) {
+        setCountdown({ hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60));
+      const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+      const secondsLeft = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+      setCountdown({
+        hours: Math.max(0, hoursLeft),
+        minutes: Math.max(0, minutesLeft),
+        seconds: Math.max(0, secondsLeft)
+      });
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [prayerSlot?.slotTime, prayerSlot?.status]);
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -306,7 +350,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     );
   }
 
-  
+
 
   return (
     <div className={`space-y-6 ${isMobile ? 'px-2' : ''}`}>
@@ -332,10 +376,8 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className={`bg-gradient-to-br from-blue-50 to-white rounded-lg border border-blue-100 ${
-            isMobile ? 'p-4' : 'p-6'
-          }`}>
-            {prayerSlot ? (
+          <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg border border-blue-100">
+              {prayerSlot && prayerSlot.slotTime ? (
               <div className="text-center mb-4">
                 <h3 className={`font-bold text-brand-primary mb-2 font-poppins ${
                   isMobile ? 'text-2xl' : 'text-3xl'
