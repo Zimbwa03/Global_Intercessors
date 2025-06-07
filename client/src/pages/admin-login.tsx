@@ -43,65 +43,63 @@ export default function AdminLogin() {
 
       console.log('Admin record found:', adminData);
 
-      // Get current session first
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      
-      if (currentSession?.user?.email === email) {
-        // User is already logged in with the correct email
-        toast({
-          title: "Admin Login Successful", 
-          description: "Welcome to the Global Intercessors Admin Panel",
-        });
-        setLocation("/admin/dashboard");
-        return;
-      }
-
-      // Try to sign in with password
+      // Check if user already has an auth account - try to sign in first
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      let currentUser = signInData?.user;
-
       if (signInError) {
-        // If sign in fails, try to sign up (first time setup)
-        console.log('Sign in failed, attempting sign up for admin...');
-        
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              role: 'admin',
-              full_name: adminData.email.split('@')[0] // Use email prefix as name
+        // Check if it's a user not found error (need to create auth account)
+        if (signInError.message.includes('Invalid login credentials') || 
+            signInError.message.includes('Email not confirmed') ||
+            signInError.message.includes('User not found')) {
+          
+          console.log('User auth account not found, creating new auth account...');
+          
+          // Try to sign up (first time setup for this admin)
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                role: 'admin',
+                full_name: adminData.email.split('@')[0]
+              }
+            }
+          });
+
+          if (signUpError) {
+            throw new Error(`Account creation failed: ${signUpError.message}`);
+          }
+
+          if (signUpData.user) {
+            toast({
+              title: "Admin Account Created",
+              description: "Your admin authentication account has been created successfully.",
+            });
+            
+            // Check if email confirmation is required
+            if (signUpData.user && !signUpData.session) {
+              throw new Error('Please check your email to confirm your account before logging in.');
             }
           }
-        });
-
-        if (signUpError) {
-          throw new Error(`Authentication failed: ${signUpError.message}`);
-        }
-
-        currentUser = signUpData.user;
-
-        if (currentUser) {
-          toast({
-            title: "Admin Account Created",
-            description: "Your admin account has been created successfully.",
-          });
+        } else {
+          // Wrong password or other auth error
+          throw new Error(`Login failed: ${signInError.message}`);
         }
       }
 
-      // Check if we have a valid user from either sign in or sign up
-      if (!currentUser) {
-        // Try to get current session as fallback
-        const { data: { user: sessionUser } } = await supabase.auth.getUser();
-        currentUser = sessionUser;
-      }
+      // Verify we have a valid authenticated user
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
       
       if (!currentUser) {
-        throw new Error('Authentication failed - no user session found');
+        throw new Error('Authentication failed - no valid user session');
+      }
+
+      // Verify the authenticated user matches the admin email
+      if (currentUser.email !== email) {
+        throw new Error('Email mismatch in authentication');
       }
 
       toast({
