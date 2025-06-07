@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { supabase } from "@/lib/supabase";
 
 export default function CreateAdmin() {
   const [email, setEmail] = useState("");
@@ -16,22 +16,47 @@ export default function CreateAdmin() {
     setIsLoading(true);
 
     try {
-      await apiRequest({
-        url: "/api/admin/create-admin",
-        method: "POST",
-        data: { email },
-      });
+      // Check if admin already exists
+      const { data: existingAdmin } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      if (existingAdmin) {
+        toast({
+          title: "Admin Already Exists",
+          description: `${email} is already registered as an admin`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Insert new admin directly into Supabase
+      const { data: newAdmin, error: insertError } = await supabase
+        .from('admin_users')
+        .insert([{
+          email: email,
+          role: 'admin',
+          is_active: true
+        }])
+        .select()
+        .single();
+
+      if (insertError) {
+        throw new Error(insertError.message);
+      }
 
       toast({
-        title: "Admin Created",
-        description: `${email} has been added as an administrator`,
+        title: "Admin Created Successfully",
+        description: `${email} has been added as an administrator and can now log in`,
       });
       
       setEmail("");
     } catch (error: any) {
       toast({
         title: "Failed to Create Admin",
-        description: error.message || "Unable to create admin user",
+        description: error.message || "Unable to create admin user. Make sure the database tables are set up.",
         variant: "destructive",
       });
     } finally {

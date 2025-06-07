@@ -27,7 +27,17 @@ export default function AdminLogin() {
         .eq('is_active', true)
         .single();
 
-      if (adminCheckError || !adminData) {
+      if (adminCheckError) {
+        if (adminCheckError.code === '42P01') {
+          throw new Error('Database tables not found. Please run the Supabase setup script first.');
+        } else if (adminCheckError.code === 'PGRST116') {
+          throw new Error('Access denied. Email not found in admin users. Please use /create-admin first.');
+        } else {
+          throw new Error(`Database error: ${adminCheckError.message}`);
+        }
+      }
+
+      if (!adminData) {
         throw new Error('Access denied. Email not found in admin users. Please use /create-admin first.');
       }
 
