@@ -76,17 +76,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.params;
       console.log('Fetching prayer slot for user:', userId);
 
-      const { data: slot, error } = await supabaseAdmin
+      // Use select without .single() to get array result, then check if array has items
+      const { data: slots, error } = await supabaseAdmin
         .from('prayer_slots')
         .select('*')
-        .eq('user_id', userId)
-        .single();
+        .eq('user_id', userId);
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Database error:', error);
         return res.status(500).json({ error: 'Failed to fetch prayer slot' });
       }
 
+      // Get the first slot if exists, otherwise null
+      const slot = slots && slots.length > 0 ? slots[0] : null;
       console.log('Prayer slot raw data:', slot);
 
       // Format the response to match frontend expectations
