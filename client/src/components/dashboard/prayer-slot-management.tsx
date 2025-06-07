@@ -10,7 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Clock, Calendar, AlertCircle, RotateCcw, Edit3, CheckCircle2, XCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { notificationService } from '@/lib/notificationService';
-import { countdownService } from '@/lib/countdownService';
+
 
 interface CountdownTime {
   hours: number;
@@ -203,28 +203,13 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     }
   });
 
-  // Use synchronized countdown service and schedule notifications
+  // Calculate countdown to next prayer session and schedule notifications
   useEffect(() => {
-    // Start the global countdown service
-    countdownService.start();
-
-    // Subscribe to countdown updates
-    const unsubscribe = countdownService.subscribe((time) => {
-      setCountdown(time);
-    });
-
     // Schedule notifications when prayer slot is active
     if (prayerSlot && prayerSlot.status === 'active') {
       notificationService.scheduleSlotReminders(prayerSlot);
     }
 
-    return () => {
-      unsubscribe();
-    };
-  }, [prayerSlot]);
-
-  // Calculate countdown to next prayer session
-  useEffect(() => {
     if (!prayerSlot?.slotTime || prayerSlot.status !== 'active') {
       setCountdown({ hours: 0, minutes: 0, seconds: 0 });
       return;
