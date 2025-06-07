@@ -54,7 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log('Prayer slot data:', slot);
-      res.json(slot);
+      res.json({ prayerSlot: slot });
     } catch (error) {
       console.error("Error fetching prayer slot:", error);
       res.status(500).json({ error: "Failed to fetch prayer slot" });
@@ -97,7 +97,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      res.json(availableSlots);
+      res.json({ availableSlots });
     } catch (error) {
       console.error("Error fetching available slots:", error);
       res.status(500).json({ error: "Failed to fetch available slots" });
@@ -125,6 +125,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Failed to check existing slot" });
       }
 
+      // Get user's email from Supabase Auth
+      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId);
+      const userEmail = authUser?.user?.email || 'unknown@example.com';
+
       let updatedSlot;
       if (existingSlot) {
         // Update existing slot using service function
@@ -145,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { data, error } = await supabaseAdmin
           .rpc('create_prayer_slot_service', {
             p_user_id: userId,
-            p_user_email: 'user@example.com',
+            p_user_email: userEmail,
             p_slot_time: newSlotTime,
             p_status: 'active'
           });
