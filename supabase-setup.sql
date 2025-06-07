@@ -2,6 +2,9 @@
 -- Global Intercessors Database Setup Script
 -- Run this in your Supabase SQL Editor
 
+-- Drop existing triggers first to avoid dependency errors
+DROP TRIGGER IF EXISTS update_user_profiles_updated_at ON user_profiles;
+
 -- Drop existing functions and tables to avoid conflicts
 DROP FUNCTION IF EXISTS create_prayer_slot_service(TEXT, TEXT, TEXT, TEXT);
 DROP FUNCTION IF EXISTS create_prayer_slot_service(TEXT, TEXT, TEXT);
@@ -10,7 +13,7 @@ DROP FUNCTION IF EXISTS create_user_profile_service(UUID, TEXT, TEXT, TEXT);
 DROP FUNCTION IF EXISTS update_prayer_slot_service(TEXT, TEXT, TEXT);
 DROP FUNCTION IF EXISTS get_user_prayer_slot(TEXT);
 DROP FUNCTION IF EXISTS change_prayer_slot(TEXT, TEXT, TEXT);
-DROP FUNCTION IF EXISTS update_updated_at_column();
+DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
 
 -- Drop tables if they exist (for clean setup)
 DROP TABLE IF EXISTS user_profiles CASCADE;
