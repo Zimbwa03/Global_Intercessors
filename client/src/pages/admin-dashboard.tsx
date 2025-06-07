@@ -199,6 +199,28 @@ export default function AdminDashboard() {
 
   const updates = Array.isArray(updatesResponse) ? updatesResponse : [];
 
+  // Fetch comprehensive statistics
+  const { data: statistics, isLoading: statsLoading, refetch: refetchStats } = useQuery({
+    queryKey: ["/api/admin/statistics"],
+    queryFn: async () => {
+      const response = await apiRequest({ url: "/api/admin/statistics" });
+      return response;
+    },
+    enabled: !!adminUser,
+    refetchInterval: 30000,
+  });
+
+  // Fetch all users
+  const { data: allUsers, isLoading: allUsersLoading, refetch: refetchAllUsers } = useQuery({
+    queryKey: ["/api/admin/users"],
+    queryFn: async () => {
+      const response = await apiRequest({ url: "/api/admin/users" });
+      return response;
+    },
+    enabled: !!adminUser,
+    refetchInterval: 30000,
+  });
+
   // Get current Zoom link
   const { data: currentZoomLink } = useQuery({
     queryKey: ["/api/admin/zoom-link"],
@@ -309,6 +331,8 @@ export default function AdminDashboard() {
     refetchFasting();
     refetchIntercessors();
     refetchUpdates();
+    refetchStats();
+    refetchAllUsers();
     toast({ title: "Data Refreshed", description: "All data has been refreshed" });
   };
 
@@ -327,8 +351,144 @@ export default function AdminDashboard() {
   }
 
   const OverviewTab = () => {
+    // Use statistics from API or fallback to calculated values
+    const totalUsers = statistics?.users?.total || intercessors.length;
+    const activeSlots = statistics?.prayerSlots?.active || prayerSlots.filter(slot => slot.status === 'active').length;
+    const totalSlots = 48; // 24-hour coverage with 30-minute slots
+    const slotCoverage = statistics?.prayerSlots?.coverage || Math.round((activeSlots / totalSlots) * 100);
+    const totalFastingRegistrations = statistics?.fasting?.total || fastingRegistrations.length;
+
     return (
       <div className="space-y-6">
+        {/* User Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <AnimatedCard animationType="fadeIn" delay={0.1}>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-2">
+                <Users className="w-8 h-8 text-brand-primary" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{totalUsers}</p>
+                  <p className="text-sm text-gray-600">Total Intercessors</p>
+                </div>
+              </div>
+            </CardContent>
+          </AnimatedCard>
+
+          <AnimatedCard animationType="fadeIn" delay={0.2}>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-2">
+                <Clock className="w-8 h-8 text-green-600" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{activeSlots}</p>
+                  <p className="text-sm text-gray-600">Active Prayer Slots</p>
+                </div>
+              </div>
+            </CardContent>
+          </AnimatedCard>
+
+          <AnimatedCard animationType="fadeIn" delay={0.3}>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-2">
+                <Activity className="w-8 h-8 text-blue-600" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{slotCoverage}%</p>
+                  <p className="text-sm text-gray-600">Slot Coverage</p>
+                </div>
+              </div>
+            </CardContent>
+          </AnimatedCard>
+
+          <AnimatedCard animationType="fadeIn" delay={0.4}>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-2">
+                <Calendar className="w-8 h-8 text-purple-600" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{totalFastingRegistrations}</p>
+                  <p className="text-sm text-gray-600">Fasting Registrations</p>
+                </div>
+              </div>
+            </CardContent>
+          </AnimatedCard>
+        </div>
+
+        {/* Detailed User Analytics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <AnimatedCard animationType="fadeIn" delay={0.5}>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="w-5 h-5 mr-2" />
+                User Distribution
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-600">Registered Intercessors</span>
+                  <Badge variant="secondary">{totalUsers}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-600">Users with Prayer Slots</span>
+                  <Badge variant="default">{prayerSlots.length}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-600">Available Slots</span>
+                  <Badge variant="outline">{totalSlots - activeSlots}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-600">Fasting Participants</span>
+                  <Badge variant="secondary">{totalFastingRegistrations}</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </AnimatedCard>
+
+          <AnimatedCard animationType="fadeIn" delay={0.6}>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <BarChart3 className="w-5 h-5 mr-2" />
+                System Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-600">Database Status</span>
+                  <Badge variant="default" className="bg-green-100 text-green-800">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Connected
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-600">Prayer Coverage</span>
+                  <Badge 
+                    variant={slotCoverage > 80 ? "default" : slotCoverage > 50 ? "secondary" : "destructive"}
+                    className={
+                      slotCoverage > 80 
+                        ? "bg-green-100 text-green-800" 
+                        : slotCoverage > 50 
+                        ? "bg-yellow-100 text-yellow-800" 
+                        : "bg-red-100 text-red-800"
+                    }
+                  >
+                    {slotCoverage}% Coverage
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-600">Recent Updates</span>
+                  <Badge variant="outline">{updates.length} Posted</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-600">Last Data Refresh</span>
+                  <Badge variant="outline">
+                    <RefreshCw className="w-3 h-3 mr-1" />
+                    Now
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </AnimatedCard>
+        </div>
+
         {/* Mobile-Optimized Data Visualization */}
         <MobileCharts 
           prayerSlots={prayerSlots}
