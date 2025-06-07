@@ -76,34 +76,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.params;
       console.log('Fetching prayer slot for user:', userId);
 
-      // Direct query with service role permissions to bypass RLS
-      const { data: slots, error } = await supabaseAdmin
-        .from('prayer_slots')
-        .select('*')
-        .eq('user_id', userId)
-        .order('updated_at', { ascending: false })
-        .limit(1);
+      // Use the update service function which can return existing slot data
+      const { data: slotData, error } = await supabaseAdmin
+        .rpc('update_prayer_slot_service', { 
+          p_user_id: userId, 
+          p_slot_time: '',  // empty string maintains current slot
+          p_status: null     // null maintains current status
+        });
 
       if (error) {
         console.error('Database error fetching prayer slot:', error);
         return res.status(500).json({ error: 'Failed to fetch prayer slot' });
       }
 
-      const slot = slots && slots.length > 0 ? slots[0] : null;
-      console.log('Prayer slot retrieved:', slot);
+      console.log('Prayer slot data retrieved:', slotData);
 
-      // Format the response to match frontend expectations
-      const formattedSlot = slot ? {
-        id: slot.id,
-        userId: slot.user_id,
-        userEmail: slot.user_email,
-        slotTime: slot.slot_time,
-        status: slot.status,
-        missedCount: slot.missed_count || 0,
-        skipStartDate: slot.skip_start_date,
-        skipEndDate: slot.skip_end_date,
-        createdAt: slot.created_at,
-        updatedAt: slot.updated_at
+      // The function returns a JSON object directly
+      const formattedSlot = slotData ? {
+        id: slotData.id,
+        userId: slotData.user_id,
+        userEmail: slotData.user_email,
+        slotTime: slotData.slot_time,
+        status: slotData.status,
+        missedCount: slotData.missed_count || 0,
+        skipStartDate: slotData.skip_start_date,
+        skipEndDate: slotData.skip_end_date,
+        createdAt: slotData.created_at,
+        updatedAt: slotData.updated_at
       } : null;
 
       console.log('Formatted prayer slot response:', formattedSlot);
