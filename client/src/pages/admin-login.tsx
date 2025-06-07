@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,33 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Handle email confirmation on component mount
+  useEffect(() => {
+    const handleEmailConfirmation = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (data.session) {
+        // User is already authenticated, check if they're an admin
+        const { data: adminData } = await supabase
+          .from('admin_users')
+          .select('*')
+          .eq('email', data.session.user.email)
+          .eq('is_active', true)
+          .single();
+
+        if (adminData) {
+          toast({
+            title: "Login Successful",
+            description: "Welcome back to the Admin Panel",
+          });
+          setLocation("/admin/dashboard");
+        }
+      }
+    };
+
+    handleEmailConfirmation();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +92,8 @@ export default function AdminLogin() {
               data: {
                 role: 'admin',
                 full_name: adminData.email.split('@')[0]
-              }
+              },
+              emailRedirectTo: window.location.origin + '/admin/login'
             }
           });
 
@@ -73,16 +101,21 @@ export default function AdminLogin() {
             throw new Error(`Account creation failed: ${signUpError.message}`);
           }
 
-          if (signUpData.user) {
+          // Check if email confirmation is required
+          if (signUpData.user && !signUpData.session) {
+            toast({
+              title: "Email Confirmation Required",
+              description: "We've sent a confirmation email. Please check your email and click the link to confirm your account, then try logging in again.",
+              variant: "default",
+            });
+            return; // Stop execution here
+          }
+
+          if (signUpData.user && signUpData.session) {
             toast({
               title: "Admin Account Created",
-              description: "Your admin authentication account has been created successfully.",
+              description: "Your admin authentication account has been created and you're now logged in.",
             });
-            
-            // Check if email confirmation is required
-            if (signUpData.user && !signUpData.session) {
-              throw new Error('Please check your email to confirm your account before logging in.');
-            }
           }
         } else {
           // Wrong password or other auth error
