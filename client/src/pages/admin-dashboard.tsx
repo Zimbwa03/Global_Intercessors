@@ -110,6 +110,23 @@ export default function AdminDashboard() {
   // Ensure intercessors is always an array
   const intercessors = Array.isArray(intercessorsResponse) ? intercessorsResponse : [];
 
+  // Fetch admin updates
+  const { data: updatesResponse, isLoading: updatesLoading } = useQuery({
+    queryKey: ["/api/admin/updates"],
+    queryFn: () => apiRequest({ url: "/api/admin/updates" }),
+    enabled: !!adminUser,
+  });
+
+  // Ensure updates is always an array
+  const adminUpdates = Array.isArray(updatesResponse) ? updatesResponse : [];
+
+  // Fetch current zoom link
+  const { data: currentZoomSession } = useQuery({
+    queryKey: ["/api/admin/zoom-link"],
+    queryFn: () => apiRequest({ url: "/api/admin/zoom-link" }),
+    enabled: !!adminUser,
+  });
+
   // Create update mutation
   const createUpdateMutation = useMutation({
     mutationFn: async (data: { title: string; description: string }) => {
@@ -143,6 +160,8 @@ export default function AdminDashboard() {
         title: "Zoom Link Saved",
         description: "Workspace link has been updated",
       });
+      setZoomLink("");
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/zoom-link"] });
     },
   });
 
@@ -404,6 +423,84 @@ export default function AdminDashboard() {
           </Card>
         )}
 
+        {activeTab === "intercessors" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Registered Intercessors</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {intercessorsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <i className="fas fa-spinner fa-spin text-2xl text-blue-600"></i>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Email
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Phone
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Region
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Prayer Slot
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Joined
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {intercessors.map((intercessor: any) => (
+                        <tr key={intercessor.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {intercessor.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {intercessor.email}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {intercessor.phone || "Not provided"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {intercessor.region || "Not specified"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {intercessor.prayerSlot || "Not assigned"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              intercessor.slotStatus === "active" 
+                                ? "bg-green-100 text-green-800" 
+                                : "bg-gray-100 text-gray-800"
+                            }`}>
+                              {intercessor.slotStatus || "Inactive"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(intercessor.createdAt).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {activeTab === "fasting" && (
           <Card>
             <CardHeader>
@@ -487,88 +584,169 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === "zoom" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Zoom Workspace Management</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="zoomLink">Zoom Meeting Link</Label>
-                <Input
-                  id="zoomLink"
-                  value={zoomLink}
-                  onChange={(e) => setZoomLink(e.target.value)}
-                  placeholder="https://zoom.us/j/..."
-                  className="mt-1"
-                />
-              </div>
-              <Button
-                onClick={handleSaveZoomLink}
-                disabled={saveZoomMutation.isPending}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {saveZoomMutation.isPending ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin mr-2"></i>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-save mr-2"></i>
-                    Save Zoom Link
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            {/* Current Session Info */}
+            {currentZoomSession && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Current Zoom Session</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Meeting ID</p>
+                      <p className="text-lg font-mono text-gray-900">{currentZoomSession.meeting_id}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Topic</p>
+                      <p className="text-lg text-gray-900">{currentZoomSession.topic}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Created</p>
+                      <p className="text-lg text-gray-900">
+                        {new Date(currentZoomSession.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Participants</p>
+                      <p className="text-lg text-gray-900">{currentZoomSession.participant_count || 0}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Add New Session */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Zoom Workspace Management</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="zoomLink">Zoom Meeting Link</Label>
+                  <Input
+                    id="zoomLink"
+                    value={zoomLink}
+                    onChange={(e) => setZoomLink(e.target.value)}
+                    placeholder="https://zoom.us/j/..."
+                    className="mt-1"
+                  />
+                </div>
+                <Button
+                  onClick={handleSaveZoomLink}
+                  disabled={saveZoomMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {saveZoomMutation.isPending ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin mr-2"></i>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-save mr-2"></i>
+                      Save Zoom Link
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {activeTab === "updates" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Create Announcement</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="updateTitle">Title</Label>
-                <Input
-                  id="updateTitle"
-                  value={newUpdate.title}
-                  onChange={(e) => setNewUpdate({ ...newUpdate, title: e.target.value })}
-                  placeholder="Announcement title"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="updateDescription">Description</Label>
-                <Textarea
-                  id="updateDescription"
-                  value={newUpdate.description}
-                  onChange={(e) => setNewUpdate({ ...newUpdate, description: e.target.value })}
-                  placeholder="Announcement content"
-                  rows={4}
-                  className="mt-1"
-                />
-              </div>
-              <Button
-                onClick={handleCreateUpdate}
-                disabled={createUpdateMutation.isPending}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {createUpdateMutation.isPending ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin mr-2"></i>
-                    Publishing...
-                  </>
+          <div className="space-y-6">
+            {/* Create new update */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Create Announcement</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="updateTitle">Title</Label>
+                  <Input
+                    id="updateTitle"
+                    value={newUpdate.title}
+                    onChange={(e) => setNewUpdate({ ...newUpdate, title: e.target.value })}
+                    placeholder="Announcement title"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="updateDescription">Description</Label>
+                  <Textarea
+                    id="updateDescription"
+                    value={newUpdate.description}
+                    onChange={(e) => setNewUpdate({ ...newUpdate, description: e.target.value })}
+                    placeholder="Announcement content"
+                    rows={4}
+                    className="mt-1"
+                  />
+                </div>
+                <Button
+                  onClick={handleCreateUpdate}
+                  disabled={createUpdateMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {createUpdateMutation.isPending ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin mr-2"></i>
+                      Publishing...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-bullhorn mr-2"></i>
+                      Publish Update
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Existing updates */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Announcements</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {updatesLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <i className="fas fa-spinner fa-spin text-2xl text-blue-600"></i>
+                  </div>
+                ) : adminUpdates.length === 0 ? (
+                  <div className="text-center py-8">
+                    <i className="fas fa-bullhorn text-4xl text-gray-300 mb-4"></i>
+                    <p className="text-gray-500">No announcements yet</p>
+                  </div>
                 ) : (
-                  <>
-                    <i className="fas fa-bullhorn mr-2"></i>
-                    Publish Update
-                  </>
+                  <div className="space-y-4">
+                    {adminUpdates.map((update: any) => (
+                      <div key={update.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {update.title}
+                            </h3>
+                            <p className="text-gray-600 mt-2">
+                              {update.description}
+                            </p>
+                            <div className="flex items-center mt-3 text-sm text-gray-500">
+                              <i className="fas fa-calendar mr-2"></i>
+                              {new Date(update.date || update.created_at).toLocaleDateString()}
+                              <span className="mx-2">•</span>
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {update.type || 'General'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </Button>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

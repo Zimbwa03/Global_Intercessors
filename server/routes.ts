@@ -634,6 +634,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin API Routes
+  
+  // Get admin updates/announcements
+  app.get("/api/admin/updates", async (req: Request, res: Response) => {
+    try {
+      const { data: updates, error } = await supabaseAdmin
+        .from('updates')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+
+      res.json(updates || []);
+    } catch (error) {
+      console.error('Error fetching updates:', error);
+      res.status(500).json({ error: 'Failed to fetch updates' });
+    }
+  });
+
   app.get("/api/admin/prayer-slots", async (req: Request, res: Response) => {
     try {
       const { data: slots, error } = await supabaseAdmin
@@ -769,13 +788,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Zoom link is required' });
       }
 
+      // Extract meeting ID from URL if possible
+      const meetingIdMatch = link.match(/\/j\/(\d+)/);
+      const meetingId = meetingIdMatch ? meetingIdMatch[1] : `meeting_${Date.now()}`;
+
       const { data: zoomSession, error } = await supabaseAdmin
         .from('zoom_meetings')
         .insert([
           {
-            meeting_url: link,
-            created_at: new Date().toISOString(),
-            is_active: true
+            meeting_id: meetingId,
+            meeting_uuid: `uuid_${meetingId}_${Date.now()}`,
+            topic: 'Global Intercessors Prayer Session',
+            start_time: new Date().toISOString(),
+            participant_count: 0,
+            processed: false,
+            created_at: new Date().toISOString()
           }
         ])
         .select()
@@ -787,6 +814,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error saving zoom link:', error);
       res.status(500).json({ error: 'Failed to save zoom link' });
+    }
+  });
+
+  // Get current zoom link/session
+  app.get("/api/admin/zoom-link", async (req: Request, res: Response) => {
+    try {
+      const { data: latestSession, error } = await supabaseAdmin
+        .from('zoom_meetings')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      res.json(latestSession || null);
+    } catch (error) {
+      console.error('Error fetching zoom link:', error);
+      res.status(500).json({ error: 'Failed to fetch zoom link' });
     }
   });
 
