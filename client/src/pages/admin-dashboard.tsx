@@ -172,13 +172,13 @@ export default function AdminDashboard() {
     const csvContent = [
       ["Name", "Phone", "Region", "Travel Cost", "GPS Latitude", "GPS Longitude", "Registered At"],
       ...fastingRegistrations.map((reg: FastingRegistration) => [
-        reg.fullName,
-        reg.phoneNumber,
+        reg.full_name,
+        reg.phone_number,
         reg.region,
-        reg.travelCost,
-        reg.gpsLatitude || "",
-        reg.gpsLongitude || "",
-        new Date(reg.createdAt).toLocaleDateString()
+        reg.travel_cost,
+        reg.gps_latitude || "",
+        reg.gps_longitude || "",
+        new Date(reg.created_at).toLocaleDateString()
       ])
     ].map(row => row.join(",")).join("\n");
 
@@ -444,28 +444,28 @@ export default function AdminDashboard() {
                       {fastingRegistrations?.map((reg: FastingRegistration) => (
                         <tr key={reg.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {reg.fullName}
+                            {reg.full_name}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {reg.phoneNumber}
+                            {reg.phone_number}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {reg.region}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            ${reg.travelCost}
+                            ${reg.travel_cost}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              reg.gpsLatitude && reg.gpsLongitude
+                              reg.gps_latitude && reg.gps_longitude
                                 ? "bg-green-100 text-green-800" 
                                 : "bg-red-100 text-red-800"
                             }`}>
-                              {reg.gpsLatitude && reg.gpsLongitude ? "Verified" : "Pending"}
+                              {reg.gps_latitude && reg.gps_longitude ? "Verified" : "Pending"}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(reg.createdAt).toLocaleDateString()}
+                            {new Date(reg.created_at).toLocaleDateString()}
                           </td>
                         </tr>
                       ))}
