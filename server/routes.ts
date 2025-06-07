@@ -3,6 +3,17 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { supabaseAdmin } from "./supabase";
 
+// Helper function to clean AI responses from markdown formatting
+function cleanAIResponse(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown
+    .replace(/\*(.*?)\*/g, '$1')     // Remove italic markdown
+    .replace(/_{2,}(.*?)_{2,}/g, '$1') // Remove underline markdown
+    .replace(/#{1,6}\s+/g, '')       // Remove heading markdown
+    .replace(/`(.*?)`/g, '$1')       // Remove code markdown
+    .trim();
+}
+
 // Helper function to get Bible book chapter counts
 function getBibleBookChapters(bookName: string): number {
   const bibleBooks: { [key: string]: number } = {
@@ -377,14 +388,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         const parsedResponse = JSON.parse(aiResponse);
-        res.json(parsedResponse);
+        // Clean all text fields from markdown formatting
+        const cleanedResponse = {
+          verse: cleanAIResponse(parsedResponse.verse),
+          reference: parsedResponse.reference,
+          version: parsedResponse.version,
+          explanation: cleanAIResponse(parsedResponse.explanation),
+          prayerPoint: cleanAIResponse(parsedResponse.prayerPoint)
+        };
+        res.json(cleanedResponse);
       } catch (parseError) {
         // Fallback if JSON parsing fails
         res.json({
           verse: "Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you with my righteous right hand.",
           reference: "Isaiah 41:10",
           version: version,
-          explanation: aiResponse,
+          explanation: cleanAIResponse(aiResponse),
           prayerPoint: "Lord, help me to trust in Your presence and strength in every situation I face."
         });
       }
@@ -421,16 +440,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       4. The Bible reference
       5. A brief explanation of how the verse relates to the prayer
 
+      Use natural, conversational language without asterisks, bold formatting, or markdown. Write in a warm, encouraging tone.
+
       Return the response in JSON format:
       {
         "category": "${categoryName}",
         "prayerPoints": [
           {
-            "title": "prayer point title",
-            "content": "detailed prayer content",
+            "title": "prayer point title in natural language",
+            "content": "detailed prayer content in conversational style",
             "bibleVerse": "actual verse text",
             "reference": "Book Chapter:Verse",
-            "explanation": "how this verse supports the prayer"
+            "explanation": "how this verse supports the prayer in simple language"
           }
         ],
         "totalPoints": 5
@@ -464,7 +485,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         const parsedResponse = JSON.parse(aiResponse);
-        res.json(parsedResponse);
+        // Clean all text fields from markdown formatting
+        const cleanedResponse = {
+          category: parsedResponse.category,
+          prayerPoints: parsedResponse.prayerPoints.map((point: any) => ({
+            title: cleanAIResponse(point.title),
+            content: cleanAIResponse(point.content),
+            bibleVerse: cleanAIResponse(point.bibleVerse),
+            reference: point.reference,
+            explanation: cleanAIResponse(point.explanation)
+          })),
+          totalPoints: parsedResponse.totalPoints
+        };
+        res.json(cleanedResponse);
       } catch (parseError) {
         // Fallback response
         res.json({
