@@ -59,6 +59,37 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Trigger refetch when user changes (same as dashboard)
+  useEffect(() => {
+    if (user?.id) {
+      queryClient.invalidateQueries({ queryKey: ['prayer-slot', user?.id] });
+    }
+  }, [user?.id, queryClient]);
+
+  // Fetch current prayer slot
+  const { data: prayerSlotResponse, isLoading: isLoadingSlot, error: slotError } = useQuery({
+    queryKey: ['prayer-slot', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+
+      const response = await fetch(`/api/prayer-slot/${user.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch prayer slot');
+      }
+
+      const data = await response.json();
+      console.log('Prayer slot management response:', data);
+      return data;
+    },
+    enabled: !!user?.id,
+    refetchInterval: 10000, // Refetch every 10 seconds (same as dashboard)
+    refetchOnWindowFocus: true,
+    staleTime: 0 // Always consider data stale
+  });
+
+  // Extract the prayer slot from the response
+  const prayerSlot = prayerSlotResponse?.prayerSlot;
+
   // Calculate countdown to next prayer session based on actual slot time
   useEffect(() => {
     if (!prayerSlot?.slotTime || prayerSlot.status !== 'active') {
@@ -103,37 +134,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
 
     return () => clearInterval(interval);
   }, [prayerSlot?.slotTime, prayerSlot?.status]);
-
-  // Trigger refetch when user changes (same as dashboard)
-  useEffect(() => {
-    if (user?.id) {
-      queryClient.invalidateQueries({ queryKey: ['prayer-slot', user?.id] });
-    }
-  }, [user?.id, queryClient]);
-
-  // Fetch current prayer slot
-  const { data: prayerSlotResponse, isLoading: isLoadingSlot, error: slotError } = useQuery({
-    queryKey: ['prayer-slot', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-
-      const response = await fetch(`/api/prayer-slot/${user.id}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch prayer slot');
-      }
-
-      const data = await response.json();
-      console.log('Prayer slot management response:', data);
-      return data;
-    },
-    enabled: !!user?.id,
-    refetchInterval: 10000, // Refetch every 10 seconds (same as dashboard)
-    refetchOnWindowFocus: true,
-    staleTime: 0 // Always consider data stale
-  });
-
-  // Extract the prayer slot from the response
-  const prayerSlot = prayerSlotResponse?.prayerSlot;
 
   // Fetch available slots
   const { data: availableSlotsData = [], isLoading: isLoadingSlots } = useQuery({
