@@ -34,25 +34,31 @@ export default function PrayerSlotManagement() {
   }, []);
 
   // Fetch user's prayer slot
-  const { data: prayerSlot, isLoading: isLoadingSlot } = useQuery<PrayerSlot>({
+  const { data: prayerSlotData, isLoading: isLoadingSlot } = useQuery({
     queryKey: ['prayer-slot', user?.id],
     queryFn: async () => {
       const response = await fetch(`/api/prayer-slot/${user?.id}`);
       if (!response.ok) throw new Error('Failed to fetch prayer slot');
-      return response.json();
+      const data = await response.json();
+      return data.prayerSlot || null;
     },
     enabled: !!user?.id
   });
 
+  const prayerSlot = prayerSlotData;
+
   // Fetch available slots
-  const { data: availableSlots = [], isLoading: isLoadingSlots } = useQuery<AvailableSlot[]>({
+  const { data: availableSlotsData, isLoading: isLoadingSlots } = useQuery({
     queryKey: ['available-slots'],
     queryFn: async () => {
       const response = await fetch('/api/available-slots');
       if (!response.ok) throw new Error('Failed to fetch available slots');
-      return response.json();
+      const data = await response.json();
+      return data.availableSlots || [];
     }
   });
+
+  const availableSlots = availableSlotsData || [];
 
   // Fetch prayer session history
   const { data: sessionHistory = [] } = useQuery<PrayerSession[]>({
@@ -309,10 +315,13 @@ export default function PrayerSlotManagement() {
                           Change Time Slot
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-md">
+                      <DialogContent className="max-w-md" aria-describedby="change-slot-description">
                         <DialogHeader>
                           <DialogTitle className="font-poppins">Select New Prayer Slot</DialogTitle>
                         </DialogHeader>
+                        <div id="change-slot-description" className="sr-only">
+                          Choose a new time slot for your prayer commitment from the available options.
+                        </div>
                         <div className="space-y-4">
                           <Select onValueChange={handleChangeSlot}>
                             <SelectTrigger className="border-blue-200 focus:ring-brand-primary focus:border-brand-primary">
@@ -350,10 +359,13 @@ export default function PrayerSlotManagement() {
                         Select Your Prayer Slot
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-md">
+                    <DialogContent className="max-w-md" aria-describedby="select-slot-description">
                       <DialogHeader>
                         <DialogTitle className="font-poppins">Select Your Prayer Slot</DialogTitle>
                       </DialogHeader>
+                      <div id="select-slot-description" className="sr-only">
+                        Choose your preferred time slot for daily prayer commitment from the available options.
+                      </div>
                       <div className="space-y-4">
                         <Select onValueChange={handleChangeSlot}>
                           <SelectTrigger className="border-blue-200 focus:ring-brand-primary focus:border-brand-primary">
