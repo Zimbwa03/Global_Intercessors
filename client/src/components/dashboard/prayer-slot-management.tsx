@@ -589,10 +589,15 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                 </div>
                 </motion.div>
               ) : (
-              <div className="text-center py-8">
-                <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-700 mb-2 font-poppins">No Prayer Slot Assigned</h3>
-                <p className="text-gray-600 mb-4">You don't have a prayer slot assigned yet.</p>
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-center py-8"
+                >
+                  <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-700 mb-2 font-poppins">No Prayer Slot Assigned</h3>
+                  <p className="text-gray-600 mb-4">You don't have a prayer slot assigned yet.</p>
                 <Dialog open={isChangeSlotModalOpen} onOpenChange={setIsChangeSlotModalOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-brand-primary hover:bg-blue-800 text-white font-poppins">
@@ -627,8 +632,8 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                     </div>
                   </DialogContent>
                 </Dialog>
-              </div>
-            )}
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </CardContent>
