@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { AnimatedCard } from "@/components/ui/animated-card";
 import { motion, AnimatePresence } from "framer-motion";
+import { MobileCharts } from "@/components/admin/mobile-charts";
 
 interface AdminUser {
   id: string;
@@ -326,103 +327,15 @@ export default function AdminDashboard() {
   }
 
   const OverviewTab = () => {
-    const activeSlots = prayerSlots.filter(slot => slot.status === 'active').length;
-    const totalIntercessors = intercessors.length;
-    const totalFastingRegistrations = fastingRegistrations.length;
-    const recentUpdates = updates.slice(0, 3);
-
     return (
       <div className="space-y-6">
-        {/* Stats Cards */}
-        <div className={`grid gap-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
-          <AnimatedCard animationType="slideIn" delay={0.1}>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Clock className="w-4 h-4 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Active Slots</p>
-                  <p className="text-2xl font-bold text-gray-900">{activeSlots}</p>
-                </div>
-              </div>
-            </CardContent>
-          </AnimatedCard>
-
-          <AnimatedCard animationType="slideIn" delay={0.2}>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Users className="w-4 h-4 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Intercessors</p>
-                  <p className="text-2xl font-bold text-gray-900">{totalIntercessors}</p>
-                </div>
-              </div>
-            </CardContent>
-          </AnimatedCard>
-
-          <AnimatedCard animationType="slideIn" delay={0.3}>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Calendar className="w-4 h-4 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Fasting</p>
-                  <p className="text-2xl font-bold text-gray-900">{totalFastingRegistrations}</p>
-                </div>
-              </div>
-            </CardContent>
-          </AnimatedCard>
-
-          <AnimatedCard animationType="slideIn" delay={0.4}>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Activity className="w-4 h-4 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Updates</p>
-                  <p className="text-2xl font-bold text-gray-900">{updates.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </AnimatedCard>
-        </div>
-
-        {/* Recent Activity */}
-        <AnimatedCard animationType="fadeIn" delay={0.5}>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <BarChart3 className="w-5 h-5 mr-2" />
-              Recent Activity
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentUpdates.length > 0 ? (
-                recentUpdates.map((update, index) => (
-                  <div key={update.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="p-1 bg-brand-primary rounded-full">
-                      <CheckCircle className="w-3 h-3 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{update.title}</h4>
-                      <p className="text-sm text-gray-600 mt-1">{update.description}</p>
-                      <p className="text-xs text-gray-500 mt-2">
-                        {new Date(update.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-center py-8">No recent updates</p>
-              )}
-            </div>
-          </CardContent>
-        </AnimatedCard>
+        {/* Mobile-Optimized Data Visualization */}
+        <MobileCharts 
+          prayerSlots={prayerSlots}
+          intercessors={intercessors}
+          fastingRegistrations={fastingRegistrations}
+          updates={updates}
+        />
       </div>
     );
   };
