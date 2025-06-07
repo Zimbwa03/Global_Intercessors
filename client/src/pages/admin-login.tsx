@@ -77,12 +77,11 @@ export default function AdminLogin() {
       });
 
       if (signInError) {
-        // Check if it's a user not found error (need to create auth account)
-        if (signInError.message.includes('Invalid login credentials') || 
-            signInError.message.includes('Email not confirmed') ||
-            signInError.message.includes('User not found')) {
+        // Check if it's a user not found error or invalid credentials
+        if (signInError.message.includes('Invalid login credentials') && 
+            !signInError.message.includes('Email not confirmed')) {
           
-          console.log('User auth account not found, creating new auth account...');
+          console.log('Invalid credentials - checking if auth account exists...');
           
           // Try to sign up (first time setup for this admin)
           const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -98,14 +97,20 @@ export default function AdminLogin() {
           });
 
           if (signUpError) {
-            throw new Error(`Account creation failed: ${signUpError.message}`);
+            // If user already exists, it means wrong password was used
+            if (signUpError.message.includes('User already registered') || 
+                signUpError.message.includes('already been registered')) {
+              throw new Error('Admin account exists but wrong password provided. Please use the correct password.');
+            } else {
+              throw new Error(`Account creation failed: ${signUpError.message}`);
+            }
           }
 
           // Check if email confirmation is required
           if (signUpData.user && !signUpData.session) {
             toast({
               title: "Email Confirmation Required",
-              description: "We've sent a confirmation email. Please check your email and click the link to confirm your account, then try logging in again.",
+              description: "Please check your email and click the confirmation link, then try logging in again.",
               variant: "default",
             });
             return; // Stop execution here
@@ -117,10 +122,18 @@ export default function AdminLogin() {
               description: "Your admin authentication account has been created and you're now logged in.",
             });
           }
+        } else if (signInError.message.includes('Email not confirmed')) {
+          throw new Error('Your admin account exists but email is not confirmed. Please check your email for the confirmation link.');
         } else {
-          // Wrong password or other auth error
+          // Other auth errors
           throw new Error(`Login failed: ${signInError.message}`);
         }
+      } else {
+        // Sign in was successful
+        toast({
+          title: "Welcome Back",
+          description: "Successfully logged in to admin panel.",
+        });
       }
 
       // Verify we have a valid authenticated user
