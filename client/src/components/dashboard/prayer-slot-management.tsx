@@ -29,32 +29,65 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   const [isChangeSlotModalOpen, setIsChangeSlotModalOpen] = useState(false);
   const [countdown, setCountdown] = useState<CountdownTime>({ hours: 0, minutes: 0, seconds: 0 });
   const [user, setUser] = useState<any>(null);
-
-  // Get userId from localStorage or use a default
-  const userId = localStorage.getItem('userId') || 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f';
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   // Get current user and initialize notification service
   useEffect(() => {
     const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) {
+          console.error('Error getting user:', error);
+          return;
+        }
+        
+        if (user) {
+          console.log('User authenticated:', user.id, user.email);
+          setUser(user);
+        } else {
+          console.log('No authenticated user found');
+        }
+      } catch (error) {
+        console.error('Error in getCurrentUser:', error);
+      } finally {
+        setIsLoadingUser(false);
+      }
     };
 
     // Initialize notification service
     notificationService.initialize();
 
     getCurrentUser();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        setUser(null);
+      }
+      setIsLoadingUser(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   // Fetch user's prayer slot with automatic refetching
   const { data: prayerSlot, error: slotError, isLoading: isLoadingSlot } = useQuery({
     queryKey: ['prayer-slot', user?.id],
     queryFn: async () => {
+      console.log('Fetching prayer slot for user:', user?.id);
       const response = await fetch(`/api/prayer-slot/${user?.id}`);
-      if (!response.ok) throw new Error('Failed to fetch prayer slot');
-      return response.json();
+      if (!response.ok) {
+        console.error('Failed to fetch prayer slot:', response.status, response.statusText);
+        throw new Error('Failed to fetch prayer slot');
+      }
+      const data = await response.json();
+      console.log('Prayer slot data:', data);
+      return data;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !isLoadingUser,
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
     staleTime: 10000
@@ -145,6 +178,8 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   // Change slot mutation with optimistic updates
   const changeSlotMutation = useMutation({
     mutationFn: async ({ userId, newSlotTime, currentSlotTime }: { userId: string; newSlotTime: string; currentSlotTime?: string }) => {
+      console.log('Attempting to change/create prayer slot:', { userId, newSlotTime, currentSlotTime });
+      
       const response = await fetch('/api/prayer-slot/change', {
         method: 'POST',
         headers: {
@@ -152,8 +187,16 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         },
         body: JSON.stringify({ userId, newSlotTime, currentSlotTime })
       });
-      if (!response.ok) throw new Error('Failed to change prayer slot');
-      return response.json();
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to change prayer slot:', response.status, errorText);
+        throw new Error(`Failed to change prayer slot: ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log('Prayer slot change successful:', result);
+      return result;
     },
     onMutate: async ({ userId, newSlotTime }) => {
       // Cancel any outgoing refetches
@@ -285,14 +328,35 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   };
 
   const handleChangeSlot = (newSlotTime: string) => {
-    if (user?.id) {
-      changeSlotMutation.mutate({
-        userId: user.id,
-        newSlotTime,
-        currentSlotTime: prayerSlot?.slotTime
+    if (!user?.id) {
+      toast({
+        title: "Authentication Error",
+        description: "Please log in to select a prayer slot.",
+        variant: "destructive",
       });
+      return;
     }
+
+    console.log('Handling slot change:', { userId: user.id, newSlotTime, currentSlot: prayerSlot?.slotTime });
+    
+    changeSlotMutation.mutate({
+      userId: user.id,
+      newSlotTime,
+      currentSlotTime: prayerSlot?.slotTime
+    });
   };
+
+  if (isLoadingUser) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <i className="fas fa-spinner fa-spin text-4xl text-brand-primary mb-4"></i>
+          <h2 className="text-xl font-poppins font-semibold text-brand-text mb-2">Loading...</h2>
+          <p className="text-gray-600">Checking authentication status...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (

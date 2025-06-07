@@ -190,24 +190,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId, newSlotTime, currentSlotTime } = req.body;
 
+      console.log('Prayer slot change request:', { userId, newSlotTime, currentSlotTime });
+
       if (!userId || !newSlotTime) {
+        console.error('Missing required fields:', { userId: !!userId, newSlotTime: !!newSlotTime });
         return res.status(400).json({ error: "User ID and new slot time are required" });
       }
 
-      // Get user email from auth
-      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
-      const userEmail = authUser?.user?.email || 'unknown@example.com';
+      // Validate user exists in auth
+      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId);
+      if (authError || !authUser?.user) {
+        console.error("Auth error:", authError);
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const userEmail = authUser.user.email || 'unknown@example.com';
+      console.log('User found:', { userId, userEmail });
+
+      // Check if the new slot time is already taken by another user
+      const { data: existingSlotUser, error: checkError } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('user_id, user_email')
+        .eq('slot_time', newSlotTime)
+        .eq('status', 'active')
+        .neq('user_id', userId)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error("Error checking slot availability:", checkError);
+        return res.status(500).json({ error: "Failed to check slot availability" });
+      }
+
+      if (existingSlotUser) {
+        console.log('Slot already taken by:', existingSlotUser);
+        return res.status(409).json({ error: "This prayer slot is already taken by another user" });
+      }
 
       // Check if user already has a slot
-      const { data: existingSlot } = await supabaseAdmin
+      const { data: existingSlot, error: existingError } = await supabaseAdmin
         .from('prayer_slots')
         .select('*')
         .eq('user_id', userId)
         .single();
 
+      if (existingError && existingError.code !== 'PGRST116') {
+        console.error("Error checking existing slot:", existingError);
+        return res.status(500).json({ error: "Failed to check existing slot" });
+      }
+
       let updatedSlot;
 
       if (existingSlot) {
+        console.log('Updating existing slot:', existingSlot.id);
         // Update existing slot
         const { data, error } = await supabaseAdmin
           .from('prayer_slots')
@@ -228,6 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         updatedSlot = data;
       } else {
+        console.log('Creating new slot for user');
         // Create new slot
         const { data, error } = await supabaseAdmin
           .from('prayer_slots')
@@ -264,10 +299,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedAt: updatedSlot.updated_at
       };
 
+      console.log('Prayer slot operation successful:', formattedSlot);
       res.json(formattedSlot);
     } catch (error) {
       console.error("Error changing prayer slot:", error);
-      res.status(500).json({ error: "Failed to change prayer slot" });
+      res.status(500).json({ 
+        error: "Failed to change prayer slot",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
