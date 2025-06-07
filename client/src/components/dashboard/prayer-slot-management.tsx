@@ -435,7 +435,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                               {isLoadingSlots ? (
                                 <SelectItem value="loading" disabled>Loading slots...</SelectItem>
                               ) : (
-                                availableSlotsData.filter((slot: any) => slot.status === 'available').map((slot: any) => (
+                                availableSlotsData.map((slot: any) => (
                                   <SelectItem key={slot.id} value={slot.slotTime}>
                                     {slot.slotTime}
                                   </SelectItem>
@@ -481,7 +481,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                             {isLoadingSlots ? (
                               <SelectItem value="loading" disabled>Loading slots...</SelectItem>
                             ) : (
-                              availableSlotsData.filter((slot: any) => slot.status === 'available').map((slot: any) => (
+                              availableSlotsData.map((slot: any) => (
                                 <SelectItem key={slot.id} value={slot.slotTime}>
                                   {slot.slotTime}
                                 </SelectItem>

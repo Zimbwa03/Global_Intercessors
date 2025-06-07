@@ -330,12 +330,14 @@ export default function PrayerSlotManagement() {
                             <SelectContent className="max-h-60">
                               {isLoadingSlots ? (
                                 <SelectItem value="loading" disabled>Loading slots...</SelectItem>
-                              ) : (
+                              ) : availableSlots.length > 0 ? (
                                 availableSlots.map((slot: AvailableSlot) => (
                                   <SelectItem key={slot.id} value={slot.slotTime}>
                                     {slot.slotTime}
                                   </SelectItem>
                                 ))
+                              ) : (
+                                <SelectItem value="no-slots" disabled>No available slots</SelectItem>
                               )}
                             </SelectContent>
                           </Select>
@@ -374,12 +376,14 @@ export default function PrayerSlotManagement() {
                           <SelectContent className="max-h-60">
                             {isLoadingSlots ? (
                               <SelectItem value="loading" disabled>Loading slots...</SelectItem>
-                            ) : (
+                            ) : availableSlots.length > 0 ? (
                               availableSlots.map((slot: AvailableSlot) => (
                                 <SelectItem key={slot.id} value={slot.slotTime}>
                                   {slot.slotTime}
                                 </SelectItem>
                               ))
+                            ) : (
+                              <SelectItem value="no-slots" disabled>No available slots</SelectItem>
                             )}
                           </SelectContent>
                         </Select>
