@@ -62,6 +62,8 @@ export default function AdminLogin() {
         password,
       });
 
+      let currentUser = signInData?.user;
+
       if (signInError) {
         // If sign in fails, try to sign up (first time setup)
         console.log('Sign in failed, attempting sign up for admin...');
@@ -81,7 +83,9 @@ export default function AdminLogin() {
           throw new Error(`Authentication failed: ${signUpError.message}`);
         }
 
-        if (signUpData.user) {
+        currentUser = signUpData.user;
+
+        if (currentUser) {
           toast({
             title: "Admin Account Created",
             description: "Your admin account has been created successfully.",
@@ -89,11 +93,15 @@ export default function AdminLogin() {
         }
       }
 
-      // Check if we have a valid user session
-      const { data: { user } } = await supabase.auth.getUser();
+      // Check if we have a valid user from either sign in or sign up
+      if (!currentUser) {
+        // Try to get current session as fallback
+        const { data: { user: sessionUser } } = await supabase.auth.getUser();
+        currentUser = sessionUser;
+      }
       
-      if (!user) {
-        throw new Error('Authentication failed - no user session');
+      if (!currentUser) {
+        throw new Error('Authentication failed - no user session found');
       }
 
       toast({
