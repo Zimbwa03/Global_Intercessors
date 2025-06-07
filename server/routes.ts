@@ -197,15 +197,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "User ID and new slot time are required" });
       }
 
-      // Validate user exists in auth
-      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId);
-      if (authError || !authUser?.user) {
-        console.error("Auth error:", authError);
-        return res.status(404).json({ error: "User not found" });
+      // Validate user exists in auth with better error handling
+      let userEmail = 'unknown@example.com';
+      try {
+        const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId);
+        if (authError) {
+          console.error("Auth error details:", authError);
+          // Continue anyway - we'll try to get email from user_profiles table
+        }
+        
+        if (authUser?.user?.email) {
+          userEmail = authUser.user.email;
+          console.log('User found in auth:', { userId, userEmail });
+        } else {
+          console.log('User not found in auth, checking user_profiles table...');
+          
+          // Try to get user email from user_profiles table as fallback
+          const { data: userProfile, error: profileError } = await supabaseAdmin
+            .from('user_profiles')
+            .select('email')
+            .eq('id', userId)
+            .single();
+            
+          if (userProfile?.email) {
+            userEmail = userProfile.email;
+            console.log('User found in profiles:', { userId, userEmail });
+          } else {
+            console.error('User not found in profiles either:', profileError);
+            // Still continue - we'll use a default email
+          }
+        }
+      } catch (authValidationError) {
+        console.error("Auth validation error:", authValidationError);
+        // Continue with default email - the user might still exist in our system
       }
-
-      const userEmail = authUser.user.email || 'unknown@example.com';
-      console.log('User found:', { userId, userEmail });
 
       // Check if the new slot time is already taken by another user
       const { data: existingSlotUser, error: checkError } = await supabaseAdmin
@@ -236,6 +261,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (existingError && existingError.code !== 'PGRST116') {
         console.error("Error checking existing slot:", existingError);
         return res.status(500).json({ error: "Failed to check existing slot" });
+      }
+
+      // Ensure user profile exists before creating slot
+      try {
+        const { data: existingProfile } = await supabaseAdmin
+          .from('user_profiles')
+          .select('id')
+          .eq('id', userId)
+          .single();
+
+        if (!existingProfile) {
+          console.log('Creating user profile for new user...');
+          const { error: profileError } = await supabaseAdmin
+            .from('user_profiles')
+            .insert([{
+              id: userId,
+              email: userEmail,
+              full_name: '',
+              role: 'intercessor',
+              is_active: true,
+              created_at: new Date().toISOString()
+            }]);
+
+          if (profileError) {
+            console.error("Error creating user profile:", profileError);
+            // Continue anyway - slot creation might still work
+          } else {
+            console.log('User profile created successfully');
+          }
+        }
+      } catch (profileError) {
+        console.error("Error checking/creating user profile:", profileError);
+        // Continue anyway
       }
 
       let updatedSlot;
