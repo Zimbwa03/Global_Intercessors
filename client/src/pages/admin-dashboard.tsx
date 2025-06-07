@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -106,6 +106,19 @@ export default function AdminDashboard() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [newUpdate, setNewUpdate] = useState({ title: "", description: "" });
   const [zoomLink, setZoomLink] = useState("");
+  
+  // Memoize the form handlers to prevent unnecessary re-renders
+  const handleUpdateTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewUpdate(prev => ({ ...prev, title: e.target.value }));
+  }, []);
+  
+  const handleUpdateDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewUpdate(prev => ({ ...prev, description: e.target.value }));
+  }, []);
+  
+  const handleZoomLinkChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setZoomLink(e.target.value);
+  }, []);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -155,7 +168,9 @@ export default function AdminDashboard() {
       return response;
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
+    refetchInterval: 60000, // Reduced from 30s to 60s
+    refetchOnWindowFocus: false, // Disable refetch on window focus
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   const prayerSlots = Array.isArray(prayerSlotsResponse) ? prayerSlotsResponse : [];
@@ -168,7 +183,9 @@ export default function AdminDashboard() {
       return response;
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
+    refetchInterval: 60000, // Reduced from 30s to 60s
+    refetchOnWindowFocus: false, // Disable refetch on window focus
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   const fastingRegistrations = Array.isArray(fastingRegistrationsResponse) ? fastingRegistrationsResponse : [];
@@ -181,7 +198,9 @@ export default function AdminDashboard() {
       return response;
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
+    refetchInterval: 60000, // Reduced from 30s to 60s
+    refetchOnWindowFocus: false, // Disable refetch on window focus
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   const intercessors = Array.isArray(intercessorsResponse) ? intercessorsResponse : [];
@@ -194,7 +213,9 @@ export default function AdminDashboard() {
       return response;
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
+    refetchInterval: 60000, // Reduced from 30s to 60s
+    refetchOnWindowFocus: false, // Disable refetch on window focus
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   const updates = Array.isArray(updatesResponse) ? updatesResponse : [];
@@ -207,7 +228,9 @@ export default function AdminDashboard() {
       return response;
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
+    refetchInterval: 60000, // Reduced from 30s to 60s
+    refetchOnWindowFocus: false, // Disable refetch on window focus
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   // Fetch all users
@@ -218,7 +241,9 @@ export default function AdminDashboard() {
       return response;
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
+    refetchInterval: 60000, // Reduced from 30s to 60s
+    refetchOnWindowFocus: false, // Disable refetch on window focus
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   // Get current Zoom link
@@ -693,7 +718,7 @@ export default function AdminDashboard() {
               <Input
                 id="updateTitle"
                 value={newUpdate.title}
-                onChange={(e) => setNewUpdate({ ...newUpdate, title: e.target.value })}
+                onChange={handleUpdateTitleChange}
                 placeholder="Enter update title..."
                 className="mt-1"
               />
@@ -703,7 +728,7 @@ export default function AdminDashboard() {
               <Textarea
                 id="updateDescription"
                 value={newUpdate.description}
-                onChange={(e) => setNewUpdate({ ...newUpdate, description: e.target.value })}
+                onChange={handleUpdateDescriptionChange}
                 placeholder="Enter update description..."
                 rows={4}
                 className="mt-1"
@@ -746,7 +771,7 @@ export default function AdminDashboard() {
               <Input
                 id="zoomLink"
                 value={zoomLink}
-                onChange={(e) => setZoomLink(e.target.value)}
+                onChange={handleZoomLinkChange}
                 placeholder="https://zoom.us/j/..."
                 className="mt-1"
               />
@@ -962,10 +987,10 @@ export default function AdminDashboard() {
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.15 }}
           >
             {renderTabContent()}
           </motion.div>
