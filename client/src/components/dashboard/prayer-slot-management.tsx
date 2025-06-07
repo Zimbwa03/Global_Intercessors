@@ -10,6 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Clock, Calendar, AlertCircle, RotateCcw, Edit3, CheckCircle2, XCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { notificationService } from '@/lib/notificationService';
+import { countdownService } from '@/lib/countdownService';
 
 interface CountdownTime {
   hours: number;
@@ -202,43 +203,24 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     }
   });
 
-  // Calculate countdown to next prayer session and schedule notifications
+  // Use synchronized countdown service and schedule notifications
   useEffect(() => {
-    if (!prayerSlot?.slotTime) return;
-
-    const updateCountdown = () => {
-      const now = new Date();
-      const [startTime] = prayerSlot.slotTime.split('–');
-      const [hours, minutes] = startTime.split(':').map(Number);
-
-      const nextSession = new Date();
-      nextSession.setHours(hours, minutes, 0, 0);
-
-      // If the time has passed today, set for tomorrow
-      if (nextSession <= now) {
-        nextSession.setDate(nextSession.getDate() + 1);
-      }
-
-      const timeDiff = nextSession.getTime() - now.getTime();
-      const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60));
-      const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-      const secondsLeft = Math.floor((timeDiff % (1000 * 60)) / 1000);
-
-      setCountdown({
-        hours: Math.max(0, hoursLeft),
-        minutes: Math.max(0, minutesLeft),
-        seconds: Math.max(0, secondsLeft)
-      });
-    };
+    // Start the global countdown service
+    countdownService.start();
+    
+    // Subscribe to countdown updates
+    const unsubscribe = countdownService.subscribe((time) => {
+      setCountdown(time);
+    });
 
     // Schedule notifications when prayer slot is active
     if (prayerSlot && prayerSlot.status === 'active') {
       notificationService.scheduleSlotReminders(prayerSlot);
     }
 
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      unsubscribe();
+    };
   }, [prayerSlot]);
 
   const getStatusBadgeVariant = (status: string) => {

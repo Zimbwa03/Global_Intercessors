@@ -63,6 +63,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get available slots
   app.get("/api/available-slots", async (req: Request, res: Response) => {
     try {
+      const { data: occupiedSlots, error } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('slot_time')
+        .eq('status', 'active');
+
+      if (error) {
+        console.error("Error fetching occupied slots:", error);
+        return res.status(500).json({ error: "Failed to fetch occupied slots" });
+      }
+
+      const occupiedTimes = new Set(occupiedSlots.map(slot => slot.slot_time));
+
       // Generate 48 time slots (30-minute intervals for 24 hours)
       const availableSlots = [];
       for (let hour = 0; hour < 24; hour++) {
@@ -71,17 +83,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const endHour = minute === 30 ? hour + 1 : hour;
           const endMinute = minute === 30 ? 0 : 30;
           const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+          const slotTime = `${startTime}–${endTime}`;
           
-          availableSlots.push({
-            id: hour * 2 + (minute / 30) + 1,
-            slotTime: `${startTime}–${endTime}`,
-            isAvailable: Math.random() > 0.3, // Random availability for demo
-            timezone: "UTC"
-          });
+          // Only include slots that are not occupied
+          if (!occupiedTimes.has(slotTime)) {
+            availableSlots.push({
+              id: hour * 2 + (minute / 30) + 1,
+              slotTime,
+              timezone: "UTC"
+            });
+          }
         }
       }
 
-      res.json(availableSlots.filter(slot => slot.isAvailable));
+      res.json(availableSlots);
     } catch (error) {
       console.error("Error fetching available slots:", error);
       res.status(500).json({ error: "Failed to fetch available slots" });
@@ -325,13 +340,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         prompt += `\nProvide a relevant Bible verse from ${version} related to "${phrase}" with a clear explanation and one practical prayer point.`;
       }
       
-      prompt += `\n\nReturn the response in JSON format with these fields:
+      prompt += `\n\nReturn the response in JSON format with these fields. Use natural, conversational language without asterisks or special formatting:
       {
         "verse": "the actual Bible verse text",
         "reference": "book chapter:verse",
         "version": "${version}",
-        "explanation": "clear explanation of the verse meaning",
-        "prayerPoint": "one practical prayer point based on this verse"
+        "explanation": "clear, conversational explanation of the verse meaning in simple language",
+        "prayerPoint": "one practical prayer point based on this verse in natural language"
       }`;
 
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
