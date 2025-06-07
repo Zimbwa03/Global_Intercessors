@@ -10,6 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Landing() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const scrollToAuth = () => {
     document.getElementById('auth')?.scrollIntoView({ behavior: 'smooth' });
@@ -25,61 +26,63 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen">
-      {/* Header/Navigation */}
+      {/* Header/Navigation - Mobile Optimized */}
       <header className="bg-brand-primary text-white shadow-brand-lg relative">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-800/30 to-blue-900/20"></div>
-        <nav className="container mx-auto px-6 py-4 relative">
+        <nav className={`container mx-auto relative ${isMobile ? 'px-4 py-3' : 'px-6 py-4'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-brand-accent rounded-full flex items-center justify-center shadow-brand">
-                <i className="fas fa-praying-hands text-brand-primary text-lg"></i>
+              <div className={`bg-brand-accent rounded-full flex items-center justify-center shadow-brand ${
+                isMobile ? 'w-8 h-8' : 'w-10 h-10'
+              }`}>
+                <i className={`fas fa-praying-hands text-brand-primary ${isMobile ? 'text-base' : 'text-lg'}`}></i>
               </div>
-              <h1 className="text-2xl font-bold font-poppins">Global Intercessors</h1>
+              <h1 className={`font-bold font-poppins ${isMobile ? 'text-xl' : 'text-2xl'}`}>
+                Global Intercessors
+              </h1>
             </div>
-            <div className="hidden md:flex items-center space-x-6">
-              <button 
-                onClick={() => scrollToSection('features')}
-                className="hover:text-brand-accent transition-brand font-medium"
+            
+            {isMobile ? (
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 rounded-lg hover:bg-blue-700/50 transition-colors"
               >
-                Features
+                <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'} text-xl`}></i>
               </button>
-              <button 
-                onClick={() => scrollToSection('contact')}
-                className="hover:text-brand-accent transition-brand font-medium"
-              >
-                About
-              </button>
-              <button 
-                onClick={() => scrollToSection('contact')}
-                className="hover:text-brand-accent transition-brand font-medium"
-              >
-                Contact
-              </button>
-              <Button 
-                onClick={scrollToAuth}
-                className="bg-brand-accent text-brand-primary px-6 py-2 rounded-lg font-semibold hover:bg-brand-accent-dark transition-brand shadow-brand font-poppins"
-              >
-                Get Started
-              </Button>
-            </div>
-            <button 
-              className="md:hidden text-white"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              <i className="fas fa-bars text-xl"></i>
-            </button>
+            ) : (
+              <div className="flex items-center space-x-6">
+                <button 
+                  onClick={() => scrollToSection('features')}
+                  className="hover:text-brand-accent transition-brand font-medium"
+                >
+                  Features
+                </button>
+                <button 
+                  onClick={() => scrollToSection('contact')}
+                  className="hover:text-brand-accent transition-brand font-medium"
+                >
+                  About
+                </button>
+                <Button 
+                  onClick={scrollToAuth}
+                  className="bg-brand-accent text-brand-primary px-6 py-2 rounded-lg font-semibold hover:bg-brand-accent-dark transition-brand shadow-brand font-poppins"
+                >
+                  Get Started
+                </Button>
+              </div>
+            )}
           </div>
-          
+
           {/* Mobile Menu */}
-          {isMobileMenuOpen && (
-            <div className="md:hidden mt-4 pt-4 border-t border-blue-700/50">
+          {isMobile && isMobileMenuOpen && (
+            <div className="mt-4 pt-4 border-t border-blue-700/50">
               <div className="flex flex-col space-y-4">
                 <button 
                   onClick={() => {
                     scrollToSection('features');
                     setIsMobileMenuOpen(false);
                   }}
-                  className="text-left hover:text-brand-accent transition-brand font-medium"
+                  className="text-left py-2 px-4 rounded-lg hover:bg-blue-700/50 transition-colors"
                 >
                   Features
                 </button>
@@ -88,25 +91,16 @@ export default function Landing() {
                     scrollToSection('contact');
                     setIsMobileMenuOpen(false);
                   }}
-                  className="text-left hover:text-brand-accent transition-brand font-medium"
+                  className="text-left py-2 px-4 rounded-lg hover:bg-blue-700/50 transition-colors"
                 >
                   About
-                </button>
-                <button 
-                  onClick={() => {
-                    scrollToSection('contact');
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="text-left hover:text-brand-accent transition-brand font-medium"
-                >
-                  Contact
                 </button>
                 <Button 
                   onClick={() => {
                     scrollToAuth();
                     setIsMobileMenuOpen(false);
                   }}
-                  className="bg-brand-accent text-brand-primary px-6 py-2 rounded-lg font-semibold hover:bg-brand-accent-dark transition-brand w-fit shadow-brand font-poppins"
+                  className="bg-brand-accent text-brand-primary font-semibold w-full mt-2"
                 >
                   Get Started
                 </Button>
@@ -116,23 +110,66 @@ export default function Landing() {
         </nav>
       </header>
 
-      {/* Hero Section */}
-      <HeroSection onGetStarted={scrollToAuth} onLearnMore={scrollToFeatures} />
-
-      {/* Features Section */}
-      <FeaturesSection />
+      {/* Hero Section - Mobile Optimized */}
+      <section className={`bg-gradient-to-br from-brand-neutral to-blue-50 ${isMobile ? 'py-12' : 'py-24'}`}>
+        <div className={`container mx-auto text-center ${isMobile ? 'px-4' : 'px-6'}`}>
+          <div className={`max-w-4xl mx-auto ${isMobile ? 'space-y-6' : 'space-y-8'}`}>
+            <h1 className={`font-bold text-brand-text font-poppins ${
+              isMobile ? 'text-3xl leading-tight' : 'text-5xl lg:text-6xl'
+            }`}>
+              Unite in Prayer
+              <span className="text-brand-primary block">Transform the World</span>
+            </h1>
+            <p className={`text-gray-600 max-w-2xl mx-auto leading-relaxed ${
+              isMobile ? 'text-base px-2' : 'text-xl'
+            }`}>
+              Join thousands of intercessors worldwide in coordinated prayer sessions. 
+              Schedule your time, connect with fellow believers, and be part of God's movement.
+            </p>
+            <div className={`flex gap-4 justify-center ${isMobile ? 'flex-col items-center' : ''}`}>
+              <Button 
+                onClick={scrollToAuth}
+                className={`bg-brand-primary hover:bg-blue-800 text-white font-semibold transition-brand shadow-brand font-poppins ${
+                  isMobile ? 'w-full max-w-sm px-8 py-4 text-lg' : 'px-8 py-4 text-lg'
+                }`}
+              >
+                <i className="fas fa-praying-hands mr-2"></i>
+                Start Praying
+              </Button>
+              <Button 
+                onClick={scrollToFeatures}
+                variant="outline"
+                className={`border-brand-primary text-brand-primary hover:bg-blue-50 font-semibold transition-brand font-poppins ${
+                  isMobile ? 'w-full max-w-sm px-8 py-4 text-lg' : 'px-8 py-4 text-lg'
+                }`}
+              >
+                Learn More
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Statistics Section */}
       <StatisticsSection />
 
-      {/* Authentication Section */}
-      <AuthSection />
+      {/* Features Section */}
+      <div id="features">
+        <FeaturesSection />
+      </div>
+
+      {/* Auth Section */}
+      <div id="auth">
+        <AuthSection />
+      </div>
 
       {/* Testimonials Section */}
       <TestimonialsSection />
 
       {/* Footer */}
-      <Footer />
+      <div id="contact">
+        <Footer />
+      </div>
     </div>
   );
 }
