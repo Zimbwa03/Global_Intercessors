@@ -27,13 +27,13 @@ interface PrayerSlot {
 
 interface FastingRegistration {
   id: string;
-  fullName: string;
-  phoneNumber: string;
+  full_name: string;
+  phone_number: string;
   region: string;
-  travelCost: number;
-  gpsLatitude: number | null;
-  gpsLongitude: number | null;
-  createdAt: string;
+  travel_cost: string;
+  gps_latitude: string | null;
+  gps_longitude: string | null;
+  created_at: string;
 }
 
 export default function AdminDashboard() {

@@ -1,0 +1,62 @@
+Failed to load resource: the server responded with a status of 404 ()
+index-BGCXbQH3.js:1146 Error fetching user profile: Object
+(anonymous) @ index-BGCXbQH3.js:1146
+index-BGCXbQH3.js:1131 Scheduled reminders for prayer slot 22:00–22:30
+index-BGCXbQH3.js:1131 Unable to get permission to notify.
+index-BGCXbQH3.js:248 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ index-BGCXbQH3.js:248
+2index-BGCXbQH3.js:1131 Scheduled reminders for prayer slot 00:30–01:00
+index-BGCXbQH3.js:1131 Unable to get permission to notify.
+index-BGCXbQH3.js:1131 Scheduled reminders for prayer slot 00:30–01:00
+index-BGCXbQH3.js:248 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ index-BGCXbQH3.js:248
+2index-BGCXbQH3.js:1131 Scheduled reminders for prayer slot 04:00–04:30
+lmhbvdxainxcjuveisfe.supabase.co/rest/v1/session_tracking?select=*&intercessor_id=eq.eb399bac-8ae0-42fb-9ee8-ffb46f63a97f&order=session_date.desc&limit=30:1 
+        
+        
+       Failed to load resource: the server responded with a status of 404 ()
+lmhbvdxainxcjuveisfe.supabase.co/rest/v1/session_tracking?select=*&intercessor_id=eq.eb399bac-8ae0-42fb-9ee8-ffb46f63a97f&order=session_date.desc&limit=30:1 
+        
+        
+       Failed to load resource: the server responded with a status of 404 ()
+lmhbvdxainxcjuveisfe.supabase.co/rest/v1/fasting_registrations?columns=%22full_name%22%2C%22phone_number%22%2C%22region%22%2C%22travel_cost%22%2C%22gps_latitude%22%2C%22gps_longitude%22&select=*:1 
+        
+        
+       Failed to load resource: the server responded with a status of 400 ()
+lmhbvdxainxcjuveisfe.supabase.co/rest/v1/fasting_registrations?columns=%22full_name%22%2C%22phone_number%22%2C%22region%22%2C%22travel_cost%22%2C%22gps_latitude%22%2C%22gps_longitude%22&select=*:1 
+        
+        
+       Failed to load resource: the server responded with a status of 400 ()
+lmhbvdxainxcjuveisfe.supabase.co/rest/v1/fasting_registrations?columns=%22full_name%22%2C%22phone_number%22%2C%22region%22%2C%22travel_cost%22%2C%22gps_latitude%22%2C%22gps_longitude%22&select=*:1 
+        
+        
+       Failed to load resource: the server responded with a status of 400 ()
+lmhbvdxainxcjuveisfe.supabase.co/rest/v1/fasting_registrations?columns=%22full_name%22%2C%22phone_number%22%2C%22region%22%2C%22travel_cost%22%2C%22gps_latitude%22%2C%22gps_longitude%22&select=*:1 
+        
+        
+       Failed to load resource: the server responded with a status of 400 ()
+lmhbvdxainxcjuveisfe.supabase.co/rest/v1/fasting_registrations?columns=%22full_name%22%2C%22phone_number%22%2C%22region%22%2C%22travel_cost%22%2C%22gps_latitude%22%2C%22gps_longitude%22&select=*:1 
+        
+        
+       Failed to load resource: the server responded with a status of 400 ()
+lmhbvdxainxcjuveisfe.supabase.co/rest/v1/fasting_registrations?columns=%22full_name%22%2C%22phone_number%22%2C%22region%22%2C%22travel_cost%22%2C%22gps_latitude%22%2C%22gps_longitude%22&select=*:1 
+        
+        
+       Failed to load resource: the server responded with a status of 400 ()
+lmhbvdxainxcjuveisfe.supabase.co/rest/v1/fasting_registrations?columns=%22full_name%22%2C%22phone_number%22%2C%22region%22%2C%22travel_cost%22%2C%22gps_latitude%22%2C%22gps_longitude%22&select=*:1 
+        
+        
+       Failed to load resource: the server responded with a status of 400 ()
+index-BGCXbQH3.js:203 
+        
+        
+       POST https://lmhbvdxainxcjuveisfe.supabase.co/rest/v1/fasting_registrations?columns=%22full_name%22%2C%22phone_number%22%2C%22region%22%2C%22travel_cost%22%2C%22gps_latitude%22%2C%22gps_longitude%22&select=* 400 (Bad Request)
+(anonymous) @ index-BGCXbQH3.js:203
+(anonymous) @ index-BGCXbQH3.js:203
+l @ index-BGCXbQH3.js:203
+Promise.then (async)
+u @ index-BGCXbQH3.js:203
+(anonymous) @ index-BGCXbQH3.js:203
+CP @ index-BGCXbQH3.js:203
+(anonymous) @ index-BGCXbQH3.js:203
+then @ index-BGCXbQH3.js:198

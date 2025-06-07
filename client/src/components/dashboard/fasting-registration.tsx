@@ -13,9 +13,9 @@ interface FastingRegistration {
   fullName: string;
   phoneNumber: string;
   region: string;
-  travelCost: number;
-  gpsLatitude: number | null;
-  gpsLongitude: number | null;
+  travelCost: string;
+  gpsLatitude: string | null;
+  gpsLongitude: string | null;
   agreedToGPS: boolean;
 }
 
@@ -25,7 +25,7 @@ export function FastingRegistration() {
     fullName: "",
     phoneNumber: "",
     region: "",
-    travelCost: 0,
+    travelCost: "0",
     gpsLatitude: null,
     gpsLongitude: null,
     agreedToGPS: false,
@@ -51,8 +51,8 @@ export function FastingRegistration() {
       (position) => {
         setFormData(prev => ({
           ...prev,
-          gpsLatitude: position.coords.latitude,
-          gpsLongitude: position.coords.longitude
+          gpsLatitude: position.coords.latitude.toString(),
+          gpsLongitude: position.coords.longitude.toString()
         }));
         setLocationStatus("success");
         toast({
@@ -83,10 +83,13 @@ export function FastingRegistration() {
 
   const registrationMutation = useMutation({
     mutationFn: async (data: FastingRegistration) => {
+      const registrationId = `reg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       const { data: result, error } = await supabase
         .from('fasting_registrations')
         .insert([
           {
+            id: registrationId,
             full_name: data.fullName,
             phone_number: data.phoneNumber,
             region: data.region,
@@ -279,7 +282,7 @@ export function FastingRegistration() {
                 step="0.01"
                 placeholder="0.00"
                 value={formData.travelCost || ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, travelCost: parseFloat(e.target.value) || 0 }))}
+                onChange={(e) => setFormData(prev => ({ ...prev, travelCost: e.target.value || "0" }))}
                 className="border-gray-300 focus:border-blue-500"
               />
               <p className="text-sm text-gray-600">Enter your estimated travel cost for reimbursement</p>
