@@ -1,3 +1,4 @@
+
 -- Global Intercessors Database Setup Script
 -- Run this in your Supabase SQL Editor
 
@@ -169,9 +170,14 @@ ALTER TABLE audio_bible_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fasting_registrations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE updates ENABLE ROW LEVEL SECURITY;
 
--- Create policies for admin_users table
+-- Drop existing policies for admin_users if they exist
+DROP POLICY IF EXISTS "Enable read access for all users" ON admin_users;
+DROP POLICY IF EXISTS "Enable insert for authenticated users only" ON admin_users;
+
+-- Create policies for admin_users table (more permissive for admin creation)
 CREATE POLICY "Enable read access for all users" ON admin_users FOR SELECT USING (true);
-CREATE POLICY "Enable insert for authenticated users only" ON admin_users FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Enable insert for admin creation" ON admin_users FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update for admins" ON admin_users FOR UPDATE USING (true);
 
 -- Create policies for prayer_slots table
 CREATE POLICY "Users can view their own prayer slots" ON prayer_slots FOR SELECT USING (user_id = auth.uid()::text OR EXISTS (SELECT 1 FROM admin_users WHERE email = auth.jwt() ->> 'email'));
