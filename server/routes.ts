@@ -58,7 +58,7 @@ async function getUserEmail(userId: string): Promise<string | null> {
         // This is expected if service role doesn't have auth permissions
         return null;
       }
-      return user?.email || null;
+      return user?.user?.email || null;
     } catch (authError) {
       console.error('Auth fetch failed (using fallback):', authError);
       return null;
@@ -76,20 +76,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.params;
       console.log('Fetching prayer slot for user:', userId);
 
-      // Use select without .single() to get array result, then check if array has items
+      // Direct query with proper ordering to get the most recent slot
       const { data: slots, error } = await supabaseAdmin
         .from('prayer_slots')
         .select('*')
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1);
 
       if (error) {
-        console.error('Database error:', error);
+        console.error('Database error fetching prayer slot:', error);
         return res.status(500).json({ error: 'Failed to fetch prayer slot' });
       }
 
-      // Get the first slot if exists, otherwise null
       const slot = slots && slots.length > 0 ? slots[0] : null;
-      console.log('Prayer slot raw data:', slot);
+      console.log('Prayer slot retrieved:', slot);
 
       // Format the response to match frontend expectations
       const formattedSlot = slot ? {
@@ -105,8 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedAt: slot.updated_at
       } : null;
 
-      console.log('Formatted prayer slot:', formattedSlot);
-
+      console.log('Formatted prayer slot response:', formattedSlot);
       res.json({ prayerSlot: formattedSlot });
     } catch (error) {
       console.error('Error fetching prayer slot:', error);
