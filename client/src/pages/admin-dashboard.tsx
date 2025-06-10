@@ -783,8 +783,8 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold ${
-                          activity.attendance_rate >= 0.8 ? 'bg-green-500' :
-                          activity.attendance_rate >= 0.6 ? 'bg-yellow-500' : 'bg-red-500'
+                          activity.attendance_rate >= 0.9 ? 'bg-green-500' :
+                          activity.attendance_rate >= 0.7 ? 'bg-yellow-500' : 'bg-red-500'
                         }`}>
                           {index + 1}
                         </div>
@@ -794,10 +794,27 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <Badge variant={activity.attendance_rate >= 0.8 ? 'default' : 
-                                      activity.attendance_rate >= 0.6 ? 'secondary' : 'destructive'}>
-                          {(activity.attendance_rate * 100).toFixed(1)}%
-                        </Badge>
+                        <div className="flex flex-col items-end">
+                          <Badge variant={activity.attendance_rate >= 0.9 ? 'default' : 
+                                        activity.attendance_rate >= 0.7 ? 'secondary' : 'destructive'}
+                                className={
+                                  activity.attendance_rate >= 0.9 ? 'bg-green-500 text-white' :
+                                  activity.attendance_rate >= 0.7 ? 'bg-yellow-500 text-white' :
+                                  'bg-red-500 text-white'
+                                }>
+                            {(activity.attendance_rate * 100).toFixed(1)}%
+                          </Badge>
+                          <span className="text-xs text-gray-500 mt-1">
+                            {activity.attendance_rate >= 0.9 ? 'Excellent' :
+                             activity.attendance_rate >= 0.7 ? 'Good' :
+                             'Needs Improvement'}
+                          </span>
+                          {activity.attendance_rate >= 0.9 && (
+                            <span className="text-xs text-green-600 font-medium">
+                              ⭐ Reward Eligible
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     
@@ -839,8 +856,8 @@ export default function AdminDashboard() {
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div 
                           className={`h-2 rounded-full ${
-                            activity.attendance_rate >= 0.8 ? 'bg-green-500' :
-                            activity.attendance_rate >= 0.6 ? 'bg-yellow-500' : 'bg-red-500'
+                            activity.attendance_rate >= 0.9 ? 'bg-green-500' :
+                            activity.attendance_rate >= 0.7 ? 'bg-yellow-500' : 'bg-red-500'
                           }`}
                           style={{ width: `${activity.attendance_rate * 100}%` }}
                         ></div>
@@ -850,8 +867,23 @@ export default function AdminDashboard() {
                 ))}
               </div>
             </ScrollArea>
+          ) : userActivities.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <UserCheck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 font-medium">No intercessor activity data found</p>
+              <p className="text-sm text-gray-500 mt-1">Activity data will appear once intercessors join Zoom prayer sessions</p>
+              <div className="mt-4 text-xs text-gray-500">
+                <p>To enable attendance tracking:</p>
+                <p>1. Ensure Zoom API credentials are configured</p>
+                <p>2. Intercessors must use the same email for Zoom and registration</p>
+                <p>3. Prayer sessions must be conducted via Zoom meetings</p>
+              </div>
+            </div>
           ) : (
-            <p className="text-gray-500 text-center py-8">No activity data found</p>
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <p className="text-gray-600">No intercessors match the selected filter</p>
+              <p className="text-sm text-gray-500 mt-1">Try adjusting the attendance filter or sort options</p>
+            </div>
           )}
         </CardContent>
       </AnimatedCard>
