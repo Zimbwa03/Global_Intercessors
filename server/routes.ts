@@ -275,85 +275,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin endpoint for user activities
+  // Admin endpoint for user activities with attendance tracking
   app.get("/api/admin/user-activities", async (req: Request, res: Response) => {
     try {
-      // Fetch recent prayer slot changes
-      const { data: slotActivities, error: slotError } = await supabaseAdmin
+      // Get all prayer slots with user data
+      const { data: prayerSlots, error: slotsError } = await supabaseAdmin
         .from('prayer_slots')
         .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false });
 
-      if (slotError) {
-        console.error("Error fetching slot activities:", slotError);
-        return res.status(500).json({ error: "Failed to fetch slot activities" });
+      if (slotsError) {
+        console.error("Error fetching prayer slots:", slotsError);
+        return res.status(500).json({ error: "Failed to fetch prayer slots" });
       }
 
-      // Fetch recent prayer sessions
-      const { data: sessionActivities, error: sessionError } = await supabaseAdmin
+      // Get attendance records
+      const { data: attendanceRecords, error: attendanceError } = await supabaseAdmin
+        .from('attendance_log')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (attendanceError) {
+        console.error("Error fetching attendance records:", attendanceError);
+        return res.status(500).json({ error: "Failed to fetch attendance records" });
+      }
+
+      // Get prayer sessions
+      const { data: prayerSessions, error: sessionsError } = await supabaseAdmin
         .from('prayer_sessions')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(30);
+        .order('created_at', { ascending: false });
 
-      if (sessionError) {
-        console.error("Error fetching session activities:", sessionError);
+      if (sessionsError) {
+        console.error("Error fetching session activities:", sessionsError);
         return res.status(500).json({ error: "Failed to fetch session activities" });
       }
 
-      // Fetch recent fasting registrations
-      const { data: fastingActivities, error: fastingError } = await supabaseAdmin
-        .from('fasting_registrations')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
+      // Process user activities with attendance data
+      const userActivityMap = new Map();
 
-      if (fastingError) {
-        console.error("Error fetching fasting activities:", fastingError);
-        return res.status(500).json({ error: "Failed to fetch fasting activities" });
-      }
-
-      // Combine and format activities
-      const activities = [];
-
-      // Add slot activities
-      slotActivities?.forEach(slot => {
-        activities.push({
-          type: 'slot_change',
-          user_id: slot.user_id,
-          user_email: slot.user_email,
-          slot_time: slot.slot_time,
-          description: `${slot.status === 'active' ? 'Assigned to' : 'Updated'} prayer slot ${slot.slot_time}`,
-          created_at: slot.updated_at || slot.created_at
-        });
+      // Process prayer slots to get user information
+      prayerSlots.forEach(slot => {
+        const userId = slot.user_id;
+        if (!userActivityMap.has(userId)) {
+          userActivityMap.set(userId, {
+            user_id: userId,
+            user_email: slot.user_email || '',
+            user_name: slot.user_name || 'Anonymous',
+            current_slot: slot.slot_time,
+            total_sessions: 0,
+            attended_sessions: 0,
+            attendance_rate: 0,
+            last_activity: slot.updated_at || slot.created_at,
+            contact_info: slot.user_email || ''
+          });
+        }
       });
 
-      // Add session activities
-      sessionActivities?.forEach(session => {
-        activities.push({
-          type: session.status === 'completed' ? 'session_completed' : 'session_missed',
-          user_id: session.user_id,
-          slot_time: session.slot_time,
-          description: `${session.status === 'completed' ? 'Completed' : 'Missed'} prayer session${session.duration ? ` (${session.duration} minutes)` : ''}`,
-          created_at: session.created_at
-        });
+      // Process attendance records
+      attendanceRecords.forEach(record => {
+        const userId = record.user_id;
+        if (userActivityMap.has(userId)) {
+          const activity = userActivityMap.get(userId);
+          activity.total_sessions += 1;
+          if (record.attendance_status === 'attended') {
+            activity.attended_sessions += 1;
+          }
+          // Update last activity if this record is more recent
+          if (new Date(record.created_at) > new Date(activity.last_activity)) {
+            activity.last_activity = record.created_at;
+          }
+        }
       });
 
-      // Add fasting activities
-      fastingActivities?.forEach(fasting => {
-        activities.push({
-          type: 'registration',
-          user_id: fasting.full_name,
-          description: `Registered for fasting program from ${fasting.region}`,
-          created_at: fasting.created_at
-        });
+      // Process prayer sessions
+      prayerSessions.forEach(session => {
+        const userId = session.user_id;
+        if (userActivityMap.has(userId)) {
+          const activity = userActivityMap.get(userId);
+          activity.total_sessions += 1;
+          activity.attended_sessions += 1; // Prayer sessions count as attended
+          if (new Date(session.created_at) > new Date(activity.last_activity)) {
+            activity.last_activity = session.created_at;
+          }
+        }
       });
 
-      // Sort by most recent
-      activities.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      // Calculate attendance rates
+      const userActivities = Array.from(userActivityMap.values()).map(activity => {
+        activity.attendance_rate = activity.total_sessions > 0 
+          ? activity.attended_sessions / activity.total_sessions 
+          : 0;
+        return activity;
+      });
 
-      res.json(activities.slice(0, 100)); // Return top 100 most recent activities
+      res.json(userActivities);
     } catch (error) {
       console.error("Error fetching user activities:", error);
       res.status(500).json({ error: "Failed to fetch user activities" });
@@ -363,33 +379,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin endpoint for attendance statistics
   app.get("/api/admin/attendance-stats", async (req: Request, res: Response) => {
     try {
-      const { data: sessions, error } = await supabaseAdmin
-        .from('prayer_sessions')
+      // Get attendance summary statistics
+      const { data: attendanceRecords, error: attendanceError } = await supabaseAdmin
+        .from('attendance_log')
         .select('*');
 
-      if (error) {
-        console.error("Error fetching attendance stats:", error);
-        return res.status(500).json({ error: "Failed to fetch attendance stats" });
+      if (attendanceError) {
+        console.error("Error fetching attendance stats:", attendanceError);
+        return res.status(500).json({ error: "Failed to fetch attendance statistics" });
       }
 
+      const totalSessions = attendanceRecords.length;
+      const attendedSessions = attendanceRecords.filter(record => record.attendance_status === 'attended').length;
+      const overallAttendanceRate = totalSessions > 0 ? attendedSessions / totalSessions : 0;
+
+      // Get unique users
+      const uniqueUsers = new Set(attendanceRecords.map(record => record.user_id)).size;
+
       const stats = {
-        totalSessions: sessions?.length || 0,
-        completedSessions: sessions?.filter(s => s.status === 'completed').length || 0,
-        missedSessions: sessions?.filter(s => s.status === 'missed').length || 0,
-        skippedSessions: sessions?.filter(s => s.status === 'skipped').length || 0,
-        averageDuration: sessions?.length > 0 
-          ? Math.round(sessions.reduce((acc, s) => acc + (s.duration || 0), 0) / sessions.length)
-          : 0,
-        attendanceRate: sessions?.length > 0
-          ? Math.round((sessions.filter(s => s.status === 'completed').length / sessions.length) * 100)
-          : 0
+        total_sessions: totalSessions,
+        attended_sessions: attendedSessions,
+        missed_sessions: totalSessions - attendedSessions,
+        overall_attendance_rate: overallAttendanceRate,
+        active_users: uniqueUsers,
+        last_updated: new Date().toISOString()
       };
 
       res.json(stats);
     } catch (error) {
-      console.error("Error calculating attendance stats:", error);
-      res.status(500).json({ error: "Failed to calculate attendance stats" });
+      console.error("Error fetching attendance statistics:", error);
+      res.status(500).json({ error: "Failed to fetch attendance statistics" });
     }
+  });
+
+  // Admin endpoint for prayer sessions
+  app.get("/api/admin/prayer-sessions", async (req: Request, res: Response) => {
+    try {
+      const { data: sessions, error } = await supabaseAdmin
+        .from('prayer_sessions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) {
+        console.error("Error fetching prayer sessions:", error);
+        return res.status(500).json({ error: "Failed to fetch prayer sessions" });
+      }
+
+      res.json(sessions || []);
+    } catch (error) {
+      console.error("Error fetching prayer sessions:", error);
+      res.status(500).json({ error: "Failed to fetch prayer sessions" });
+    }
+  });
   });
 
   // Admin endpoint for prayer sessions

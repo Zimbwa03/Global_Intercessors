@@ -21,17 +21,17 @@ import {
   BarChart3, 
   RefreshCw,
   LogOut,
-  Menu,
-  X,
   MapPin,
   Phone,
   Mail,
-  AlertCircle,
   CheckCircle,
   Activity,
   Plus,
   Link as LinkIcon,
-  Download
+  Download,
+  TrendingUp,
+  UserCheck,
+  Timer
 } from "lucide-react";
 import { AnimatedCard } from "@/components/ui/animated-card";
 import { motion, AnimatePresence } from "framer-motion";
@@ -52,6 +52,7 @@ interface PrayerSlot {
   userName?: string;
   createdAt: string;
   updatedAt: string;
+  missedCount?: number;
 }
 
 interface FastingRegistration {
@@ -62,7 +63,6 @@ interface FastingRegistration {
   travel_cost: string;
   gps_latitude: string | null;
   gps_longitude: string | null;
-  city_name?: string;
   created_at: string;
 }
 
@@ -72,6 +72,9 @@ interface Intercessor {
   name?: string;
   created_at: string;
   prayer_slot?: string;
+  attendance_rate?: number;
+  last_activity?: string;
+  zoom_sessions?: number;
 }
 
 interface AdminUpdate {
@@ -80,6 +83,29 @@ interface AdminUpdate {
   description: string;
   created_at: string;
   updated_at: string;
+}
+
+interface AttendanceRecord {
+  id: string;
+  user_id: string;
+  user_email: string;
+  slot_time: string;
+  attendance_status: string;
+  meeting_date: string;
+  duration: number;
+  created_at: string;
+}
+
+interface UserActivity {
+  user_id: string;
+  user_email: string;
+  user_name?: string;
+  total_sessions: number;
+  attended_sessions: number;
+  attendance_rate: number;
+  last_activity: string;
+  contact_info?: string;
+  current_slot?: string;
 }
 
 const MobileNavButton = ({ icon: Icon, label, isActive, onClick }: {
@@ -106,7 +132,6 @@ export default function AdminDashboard() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [newUpdate, setNewUpdate] = useState({ title: "", description: "" });
   const [zoomLink, setZoomLink] = useState("");
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -116,7 +141,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const checkAdminAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-
+      
       if (!user) {
         setLocation("/admin/login");
         return;
@@ -147,85 +172,106 @@ export default function AdminDashboard() {
     checkAdminAuth();
   }, [setLocation, toast]);
 
-  // Fetch prayer slots
-  const { data: prayerSlotsResponse, isLoading: slotsLoading, refetch: refetchSlots, error: slotsError } = useQuery({
-    queryKey: ["/api/admin/prayer-slots"],
+  // Fetch prayer slots from Supabase
+  const { data: prayerSlotsResponse, isLoading: slotsLoading, refetch: refetchSlots } = useQuery({
+    queryKey: ["admin-prayer-slots"],
     queryFn: async () => {
-      try {
-        const response = await apiRequest({ url: "/api/admin/prayer-slots" });
-        console.log('Prayer slots loaded:', response?.length || 0, 'records');
-        return response;
-      } catch (error) {
-        console.error('Failed to load prayer slots:', error);
-        throw error;
-      }
+      const { data, error } = await supabase
+        .from('prayer_slots')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      console.log('Prayer slots loaded:', data?.length || 0, 'records');
+      return data || [];
     },
     enabled: !!adminUser,
-    retry: 2,
+    refetchInterval: 30000,
   });
 
-  const prayerSlots = Array.isArray(prayerSlotsResponse) ? prayerSlotsResponse : [];
+  const prayerSlots = prayerSlotsResponse || [];
 
-  // Fetch fasting registrations
-  const { data: fastingRegistrationsResponse, isLoading: fastingLoading, refetch: refetchFasting, error: fastingError } = useQuery({
-    queryKey: ["/api/admin/fasting-registrations"],
+  // Fetch fasting registrations from Supabase
+  const { data: fastingRegistrationsResponse, isLoading: fastingLoading, refetch: refetchFasting } = useQuery({
+    queryKey: ["admin-fasting-registrations"],
     queryFn: async () => {
-      try {
-        const response = await apiRequest({ url: "/api/admin/fasting-registrations" });
-        console.log('Fasting registrations loaded:', response?.length || 0, 'records');
-        return response;
-      } catch (error) {
-        console.error('Failed to load fasting registrations:', error);
-        throw error;
-      }
+      const { data, error } = await supabase
+        .from('fasting_registrations')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      console.log('Fasting registrations loaded:', data?.length || 0, 'records');
+      return data || [];
     },
     enabled: !!adminUser,
-    retry: 2,
+    refetchInterval: 30000,
   });
 
-  const fastingRegistrations = Array.isArray(fastingRegistrationsResponse) ? fastingRegistrationsResponse : [];
+  const fastingRegistrations = fastingRegistrationsResponse || [];
 
-  // Fetch intercessors
-  const { data: intercessorsResponse, isLoading: intercessorsLoading, refetch: refetchIntercessors, error: intercessorsError } = useQuery({
-    queryKey: ["/api/admin/intercessors"],
+  // Fetch admin updates from Supabase
+  const { data: updatesResponse, isLoading: updatesLoading, refetch: refetchUpdates } = useQuery({
+    queryKey: ["admin-updates"],
     queryFn: async () => {
-      try {
-        const response = await apiRequest({ url: "/api/admin/intercessors" });
-        console.log('Intercessors loaded:', response?.length || 0, 'records');
-        return response;
-      } catch (error) {
-        console.error('Failed to load intercessors:', error);
-        throw error;
-      }
+      const { data, error } = await supabase
+        .from('updates')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      console.log('Admin updates loaded:', data?.length || 0, 'records');
+      return data || [];
     },
     enabled: !!adminUser,
-    retry: 2,
+    refetchInterval: 30000,
   });
 
-  const intercessors = Array.isArray(intercessorsResponse) ? intercessorsResponse : [];
+  const updates = updatesResponse || [];
 
-  // Fetch admin updates
-  const { data: updatesResponse, isLoading: updatesLoading, refetch: refetchUpdates, error: updatesError } = useQuery({
-    queryKey: ["/api/admin/updates"],
+  // Fetch user activities for intercessor tracking
+  const { data: userActivitiesResponse, isLoading: activitiesLoading, refetch: refetchActivities } = useQuery({
+    queryKey: ["admin-user-activities"],
     queryFn: async () => {
-      try {
-        const response = await apiRequest({ url: "/api/admin/updates" });
-        console.log('Admin updates loaded:', response?.length || 0, 'records');
-        return response;
-      } catch (error) {
-        console.error('Failed to load admin updates:', error);
-        throw error;
-      }
+      const response = await apiRequest({ url: "/api/admin/user-activities" });
+      console.log('Intercessors loaded:', response?.length || 0, 'records');
+      return response || [];
     },
     enabled: !!adminUser,
-    retry: 2,
+    refetchInterval: 30000,
   });
 
-  const updates = Array.isArray(updatesResponse) ? updatesResponse : [];
+  const userActivities: UserActivity[] = userActivitiesResponse || [];
+
+  // Fetch attendance statistics
+  const { data: attendanceStatsResponse, isLoading: attendanceLoading } = useQuery({
+    queryKey: ["admin-attendance-stats"],
+    queryFn: async () => {
+      const response = await apiRequest({ url: "/api/admin/attendance-stats" });
+      return response || {};
+    },
+    enabled: !!adminUser,
+    refetchInterval: 30000,
+  });
+
+  const attendanceStats = attendanceStatsResponse || {};
+
+  // Fetch prayer sessions
+  const { data: prayerSessionsResponse, isLoading: sessionsLoading } = useQuery({
+    queryKey: ["admin-prayer-sessions"],
+    queryFn: async () => {
+      const response = await apiRequest({ url: "/api/admin/prayer-sessions" });
+      return response || [];
+    },
+    enabled: !!adminUser,
+    refetchInterval: 30000,
+  });
+
+  const prayerSessions = prayerSessionsResponse || [];
 
   // Get current Zoom link
   const { data: currentZoomLink } = useQuery({
-    queryKey: ["/api/admin/zoom-link"],
+    queryKey: ["admin-zoom-link"],
     queryFn: async () => {
       const response = await apiRequest({ url: "/api/admin/zoom-link" });
       return response;
@@ -236,16 +282,19 @@ export default function AdminDashboard() {
   // Mutations for admin actions
   const createUpdateMutation = useMutation({
     mutationFn: async (updateData: { title: string; description: string }) => {
-      return apiRequest({
-        url: "/api/admin/updates",
-        method: "POST",
-        body: updateData,
-      });
+      const { data, error } = await supabase
+        .from('updates')
+        .insert([updateData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Update posted successfully" });
       setNewUpdate({ title: "", description: "" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/updates"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-updates"] });
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to post update", variant: "destructive" });
@@ -262,7 +311,7 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Zoom link updated successfully" });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/zoom-link"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-zoom-link"] });
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to update Zoom link", variant: "destructive" });
@@ -292,73 +341,66 @@ export default function AdminDashboard() {
     updateZoomLinkMutation.mutate(zoomLink);
   };
 
-  const exportToCSV = (data: any[], filename: string, headers: string[]) => {
+  const exportToCSV = (data: any[], filename: string) => {
+    if (data.length === 0) {
+      toast({ title: "No Data", description: "No data available to export" });
+      return;
+    }
+
+    const headers = Object.keys(data[0]);
     const csvContent = [
       headers.join(','),
       ...data.map(item => headers.map(header => {
-        const key = header.toLowerCase().replace(/ /g, '_');
-        let value = item[key] || '';
-        
-        // Handle specific fields
-        if (key === 'created_at' && value) {
-          value = new Date(value).toLocaleDateString();
+        let value = item[header];
+        if (value === null || value === undefined) value = '';
+        if (typeof value === 'string' && value.includes(',')) {
+          value = `"${value}"`;
         }
-        
-        // Escape quotes and wrap in quotes
-        return `"${String(value).replace(/"/g, '""')}"`;
+        return value;
       }).join(','))
     ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
-    link.style.display = 'none';
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   };
 
   const handleExportFasting = () => {
-    if (fastingRegistrations.length === 0) {
-      toast({ 
-        title: "No Data", 
-        description: "No fasting registrations to export",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const exportData = fastingRegistrations.map(reg => ({
-      full_name: reg.full_name,
-      phone_number: reg.phone_number,
-      region: reg.region,
-      city_name: reg.city_name || 'GPS location not available',
-      travel_cost: reg.travel_cost,
-      gps_latitude: reg.gps_latitude || '',
-      gps_longitude: reg.gps_longitude || '',
-      created_at: reg.created_at
-    }));
-
-    exportToCSV(
-      exportData,
-      `fasting-registrations-${new Date().toISOString().split('T')[0]}.csv`,
-      ['Full Name', 'Phone Number', 'Region', 'City Name', 'Travel Cost', 'GPS Latitude', 'GPS Longitude', 'Created At']
-    );
-
+    exportToCSV(fastingRegistrations, 'fasting-registrations.csv');
     toast({
       title: "Export Complete",
-      description: `${fastingRegistrations.length} fasting registrations exported to CSV`,
+      description: "Fasting registrations exported to CSV",
+    });
+  };
+
+  const handleExportIntercessors = () => {
+    const exportData = userActivities.map(activity => ({
+      name: activity.user_name || 'Anonymous',
+      email: activity.user_email,
+      contact: activity.contact_info || '',
+      current_slot: activity.current_slot || '',
+      total_sessions: activity.total_sessions,
+      attended_sessions: activity.attended_sessions,
+      attendance_rate: `${(activity.attendance_rate * 100).toFixed(1)}%`,
+      last_activity: new Date(activity.last_activity).toLocaleDateString()
+    }));
+
+    exportToCSV(exportData, 'intercessors-activity.csv');
+    toast({
+      title: "Export Complete",
+      description: "Intercessor activity data exported to CSV",
     });
   };
 
   const refreshAllData = () => {
     refetchSlots();
     refetchFasting();
-    refetchIntercessors();
     refetchUpdates();
+    refetchActivities();
     toast({ title: "Data Refreshed", description: "All data has been refreshed" });
   };
 
@@ -378,9 +420,11 @@ export default function AdminDashboard() {
 
   const OverviewTab = () => {
     const activeSlots = prayerSlots.filter(slot => slot.status === 'active').length;
-    const totalIntercessors = intercessors.length;
+    const totalIntercessors = userActivities.length;
     const totalFastingRegistrations = fastingRegistrations.length;
-    const recentUpdates = updates.slice(0, 3);
+    const avgAttendanceRate = userActivities.length > 0 
+      ? userActivities.reduce((sum, activity) => sum + activity.attendance_rate, 0) / userActivities.length
+      : 0;
 
     return (
       <div className="space-y-6">
@@ -432,11 +476,11 @@ export default function AdminDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
                 <div className="p-2 bg-orange-100 rounded-lg">
-                  <Activity className="w-4 h-4 text-orange-600" />
+                  <TrendingUp className="w-4 h-4 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Updates</p>
-                  <p className="text-2xl font-bold text-gray-900">{updates.length}</p>
+                  <p className="text-sm font-medium text-gray-600">Avg Attendance</p>
+                  <p className="text-2xl font-bold text-gray-900">{(avgAttendanceRate * 100).toFixed(1)}%</p>
                 </div>
               </div>
             </CardContent>
@@ -448,13 +492,13 @@ export default function AdminDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <BarChart3 className="w-5 h-5 mr-2" />
-              Recent Activity
+              Recent Updates
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentUpdates.length > 0 ? (
-                recentUpdates.map((update, index) => (
+              {updates.slice(0, 5).length > 0 ? (
+                updates.slice(0, 5).map((update) => (
                   <div key={update.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
                     <div className="p-1 bg-brand-primary rounded-full">
                       <CheckCircle className="w-3 h-3 text-white" />
@@ -506,15 +550,18 @@ export default function AdminDashboard() {
                         <Badge variant={slot.status === 'active' ? 'default' : 'secondary'}>
                           {slot.status}
                         </Badge>
-                        <span className="font-semibold">{slot.slotTime}</span>
+                        <span className="font-semibold">{slot.slot_time}</span>
                       </div>
                       <span className="text-sm text-gray-500">
-                        {new Date(slot.createdAt).toLocaleDateString()}
+                        {new Date(slot.created_at).toLocaleDateString()}
                       </span>
                     </div>
                     <div className="text-sm text-gray-600">
-                      <p><Mail className="w-4 h-4 inline mr-1" />{slot.userEmail || 'No email'}</p>
-                      <p className="mt-1">User ID: {slot.userId}</p>
+                      <p><Mail className="w-4 h-4 inline mr-1" />{slot.user_email || 'No email'}</p>
+                      <p className="mt-1">User ID: {slot.user_id}</p>
+                      {slot.missed_count > 0 && (
+                        <p className="mt-1 text-red-600">Missed: {slot.missed_count} times</p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -528,54 +575,114 @@ export default function AdminDashboard() {
     </div>
   );
 
-  const IntercessorsTab = () => (
+  const IntercessorActivityTab = () => (
     <div className="space-y-6">
       <AnimatedCard animationType="fadeIn">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center">
-              <Users className="w-5 h-5 mr-2" />
-              Registered Intercessors
+              <UserCheck className="w-5 h-5 mr-2" />
+              Intercessor Activity Tracking
             </span>
-            <Badge variant="secondary">{intercessors.length} Total</Badge>
+            <div className="flex items-center space-x-2">
+              <Badge variant="secondary">{userActivities.length} Active</Badge>
+              <Button
+                onClick={handleExportIntercessors}
+                size="sm"
+                variant="outline"
+                className="flex items-center"
+              >
+                <Download className="w-4 h-4 mr-1" />
+                Export CSV
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {intercessorsLoading ? (
+          {activitiesLoading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
-              <p>Loading intercessors...</p>
+              <p>Loading activity data...</p>
             </div>
-          ) : intercessors.length > 0 ? (
+          ) : userActivities.length > 0 ? (
             <ScrollArea className="h-96">
               <div className="space-y-4">
-                {intercessors.map((intercessor) => (
-                  <div key={intercessor.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-brand-primary rounded-full flex items-center justify-center">
-                          <Users className="w-4 h-4 text-white" />
+                {userActivities
+                  .sort((a, b) => b.attendance_rate - a.attendance_rate)
+                  .map((activity, index) => (
+                  <div key={activity.user_id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold ${
+                          activity.attendance_rate >= 0.8 ? 'bg-green-500' :
+                          activity.attendance_rate >= 0.6 ? 'bg-yellow-500' : 'bg-red-500'
+                        }`}>
+                          {index + 1}
                         </div>
                         <div>
-                          <p className="font-semibold">{intercessor.name || 'Anonymous'}</p>
-                          <p className="text-sm text-gray-600">{intercessor.email}</p>
+                          <p className="font-semibold">{activity.user_name || 'Anonymous'}</p>
+                          <p className="text-sm text-gray-600">{activity.user_email}</p>
                         </div>
                       </div>
-                      <span className="text-sm text-gray-500">
-                        {new Date(intercessor.created_at).toLocaleDateString()}
-                      </span>
+                      <div className="text-right">
+                        <Badge variant={activity.attendance_rate >= 0.8 ? 'default' : 
+                                      activity.attendance_rate >= 0.6 ? 'secondary' : 'destructive'}>
+                          {(activity.attendance_rate * 100).toFixed(1)}%
+                        </Badge>
+                      </div>
                     </div>
-                    {intercessor.prayer_slot && (
-                      <div className="mt-2">
-                        <Badge variant="outline">{intercessor.prayer_slot}</Badge>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                      <div className="flex items-center text-gray-600">
+                        <Timer className="w-4 h-4 mr-2" />
+                        {activity.total_sessions} sessions
+                      </div>
+                      <div className="flex items-center text-gray-600">
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        {activity.attended_sessions} attended
+                      </div>
+                      {activity.current_slot && (
+                        <div className="flex items-center text-gray-600">
+                          <Clock className="w-4 h-4 mr-2" />
+                          {activity.current_slot}
+                        </div>
+                      )}
+                      <div className="flex items-center text-gray-600">
+                        <Activity className="w-4 h-4 mr-2" />
+                        {new Date(activity.last_activity).toLocaleDateString()}
+                      </div>
+                    </div>
+
+                    {activity.contact_info && (
+                      <div className="mt-3 pt-3 border-t">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Phone className="w-4 h-4 mr-2" />
+                          {activity.contact_info}
+                        </div>
                       </div>
                     )}
+
+                    <div className="mt-3">
+                      <div className="flex justify-between text-xs text-gray-500 mb-1">
+                        <span>Attendance Rate</span>
+                        <span>{(activity.attendance_rate * 100).toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full ${
+                            activity.attendance_rate >= 0.8 ? 'bg-green-500' :
+                            activity.attendance_rate >= 0.6 ? 'bg-yellow-500' : 'bg-red-500'
+                          }`}
+                          style={{ width: `${activity.attendance_rate * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
             </ScrollArea>
           ) : (
-            <p className="text-gray-500 text-center py-8">No intercessors found</p>
+            <p className="text-gray-500 text-center py-8">No activity data found</p>
           )}
         </CardContent>
       </AnimatedCard>
@@ -598,10 +705,9 @@ export default function AdminDashboard() {
                 size="sm"
                 variant="outline"
                 className="flex items-center"
-                disabled={fastingRegistrations.length === 0}
               >
                 <Download className="w-4 h-4 mr-1" />
-                Export CSV
+                Export
               </Button>
             </div>
           </CardTitle>
@@ -636,16 +742,10 @@ export default function AdminDashboard() {
                         <span className="font-medium mr-2">Travel Cost:</span>
                         ${registration.travel_cost}
                       </div>
-                      {registration.city_name && (
-                        <div className="flex items-center text-gray-600">
-                          <MapPin className="w-4 h-4 mr-2 text-green-600" />
-                          <span className="font-medium">{registration.city_name}</span>
-                        </div>
-                      )}
                       {(registration.gps_latitude && registration.gps_longitude) && (
-                        <div className="flex items-center text-gray-600 text-xs">
-                          <span className="font-medium mr-2">Coordinates:</span>
-                          {parseFloat(registration.gps_latitude).toFixed(4)}, {parseFloat(registration.gps_longitude).toFixed(4)}
+                        <div className="flex items-center text-gray-600">
+                          <span className="font-medium mr-2">GPS:</span>
+                          {registration.gps_latitude}, {registration.gps_longitude}
                         </div>
                       )}
                     </div>
@@ -751,121 +851,6 @@ export default function AdminDashboard() {
           </form>
         </CardContent>
       </AnimatedCard>
-
-      {/* Recent Updates List */}
-      <AnimatedCard animationType="fadeIn" delay={0.3}>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <BarChart3 className="w-5 h-5 mr-2" />
-            Recent Updates
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {updatesLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
-              <p>Loading updates...</p>
-            </div>
-          ) : updates.length > 0 ? (
-            <ScrollArea className="h-64">
-              <div className="space-y-4">
-                {updates.map((update) => (
-                  <div key={update.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-semibold text-gray-900">{update.title}</h4>
-                      <span className="text-sm text-gray-500">
-                        {new Date(update.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600">{update.description}</p>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          ) : (
-            <p className="text-gray-500 text-center py-8">No updates found</p>
-          )}
-        </CardContent>
-      </AnimatedCard>
-    </div>
-  );
-
-  const UserActivitiesTab = () => (
-    <div className="space-y-6">
-      <AnimatedCard animationType="fadeIn">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Activity className="w-5 h-5 mr-2" />
-            User Activities Overview
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 border rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-2">Database Status</h4>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Prayer Slots:</span>
-                    <Badge variant={slotsError ? "destructive" : "default"}>
-                      {slotsError ? "Error" : `${prayerSlots.length} loaded`}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Intercessors:</span>
-                    <Badge variant={intercessorsError ? "destructive" : "default"}>
-                      {intercessorsError ? "Error" : `${intercessors.length} loaded`}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Fasting Regs:</span>
-                    <Badge variant={fastingError ? "destructive" : "default"}>
-                      {fastingError ? "Error" : `${fastingRegistrations.length} loaded`}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Updates:</span>
-                    <Badge variant={updatesError ? "destructive" : "default"}>
-                      {updatesError ? "Error" : `${updates.length} loaded`}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-4 border rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-2">Recent Activity</h4>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <p>• {prayerSlots.filter(slot => slot.status === 'active').length} active prayer slots</p>
-                  <p>• {fastingRegistrations.filter(reg => 
-                    new Date(reg.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                  ).length} new fasting registrations this week</p>
-                  <p>• {updates.filter(update => 
-                    new Date(update.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                  ).length} new updates this week</p>
-                </div>
-              </div>
-              
-              <div className="p-4 border rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-2">System Health</h4>
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                    <span className="text-sm text-gray-600">Database Connected</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                    <span className="text-sm text-gray-600">API Functional</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
-                    <span className="text-sm text-gray-600">Zoom API (Check Config)</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </AnimatedCard>
     </div>
   );
 
@@ -873,12 +858,10 @@ export default function AdminDashboard() {
     switch (activeTab) {
       case "overview":
         return <OverviewTab />;
-      case "activities":
-        return <UserActivitiesTab />;
       case "slots":
         return <PrayerSlotsTab />;
-      case "intercessors":
-        return <IntercessorsTab />;
+      case "activity":
+        return <IntercessorActivityTab />;
       case "fasting":
         return <FastingTab />;
       case "management":
@@ -969,12 +952,6 @@ export default function AdminDashboard() {
               isActive={activeTab === "overview"}
               onClick={() => setActiveTab("overview")}
             />
-             <MobileNavButton
-              icon={Activity}
-              label="Activities"
-              isActive={activeTab === "activities"}
-              onClick={() => setActiveTab("activities")}
-            />
             <MobileNavButton
               icon={Clock}
               label="Slots"
@@ -982,10 +959,10 @@ export default function AdminDashboard() {
               onClick={() => setActiveTab("slots")}
             />
             <MobileNavButton
-              icon={Users}
-              label="Members"
-              isActive={activeTab === "intercessors"}
-              onClick={() => setActiveTab("intercessors")}
+              icon={UserCheck}
+              label="Activity"
+              isActive={activeTab === "activity"}
+              onClick={() => setActiveTab("activity")}
             />
             <MobileNavButton
               icon={Calendar}
@@ -1005,9 +982,8 @@ export default function AdminDashboard() {
           <div className="flex space-x-1 mb-6 bg-white rounded-lg p-2 shadow-sm">
             {[
               { id: "overview", label: "Overview", icon: BarChart3 },
-              { id: "activities", label: "Activities", icon: Activity },
               { id: "slots", label: "Prayer Slots", icon: Clock },
-              { id: "intercessors", label: "Intercessors", icon: Users },
+              { id: "activity", label: "Intercessor Activity", icon: UserCheck },
               { id: "fasting", label: "Fasting Program", icon: Calendar },
               { id: "management", label: "Management", icon: Settings },
             ].map((tab) => {
