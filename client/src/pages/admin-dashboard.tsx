@@ -133,6 +133,8 @@ export default function AdminDashboard() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [newUpdate, setNewUpdate] = useState({ title: "", description: "" });
   const [zoomLink, setZoomLink] = useState("");
+  const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'excellent' | 'good' | 'needs-improvement'>('all');
+  const [sortOrder, setSortOrder] = useState<'highest' | 'lowest' | 'alphabetical'>('highest');
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -435,8 +437,24 @@ export default function AdminDashboard() {
     });
   };
 
-  const handleExportIntercessors = () => {
-    const exportData = userActivities.map(activity => ({
+  // Filter and sort intercessor activities
+  const filteredAndSortedActivities = userActivities
+    .filter(activity => {
+      if (attendanceFilter === 'all') return true;
+      if (attendanceFilter === 'excellent') return activity.attendance_rate >= 0.9;
+      if (attendanceFilter === 'good') return activity.attendance_rate >= 0.7 && activity.attendance_rate < 0.9;
+      if (attendanceFilter === 'needs-improvement') return activity.attendance_rate < 0.7;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortOrder === 'highest') return b.attendance_rate - a.attendance_rate;
+      if (sortOrder === 'lowest') return a.attendance_rate - b.attendance_rate;
+      if (sortOrder === 'alphabetical') return (a.user_name || '').localeCompare(b.user_name || '');
+      return 0;
+    });
+
+  const generateAttendanceCSV = (activities: UserActivity[]) => {
+    return activities.map(activity => ({
       name: activity.user_name || 'Anonymous',
       email: activity.user_email,
       contact: activity.contact_info || '',
@@ -444,8 +462,44 @@ export default function AdminDashboard() {
       total_sessions: activity.total_sessions,
       attended_sessions: activity.attended_sessions,
       attendance_rate: `${(activity.attendance_rate * 100).toFixed(1)}%`,
-      last_activity: new Date(activity.last_activity).toLocaleDateString()
+      attendance_category: activity.attendance_rate >= 0.9 ? 'Excellent' : 
+                          activity.attendance_rate >= 0.7 ? 'Good' : 
+                          'Needs Improvement',
+      last_activity: new Date(activity.last_activity).toLocaleDateString(),
+      recommended_for_reward: activity.attendance_rate >= 0.9 ? 'Yes' : 'No'
     }));
+  };
+
+  const downloadCSV = (data: any[], filename: string) => {
+    if (data.length === 0) {
+      toast({ title: "No Data", description: "No data available to export" });
+      return;
+    }
+
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(item => headers.map(header => {
+        let value = item[header];
+        if (value === null || value === undefined) value = '';
+        if (typeof value === 'string' && value.includes(',')) {
+          value = `"${value}"`;
+        }
+        return value;
+      }).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleExportIntercessors = () => {
+    const exportData = generateAttendanceCSV(filteredAndSortedActivities);
 
     exportToCSV(exportData, 'intercessors-activity.csv');
     toast({
@@ -643,12 +697,13 @@ export default function AdminDashboard() {
               Intercessor Activity Tracking
             </span>
             <div className="flex items-center space-x-2">
-              <Badge variant="secondary">{userActivities.length} Active</Badge>
+              <Badge variant="secondary">{userActivities.length} Total</Badge>
               <Button
                 onClick={handleExportIntercessors}
                 size="sm"
                 variant="outline"
                 className="flex items-center"
+                disabled={filteredAndSortedActivities.length === 0}
               >
                 <Download className="w-4 h-4 mr-1" />
                 Export CSV
@@ -657,17 +712,73 @@ export default function AdminDashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Attendance Filter Controls */}
+          <div className="mb-6 space-y-4">
+            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+              <h4 className="font-medium text-sm text-gray-700">Filter by Attendance Rate</h4>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={attendanceFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setAttendanceFilter('all')}
+                >
+                  All ({userActivities.length})
+                </Button>
+                <Button
+                  variant={attendanceFilter === 'excellent' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setAttendanceFilter('excellent')}
+                  className="bg-green-500 hover:bg-green-600 text-white border-green-500"
+                >
+                  Excellent 90%+ ({userActivities.filter(a => a.attendance_rate >= 0.9).length})
+                </Button>
+                <Button
+                  variant={attendanceFilter === 'good' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setAttendanceFilter('good')}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500"
+                >
+                  Good 70-89% ({userActivities.filter(a => a.attendance_rate >= 0.7 && a.attendance_rate < 0.9).length})
+                </Button>
+                <Button
+                  variant={attendanceFilter === 'needs-improvement' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setAttendanceFilter('needs-improvement')}
+                  className="bg-red-500 hover:bg-red-600 text-white border-red-500"
+                >
+                  Needs Improvement &lt;70% ({userActivities.filter(a => a.attendance_rate < 0.7).length})
+                </Button>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <label htmlFor="sort-order" className="font-medium">Sort by:</label>
+                  <select
+                    id="sort-order"
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value as 'highest' | 'lowest' | 'alphabetical')}
+                    className="border rounded px-2 py-1 text-sm"
+                  >
+                    <option value="highest">Highest Attendance</option>
+                    <option value="lowest">Lowest Attendance</option>
+                    <option value="alphabetical">Alphabetical</option>
+                  </select>
+                </div>
+                <div className="text-sm text-gray-600">
+                  Showing {filteredAndSortedActivities.length} of {userActivities.length} intercessors
+                </div>
+              </div>
+            </div>
+          </div>
+
           {activitiesLoading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
               <p>Loading activity data...</p>
             </div>
-          ) : userActivities.length > 0 ? (
+          ) : filteredAndSortedActivities.length > 0 ? (
             <ScrollArea className="h-96">
               <div className="space-y-4">
-                {userActivities
-                  .sort((a, b) => b.attendance_rate - a.attendance_rate)
-                  .map((activity, index) => (
+                {filteredAndSortedActivities.map((activity, index) => (
                   <div key={activity.user_id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-3">

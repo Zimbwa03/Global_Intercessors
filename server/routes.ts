@@ -547,5 +547,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  // Test Zoom API connection
+  app.get("/api/admin/test-zoom", async (req: Request, res: Response) => {
+    try {
+      const clientId = process.env.ZOOM_CLIENT_ID;
+      const clientSecret = process.env.ZOOM_API_SECRET;
+      const accountId = process.env.ZOOM_ACCOUNT_ID;
+
+      console.log('Testing Zoom credentials:', {
+        clientId: clientId ? `${clientId.substring(0, 8)}...` : 'missing',
+        clientSecret: clientSecret ? `${clientSecret.substring(0, 8)}...` : 'missing',
+        accountId: accountId ? `${accountId.substring(0, 8)}...` : 'missing'
+      });
+
+      if (!clientId || !clientSecret || !accountId) {
+        return res.status(400).json({ 
+          error: "Missing Zoom credentials",
+          details: {
+            hasClientId: !!clientId,
+            hasClientSecret: !!clientSecret,
+            hasAccountId: !!accountId
+          }
+        });
+      }
+
+      // Try to get access token
+      const axios = require('axios');
+      const response = await axios.post('https://zoom.us/oauth/token', 
+        `grant_type=account_credentials&account_id=${accountId}`,
+        {
+          headers: {
+            'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        }
+      );
+
+      res.json({ 
+        success: true, 
+        message: "Zoom API connection successful",
+        tokenType: response.data.token_type,
+        expiresIn: response.data.expires_in
+      });
+    } catch (error: any) {
+      console.error('Zoom API test failed:', error.response?.data || error.message);
+      res.status(500).json({ 
+        error: "Zoom API connection failed",
+        details: error.response?.data || error.message
+      });
+    }
+  });
+
   return httpServer;
 }
