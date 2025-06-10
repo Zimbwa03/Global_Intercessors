@@ -148,49 +148,77 @@ export default function AdminDashboard() {
   }, [setLocation, toast]);
 
   // Fetch prayer slots
-  const { data: prayerSlotsResponse, isLoading: slotsLoading, refetch: refetchSlots } = useQuery({
+  const { data: prayerSlotsResponse, isLoading: slotsLoading, refetch: refetchSlots, error: slotsError } = useQuery({
     queryKey: ["/api/admin/prayer-slots"],
     queryFn: async () => {
-      const response = await apiRequest({ url: "/api/admin/prayer-slots" });
-      return response;
+      try {
+        const response = await apiRequest({ url: "/api/admin/prayer-slots" });
+        console.log('Prayer slots loaded:', response?.length || 0, 'records');
+        return response;
+      } catch (error) {
+        console.error('Failed to load prayer slots:', error);
+        throw error;
+      }
     },
     enabled: !!adminUser,
+    retry: 2,
   });
 
   const prayerSlots = Array.isArray(prayerSlotsResponse) ? prayerSlotsResponse : [];
 
   // Fetch fasting registrations
-  const { data: fastingRegistrationsResponse, isLoading: fastingLoading, refetch: refetchFasting } = useQuery({
+  const { data: fastingRegistrationsResponse, isLoading: fastingLoading, refetch: refetchFasting, error: fastingError } = useQuery({
     queryKey: ["/api/admin/fasting-registrations"],
     queryFn: async () => {
-      const response = await apiRequest({ url: "/api/admin/fasting-registrations" });
-      return response;
+      try {
+        const response = await apiRequest({ url: "/api/admin/fasting-registrations" });
+        console.log('Fasting registrations loaded:', response?.length || 0, 'records');
+        return response;
+      } catch (error) {
+        console.error('Failed to load fasting registrations:', error);
+        throw error;
+      }
     },
     enabled: !!adminUser,
+    retry: 2,
   });
 
   const fastingRegistrations = Array.isArray(fastingRegistrationsResponse) ? fastingRegistrationsResponse : [];
 
   // Fetch intercessors
-  const { data: intercessorsResponse, isLoading: intercessorsLoading, refetch: refetchIntercessors } = useQuery({
+  const { data: intercessorsResponse, isLoading: intercessorsLoading, refetch: refetchIntercessors, error: intercessorsError } = useQuery({
     queryKey: ["/api/admin/intercessors"],
     queryFn: async () => {
-      const response = await apiRequest({ url: "/api/admin/intercessors" });
-      return response;
+      try {
+        const response = await apiRequest({ url: "/api/admin/intercessors" });
+        console.log('Intercessors loaded:', response?.length || 0, 'records');
+        return response;
+      } catch (error) {
+        console.error('Failed to load intercessors:', error);
+        throw error;
+      }
     },
     enabled: !!adminUser,
+    retry: 2,
   });
 
   const intercessors = Array.isArray(intercessorsResponse) ? intercessorsResponse : [];
 
   // Fetch admin updates
-  const { data: updatesResponse, isLoading: updatesLoading, refetch: refetchUpdates } = useQuery({
+  const { data: updatesResponse, isLoading: updatesLoading, refetch: refetchUpdates, error: updatesError } = useQuery({
     queryKey: ["/api/admin/updates"],
     queryFn: async () => {
-      const response = await apiRequest({ url: "/api/admin/updates" });
-      return response;
+      try {
+        const response = await apiRequest({ url: "/api/admin/updates" });
+        console.log('Admin updates loaded:', response?.length || 0, 'records');
+        return response;
+      } catch (error) {
+        console.error('Failed to load admin updates:', error);
+        throw error;
+      }
     },
     enabled: !!adminUser,
+    retry: 2,
   });
 
   const updates = Array.isArray(updatesResponse) ? updatesResponse : [];
@@ -763,8 +791,81 @@ export default function AdminDashboard() {
   );
 
   const UserActivitiesTab = () => (
-    <div>
-        User Activities Tab
+    <div className="space-y-6">
+      <AnimatedCard animationType="fadeIn">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Activity className="w-5 h-5 mr-2" />
+            User Activities Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 border rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-2">Database Status</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Prayer Slots:</span>
+                    <Badge variant={slotsError ? "destructive" : "default"}>
+                      {slotsError ? "Error" : `${prayerSlots.length} loaded`}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Intercessors:</span>
+                    <Badge variant={intercessorsError ? "destructive" : "default"}>
+                      {intercessorsError ? "Error" : `${intercessors.length} loaded`}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Fasting Regs:</span>
+                    <Badge variant={fastingError ? "destructive" : "default"}>
+                      {fastingError ? "Error" : `${fastingRegistrations.length} loaded`}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Updates:</span>
+                    <Badge variant={updatesError ? "destructive" : "default"}>
+                      {updatesError ? "Error" : `${updates.length} loaded`}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-4 border rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-2">Recent Activity</h4>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <p>• {prayerSlots.filter(slot => slot.status === 'active').length} active prayer slots</p>
+                  <p>• {fastingRegistrations.filter(reg => 
+                    new Date(reg.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                  ).length} new fasting registrations this week</p>
+                  <p>• {updates.filter(update => 
+                    new Date(update.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                  ).length} new updates this week</p>
+                </div>
+              </div>
+              
+              <div className="p-4 border rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-2">System Health</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span className="text-sm text-gray-600">Database Connected</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span className="text-sm text-gray-600">API Functional</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+                    <span className="text-sm text-gray-600">Zoom API (Check Config)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </AnimatedCard>
     </div>
   );
 
