@@ -63,6 +63,7 @@ interface FastingRegistration {
   travel_cost: string;
   gps_latitude: string | null;
   gps_longitude: string | null;
+  city_name?: string;
   created_at: string;
 }
 
@@ -191,24 +192,24 @@ export default function AdminDashboard() {
 
   const prayerSlots = prayerSlotsResponse || [];
 
-  // Fetch fasting registrations from Supabase
+  // Fetch fasting registrations with location conversion from API
   const { data: fastingRegistrationsResponse, isLoading: fastingLoading, refetch: refetchFasting } = useQuery({
     queryKey: ["admin-fasting-registrations"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('fasting_registrations')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      console.log('Fasting registrations loaded:', data?.length || 0, 'records');
-      return data || [];
+      try {
+        const response = await apiRequest({ url: "/api/admin/fasting-registrations" });
+        console.log('Fasting registrations loaded:', Array.isArray(response) ? response.length : 0, 'records');
+        return Array.isArray(response) ? response : [];
+      } catch (error) {
+        console.error('Error loading fasting registrations:', error);
+        return [];
+      }
     },
     enabled: !!adminUser,
     refetchInterval: 30000,
   });
 
-  const fastingRegistrations = fastingRegistrationsResponse || [];
+  const fastingRegistrations = Array.isArray(fastingRegistrationsResponse) ? fastingRegistrationsResponse : [];
 
   // Fetch admin updates from Supabase
   const { data: updatesResponse, isLoading: updatesLoading, refetch: refetchUpdates } = useQuery({
@@ -762,7 +763,14 @@ export default function AdminDashboard() {
                         <span className="font-medium mr-2">Travel Cost:</span>
                         ${registration.travel_cost}
                       </div>
-                      {(registration.gps_latitude && registration.gps_longitude) && (
+                      {registration.city_name && (
+                        <div className="flex items-center text-gray-600">
+                          <MapPin className="w-4 h-4 mr-2" />
+                          <span className="font-medium mr-2">Location:</span>
+                          {registration.city_name}
+                        </div>
+                      )}
+                      {(registration.gps_latitude && registration.gps_longitude && !registration.city_name) && (
                         <div className="flex items-center text-gray-600">
                           <span className="font-medium mr-2">GPS:</span>
                           {registration.gps_latitude}, {registration.gps_longitude}
