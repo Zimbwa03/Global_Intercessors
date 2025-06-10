@@ -155,7 +155,6 @@ export default function AdminDashboard() {
       return response;
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
   });
 
   const prayerSlots = Array.isArray(prayerSlotsResponse) ? prayerSlotsResponse : [];
@@ -168,7 +167,6 @@ export default function AdminDashboard() {
       return response;
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
   });
 
   const fastingRegistrations = Array.isArray(fastingRegistrationsResponse) ? fastingRegistrationsResponse : [];
@@ -181,7 +179,6 @@ export default function AdminDashboard() {
       return response;
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
   });
 
   const intercessors = Array.isArray(intercessorsResponse) ? intercessorsResponse : [];
@@ -194,7 +191,6 @@ export default function AdminDashboard() {
       return response;
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
   });
 
   const updates = Array.isArray(updatesResponse) ? updatesResponse : [];
