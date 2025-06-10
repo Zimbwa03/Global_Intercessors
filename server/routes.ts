@@ -647,6 +647,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get updates for user frontend (public endpoint)
   app.get("/api/updates", async (req: Request, res: Response) => {
     try {
+      console.log('Fetching public updates for users...');
+      
       const { data: updates, error } = await supabaseAdmin
         .from('updates')
         .select('*')
@@ -658,6 +660,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error fetching public updates:", error);
         return res.status(500).json({ error: "Failed to fetch updates" });
       }
+
+      console.log('Raw updates from database:', updates?.length || 0);
 
       // Filter out expired updates and add date field
       const activeUpdates = updates?.filter(update => {
@@ -676,8 +680,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }).map(update => ({
         ...update,
-        date: update.created_at // Add date field for frontend compatibility
+        date: update.created_at, // Add date field for frontend compatibility
+        created_at: update.created_at // Ensure this field is preserved
       })) || [];
+
+      console.log('Active updates after filtering:', activeUpdates.length);
 
       // Sort by priority and pin status
       const sortedUpdates = activeUpdates.sort((a, b) => {
@@ -696,6 +703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
+      console.log('Final sorted updates being sent to users:', sortedUpdates.length);
       res.json(sortedUpdates);
     } catch (error) {
       console.error("Error fetching public updates:", error);

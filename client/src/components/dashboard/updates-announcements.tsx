@@ -40,6 +40,7 @@ export function UpdatesAnnouncements() {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
+        console.log('User updates loaded:', Array.isArray(data) ? data.length : 0, 'records');
         return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error('Error loading updates:', error);
@@ -47,6 +48,7 @@ export function UpdatesAnnouncements() {
       }
     },
     refetchOnWindowFocus: false,
+    refetchInterval: 30000, // Refresh every 30 seconds to get new admin updates
   });
 
   // Static fasting announcement (always shows first)
