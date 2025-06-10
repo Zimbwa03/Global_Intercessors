@@ -1,6 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -63,8 +60,8 @@
   }
 
   body {
-    @apply font-inter antialiased bg-background text-foreground;
-    font-family: 'Inter', 'Poppins', sans-serif;
+    @apply bg-background text-foreground;
+    font-family: system-ui, -apple-system, sans-serif;
   }
 }
 
@@ -113,19 +110,6 @@
   background-color: #F59E0B;
 }
 
-.font-inter {
-  font-family: 'Inter', sans-serif;
-}
-
-.font-poppins {
-  font-family: 'Poppins', sans-serif;
-}
-
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
 /* Custom gradients */
 .gradient-brand {
   background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 50%, #60A5FA 100%);
@@ -135,15 +119,11 @@ html {
   background: linear-gradient(135deg, #BFDBFE 0%, #DBEAFE 50%, #EFF6FF 100%);
 }
 
-/* Enhanced shadows and transitions */
+/* Enhanced shadows */
 .shadow-brand {
   box-shadow: 0 4px 6px -1px rgba(30, 58, 138, 0.1), 0 2px 4px -1px rgba(30, 58, 138, 0.06);
 }
 
 .shadow-brand-lg {
   box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.1), 0 4px 6px -2px rgba(30, 58, 138, 0.05);
-}
-
-.transition-brand {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
