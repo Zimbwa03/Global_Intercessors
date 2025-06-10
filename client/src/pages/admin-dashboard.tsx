@@ -131,7 +131,17 @@ const MobileNavButton = ({ icon: Icon, label, isActive, onClick }: {
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
-  const [newUpdate, setNewUpdate] = useState({ title: "", description: "" });
+  const [newUpdate, setNewUpdate] = useState({ 
+    title: "", 
+    description: "", 
+    type: "general", 
+    priority: "normal",
+    schedule: "immediate",
+    expiry: "never",
+    sendNotification: false,
+    sendEmail: false,
+    pinToTop: false
+  });
   const [zoomLink, setZoomLink] = useState("");
   const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'excellent' | 'good' | 'needs-improvement'>('all');
   const [sortOrder, setSortOrder] = useState<'highest' | 'lowest' | 'alphabetical'>('highest');
@@ -345,8 +355,18 @@ export default function AdminDashboard() {
       return data;
     },
     onSuccess: () => {
-      toast({ title: "Success", description: "Update posted successfully" });
-      setNewUpdate({ title: "", description: "" });
+      toast({ title: "Success", description: "Update posted successfully and will appear on user dashboards" });
+      setNewUpdate({ 
+        title: "", 
+        description: "", 
+        type: "general", 
+        priority: "normal",
+        schedule: "immediate",
+        expiry: "never",
+        sendNotification: false,
+        sendEmail: false,
+        pinToTop: false
+      });
       queryClient.invalidateQueries({ queryKey: ["admin-updates"] });
     },
     onError: () => {
@@ -971,55 +991,248 @@ export default function AdminDashboard() {
 
   const ManagementTab = () => (
     <div className="space-y-6">
-      {/* Post Updates */}
+      {/* Advanced Update Posting */}
       <AnimatedCard animationType="fadeIn" delay={0.1}>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Plus className="w-5 h-5 mr-2" />
-            Post New Update
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center">
+              <Plus className="w-5 h-5 mr-2" />
+              Post Global Update
+            </span>
+            <Badge variant="outline" className="text-xs">
+              Will appear on user dashboard
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCreateUpdate} className="space-y-4">
-            <div>
-              <Label htmlFor="updateTitle">Update Title</Label>
-              <Input
-                id="updateTitle"
-                value={newUpdate.title}
-                onChange={(e) => setNewUpdate({ ...newUpdate, title: e.target.value })}
-                placeholder="Enter update title..."
-                className="mt-1"
-              />
+          <form onSubmit={handleCreateUpdate} className="space-y-6">
+            <div className="grid gap-4">
+              <div>
+                <Label htmlFor="updateTitle" className="text-sm font-medium">Update Title *</Label>
+                <Input
+                  id="updateTitle"
+                  value={newUpdate.title}
+                  onChange={(e) => setNewUpdate({ ...newUpdate, title: e.target.value })}
+                  placeholder="e.g., Prayer Meeting Schedule Update, Fasting Program Announcement..."
+                  className="mt-1"
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="updateType" className="text-sm font-medium">Update Type</Label>
+                <select
+                  id="updateType"
+                  value={newUpdate.type || 'general'}
+                  onChange={(e) => setNewUpdate({ ...newUpdate, type: e.target.value })}
+                  className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="general">General Announcement</option>
+                  <option value="urgent">Urgent Notice</option>
+                  <option value="prayer">Prayer Request</option>
+                  <option value="event">Event Update</option>
+                  <option value="maintenance">System Maintenance</option>
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="updatePriority" className="text-sm font-medium">Priority Level</Label>
+                <select
+                  id="updatePriority"
+                  value={newUpdate.priority || 'normal'}
+                  onChange={(e) => setNewUpdate({ ...newUpdate, priority: e.target.value })}
+                  className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="low">Low Priority</option>
+                  <option value="normal">Normal Priority</option>
+                  <option value="high">High Priority</option>
+                  <option value="critical">Critical Alert</option>
+                </select>
+              </div>
+              
+              <div>
+                <Label htmlFor="updateDescription" className="text-sm font-medium">Message Content *</Label>
+                <Textarea
+                  id="updateDescription"
+                  value={newUpdate.description}
+                  onChange={(e) => setNewUpdate({ ...newUpdate, description: e.target.value })}
+                  placeholder="Enter your message for all users. This will appear on their dashboard immediately after posting..."
+                  rows={6}
+                  className="mt-1"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {newUpdate.description.length}/500 characters
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="updateSchedule" className="text-sm font-medium">Schedule Options</Label>
+                  <select
+                    id="updateSchedule"
+                    value={newUpdate.schedule || 'immediate'}
+                    onChange={(e) => setNewUpdate({ ...newUpdate, schedule: e.target.value })}
+                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  >
+                    <option value="immediate">Post Immediately</option>
+                    <option value="scheduled">Schedule for Later</option>
+                  </select>
+                </div>
+
+                <div>
+                  <Label htmlFor="updateExpiry" className="text-sm font-medium">Auto-Hide After</Label>
+                  <select
+                    id="updateExpiry"
+                    value={newUpdate.expiry || 'never'}
+                    onChange={(e) => setNewUpdate({ ...newUpdate, expiry: e.target.value })}
+                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  >
+                    <option value="never">Never Hide</option>
+                    <option value="1day">1 Day</option>
+                    <option value="3days">3 Days</option>
+                    <option value="1week">1 Week</option>
+                    <option value="1month">1 Month</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="border rounded-lg p-3 bg-gray-50">
+                <h4 className="text-sm font-medium mb-2">Notification Settings</h4>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={newUpdate.sendNotification || false}
+                      onChange={(e) => setNewUpdate({ ...newUpdate, sendNotification: e.target.checked })}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">Send push notification to all users</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={newUpdate.sendEmail || false}
+                      onChange={(e) => setNewUpdate({ ...newUpdate, sendEmail: e.target.checked })}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">Send email notification to subscribers</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={newUpdate.pinToTop || false}
+                      onChange={(e) => setNewUpdate({ ...newUpdate, pinToTop: e.target.checked })}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">Pin to top of user dashboard</span>
+                  </label>
+                </div>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="updateDescription">Description</Label>
-              <Textarea
-                id="updateDescription"
-                value={newUpdate.description}
-                onChange={(e) => setNewUpdate({ ...newUpdate, description: e.target.value })}
-                placeholder="Enter update description..."
-                rows={4}
-                className="mt-1"
-              />
+
+            <div className="flex gap-3">
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={() => setNewUpdate({ 
+                  title: '', 
+                  description: '', 
+                  type: 'general', 
+                  priority: 'normal',
+                  schedule: 'immediate',
+                  expiry: 'never',
+                  sendNotification: false,
+                  sendEmail: false,
+                  pinToTop: false
+                })}
+                className="flex-1"
+              >
+                Clear Form
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={createUpdateMutation.isPending || !newUpdate.title || !newUpdate.description}
+                className="flex-1 bg-brand-primary hover:bg-brand-primary/90"
+              >
+                {createUpdateMutation.isPending ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4 mr-2" />
+                )}
+                Post Update
+              </Button>
             </div>
-            <Button 
-              type="submit" 
-              disabled={createUpdateMutation.isPending}
-              className="w-full"
-            >
-              {createUpdateMutation.isPending ? (
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Plus className="w-4 h-4 mr-2" />
-              )}
-              Post Update
-            </Button>
           </form>
         </CardContent>
       </AnimatedCard>
 
-      {/* Zoom Link Management */}
+      {/* Recent Updates Preview */}
       <AnimatedCard animationType="fadeIn" delay={0.2}>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center">
+              <BarChart3 className="w-5 h-5 mr-2" />
+              Recent Updates
+            </span>
+            <Badge variant="secondary">{updates.length} Published</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {updatesLoading ? (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-brand-primary border-t-transparent mx-auto mb-2"></div>
+              <p className="text-sm text-gray-600">Loading updates...</p>
+            </div>
+          ) : updates.length > 0 ? (
+            <ScrollArea className="h-64">
+              <div className="space-y-3">
+                {updates.slice(0, 10).map((update, index) => (
+                  <div key={update.id} className="border rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-medium text-sm">{update.title}</h4>
+                      <div className="flex items-center space-x-2">
+                        <Badge 
+                          variant={update.priority === 'critical' ? 'destructive' : 
+                                  update.priority === 'high' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {update.priority || 'normal'}
+                        </Badge>
+                        <span className="text-xs text-gray-500">
+                          {new Date(update.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-600 line-clamp-2">
+                      {update.description}
+                    </p>
+                    <div className="flex items-center justify-between mt-2">
+                      <Badge variant="outline" className="text-xs">
+                        {update.type || 'general'}
+                      </Badge>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-green-600">✓ Published</span>
+                        {update.pinToTop && (
+                          <span className="text-xs text-blue-600">📌 Pinned</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p className="text-sm">No updates posted yet</p>
+              <p className="text-xs mt-1">Use the form above to post your first update</p>
+            </div>
+          )}
+        </CardContent>
+      </AnimatedCard>
+
+      {/* Zoom Link Management */}
+      <AnimatedCard animationType="fadeIn" delay={0.3}>
         <CardHeader>
           <CardTitle className="flex items-center">
             <LinkIcon className="w-5 h-5 mr-2" />
@@ -1057,6 +1270,57 @@ export default function AdminDashboard() {
               Update Zoom Link
             </Button>
           </form>
+        </CardContent>
+      </AnimatedCard>
+
+      {/* System Analytics */}
+      <AnimatedCard animationType="fadeIn" delay={0.4}>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <TrendingUp className="w-5 h-5 mr-2" />
+            System Analytics
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{prayerSlots.length}</div>
+              <div className="text-xs text-gray-600">Prayer Slots</div>
+            </div>
+            <div className="p-3 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">{userActivities.length}</div>
+              <div className="text-xs text-gray-600">Active Users</div>
+            </div>
+            <div className="p-3 bg-purple-50 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">{fastingRegistrations.length}</div>
+              <div className="text-xs text-gray-600">Fasting Participants</div>
+            </div>
+            <div className="p-3 bg-orange-50 rounded-lg">
+              <div className="text-2xl font-bold text-orange-600">{updates.length}</div>
+              <div className="text-xs text-gray-600">Published Updates</div>
+            </div>
+          </div>
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <h4 className="text-sm font-medium mb-2">Quick Actions</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" onClick={() => refetchSlots()}>
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Refresh Slots
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => refetchActivities()}>
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Refresh Activities
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => refetchFasting()}>
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Refresh Fasting
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => refetchUpdates()}>
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Refresh Updates
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </AnimatedCard>
     </div>

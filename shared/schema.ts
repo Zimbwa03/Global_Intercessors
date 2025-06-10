@@ -104,7 +104,16 @@ export const updates = pgTable("updates", {
   description: text("description").notNull(),
   date: timestamp("date").notNull(),
   type: text("type").notNull().default("general"),
+  priority: text("priority").notNull().default("normal"),
+  schedule: text("schedule").notNull().default("immediate"),
+  expiry: text("expiry").notNull().default("never"),
+  sendNotification: boolean("send_notification").default(false),
+  sendEmail: boolean("send_email").default(false),
+  pinToTop: boolean("pin_to_top").default(false),
+  isActive: boolean("is_active").default(true),
+  authorId: text("author_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertPrayerSlotSchema = createInsertSchema(prayerSlots).omit({
