@@ -568,33 +568,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Title and description are required" });
       }
 
-      // Use raw SQL to bypass RLS policies for admin operations
-      const updateId = `update_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const now = new Date().toISOString();
-      
-      const { data, error } = await supabaseAdmin.rpc('exec_sql', {
-        sql: `
-          INSERT INTO updates (
-            id, title, description, type, priority, schedule, expiry,
-            send_notification, send_email, pin_to_top, is_active, date, created_at, updated_at
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
-          ) RETURNING *;
-        `,
-        params: [
-          updateId, title.trim(), description.trim(), type, priority, schedule, expiry,
-          sendNotification, sendEmail, pinToTop, true, now, now, now
-        ]
+      // Use the database function created by the SQL script
+      const { data, error } = await supabaseAdmin.rpc('create_admin_update', {
+        p_title: title.trim(),
+        p_description: description.trim(),
+        p_type: type,
+        p_priority: priority,
+        p_schedule: schedule,
+        p_expiry: expiry,
+        p_send_notification: sendNotification,
+        p_send_email: sendEmail,
+        p_pin_to_top: pinToTop
       });
 
       if (error) {
-        console.error("RPC SQL failed, trying direct insert with auth bypass:", error);
+        console.error("Database function failed, trying direct insert:", error);
         
-        // Fallback: Use service role with auth bypass
+        // Fallback to direct insert with service role
         const { data: directData, error: directError } = await supabaseAdmin
           .from('updates')
           .insert([{
-            id: updateId,
             title: title.trim(),
             description: description.trim(),
             type,
@@ -605,21 +598,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             send_email: sendEmail,
             pin_to_top: pinToTop,
             is_active: true,
-            date: now
-          }]);
+            date: new Date().toISOString()
+          }])
+          .select()
+          .single();
 
         if (directError) {
-          console.error("Direct insert failed:", directError);
+          console.error("Direct insert also failed:", directError);
           return res.status(500).json({ 
-            error: "Database policy restriction",
-            details: "Admin update posting requires database configuration" 
+            error: "Failed to create update",
+            details: "Please run the SQL script in Supabase first" 
           });
         }
         
+        console.log(`Admin update posted: "${title}"`);
         return res.json({ 
           success: true, 
-          message: "Update posted successfully",
-          id: updateId 
+          message: "Update posted successfully and is live on user dashboards",
+          data: directData
         });
       }
 
@@ -634,8 +630,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         success: true,
-        data: data,
-        message: "Update created successfully"
+        message: "Update posted successfully and is live on user dashboards",
+        data: data
       });
     } catch (error) {
       console.error("Error in admin updates endpoint:", error);
