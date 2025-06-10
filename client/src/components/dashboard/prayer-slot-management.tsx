@@ -82,9 +82,9 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       return data;
     },
     enabled: !!user?.id,
-    refetchInterval: 30000, // Refetch every 30 seconds to reduce flickering
-    refetchOnWindowFocus: false, // Disable refetch on focus to prevent flicker
-    staleTime: 20000 // Cache data for 20 seconds
+    refetchOnWindowFocus: false,
+    staleTime: 300000, // Cache data for 5 minutes
+    gcTime: 300000 // Keep in cache for 5 minutes
   });
 
   // Extract the prayer slot from the response
@@ -147,6 +147,9 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       const data = await response.json();
       return data.availableSlots;
     },
+    refetchOnWindowFocus: false,
+    staleTime: 600000, // Cache for 10 minutes
+    gcTime: 600000
   });
 
   // Skip slot mutation

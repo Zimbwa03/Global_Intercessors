@@ -565,13 +565,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Title and description are required" });
       }
 
-      // Create the update in Supabase
+      // Create the update in Supabase with proper field mapping
       const { data, error } = await supabaseAdmin
         .from('updates')
         .insert([{
-          title,
-          description,
-          date: new Date().toISOString(),
+          title: title.trim(),
+          description: description.trim(),
           type,
           priority,
           schedule,
@@ -580,14 +579,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           send_email: sendEmail,
           pin_to_top: pinToTop,
           is_active: true,
-          author_id: 'admin', // TODO: Get actual admin user ID from session
+          author_id: 'admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }])
         .select()
         .single();
 
       if (error) {
         console.error("Error creating update:", error);
-        return res.status(500).json({ error: "Failed to create update" });
+        return res.status(500).json({ 
+          error: "Failed to create update",
+          details: error.message 
+        });
       }
 
       // TODO: Implement notification sending if requested
@@ -599,10 +603,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Email notification would be sent for update:', title);
       }
 
-      res.json(data);
+      res.json({
+        success: true,
+        data: data,
+        message: "Update created successfully"
+      });
     } catch (error) {
       console.error("Error in admin updates endpoint:", error);
-      res.status(500).json({ error: "Failed to create update" });
+      res.status(500).json({ 
+        error: "Failed to create update",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 

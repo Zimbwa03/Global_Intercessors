@@ -154,7 +154,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const checkAdminAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         setLocation("/admin/login");
         return;
@@ -344,33 +344,43 @@ export default function AdminDashboard() {
 
   // Mutations for admin actions
   const createUpdateMutation = useMutation({
-    mutationFn: async (updateData: { title: string; description: string }) => {
-      const { data, error } = await supabase
-        .from('updates')
-        .insert([updateData])
-        .select()
-        .single();
+    mutationFn: async (updateData: any) => {
+      const response = await fetch('/api/admin/updates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
 
-      if (error) throw error;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.details || data.error || 'Failed to create update');
+      }
+
       return data;
     },
-    onSuccess: () => {
-      toast({ title: "Success", description: "Update posted successfully and will appear on user dashboards" });
-      setNewUpdate({ 
-        title: "", 
-        description: "", 
-        type: "general", 
-        priority: "normal",
-        schedule: "immediate",
-        expiry: "never",
-        sendNotification: false,
-        sendEmail: false,
-        pinToTop: false
+    onSuccess: (data) => {
+      toast({
+        title: "Update Created",
+        description: data.message || "Update has been posted successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["admin-updates"] });
+      queryClient.invalidateQueries({ queryKey: ['admin-updates'] });
+      queryClient.invalidateQueries({ queryKey: ['updates'] });
+      setNewUpdate({
+        title: '',
+        description: '',
+        type: 'general',
+        priority: 'normal',
+      });
     },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to post update", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({
+        title: "Error Creating Update",
+        description: error.message || "Failed to create update. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -837,7 +847,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                       <div className="flex items-center text-gray-600">
                         <Timer className="w-4 h-4 mr-2" />
@@ -1018,7 +1028,7 @@ export default function AdminDashboard() {
                   required
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="updateType" className="text-sm font-medium">Update Type</Label>
                 <select
@@ -1049,7 +1059,7 @@ export default function AdminDashboard() {
                   <option value="critical">Critical Alert</option>
                 </select>
               </div>
-              
+
               <div>
                 <Label htmlFor="updateDescription" className="text-sm font-medium">Message Content *</Label>
                 <Textarea
