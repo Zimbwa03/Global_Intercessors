@@ -546,6 +546,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced admin updates endpoint for rich update posting
+  app.post("/api/admin/updates", async (req: Request, res: Response) => {
+    try {
+      const {
+        title,
+        description,
+        type = 'general',
+        priority = 'normal',
+        schedule = 'immediate',
+        expiry = 'never',
+        sendNotification = false,
+        sendEmail = false,
+        pinToTop = false
+      } = req.body;
+
+      if (!title || !description) {
+        return res.status(400).json({ error: "Title and description are required" });
+      }
+
+      // Create the update in Supabase
+      const { data, error } = await supabaseAdmin
+        .from('updates')
+        .insert([{
+          title,
+          description,
+          date: new Date().toISOString(),
+          type,
+          priority,
+          schedule,
+          expiry,
+          send_notification: sendNotification,
+          send_email: sendEmail,
+          pin_to_top: pinToTop,
+          is_active: true,
+          author_id: 'admin', // TODO: Get actual admin user ID from session
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error creating update:", error);
+        return res.status(500).json({ error: "Failed to create update" });
+      }
+
+      // TODO: Implement notification sending if requested
+      if (sendNotification) {
+        console.log('Push notification would be sent for update:', title);
+      }
+      
+      if (sendEmail) {
+        console.log('Email notification would be sent for update:', title);
+      }
+
+      res.json(data);
+    } catch (error) {
+      console.error("Error in admin updates endpoint:", error);
+      res.status(500).json({ error: "Failed to create update" });
+    }
+  });
+
+  // Get updates for user frontend (public endpoint)
+  app.get("/api/updates", async (req: Request, res: Response) => {
+    try {
+      const { data: updates, error } = await supabaseAdmin
+        .from('updates')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.error("Error fetching public updates:", error);
+        return res.status(500).json({ error: "Failed to fetch updates" });
+      }
+
+      // Filter out expired updates
+      const activeUpdates = updates?.filter(update => {
+        if (update.expiry === 'never') return true;
+        
+        const createdAt = new Date(update.created_at);
+        const now = new Date();
+        const diffInDays = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+        
+        switch (update.expiry) {
+          case '1day': return diffInDays <= 1;
+          case '3days': return diffInDays <= 3;
+          case '1week': return diffInDays <= 7;
+          case '1month': return diffInDays <= 30;
+          default: return true;
+        }
+      }) || [];
+
+      // Sort by priority and pin status
+      const sortedUpdates = activeUpdates.sort((a, b) => {
+        // Pinned items first
+        if (a.pin_to_top && !b.pin_to_top) return -1;
+        if (!a.pin_to_top && b.pin_to_top) return 1;
+        
+        // Then by priority
+        const priorityOrder = { critical: 4, high: 3, normal: 2, low: 1 };
+        const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 2;
+        const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 2;
+        
+        if (aPriority !== bPriority) return bPriority - aPriority;
+        
+        // Finally by creation date
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
+      res.json(sortedUpdates);
+    } catch (error) {
+      console.error("Error fetching public updates:", error);
+      res.status(500).json({ error: "Failed to fetch updates" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Test Zoom API connection
   app.get("/api/admin/test-zoom", async (req: Request, res: Response) => {
