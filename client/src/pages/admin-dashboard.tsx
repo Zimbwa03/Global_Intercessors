@@ -199,7 +199,9 @@ export default function AdminDashboard() {
       return data || [];
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
   const prayerSlots = prayerSlotsResponse || [];
@@ -224,7 +226,9 @@ export default function AdminDashboard() {
       }
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
   const fastingRegistrations = Array.isArray(fastingRegistrationsResponse) ? fastingRegistrationsResponse : [];
@@ -243,7 +247,9 @@ export default function AdminDashboard() {
       return data || [];
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
   const updates = updatesResponse || [];
@@ -268,7 +274,9 @@ export default function AdminDashboard() {
       }
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
   const userActivities: UserActivity[] = Array.isArray(userActivitiesResponse) ? userActivitiesResponse : [];
@@ -292,7 +300,9 @@ export default function AdminDashboard() {
       }
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
   const attendanceStats = attendanceStatsResponse || {};
@@ -316,7 +326,9 @@ export default function AdminDashboard() {
       }
     },
     enabled: !!adminUser,
-    refetchInterval: 30000,
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
   const prayerSessions = Array.isArray(prayerSessionsResponse) ? prayerSessionsResponse : [];
@@ -366,13 +378,18 @@ export default function AdminDashboard() {
         title: "Update Created",
         description: data.message || "Update has been posted successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ['admin-updates'] });
-      queryClient.invalidateQueries({ queryKey: ['updates'] });
+      // Only refresh the updates list, don't invalidate other queries
+      refetchUpdates();
       setNewUpdate({
         title: '',
         description: '',
         type: 'general',
         priority: 'normal',
+        schedule: 'immediate',
+        expiry: 'never',
+        sendNotification: false,
+        sendEmail: false,
+        pinToTop: false
       });
     },
     onError: (error: Error) => {
