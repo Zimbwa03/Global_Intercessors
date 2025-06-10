@@ -59,12 +59,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Trigger refetch when user changes (same as dashboard)
-  useEffect(() => {
-    if (user?.id) {
-      queryClient.invalidateQueries({ queryKey: ['prayer-slot', user?.id] });
-    }
-  }, [user?.id, queryClient]);
+  // Removed auto-refresh to prevent form flickering
 
   // Fetch current prayer slot
   const { data: prayerSlotResponse, isLoading: isLoadingSlot, error: slotError } = useQuery({
@@ -83,8 +78,8 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     },
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
-    staleTime: 300000, // Cache data for 5 minutes
-    gcTime: 300000 // Keep in cache for 5 minutes
+    staleTime: Infinity, // Never consider data stale
+    gcTime: Infinity // Keep in cache indefinitely
   });
 
   // Extract the prayer slot from the response
@@ -148,8 +143,9 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       return data.availableSlots;
     },
     refetchOnWindowFocus: false,
-    staleTime: 600000, // Cache for 10 minutes
-    gcTime: 600000
+    refetchOnMount: false,
+    staleTime: Infinity, // Never refresh automatically
+    gcTime: Infinity
   });
 
   // Skip slot mutation
@@ -223,10 +219,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         description: "Your prayer slot has been successfully updated.",
       });
 
-      // Force refetch the prayer slot data
-      queryClient.invalidateQueries({ queryKey: ['prayer-slot', user?.id] });
-      queryClient.refetchQueries({ queryKey: ['prayer-slot', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['available-slots'] });
+      // Only close modal without forcing refresh
       setIsChangeSlotModalOpen(false);
     },
     onError: (error: Error) => {
