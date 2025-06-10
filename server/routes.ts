@@ -131,7 +131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate 48 time slots (30-minute intervals for 24 hours)
       const availableSlots = [];
       let slotId = 1;
-      
+
       for (let hour = 0; hour < 24; hour++) {
         for (let minute = 0; minute < 60; minute += 30) {
           const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
@@ -170,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Try to get user email, but use a fallback if not available
       let userEmail = await getUserEmail(userId);
-      
+
       // If we can't get email from auth, use provided email or generate a temporary one
       if (!userEmail) {
         if (providedEmail) {
@@ -410,6 +410,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching prayer sessions:", error);
       res.status(500).json({ error: "Failed to fetch prayer sessions" });
+    }
+  });
+
+  // Simple in-memory cache for geocoding results
+  const geocodingCache = new Map<string, string>();
+
+  // Helper function to get city name from coordinates with caching and rate limiting
+  async function getCityFromCoordinates(lat: string, lng: string): Promise<string> {
+    const cacheKey = `${lat},${lng}`;
+
+    // Check cache first
+    if (geocodingCache.has(cacheKey)) {
+      return geocodingCache.get(cacheKey)!;
+    }
+
+    try {
+      // Add small delay to respect API rate limits
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Using OpenStreetMap Nominatim API for reverse geocoding (free)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'GlobalIntercessors/1.0'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Geocoding API failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Extract city name from the response
+      const address = data.address || {};
+      const city = address.city || address.town || address.village || address.municipality || 
+                   address.county || address.state || 'Unknown Location';
+
+      const cityName = `${city}, ${address.country || 'Unknown Country'}`;
+
+      // Cache the result
+      geocodingCache.set(cacheKey, cityName);
+
+      return cityName;
+    } catch (error) {
+      console.error('Error getting city from coordinates:', error);
+      const fallbackName = `GPS: ${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`;
+      geocodingCache.set(cacheKey, fallbackName);
+      return fallbackName;
+    }
+  }
+
+  // Admin endpoint for fasting registrations
+  app.get("/api/admin/fasting-registrations", async (req: Request, res: Response) => {
+    try {
+      const { data: registrations, error } = await supabaseAdmin
+        .from('fasting_registrations')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Add city names for registrations with GPS coordinates
+      const registrationsWithCities = await Promise.all(
+        (registrations || []).map(async (registration) => {
+          let cityName = 'No GPS data';
+
+          if (registration.gps_latitude && registration.gps_longitude) {
+            try {
+              cityName = await getCityFromCoordinates(
+                registration.gps_latitude, 
+                registration.gps_longitude
+              );
+            } catch (error) {
+              console.error('Error getting city for registration:', registration.id, error);
+              cityName = `GPS: ${registration.gps_latitude}, ${registration.gps_longitude}`;
+            }
+          }
+
+          return {
+            ...registration,
+            city_name: cityName
+          };
+        })
+      );
+
+      res.json(registrationsWithCities);
+    } catch (error) {
+      console.error('Error fetching fasting registrations:', error);
+      res.status(500).json({ error: 'Failed to fetch fasting registrations' });
     }
   });
 

@@ -62,6 +62,7 @@ interface FastingRegistration {
   travel_cost: string;
   gps_latitude: string | null;
   gps_longitude: string | null;
+  city_name?: string;
   created_at: string;
 }
 
@@ -271,35 +272,61 @@ export default function AdminDashboard() {
     const csvContent = [
       headers.join(','),
       ...data.map(item => headers.map(header => {
-        const key = header.toLowerCase().replace(' ', '_');
-        return `"${item[key] || ''}"`;
+        const key = header.toLowerCase().replace(/ /g, '_');
+        let value = item[key] || '';
+        
+        // Handle specific fields
+        if (key === 'created_at' && value) {
+          value = new Date(value).toLocaleDateString();
+        }
+        
+        // Escape quotes and wrap in quotes
+        return `"${String(value).replace(/"/g, '""')}"`;
       }).join(','))
     ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   };
 
   const handleExportFasting = () => {
     if (fastingRegistrations.length === 0) {
-      toast({ title: "No Data", description: "No fasting registrations to export" });
+      toast({ 
+        title: "No Data", 
+        description: "No fasting registrations to export",
+        variant: "destructive"
+      });
       return;
     }
 
+    const exportData = fastingRegistrations.map(reg => ({
+      full_name: reg.full_name,
+      phone_number: reg.phone_number,
+      region: reg.region,
+      city_name: reg.city_name || 'GPS location not available',
+      travel_cost: reg.travel_cost,
+      gps_latitude: reg.gps_latitude || '',
+      gps_longitude: reg.gps_longitude || '',
+      created_at: reg.created_at
+    }));
+
     exportToCSV(
-      fastingRegistrations,
-      'fasting-registrations.csv',
-      ['Full Name', 'Phone Number', 'Region', 'Travel Cost', 'Created At']
+      exportData,
+      `fasting-registrations-${new Date().toISOString().split('T')[0]}.csv`,
+      ['Full Name', 'Phone Number', 'Region', 'City Name', 'Travel Cost', 'GPS Latitude', 'GPS Longitude', 'Created At']
     );
 
     toast({
       title: "Export Complete",
-      description: "Fasting registrations exported to CSV",
+      description: `${fastingRegistrations.length} fasting registrations exported to CSV`,
     });
   };
 
@@ -547,9 +574,10 @@ export default function AdminDashboard() {
                 size="sm"
                 variant="outline"
                 className="flex items-center"
+                disabled={fastingRegistrations.length === 0}
               >
                 <Download className="w-4 h-4 mr-1" />
-                Export
+                Export CSV
               </Button>
             </div>
           </CardTitle>
@@ -584,10 +612,16 @@ export default function AdminDashboard() {
                         <span className="font-medium mr-2">Travel Cost:</span>
                         ${registration.travel_cost}
                       </div>
-                      {(registration.gps_latitude && registration.gps_longitude) && (
+                      {registration.city_name && (
                         <div className="flex items-center text-gray-600">
-                          <span className="font-medium mr-2">GPS:</span>
-                          {registration.gps_latitude}, {registration.gps_longitude}
+                          <MapPin className="w-4 h-4 mr-2 text-green-600" />
+                          <span className="font-medium">{registration.city_name}</span>
+                        </div>
+                      )}
+                      {(registration.gps_latitude && registration.gps_longitude) && (
+                        <div className="flex items-center text-gray-600 text-xs">
+                          <span className="font-medium mr-2">Coordinates:</span>
+                          {parseFloat(registration.gps_latitude).toFixed(4)}, {parseFloat(registration.gps_longitude).toFixed(4)}
                         </div>
                       )}
                     </div>

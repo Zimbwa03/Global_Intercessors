@@ -19,6 +19,18 @@ interface FastingRegistration {
   agreedToGPS: boolean;
 }
 
+interface FastingRegistrationDB {
+  id: string;
+  full_name: string;
+  phone_number: string;
+  region: string;
+  travel_cost: string;
+  gps_latitude: string | null;
+  gps_longitude: string | null;
+  city_name?: string;
+  created_at: string;
+}
+
 export function FastingRegistration() {
   const { toast } = useToast();
   const [formData, setFormData] = useState<FastingRegistration>({
