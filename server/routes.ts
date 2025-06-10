@@ -432,9 +432,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch prayer sessions" });
     }
   });
-  });
 
-  // Admin endpoint for prayer sessions
+  // Admin endpoint for prayer sessions (deprecated - data now comes from Supabase)
   app.get("/api/admin/prayer-sessions", async (req: Request, res: Response) => {
     try {
       const { data: sessions, error } = await supabaseAdmin

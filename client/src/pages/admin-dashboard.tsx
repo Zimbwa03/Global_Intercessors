@@ -233,22 +233,32 @@ export default function AdminDashboard() {
   const { data: userActivitiesResponse, isLoading: activitiesLoading, refetch: refetchActivities } = useQuery({
     queryKey: ["admin-user-activities"],
     queryFn: async () => {
-      const response = await apiRequest({ url: "/api/admin/user-activities" });
-      console.log('Intercessors loaded:', response?.length || 0, 'records');
-      return response || [];
+      try {
+        const response = await apiRequest({ url: "/api/admin/user-activities" });
+        console.log('Intercessors loaded:', Array.isArray(response) ? response.length : 0, 'records');
+        return Array.isArray(response) ? response : [];
+      } catch (error) {
+        console.error('Error loading user activities:', error);
+        return [];
+      }
     },
     enabled: !!adminUser,
     refetchInterval: 30000,
   });
 
-  const userActivities: UserActivity[] = userActivitiesResponse || [];
+  const userActivities: UserActivity[] = Array.isArray(userActivitiesResponse) ? userActivitiesResponse : [];
 
   // Fetch attendance statistics
   const { data: attendanceStatsResponse, isLoading: attendanceLoading } = useQuery({
     queryKey: ["admin-attendance-stats"],
     queryFn: async () => {
-      const response = await apiRequest({ url: "/api/admin/attendance-stats" });
-      return response || {};
+      try {
+        const response = await apiRequest({ url: "/api/admin/attendance-stats" });
+        return response || {};
+      } catch (error) {
+        console.error('Error loading attendance stats:', error);
+        return {};
+      }
     },
     enabled: !!adminUser,
     refetchInterval: 30000,
@@ -260,21 +270,31 @@ export default function AdminDashboard() {
   const { data: prayerSessionsResponse, isLoading: sessionsLoading } = useQuery({
     queryKey: ["admin-prayer-sessions"],
     queryFn: async () => {
-      const response = await apiRequest({ url: "/api/admin/prayer-sessions" });
-      return response || [];
+      try {
+        const response = await apiRequest({ url: "/api/admin/prayer-sessions" });
+        return Array.isArray(response) ? response : [];
+      } catch (error) {
+        console.error('Error loading prayer sessions:', error);
+        return [];
+      }
     },
     enabled: !!adminUser,
     refetchInterval: 30000,
   });
 
-  const prayerSessions = prayerSessionsResponse || [];
+  const prayerSessions = Array.isArray(prayerSessionsResponse) ? prayerSessionsResponse : [];
 
   // Get current Zoom link
   const { data: currentZoomLink } = useQuery({
     queryKey: ["admin-zoom-link"],
     queryFn: async () => {
-      const response = await apiRequest({ url: "/api/admin/zoom-link" });
-      return response;
+      try {
+        const response = await apiRequest({ url: "/api/admin/zoom-link" });
+        return response || null;
+      } catch (error) {
+        console.error('Error loading zoom link:', error);
+        return null;
+      }
     },
     enabled: !!adminUser,
   });
@@ -819,10 +839,10 @@ export default function AdminDashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {currentZoomLink && (
+          {currentZoomLink && typeof currentZoomLink === 'object' && 'zoomLink' in currentZoomLink && (
             <div className="mb-4 p-3 bg-blue-50 rounded-lg">
               <p className="text-sm text-gray-600 mb-1">Current Zoom Link:</p>
-              <p className="text-blue-600 font-mono text-sm break-all">{currentZoomLink.zoomLink}</p>
+              <p className="text-blue-600 font-mono text-sm break-all">{(currentZoomLink as any).zoomLink}</p>
             </div>
           )}
           <form onSubmit={handleUpdateZoomLink} className="space-y-4">
