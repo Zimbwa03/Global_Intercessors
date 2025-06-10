@@ -102,7 +102,6 @@ export const updates = pgTable("updates", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  date: timestamp("date").notNull(),
   type: text("type").notNull().default("general"),
   priority: text("priority").notNull().default("normal"),
   schedule: text("schedule").notNull().default("immediate"),
@@ -111,7 +110,6 @@ export const updates = pgTable("updates", {
   sendEmail: boolean("send_email").default(false),
   pinToTop: boolean("pin_to_top").default(false),
   isActive: boolean("is_active").default(true),
-  authorId: text("author_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

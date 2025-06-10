@@ -579,7 +579,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           send_email: sendEmail,
           pin_to_top: pinToTop,
           is_active: true,
-          author_id: 'admin',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }])

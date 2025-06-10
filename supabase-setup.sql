@@ -141,9 +141,16 @@ CREATE TABLE updates (
   id SERIAL PRIMARY KEY,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
-  date TIMESTAMP NOT NULL,
   type TEXT NOT NULL DEFAULT 'general',
-  created_at TIMESTAMP DEFAULT NOW() NOT NULL
+  priority TEXT NOT NULL DEFAULT 'normal',
+  schedule TEXT NOT NULL DEFAULT 'immediate',
+  expiry TEXT NOT NULL DEFAULT 'never',
+  send_notification BOOLEAN DEFAULT false,
+  send_email BOOLEAN DEFAULT false,
+  pin_to_top BOOLEAN DEFAULT false,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 
 -- Insert sample available prayer slots (24-hour coverage)
