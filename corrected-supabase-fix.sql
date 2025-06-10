@@ -1,4 +1,4 @@
--- Fix RLS policies for updates table to allow admin operations
+-- CORRECTED SQL Script for Supabase - Fix RLS policies for updates table
 -- Copy and paste this entire code into your Supabase SQL editor
 
 -- First, disable RLS temporarily to make changes
@@ -11,7 +11,7 @@ DROP POLICY IF EXISTS "Allow service role full access" ON public.updates;
 DROP POLICY IF EXISTS "Allow admin operations" ON public.updates;
 
 -- Create new policies that allow proper access
--- 1. Allow anyone to read updates (for user dashboard)
+-- 1. Allow anyone to read active updates (for user dashboard)
 CREATE POLICY "Allow public read access" ON public.updates
     FOR SELECT USING (is_active = true);
 
@@ -30,7 +30,7 @@ CREATE POLICY "Allow admin operations" ON public.updates
 -- Re-enable RLS
 ALTER TABLE public.updates ENABLE ROW LEVEL SECURITY;
 
--- Create a helper function for admin operations (works with integer ID)
+-- Create helper function for admin operations (works with integer ID)
 CREATE OR REPLACE FUNCTION create_admin_update(
     p_title text,
     p_description text,
@@ -49,7 +49,7 @@ AS $$
 DECLARE
     result json;
 BEGIN
-    -- Insert the update (let the database auto-generate the integer ID)
+    -- Insert the update (auto-generate integer ID)
     INSERT INTO public.updates (
         title, description, type, priority, schedule, expiry,
         send_notification, send_email, pin_to_top, is_active, date, created_at, updated_at
@@ -67,7 +67,7 @@ $$;
 GRANT EXECUTE ON FUNCTION create_admin_update TO service_role;
 GRANT EXECUTE ON FUNCTION create_admin_update TO authenticated;
 
--- Ensure the updates table has proper structure (add missing columns if needed)
+-- Add missing columns if they don't exist
 DO $$
 BEGIN
     -- Add columns if they don't exist
@@ -105,12 +105,12 @@ BEGIN
 END
 $$;
 
--- Test the setup with a sample update (optional - you can remove this)
+-- Test the system with a sample update
 SELECT create_admin_update(
-    'System Test Update',
-    'This is a test update to verify the admin posting system is working correctly. You can delete this after confirming the system works.',
+    'Admin System Ready',
+    'The global update posting system has been successfully configured and is ready for use.',
     'general',
-    'normal',
+    'high',
     'immediate',
     'never',
     false,
@@ -118,7 +118,7 @@ SELECT create_admin_update(
     true
 );
 
--- Show current policies for verification
+-- Show final policies for verification
 SELECT schemaname, tablename, policyname, permissive, roles, cmd 
 FROM pg_policies 
 WHERE tablename = 'updates';
