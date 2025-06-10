@@ -27,11 +27,40 @@ interface ZoomMeetingParticipants {
 class ZoomAttendanceTracker {
   private zoomToken: string;
   private isRunning: boolean = false;
+  private clientId: string;
+  private clientSecret: string;
+  private accountId: string;
 
   constructor() {
-    this.zoomToken = process.env.ZOOM_API_TOKEN || '';
-    if (!this.zoomToken) {
-      console.warn('ZOOM_API_TOKEN not found in environment variables');
+    this.clientId = process.env.ZOOM_CLIENT_ID || '';
+    this.clientSecret = process.env.ZOOM_API_SECRET || '';
+    this.accountId = process.env.ZOOM_ACCOUNT_ID || '';
+    this.zoomToken = '';
+    
+    if (!this.clientId || !this.clientSecret || !this.accountId) {
+      console.warn('Zoom credentials not found in environment variables');
+    }
+  }
+
+  // Get OAuth token using Server-to-Server OAuth
+  private async getAccessToken(): Promise<string> {
+    try {
+      const response = await axios.post('https://zoom.us/oauth/token', 
+        `grant_type=account_credentials&account_id=${this.accountId}`,
+        {
+          headers: {
+            'Authorization': `Basic ${Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        }
+      );
+
+      this.zoomToken = response.data.access_token;
+      console.log('Zoom access token obtained successfully');
+      return this.zoomToken;
+    } catch (error) {
+      console.error('Error getting Zoom access token:', error);
+      throw error;
     }
   }
 
@@ -60,8 +89,12 @@ class ZoomAttendanceTracker {
 
   // Main attendance processing function
   private async processAttendance() {
-    if (!this.zoomToken) {
-      console.error('Zoom API token not configured');
+    try {
+      if (!this.zoomToken) {
+        await this.getAccessToken();
+      }
+    } catch (error) {
+      console.error('Failed to get Zoom access token:', error);
       return;
     }
 
@@ -105,9 +138,10 @@ class ZoomAttendanceTracker {
         }
       );
 
+      console.log(`Found ${response.data.meetings?.length || 0} recent meetings`);
       return response.data.meetings || [];
     } catch (error) {
-      console.error('Error fetching Zoom meetings:', error);
+      console.error('Error fetching Zoom meetings:', error.response?.data || error.message);
       return [];
     }
   }
