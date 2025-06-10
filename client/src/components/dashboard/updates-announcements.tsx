@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -11,38 +12,78 @@ interface Announcement {
   type: "fast" | "event" | "general";
   date: string;
   registrationRequired: boolean;
+  priority?: string;
+  pin_to_top?: boolean;
+}
+
+interface DatabaseUpdate {
+  id: number;
+  title: string;
+  description: string;
+  type: string;
+  priority: string;
+  pin_to_top: boolean;
+  created_at: string;
 }
 
 export function UpdatesAnnouncements() {
   const [showFastingRegistration, setShowFastingRegistration] = useState(false);
   const { toast } = useToast();
-  
-  const [announcements] = useState<Announcement[]>([
-    {
-      id: "1",
-      title: "3 Days & 3 Nights Fasting Program - June",
-      description: "Join believers worldwide in a powerful 3-day fasting period for breakthrough and revival. Registration includes GPS location tracking for transport reimbursement.",
-      type: "fast",
-      date: "June 15-17, 2025",
-      registrationRequired: true
+
+  // Fetch updates from database
+  const { data: databaseUpdates, isLoading } = useQuery({
+    queryKey: ["user-updates"],
+    queryFn: async () => {
+      try {
+        const response = await fetch("/api/updates");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error('Error loading updates:', error);
+        return [];
+      }
     },
-    {
-      id: "2",
-      title: "AI-Powered Bible Chatbook",
-      description: "New AI feature now available! Get contextual Bible verses and explanations for any phrase or situation using advanced AI technology.",
-      type: "general",
-      date: "June 6, 2025",
-      registrationRequired: false
-    },
-    {
-      id: "3",
-      title: "Prayer Point Planner",
-      description: "Generate structured, biblically-grounded prayer points for your intercession time with our new AI-powered prayer planner.",
-      type: "general",
-      date: "June 6, 2025",
-      registrationRequired: false
-    }
-  ]);
+    refetchOnWindowFocus: false,
+  });
+
+  // Static fasting announcement (always shows first)
+  const fastingAnnouncement: Announcement = {
+    id: "fasting-program",
+    title: "3 Days & 3 Nights Fasting Program - June",
+    description: "Join believers worldwide in a powerful 3-day fasting period for breakthrough and revival. Registration includes GPS location tracking for transport reimbursement.",
+    type: "fast",
+    date: "June 15-17, 2025",
+    registrationRequired: true,
+    priority: "high",
+    pin_to_top: true
+  };
+
+  // Convert database updates to announcement format
+  const convertToAnnouncements = (updates: DatabaseUpdate[]): Announcement[] => {
+    return updates.map(update => ({
+      id: update.id.toString(),
+      title: update.title,
+      description: update.description,
+      type: update.type as "fast" | "event" | "general",
+      date: new Date(update.created_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      registrationRequired: false,
+      priority: update.priority,
+      pin_to_top: update.pin_to_top
+    }));
+  };
+
+  // Combine static fasting announcement with database updates
+  const allAnnouncements: Announcement[] = [
+    fastingAnnouncement,
+    ...(databaseUpdates ? convertToAnnouncements(databaseUpdates) : [])
+  ];
 
   if (showFastingRegistration) {
     return <FastingRegistration />;
@@ -73,8 +114,14 @@ export function UpdatesAnnouncements() {
         <p className="text-gray-600">Stay informed about global prayer events and community updates</p>
       </div>
 
-      <div className="space-y-4">
-        {announcements.map((announcement) => (
+      {isLoading ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+          <p>Loading updates...</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {allAnnouncements.map((announcement) => (
           <Card key={announcement.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300">
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -100,7 +147,7 @@ export function UpdatesAnnouncements() {
             <CardContent>
               <p className="text-gray-600 mb-4 leading-relaxed">{announcement.description}</p>
               
-              {announcement.registrationRequired && announcement.id === "1" && (
+              {announcement.registrationRequired && announcement.id === "fasting-program" && (
                 <Button 
                   onClick={() => setShowFastingRegistration(true)}
                   className="bg-blue-600 text-white hover:bg-blue-700 font-semibold"
@@ -110,7 +157,7 @@ export function UpdatesAnnouncements() {
                 </Button>
               )}
               
-              {announcement.registrationRequired && announcement.id !== "1" && (
+              {announcement.registrationRequired && announcement.id !== "fasting-program" && (
                 <Button className="bg-brand-accent text-brand-primary hover:bg-yellow-400 font-semibold">
                   <i className="fas fa-user-plus mr-2"></i>
                   Register for Event
@@ -119,7 +166,8 @@ export function UpdatesAnnouncements() {
             </CardContent>
           </Card>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -659,7 +659,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Failed to fetch updates" });
       }
 
-      // Filter out expired updates
+      // Filter out expired updates and add date field
       const activeUpdates = updates?.filter(update => {
         if (update.expiry === 'never') return true;
         
@@ -674,7 +674,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case '1month': return diffInDays <= 30;
           default: return true;
         }
-      }) || [];
+      }).map(update => ({
+        ...update,
+        date: update.created_at // Add date field for frontend compatibility
+      })) || [];
 
       // Sort by priority and pin status
       const sortedUpdates = activeUpdates.sort((a, b) => {
