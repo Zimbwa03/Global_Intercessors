@@ -197,9 +197,15 @@ export default function AdminDashboard() {
     queryKey: ["admin-fasting-registrations"],
     queryFn: async () => {
       try {
-        const response = await apiRequest({ url: "/api/admin/fasting-registrations" });
-        console.log('Fasting registrations loaded:', Array.isArray(response) ? response.length : 0, 'records');
-        return Array.isArray(response) ? response : [];
+        const response = await fetch("/api/admin/fasting-registrations", {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Fasting registrations loaded:', Array.isArray(data) ? data.length : 0, 'records');
+        return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error('Error loading fasting registrations:', error);
         return [];
@@ -235,9 +241,15 @@ export default function AdminDashboard() {
     queryKey: ["admin-user-activities"],
     queryFn: async () => {
       try {
-        const response = await apiRequest({ url: "/api/admin/user-activities" });
-        console.log('Intercessors loaded:', Array.isArray(response) ? response.length : 0, 'records');
-        return Array.isArray(response) ? response : [];
+        const response = await fetch("/api/admin/user-activities", {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Intercessors loaded:', Array.isArray(data) ? data.length : 0, 'records');
+        return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error('Error loading user activities:', error);
         return [];
@@ -254,8 +266,14 @@ export default function AdminDashboard() {
     queryKey: ["admin-attendance-stats"],
     queryFn: async () => {
       try {
-        const response = await apiRequest({ url: "/api/admin/attendance-stats" });
-        return response || {};
+        const response = await fetch("/api/admin/attendance-stats", {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data || {};
       } catch (error) {
         console.error('Error loading attendance stats:', error);
         return {};
@@ -272,8 +290,14 @@ export default function AdminDashboard() {
     queryKey: ["admin-prayer-sessions"],
     queryFn: async () => {
       try {
-        const response = await apiRequest({ url: "/api/admin/prayer-sessions" });
-        return Array.isArray(response) ? response : [];
+        const response = await fetch("/api/admin/prayer-sessions", {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error('Error loading prayer sessions:', error);
         return [];
@@ -290,8 +314,14 @@ export default function AdminDashboard() {
     queryKey: ["admin-zoom-link"],
     queryFn: async () => {
       try {
-        const response = await apiRequest({ url: "/api/admin/zoom-link" });
-        return response || null;
+        const response = await fetch("/api/admin/zoom-link", {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data || null;
       } catch (error) {
         console.error('Error loading zoom link:', error);
         return null;
@@ -324,11 +354,18 @@ export default function AdminDashboard() {
 
   const updateZoomLinkMutation = useMutation({
     mutationFn: async (link: string) => {
-      return apiRequest({
-        url: "/api/admin/zoom-link",
+      const response = await fetch("/api/admin/zoom-link", {
         method: "POST",
-        body: { zoomLink: link },
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ zoomLink: link }),
       });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Zoom link updated successfully" });
