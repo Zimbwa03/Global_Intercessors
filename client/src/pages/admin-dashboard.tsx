@@ -115,7 +115,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const checkAdminAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         setLocation("/admin/login");
         return;
@@ -290,13 +290,13 @@ export default function AdminDashboard() {
       toast({ title: "No Data", description: "No fasting registrations to export" });
       return;
     }
-    
+
     exportToCSV(
       fastingRegistrations,
       'fasting-registrations.csv',
       ['Full Name', 'Phone Number', 'Region', 'Travel Cost', 'Created At']
     );
-    
+
     toast({
       title: "Export Complete",
       description: "Fasting registrations exported to CSV",
@@ -732,10 +732,18 @@ export default function AdminDashboard() {
     </div>
   );
 
+  const UserActivitiesTab = () => (
+    <div>
+        User Activities Tab
+    </div>
+  );
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "overview":
         return <OverviewTab />;
+      case "activities":
+        return <UserActivitiesTab />;
       case "slots":
         return <PrayerSlotsTab />;
       case "intercessors":
@@ -830,6 +838,12 @@ export default function AdminDashboard() {
               isActive={activeTab === "overview"}
               onClick={() => setActiveTab("overview")}
             />
+             <MobileNavButton
+              icon={Activity}
+              label="Activities"
+              isActive={activeTab === "activities"}
+              onClick={() => setActiveTab("activities")}
+            />
             <MobileNavButton
               icon={Clock}
               label="Slots"
@@ -860,6 +874,7 @@ export default function AdminDashboard() {
           <div className="flex space-x-1 mb-6 bg-white rounded-lg p-2 shadow-sm">
             {[
               { id: "overview", label: "Overview", icon: BarChart3 },
+              { id: "activities", label: "Activities", icon: Activity },
               { id: "slots", label: "Prayer Slots", icon: Clock },
               { id: "intercessors", label: "Intercessors", icon: Users },
               { id: "fasting", label: "Fasting Program", icon: Calendar },
