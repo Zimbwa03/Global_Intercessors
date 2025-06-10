@@ -356,30 +356,29 @@ export default function AdminDashboard() {
 
   // Mutations for admin actions
   const createUpdateMutation = useMutation({
-    mutationFn: async (updateData: any) => {
+    mutationFn: async (updateData: typeof newUpdate) => {
       const response = await fetch('/api/admin/updates', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(updateData),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.details || data.error || 'Failed to create update');
+        const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
-      return data;
+      return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
-        title: "Update Created",
-        description: data.message || "Update has been posted successfully.",
+        title: "Global Update Posted",
+        description: "Your update is now live on all user dashboards",
       });
-      // Only refresh the updates list, don't invalidate other queries
-      refetchUpdates();
+      
       setNewUpdate({
         title: '',
         description: '',
@@ -391,11 +390,13 @@ export default function AdminDashboard() {
         sendEmail: false,
         pinToTop: false
       });
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/updates'] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error Creating Update",
-        description: error.message || "Failed to create update. Please try again.",
+        title: "Failed to Post Update",
+        description: error.message || "Please try again",
         variant: "destructive",
       });
     },
@@ -1179,15 +1180,20 @@ export default function AdminDashboard() {
               </Button>
               <Button 
                 type="submit" 
-                disabled={createUpdateMutation.isPending || !newUpdate.title || !newUpdate.description}
-                className="flex-1 bg-brand-primary hover:bg-brand-primary/90"
+                disabled={createUpdateMutation.isPending || !newUpdate.title.trim() || !newUpdate.description.trim()}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium"
               >
                 {createUpdateMutation.isPending ? (
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Publishing...
+                  </>
                 ) : (
-                  <Plus className="w-4 h-4 mr-2" />
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Publish Global Update
+                  </>
                 )}
-                Post Update
               </Button>
             </div>
           </form>
