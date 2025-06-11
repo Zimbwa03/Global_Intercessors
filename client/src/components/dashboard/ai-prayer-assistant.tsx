@@ -1,10 +1,12 @@
+
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Heart, Copy, Volume2, Sparkles, BookOpen, Target } from "lucide-react";
 
 interface PrayerResponse {
   bibleVerses: Array<{
@@ -18,14 +20,47 @@ interface PrayerResponse {
 
 export function AIPrayerAssistant() {
   const [prayerRequest, setPrayerRequest] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<PrayerResponse | null>(null);
   const [recentRequests, setRecentRequests] = useState<string[]>([
     "Guide my prayer for strength during difficult times",
     "Help me pray for my family's financial breakthrough",
-    "Prayer for healing and restoration"
+    "Prayer for healing and restoration",
+    "Wisdom for important life decisions",
+    "Protection and safety for loved ones"
   ]);
   const { toast } = useToast();
+
+  const prayerAssistantMutation = useMutation({
+    mutationFn: async (request: string) => {
+      const response = await fetch('/api/prayer-assistant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ request }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to get prayer guidance');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setResponse(data);
+      toast({
+        title: "Prayer Guidance Generated",
+        description: "Your personalized prayer guidance is ready."
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to generate prayer guidance. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
 
   const handlePrayerRequest = async () => {
     if (!prayerRequest.trim()) {
@@ -37,103 +72,88 @@ export function AIPrayerAssistant() {
       return;
     }
 
-    setIsLoading(true);
-    
-    try {
-      // This would integrate with DeepSeek AI API and Bible API
-      // For now, showing the structure with sample data
-      toast({
-        title: "API Integration Required",
-        description: "AI prayer assistant requires DeepSeek API key and Bible API integration. Please provide the necessary API credentials.",
-        variant: "destructive"
-      });
-      
-      // Simulated response structure for UI demonstration
-      setTimeout(() => {
-        setResponse({
-          bibleVerses: [
-            {
-              verse: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, to give you hope and a future.",
-              reference: "Jeremiah 29:11",
-              version: "NIV"
-            },
-            {
-              verse: "And we know that in all things God works for the good of those who love him, who have been called according to his purpose.",
-              reference: "Romans 8:28",
-              version: "NIV"
-            }
-          ],
-          prayerPoints: [
-            "Thank God for His faithfulness and constant presence in your life",
-            "Ask for wisdom and discernment in making important decisions",
-            "Pray for strength to overcome current challenges",
-            "Request protection and guidance for your loved ones",
-            "Declare God's promises over your situation"
-          ],
-          encouragement: "Remember that God hears every prayer and works all things together for your good. Trust in His perfect timing and plan for your life."
-        });
-        
-        // Add to recent requests
-        setRecentRequests(prev => [prayerRequest, ...prev.slice(0, 4)]);
-        setIsLoading(false);
-      }, 2000);
-      
-    } catch (error) {
-      setIsLoading(false);
-      toast({
-        title: "Error",
-        description: "Unable to generate prayer guidance. Please try again.",
-        variant: "destructive"
-      });
-    }
+    prayerAssistantMutation.mutate(prayerRequest.trim());
   };
 
   const handleQuickRequest = (request: string) => {
     setPrayerRequest(request);
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied to clipboard",
+      description: "Text has been copied successfully."
+    });
+  };
+
+  const speakText = (text: string) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.8;
+      speechSynthesis.speak(utterance);
+    }
+  };
+
+  const copyAllPrayerPoints = () => {
+    if (!response) return;
+    
+    const allContent = [
+      "=== Prayer Guidance ===",
+      "",
+      "Bible Verses:",
+      ...response.bibleVerses.map(verse => `${verse.reference} (${verse.version}): "${verse.verse}"`),
+      "",
+      "Prayer Points:",
+      ...response.prayerPoints.map((point, index) => `${index + 1}. ${point}`),
+      "",
+      "Encouragement:",
+      response.encouragement
+    ].join('\n');
+    
+    copyToClipboard(allContent);
+  };
+
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">AI Prayer Assistant</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+          <Heart className="w-6 h-6 text-brand-primary" />
+          AI Prayer Assistant
+        </h2>
         <p className="text-gray-600">Get biblical guidance and structured prayer points for your needs</p>
       </div>
 
       {/* Prayer Request Input */}
-      <Card className="shadow-lg">
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3">
-              <i className="fas fa-robot text-brand-accent text-sm"></i>
-            </div>
-            What would you like prayer guidance for?
+          <CardTitle className="flex items-center gap-2">
+            <Target className="w-5 h-5 text-brand-primary" />
+            Share Your Prayer Need
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="prayerRequest">Describe your prayer need</Label>
-            <Textarea
-              id="prayerRequest"
-              value={prayerRequest}
-              onChange={(e) => setPrayerRequest(e.target.value)}
-              placeholder="e.g., I need strength during a difficult season, guidance for an important decision, healing for a loved one..."
-              className="mt-2 min-h-[100px]"
-            />
-          </div>
+          <Textarea
+            placeholder="Describe what you need prayer for... (e.g., 'I'm struggling with anxiety and need God's peace' or 'My family needs financial breakthrough')"
+            value={prayerRequest}
+            onChange={(e) => setPrayerRequest(e.target.value)}
+            rows={4}
+            className="w-full"
+          />
           
-          <Button
+          <Button 
             onClick={handlePrayerRequest}
-            disabled={isLoading || !prayerRequest.trim()}
-            className="w-full bg-brand-accent text-brand-primary hover:bg-yellow-400 font-semibold"
+            className="w-full"
+            disabled={prayerAssistantMutation.isPending}
           >
-            {isLoading ? (
+            {prayerAssistantMutation.isPending ? (
               <>
-                <i className="fas fa-spinner fa-spin mr-2"></i>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-brand-primary border-t-transparent mr-2" />
                 Generating Prayer Guidance...
               </>
             ) : (
               <>
-                <i className="fas fa-pray mr-2"></i>
+                <Sparkles className="w-4 h-4 mr-2" />
                 Get Prayer Guidance
               </>
             )}
@@ -141,138 +161,150 @@ export function AIPrayerAssistant() {
         </CardContent>
       </Card>
 
-      {/* Quick Prayer Requests */}
-      <Card className="shadow-lg">
+      {/* Quick Request Options */}
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3">
-              <i className="fas fa-lightning-bolt text-brand-accent text-sm"></i>
-            </div>
-            Quick Prayer Topics
-          </CardTitle>
+          <CardTitle className="text-lg">Quick Prayer Topics</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 gap-3">
-            {[
-              "Strength and courage",
-              "Family relationships",
-              "Financial breakthrough",
-              "Health and healing",
-              "Career guidance",
-              "Spiritual growth",
-              "Peace and comfort",
-              "Wisdom and discernment"
-            ].map((topic, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {recentRequests.map((request, index) => (
               <Button
                 key={index}
-                onClick={() => handleQuickRequest(`Guide my prayer for ${topic.toLowerCase()}`)}
                 variant="outline"
-                className="border-brand-primary text-brand-primary hover:bg-brand-neutral text-left justify-start"
+                size="sm"
+                onClick={() => handleQuickRequest(request)}
+                className="text-left justify-start h-auto p-3"
               >
-                <i className="fas fa-plus mr-2 text-xs"></i>
-                {topic}
+                {request}
               </Button>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Recent Requests */}
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3">
-              <i className="fas fa-history text-brand-accent text-sm"></i>
-            </div>
-            Recent Prayer Requests
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {recentRequests.map((request, index) => (
-              <div
-                key={index}
-                onClick={() => setPrayerRequest(request)}
-                className="p-3 bg-brand-neutral rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-              >
-                <p className="text-sm text-gray-700">{request}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* AI Response */}
+      {/* Prayer Response */}
       {response && (
-        <Card className="shadow-lg border-brand-accent border-2">
+        <Card className="border-2 border-brand-primary">
           <CardHeader>
-            <CardTitle className="flex items-center text-brand-primary">
-              <div className="w-8 h-8 bg-brand-accent rounded-lg flex items-center justify-center mr-3">
-                <i className="fas fa-bible text-brand-primary text-sm"></i>
-              </div>
-              Prayer Guidance
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-brand-primary" />
+                Your Prayer Guidance
+              </CardTitle>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={copyAllPrayerPoints}
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Copy All
+              </Button>
+            </div>
           </CardHeader>
+          
           <CardContent className="space-y-6">
             {/* Bible Verses */}
-            <div>
-              <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
-                <i className="fas fa-book-open text-brand-accent mr-2"></i>
-                Related Bible Verses
-              </h4>
-              <div className="space-y-3">
-                {response.bibleVerses.map((verse, index) => (
-                  <div key={index} className="bg-brand-neutral rounded-lg p-4">
-                    <p className="text-gray-700 italic mb-2">"{verse.verse}"</p>
-                    <p className="text-sm font-semibold text-brand-primary">
-                      {verse.reference} ({verse.version})
-                    </p>
-                  </div>
-                ))}
+            {response.bibleVerses.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-blue-600" />
+                  Scripture Foundation
+                </h3>
+                <div className="space-y-3">
+                  {response.bibleVerses.map((verse, index) => (
+                    <div key={index} className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-medium text-blue-800">
+                          {verse.reference} ({verse.version})
+                        </h4>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => copyToClipboard(`${verse.reference}: "${verse.verse}"`)}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => speakText(verse.verse)}
+                          >
+                            <Volume2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-blue-700 italic">"{verse.verse}"</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Prayer Points */}
-            <div>
-              <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
-                <i className="fas fa-list text-brand-accent mr-2"></i>
-                Structured Prayer Points
-              </h4>
-              <div className="space-y-2">
-                {response.prayerPoints.map((point, index) => (
-                  <div key={index} className="flex items-start">
-                    <div className="w-6 h-6 bg-brand-primary rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                      <span className="text-brand-accent text-xs font-bold">{index + 1}</span>
+            {response.prayerPoints.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-green-600" />
+                  Prayer Points
+                </h3>
+                <div className="space-y-2">
+                  {response.prayerPoints.map((point, index) => (
+                    <div key={index} className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                      <Badge variant="secondary" className="mt-0.5">
+                        {index + 1}
+                      </Badge>
+                      <p className="text-green-800 flex-1">{point}</p>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => copyToClipboard(point)}
+                      >
+                        <Copy className="w-3 h-3" />
+                      </Button>
                     </div>
-                    <p className="text-gray-700">{point}</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Encouragement */}
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <h4 className="font-semibold text-green-800 mb-2 flex items-center">
-                <i className="fas fa-heart text-green-600 mr-2"></i>
-                Encouragement
-              </h4>
-              <p className="text-green-700">{response.encouragement}</p>
-            </div>
+            {response.encouragement && (
+              <div>
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-purple-600" />
+                  Encouragement
+                </h3>
+                <div className="bg-purple-50 p-4 rounded-lg border-l-4 border-purple-500">
+                  <p className="text-purple-800 leading-relaxed">{response.encouragement}</p>
+                </div>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex space-x-3">
               <Button
                 variant="outline"
                 className="border-brand-primary text-brand-primary hover:bg-brand-neutral"
+                onClick={copyAllPrayerPoints}
               >
-                <i className="fas fa-copy mr-2"></i>
+                <Copy className="w-4 h-4 mr-2" />
                 Copy Prayer Points
               </Button>
               <Button
                 variant="outline"
                 className="border-brand-primary text-brand-primary hover:bg-brand-neutral"
+                onClick={() => {
+                  const shareText = `Prayer Guidance:\n\n${response.prayerPoints.join('\n')}\n\n${response.encouragement}`;
+                  if (navigator.share) {
+                    navigator.share({ text: shareText });
+                  } else {
+                    copyToClipboard(shareText);
+                  }
+                }}
               >
-                <i className="fas fa-share mr-2"></i>
+                <Heart className="w-4 h-4 mr-2" />
                 Share with Prayer Partner
               </Button>
             </div>
@@ -284,7 +316,7 @@ export function AIPrayerAssistant() {
       <Card className="shadow-lg border-yellow-200 border-2 bg-yellow-50">
         <CardContent className="p-4">
           <div className="flex items-start">
-            <i className="fas fa-info-circle text-yellow-600 mr-3 mt-1"></i>
+            <Sparkles className="text-yellow-600 mr-3 mt-1 w-5 h-5" />
             <div>
               <h4 className="font-semibold text-yellow-800 mb-1">AI Integration Required</h4>
               <p className="text-yellow-700 text-sm">
