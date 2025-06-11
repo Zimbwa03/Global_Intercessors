@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -1488,65 +1489,39 @@ export default function AdminDashboard() {
         ) : (
           /* Desktop Navigation */
           <div className="flex space-x-1 mb-6 bg-white rounded-lg p-2 shadow-sm">
-            
-              
-                
-                  
-                    Overview
-                  
-                  
-                
-              
-              
-                
-                  
-                    Fasting Program
-                  
-                  
-                
-              
-              
-                
-                  
-                    Prayer Slots
-                  
-                  
-                
-              
-              
-                
-                  
-                    Updates
-                  
-                  
-                
-              
-              
-                
-                  
-                    Registrations
-                  
-                  
-                
-              
-              
-                
-                  
-                    Intercessors
-                  
-                  
-                
-              
-              
-                
-                  
-                    Monitoring
-                  
-                  
-                
-              
-            
-          
+            <Button
+              variant={activeTab === "overview" ? "default" : "ghost"}
+              onClick={() => setActiveTab("overview")}
+              className="flex-1"
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Overview
+            </Button>
+            <Button
+              variant={activeTab === "fasting" ? "default" : "ghost"}
+              onClick={() => setActiveTab("fasting")}
+              className="flex-1"
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Fasting Program
+            </Button>
+            <Button
+              variant={activeTab === "slots" ? "default" : "ghost"}
+              onClick={() => setActiveTab("slots")}
+              className="flex-1"
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              Prayer Slots
+            </Button>
+            <Button
+              variant={activeTab === "management" ? "default" : "ghost"}
+              onClick={() => setActiveTab("management")}
+              className="flex-1"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Management
+            </Button>
+          </div>
         )}
 
         {/* Tab Content */}
