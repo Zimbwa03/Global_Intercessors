@@ -57,18 +57,6 @@ export default function Landing() {
                 >
                   Features
                 </button>
-                <a 
-                  href="/bible-chat"
-                  className="hover:text-brand-accent transition-brand font-medium"
-                >
-                  Bible Chat
-                </a>
-                <a 
-                  href="/prayer-planner"
-                  className="hover:text-brand-accent transition-brand font-medium"
-                >
-                  Prayer Planner
-                </a>
                 <button 
                   onClick={() => scrollToSection('contact')}
                   className="hover:text-brand-accent transition-brand font-medium"
@@ -98,20 +86,6 @@ export default function Landing() {
                 >
                   Features
                 </button>
-                <a 
-                  href="/bible-chat"
-                  className="text-left py-2 px-4 rounded-lg hover:bg-blue-700/50 transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  AI Bible Chat
-                </a>
-                <a 
-                  href="/prayer-planner"
-                  className="text-left py-2 px-4 rounded-lg hover:bg-blue-700/50 transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Prayer Planner
-                </a>
                 <button 
                   onClick={() => {
                     scrollToSection('contact');

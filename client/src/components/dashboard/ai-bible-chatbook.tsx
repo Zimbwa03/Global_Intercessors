@@ -11,6 +11,18 @@ import { useToast } from "@/hooks/use-toast";
 import { Book, Search, Copy, Volume2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
+interface ChatMessage {
+  id: string;
+  type: 'user' | 'ai';
+  content: string;
+  timestamp: Date;
+  scripture?: {
+    reference: string;
+    text: string;
+  };
+  insights?: string[];
+}
+
 interface BibleResponse {
   verse: string;
   reference: string;
@@ -26,6 +38,9 @@ export function AIBibleChatbook() {
   const [selectedChapter, setSelectedChapter] = useState("");
   const [selectedVerse, setSelectedVerse] = useState("");
   const [response, setResponse] = useState<BibleResponse | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [currentMessage, setCurrentMessage] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
 
   const bibleMutation = useMutation({
     mutationFn: async (data: {
@@ -58,6 +73,41 @@ export function AIBibleChatbook() {
     }
   });
 
+  const chatMutation = useMutation({
+    mutationFn: async (data: {
+      message: string;
+      context: ChatMessage[];
+    }) => {
+      const response = await fetch("/api/bible-chat", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" }
+      });
+      if (!response.ok) throw new Error('Failed to process chat message');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      const aiMessage: ChatMessage = {
+        id: Date.now().toString() + '-ai',
+        type: 'ai',
+        content: data.response,
+        timestamp: new Date(),
+        scripture: data.scripture,
+        insights: data.insights
+      };
+      setMessages(prev => [...prev, aiMessage]);
+      setIsTyping(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive"
+      });
+      setIsTyping(false);
+    }
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!phrase.trim()) {
@@ -77,6 +127,28 @@ export function AIBibleChatbook() {
     });
   };
 
+  const handleChatSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentMessage.trim()) return;
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: currentMessage.trim(),
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsTyping(true);
+    
+    chatMutation.mutate({
+      message: currentMessage.trim(),
+      context: messages.slice(-5) // Send last 5 messages for context
+    });
+    
+    setCurrentMessage("");
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
@@ -93,16 +165,109 @@ export function AIBibleChatbook() {
     }
   };
 
+  const MessageBubble = ({ message }: { message: ChatMessage }) => (
+    <div className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
+      <div className={`max-w-[80%] rounded-lg p-3 ${
+        message.type === 'user' 
+          ? 'bg-blue-600 text-white' 
+          : 'bg-gray-100 text-gray-900 border'
+      }`}>
+        <p className="mb-2">{message.content}</p>
+        {message.scripture && (
+          <div className="mt-2 p-2 bg-blue-50 rounded border-l-4 border-blue-500">
+            <p className="text-sm font-semibold text-blue-700">{message.scripture.reference}</p>
+            <p className="text-sm italic">{message.scripture.text}</p>
+          </div>
+        )}
+        {message.insights && message.insights.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {message.insights.map((insight, idx) => (
+              <span key={idx} className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                {insight}
+              </span>
+            ))}
+          </div>
+        )}
+        <p className="text-xs opacity-70 mt-1">
+          {message.timestamp.toLocaleTimeString()}
+        </p>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
+      {/* Interactive Chat Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Book className="w-5 h-5 text-brand-primary" />
-            AI-Powered Bible Chatbook
+            Interactive Bible Chat
           </CardTitle>
           <p className="text-sm text-gray-600">
-            Type any word, phrase, or situation to receive biblical guidance with AI-powered explanations
+            Have a conversation about biblical topics, ask questions, and receive scriptural guidance
+          </p>
+        </CardHeader>
+        
+        <CardContent>
+          {/* Chat Messages */}
+          <div className="h-96 overflow-y-auto border rounded-lg p-4 mb-4 bg-gray-50">
+            {messages.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-gray-500">
+                <div className="text-center">
+                  <Book className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Start a conversation about biblical topics</p>
+                  <p className="text-sm">Ask questions, seek guidance, or explore Scripture</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {messages.map((message) => (
+                  <MessageBubble key={message.id} message={message} />
+                ))}
+                {isTyping && (
+                  <div className="flex justify-start mb-4">
+                    <div className="bg-gray-100 rounded-lg p-3 border">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Chat Input */}
+          <form onSubmit={handleChatSubmit} className="flex gap-2">
+            <Input
+              value={currentMessage}
+              onChange={(e) => setCurrentMessage(e.target.value)}
+              placeholder="Ask about biblical topics, verses, or spiritual guidance..."
+              className="flex-1"
+              disabled={chatMutation.isPending}
+            />
+            <Button 
+              type="submit" 
+              disabled={chatMutation.isPending || !currentMessage.trim()}
+            >
+              Send
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Bible Search Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="w-5 h-5 text-brand-primary" />
+            Bible Verse Search
+          </CardTitle>
+          <p className="text-sm text-gray-600">
+            Search for specific verses or topics to receive biblical guidance with explanations
           </p>
         </CardHeader>
         

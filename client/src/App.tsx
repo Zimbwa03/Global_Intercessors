@@ -10,8 +10,6 @@ import PrayerSlotManagement from "@/pages/prayer-slot-management";
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
 import CreateAdmin from "@/pages/create-admin";
-import BibleChatPage from "@/pages/bible-chat";
-import PrayerPlannerPage from "@/pages/prayer-planner";
 
 function Router() {
   return (
@@ -19,8 +17,6 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/prayer-slot-management" component={PrayerSlotManagement} />
-      <Route path="/bible-chat" component={BibleChatPage} />
-      <Route path="/prayer-planner" component={PrayerPlannerPage} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/create-admin" component={CreateAdmin} />
