@@ -800,6 +800,300 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced Bible Chat with DeepSeek AI
+  app.post("/api/bible-chat", async (req: Request, res: Response) => {
+    try {
+      const { message, context } = req.body;
+
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
+      if (!deepSeekApiKey) {
+        return res.status(500).json({ 
+          error: "DeepSeek API key not configured",
+          response: "Bible chat service is currently unavailable. Please contact the administrator."
+        });
+      }
+
+      const cleanedMessage = cleanAIResponse(message);
+
+      const systemPrompt = `You are an expert Bible study assistant and spiritual mentor with deep knowledge of Scripture. Your responses should be:
+
+1. Biblically accurate and theologically sound
+2. Practical and applicable to daily Christian life
+3. Encouraging and spiritually enriching
+4. Include specific Bible verse references when relevant
+5. Provide multiple perspectives when appropriate
+6. Offer prayer guidance and spiritual insights
+
+Format your responses to include:
+- Main biblical teaching or answer
+- Relevant scripture references (book chapter:verse format)
+- Practical application or spiritual insights
+- Encouraging words or prayer suggestions when appropriate
+
+Always maintain a tone of wisdom, compassion, and spiritual depth.`;
+
+      const deepSeekResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${deepSeekApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt
+            },
+            ...context?.slice(-4)?.map((msg: any) => ({
+              role: msg.type === 'user' ? 'user' : 'assistant',
+              content: msg.content
+            })) || [],
+            {
+              role: 'user',
+              content: cleanedMessage
+            }
+          ],
+          max_tokens: 1200,
+          temperature: 0.7,
+          top_p: 0.9
+        })
+      });
+
+      if (!deepSeekResponse.ok) {
+        const errorData = await deepSeekResponse.json().catch(() => ({}));
+        console.error('DeepSeek API error:', errorData);
+        throw new Error(`DeepSeek API request failed: ${deepSeekResponse.status}`);
+      }
+
+      const data = await deepSeekResponse.json();
+      const aiResponse = data.choices[0]?.message?.content || "I'm here to help with your Bible study questions.";
+
+      const scripturePattern = /([1-3]?\s*[A-Za-z]+(?:\s+[A-Za-z]+)?\s+\d+:\d+(?:-\d+)?(?:\s*-\s*\d+:\d+)?)/g;
+      const scriptureMatches = aiResponse.match(scripturePattern);
+      
+      const insightKeywords = ['faith', 'love', 'grace', 'mercy', 'wisdom', 'prayer', 'forgiveness', 'hope', 'peace', 'joy', 'salvation', 'redemption'];
+      const foundInsights = insightKeywords.filter(keyword => 
+        aiResponse.toLowerCase().includes(keyword)
+      ).slice(0, 3);
+
+      const response = {
+        response: cleanAIResponse(aiResponse),
+        scripture: scriptureMatches && scriptureMatches.length > 0 ? {
+          reference: scriptureMatches[0].trim(),
+          text: `"For this is how God loved the world: He gave his one and only Son, so that everyone who believes in him will not perish but have eternal life." - Context-appropriate verse will be provided based on the reference.`
+        } : null,
+        insights: foundInsights.length > 0 ? 
+          foundInsights.map(insight => insight.charAt(0).toUpperCase() + insight.slice(1)) :
+          ["Biblical Wisdom", "Spiritual Growth", "Divine Guidance"]
+      };
+
+      res.json(response);
+    } catch (error) {
+      console.error("Bible chat error:", error);
+      res.status(500).json({ 
+        error: "Failed to process Bible chat request",
+        response: "I apologize, but I'm experiencing technical difficulties. Your question is important, and I encourage you to continue seeking God's wisdom through prayer and Scripture study."
+      });
+    }
+  });
+
+  // Enhanced Prayer Planner with DeepSeek AI
+  app.post("/api/prayer-planner", async (req: Request, res: Response) => {
+    try {
+      const { query, category = 'personal', duration = 15 } = req.body;
+
+      if (!query) {
+        return res.status(400).json({ error: "Prayer query is required" });
+      }
+
+      const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
+      if (!deepSeekApiKey) {
+        return res.status(500).json({ 
+          error: "DeepSeek API key not configured",
+          message: "Prayer planning service is currently unavailable."
+        });
+      }
+
+      const cleanedQuery = cleanAIResponse(query);
+
+      const systemPrompt = `You are an expert prayer planning assistant and spiritual mentor. Create comprehensive, biblically-grounded prayer plans that include:
+
+1. A meaningful title that captures the prayer focus
+2. A clear description of the prayer's purpose and scope
+3. 4-6 specific, actionable prayer points
+4. 2-4 relevant Bible verses for meditation and support
+5. 2-3 spiritual insights or themes
+6. Practical guidance for the prayer time
+
+Make the prayer plan deeply spiritual, practical, and encouraging. Tailor the content to be appropriate for ${duration} minutes of focused prayer time. The prayer should feel personal, meaningful, and biblically grounded.
+
+Respond in JSON format with these exact fields:
+{
+  "title": "Prayer Plan Title",
+  "description": "Detailed description",
+  "prayerPoints": ["Point 1", "Point 2", "Point 3", "Point 4"],
+  "scriptures": ["Reference 1", "Reference 2", "Reference 3"],
+  "insights": ["Insight 1", "Insight 2", "Insight 3"]
+}`;
+
+      const deepSeekResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${deepSeekApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt
+            },
+            {
+              role: 'user',
+              content: `Create a ${category} prayer plan for: "${cleanedQuery}". Duration: ${duration} minutes. Focus on creating a meaningful, biblically-grounded prayer experience.`
+            }
+          ],
+          max_tokens: 1000,
+          temperature: 0.8,
+          top_p: 0.9
+        })
+      });
+
+      if (!deepSeekResponse.ok) {
+        const errorData = await deepSeekResponse.json().catch(() => ({}));
+        console.error('DeepSeek API error:', errorData);
+        throw new Error(`DeepSeek API request failed: ${deepSeekResponse.status}`);
+      }
+
+      const data = await deepSeekResponse.json();
+      const aiResponse = data.choices[0]?.message?.content || "";
+
+      // Try to parse JSON response, fallback to structured parsing
+      let parsedResponse;
+      try {
+        parsedResponse = JSON.parse(aiResponse);
+      } catch (parseError) {
+        // Fallback parsing if JSON fails
+        console.log("JSON parsing failed, using fallback parsing");
+        parsedResponse = {
+          title: `${category.charAt(0).toUpperCase() + category.slice(1)} Prayer Focus`,
+          description: cleanedQuery,
+          prayerPoints: [
+            "Begin with thanksgiving and praise for God's faithfulness",
+            "Seek God's wisdom and guidance for this specific need",
+            "Intercede for all those involved in this situation",
+            "Pray for God's will to be accomplished",
+            "Trust in God's perfect timing and plan"
+          ],
+          scriptures: ["Philippians 4:6-7", "Jeremiah 29:11", "Matthew 7:7-8"],
+          insights: ["Faith", "Trust", "Surrender"]
+        };
+      }
+
+      res.json(parsedResponse);
+    } catch (error) {
+      console.error("Prayer planner error:", error);
+      res.status(500).json({ 
+        error: "Failed to create prayer plan",
+        message: "Unable to generate prayer plan at this time. Please try again."
+      });
+    }
+  });
+
+  // Prayer suggestions endpoint
+  app.get("/api/prayer-suggestions", async (req: Request, res: Response) => {
+    try {
+      const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
+      if (!deepSeekApiKey) {
+        return res.status(500).json({ 
+          error: "DeepSeek API key not configured"
+        });
+      }
+
+      const systemPrompt = `Generate 4 diverse prayer plan suggestions for different spiritual needs. Include personal, family, community, and global prayer focuses. 
+
+Respond in JSON format as an array:
+[
+  {
+    "category": "personal",
+    "title": "Title",
+    "description": "Description",
+    "prayerPoints": ["Point 1", "Point 2", "Point 3"],
+    "scriptures": ["Reference 1", "Reference 2"],
+    "duration": 15
+  }
+]`;
+
+      const deepSeekResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${deepSeekApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt
+            },
+            {
+              role: 'user',
+              content: 'Generate 4 meaningful prayer plan suggestions covering personal growth, family blessing, community healing, and global peace.'
+            }
+          ],
+          max_tokens: 1200,
+          temperature: 0.9
+        })
+      });
+
+      if (!deepSeekResponse.ok) {
+        throw new Error('DeepSeek API request failed');
+      }
+
+      const data = await deepSeekResponse.json();
+      const aiResponse = data.choices[0]?.message?.content || "";
+
+      let suggestions;
+      try {
+        suggestions = JSON.parse(aiResponse);
+      } catch (parseError) {
+        // Fallback suggestions
+        suggestions = [
+          {
+            category: "personal",
+            title: "Morning Spiritual Strength",
+            description: "Begin your day with God's presence and guidance",
+            prayerPoints: ["Gratitude for a new day", "Seeking God's guidance", "Strength for challenges ahead"],
+            scriptures: ["Psalm 143:8", "Isaiah 40:31"],
+            duration: 15
+          },
+          {
+            category: "family",
+            title: "Family Unity and Blessing",
+            description: "Pray for your family's spiritual growth and harmony",
+            prayerPoints: ["Family protection", "Unity in love", "Spiritual growth"],
+            scriptures: ["Joshua 24:15", "Ephesians 6:4"],
+            duration: 20
+          }
+        ];
+      }
+
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Prayer suggestions error:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch prayer suggestions"
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   // Test Zoom API connection
   app.get("/api/admin/test-zoom", async (req: Request, res: Response) => {
