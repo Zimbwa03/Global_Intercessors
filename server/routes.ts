@@ -836,12 +836,17 @@ Format your responses to include:
 
 Always maintain a tone of wisdom, compassion, and spiritual depth.`;
 
+      // Create abort controller for timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+
       const deepSeekResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${deepSeekApiKey}`
         },
+        signal: controller.signal,
         body: JSON.stringify({
           model: 'deepseek-chat',
           messages: [
@@ -858,11 +863,13 @@ Always maintain a tone of wisdom, compassion, and spiritual depth.`;
               content: cleanedMessage
             }
           ],
-          max_tokens: 1200,
+          max_tokens: 600,
           temperature: 0.7,
           top_p: 0.9
         })
       });
+
+      clearTimeout(timeoutId);
 
       if (!deepSeekResponse.ok) {
         const errorData = await deepSeekResponse.json().catch(() => ({}));
