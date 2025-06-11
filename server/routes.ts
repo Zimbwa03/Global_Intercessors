@@ -917,96 +917,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { query, category = 'personal', duration = 15 } = req.body;
 
-      if (!query) {
-        return res.status(400).json({ error: "Prayer query is required" });
-      }
-
-      const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
-      if (!deepSeekApiKey) {
-        return res.status(500).json({ 
-          error: "DeepSeek API key not configured",
-          message: "Prayer planning service is currently unavailable."
-        });
-      }
-
-      const cleanedQuery = cleanAIResponse(query);
-
-      const systemPrompt = `You are an expert prayer planning assistant and spiritual mentor. Create comprehensive, biblically-grounded prayer plans that include:
-
-1. A meaningful title that captures the prayer focus
-2. A clear description of the prayer's purpose and scope
-3. 4-6 specific, actionable prayer points
-4. 2-4 relevant Bible verses for meditation and support
-5. 2-3 spiritual insights or themes
-6. Practical guidance for the prayer time
-
-Make the prayer plan deeply spiritual, practical, and encouraging. Tailor the content to be appropriate for ${duration} minutes of focused prayer time. The prayer should feel personal, meaningful, and biblically grounded.
-
-Respond in JSON format with these exact fields:
-{
-  "title": "Prayer Plan Title",
-  "description": "Detailed description",
-  "prayerPoints": ["Point 1", "Point 2", "Point 3", "Point 4"],
-  "scriptures": ["Reference 1", "Reference 2", "Reference 3"],
-  "insights": ["Insight 1", "Insight 2", "Insight 3"]
-}`;
-
-      const deepSeekResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${deepSeekApiKey}`
-        },
-        body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [
+      // Provide structured prayer plans based on category
+      const prayerPlans = {
+        nation: {
+          category: "Nation & Government",
+          prayerPoints: [
             {
-              role: 'system',
-              content: systemPrompt
+              title: "Pray for National Leaders",
+              content: "Father, we lift up our nation's leaders to You. Grant them wisdom to make decisions that honor You and benefit all people. Help them to seek justice, love mercy, and walk humbly before You.",
+              bibleVerse: "I urge, then, first of all, that petitions, prayers, intercession and thanksgiving be made for all people—for kings and all those in authority, that we may live peaceful and quiet lives in all godliness and holiness.",
+              reference: "1 Timothy 2:1-2",
+              explanation: "God calls us to pray for our leaders, regardless of our political views, so that society can function peacefully and righteously."
             },
             {
-              role: 'user',
-              content: `Create a ${category} prayer plan for: "${cleanedQuery}". Duration: ${duration} minutes. Focus on creating a meaningful, biblically-grounded prayer experience.`
+              title: "Pray for Justice and Righteousness",
+              content: "Lord, establish justice in our land. Where there is corruption, bring accountability. Where there is oppression, bring freedom. Let righteousness flow like a river through our nation.",
+              bibleVerse: "But let justice roll on like a river, righteousness like a never-failing stream!",
+              reference: "Amos 5:24",
+              explanation: "God desires justice and righteousness to characterize nations, flowing consistently like water that never stops."
+            },
+            {
+              title: "Pray for Unity and Healing",
+              content: "God of peace, heal the divisions in our nation. Help us to see beyond our differences and work together for the common good. Break down walls of hatred and build bridges of understanding.",
+              bibleVerse: "How good and pleasant it is when God's people live together in unity!",
+              reference: "Psalm 133:1",
+              explanation: "Unity among people brings God's blessing and reflects His heart for reconciliation and peace."
             }
           ],
-          max_tokens: 1000,
-          temperature: 0.8,
-          top_p: 0.9
-        })
-      });
-
-      if (!deepSeekResponse.ok) {
-        const errorData = await deepSeekResponse.json().catch(() => ({}));
-        console.error('DeepSeek API error:', errorData);
-        throw new Error(`DeepSeek API request failed: ${deepSeekResponse.status}`);
-      }
-
-      const data = await deepSeekResponse.json();
-      const aiResponse = data.choices[0]?.message?.content || "";
-
-      // Try to parse JSON response, fallback to structured parsing
-      let parsedResponse;
-      try {
-        parsedResponse = JSON.parse(aiResponse);
-      } catch (parseError) {
-        // Fallback parsing if JSON fails
-        console.log("JSON parsing failed, using fallback parsing");
-        parsedResponse = {
-          title: `${category.charAt(0).toUpperCase() + category.slice(1)} Prayer Focus`,
-          description: cleanedQuery,
+          totalPoints: 3
+        },
+        healing: {
+          category: "Healing & Health",
           prayerPoints: [
-            "Begin with thanksgiving and praise for God's faithfulness",
-            "Seek God's wisdom and guidance for this specific need",
-            "Intercede for all those involved in this situation",
-            "Pray for God's will to be accomplished",
-            "Trust in God's perfect timing and plan"
+            {
+              title: "Pray for Physical Healing",
+              content: "Great Physician, we bring before You all who are suffering with illness and disease. Touch their bodies with Your healing power. Restore what is broken and bring complete wholeness.",
+              bibleVerse: "Heal the sick, raise the dead, cleanse those who have leprosy, drive out demons. Freely you have received; freely give.",
+              reference: "Matthew 10:8",
+              explanation: "Jesus gave His disciples authority to heal, demonstrating God's heart for physical restoration and wholeness."
+            },
+            {
+              title: "Pray for Emotional and Mental Healing",
+              content: "Lord, You are close to the brokenhearted. Bring healing to wounded souls, peace to anxious minds, and hope to those who despair. Let Your love cast out all fear.",
+              bibleVerse: "The Lord is close to the brokenhearted and saves those who are crushed in spirit.",
+              reference: "Psalm 34:18",
+              explanation: "God specially cares for those who are emotionally wounded and promises His presence in their pain."
+            },
+            {
+              title: "Pray for Healthcare Workers",
+              content: "Father, strengthen and protect all healthcare workers. Give them wisdom in treatment decisions, stamina for long hours, and compassion for those they serve. Protect them from harm.",
+              bibleVerse: "She opens her arms to the poor and extends her hands to the needy.",
+              reference: "Proverbs 31:20",
+              explanation: "Those who care for others reflect God's character and deserve our prayers and support."
+            }
           ],
-          scriptures: ["Philippians 4:6-7", "Jeremiah 29:11", "Matthew 7:7-8"],
-          insights: ["Faith", "Trust", "Surrender"]
-        };
-      }
+          totalPoints: 3
+        },
+        family: {
+          category: "Family & Relationships",
+          prayerPoints: [
+            {
+              title: "Pray for Marriage Relationships",
+              content: "Lord, strengthen marriages and help husbands and wives to love each other as You intended. Build unity, trust, and mutual respect. Where there is conflict, bring reconciliation.",
+              bibleVerse: "Above all, love each other deeply, because love covers over a multitude of sins.",
+              reference: "1 Peter 4:8",
+              explanation: "Deep, sacrificial love is essential for healthy marriages and can overcome many difficulties and conflicts."
+            },
+            {
+              title: "Pray for Children and Youth",
+              content: "Heavenly Father, protect our children and young people. Guide them in truth, surround them with godly influences, and help them to grow in wisdom and favor with God and people.",
+              bibleVerse: "Start children off on the way they should go, and even when they are old they will not turn from it.",
+              reference: "Proverbs 22:6",
+              explanation: "Early spiritual training and guidance create a foundation that can last throughout a person's life."
+            },
+            {
+              title: "Pray for Family Unity",
+              content: "God of peace, help families to communicate with love and understanding. Heal broken relationships, restore trust where it has been damaged, and help family members to forgive each other.",
+              bibleVerse: "Be kind and compassionate to one another, forgiving each other, just as in Christ God forgave you.",
+              reference: "Ephesians 4:32",
+              explanation: "Forgiveness is essential for healthy family relationships and reflects how God has forgiven us."
+            }
+          ],
+          totalPoints: 3
+        }
+      };
 
-      res.json(parsedResponse);
+      const selectedPlan = prayerPlans[category as keyof typeof prayerPlans] || prayerPlans.family;
+      res.json(selectedPlan);
     } catch (error) {
       console.error("Prayer planner error:", error);
       res.status(500).json({ 
