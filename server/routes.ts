@@ -583,7 +583,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (error) {
         console.error("Database function failed, trying direct insert:", error);
-        
+
         // Fallback to direct insert with service role
         const { data: directData, error: directError } = await supabaseAdmin
           .from('updates')
@@ -612,7 +612,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             details: "Please run the SQL script in Supabase first" 
           });
         }
-        
+
         console.log(`Admin update posted: "${title}"`);
         return res.json({ 
           success: true, 
@@ -625,7 +625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (sendNotification) {
         console.log('Push notification would be sent for update:', title);
       }
-      
+
       if (sendEmail) {
         console.log('Email notification would be sent for update:', title);
       }
@@ -648,7 +648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/updates", async (req: Request, res: Response) => {
     try {
       console.log('Fetching public updates for users...');
-      
+
       const { data: updates, error } = await supabaseAdmin
         .from('updates')
         .select('*')
@@ -666,11 +666,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Filter out expired updates and add date field
       const activeUpdates = updates?.filter(update => {
         if (update.expiry === 'never') return true;
-        
+
         const createdAt = new Date(update.created_at);
         const now = new Date();
         const diffInDays = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-        
+
         switch (update.expiry) {
           case '1day': return diffInDays <= 1;
           case '3days': return diffInDays <= 3;
@@ -691,14 +691,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Pinned items first
         if (a.pin_to_top && !b.pin_to_top) return -1;
         if (!a.pin_to_top && b.pin_to_top) return 1;
-        
+
         // Then by priority
         const priorityOrder = { critical: 4, high: 3, normal: 2, low: 1 };
         const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 2;
         const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 2;
-        
+
         if (aPriority !== bPriority) return bPriority - aPriority;
-        
+
         // Finally by creation date
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
@@ -708,6 +708,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching public updates:", error);
       res.status(500).json({ error: "Failed to fetch updates" });
+    }
+  });
+
+  // Get fasting program details for admin management
+  app.get("/api/admin/fasting-program", async (req: Request, res: Response) => {
+    try {
+      console.log('Fetching fasting program details for admin...');
+
+      const { data, error } = await supabaseAdmin.rpc('get_active_fasting_program');
+
+      if (error) {
+        console.error("Error fetching fasting program details:", error);
+        return res.status(500).json({ error: "Failed to fetch fasting program details" });
+      }
+
+      console.log('Fasting program details loaded for admin');
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching fasting program details:", error);
+      res.status(500).json({ error: "Failed to fetch fasting program details" });
+    }
+  });
+
+  // Update fasting program details (Admin only)
+  app.put("/api/admin/fasting-program", async (req: Request, res: Response) => {
+    try {
+      console.log('Updating fasting program details...');
+
+      const {
+        program_title,
+        program_subtitle,
+        program_description,
+        start_date,
+        end_date,
+        registration_open_date,
+        registration_close_date,
+        max_participants,
+        program_status,
+        special_instructions,
+        contact_email,
+        location_details
+      } = req.body;
+
+      const { data, error } = await supabaseAdmin.rpc('update_fasting_program_details', {
+        p_program_title: program_title,
+        p_program_subtitle: program_subtitle,
+        p_program_description: program_description,
+        p_start_date: start_date,
+        p_end_date: end_date,
+        p_registration_open_date: registration_open_date,
+        p_registration_close_date: registration_close_date,
+        p_max_participants: max_participants,
+        p_program_status: program_status,
+        p_special_instructions: special_instructions,
+        p_contact_email: contact_email,
+        p_location_details: location_details
+      });
+
+      if (error) {
+        console.error("Error updating fasting program details:", error);
+        return res.status(500).json({ error: "Failed to update fasting program details" });
+      }
+
+      console.log('Fasting program details updated successfully');
+      res.json(data);
+    } catch (error) {
+      console.error("Error updating fasting program details:", error);
+      res.status(500).json({ error: "Failed to update fasting program details" });
+    }
+  });
+
+  // Get prayer slots for admin management
+  app.get("/api/admin/prayer-slots", async (req: Request, res: Response) => {
+    try {
+      const { data: slots, error } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) {
+        console.error("Error fetching prayer slots:", error);
+        return res.status(500).json({ error: "Failed to fetch prayer slots" });
+      }
+
+      res.json(slots || []);
+    } catch (error) {
+      console.error("Error fetching prayer slots:", error);
+      res.status(500).json({ error: "Failed to fetch prayer slots" });
     }
   });
 
@@ -742,7 +831,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `grant_type=account_credentials&account_id=${accountId}`,
         {
           headers: {
-            'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+            'Authorization':`Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
             'Content-Type': 'application/x-www-form-urlencoded'
           }
         }

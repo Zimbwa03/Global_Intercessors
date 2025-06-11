@@ -11,9 +11,12 @@ interface Announcement {
   description: string;
   type: "fast" | "event" | "general";
   date: string;
-  registrationRequired: boolean;
-  priority?: string;
-  pin_to_top?: boolean;
+  registrationRequired?: boolean;
+  priority: string;
+  pin_to_top: boolean;
+  subtitle?: string;
+  registrationStatus?: string;
+  registrationCloses?: string | null;
 }
 
 interface DatabaseUpdate {
@@ -148,7 +151,7 @@ export function UpdatesAnnouncements() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 mb-4 leading-relaxed">{announcement.description}</p>
-              
+
               {announcement.registrationRequired && announcement.id === "fasting-program" && (
                 <Button 
                   onClick={() => setShowFastingRegistration(true)}
@@ -158,7 +161,7 @@ export function UpdatesAnnouncements() {
                   Register for Fasting Program
                 </Button>
               )}
-              
+
               {announcement.registrationRequired && announcement.id !== "fasting-program" && (
                 <Button className="bg-brand-accent text-brand-primary hover:bg-yellow-400 font-semibold">
                   <i className="fas fa-user-plus mr-2"></i>

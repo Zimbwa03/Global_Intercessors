@@ -35,6 +35,9 @@ import {
 } from "lucide-react";
 import { AnimatedCard } from "@/components/ui/animated-card";
 import { motion, AnimatePresence } from "framer-motion";
+import { PrayerSlotManagement } from '../components/dashboard/prayer-slot-management';
+import { SlotCoverageMonitor } from '../components/dashboard/slot-coverage-monitor';
+import { FastingProgramManagement } from '../components/dashboard/fasting-program-management';
 
 interface AdminUser {
   id: string;
@@ -378,7 +381,7 @@ export default function AdminDashboard() {
         title: "Global Update Posted",
         description: "Your update is now live on all user dashboards",
       });
-      
+
       setNewUpdate({
         title: '',
         description: '',
@@ -390,7 +393,7 @@ export default function AdminDashboard() {
         sendEmail: false,
         pinToTop: false
       });
-      
+
       queryClient.invalidateQueries({ queryKey: ['/api/admin/updates'] });
     },
     onError: (error: Error) => {
@@ -1485,31 +1488,65 @@ export default function AdminDashboard() {
         ) : (
           /* Desktop Navigation */
           <div className="flex space-x-1 mb-6 bg-white rounded-lg p-2 shadow-sm">
-            {[
-              { id: "overview", label: "Overview", icon: BarChart3 },
-              { id: "slots", label: "Prayer Slots", icon: Clock },
-              { id: "activity", label: "Intercessor Activity", icon: UserCheck },
-              { id: "fasting", label: "Fasting Program", icon: Calendar },
-              { id: "management", label: "Management", icon: Settings },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <Button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  variant={activeTab === tab.id ? "default" : "ghost"}
-                  className={`flex items-center space-x-2 px-4 py-2 ${
-                    activeTab === tab.id 
-                      ? "bg-brand-primary text-white shadow-md" 
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                </Button>
-              );
-            })}
-          </div>
+            
+              
+                
+                  
+                    Overview
+                  
+                  
+                
+              
+              
+                
+                  
+                    Fasting Program
+                  
+                  
+                
+              
+              
+                
+                  
+                    Prayer Slots
+                  
+                  
+                
+              
+              
+                
+                  
+                    Updates
+                  
+                  
+                
+              
+              
+                
+                  
+                    Registrations
+                  
+                  
+                
+              
+              
+                
+                  
+                    Intercessors
+                  
+                  
+                
+              
+              
+                
+                  
+                    Monitoring
+                  
+                  
+                
+              
+            
+          
         )}
 
         {/* Tab Content */}
