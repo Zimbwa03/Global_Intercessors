@@ -289,10 +289,8 @@ export function FastingRegistration() {
               </Label>
               <Input
                 id="travelCost"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
+                type="text"
+                placeholder="Enter amount (e.g., 50.00)"
                 value={formData.travelCost || ""}
                 onChange={(e) => setFormData(prev => ({ ...prev, travelCost: e.target.value || "0" }))}
                 className="border-gray-300 focus:border-blue-500"
