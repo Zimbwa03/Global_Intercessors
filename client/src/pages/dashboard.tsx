@@ -14,6 +14,7 @@ import { AIPrayerPlanner } from "@/components/dashboard/ai-prayer-planner";
 import { AudioBiblePlayer } from "@/components/dashboard/audio-bible-player";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Dashboard() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -168,7 +169,7 @@ export default function Dashboard() {
               { id: "dashboard", label: "Dashboard", icon: "fas fa-home" },
               { id: "prayer-slot", label: "Prayer", icon: "fas fa-clock" },
               { id: "audio-bible", label: "Audio", icon: "fas fa-volume-up" },
-              { id: "ai-assistant", label: "AI Help", icon: "fas fa-robot" },
+              { id: "bible-chatbook", label: "Bible Chat", icon: "fas fa-book" },
             ].map((item) => (
               <button
                 key={item.id}

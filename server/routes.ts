@@ -1075,7 +1075,7 @@ Guidelines:
         const cleanedResponse = cleanAIResponse(aiResponse)
           .replace(/^```json\s*/, '')
           .replace(/```\s*$/, '')
-          .replace(/^\{.*?"response"\s*:\s*"([^"]*)".*\}$/s, '$1')
+          .replace(/^\{[\s\S]*?"response"\s*:\s*"([^"]*)"[\s\S]*\}$/, '$1')
           .replace(/\\n/g, '\n')
           .replace(/\\"/g, '"');
         
