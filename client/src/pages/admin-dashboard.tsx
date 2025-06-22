@@ -41,6 +41,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PrayerSlotManagement } from '../components/dashboard/prayer-slot-management';
 import { SlotCoverageMonitor } from '../components/dashboard/slot-coverage-monitor';
 import { FastingProgramManagement } from '../components/dashboard/fasting-program-management';
+import { AnalyticsCharts } from '../components/dashboard/analytics-charts';
 
 interface AdminUser {
   id: string;
@@ -1501,6 +1502,14 @@ export default function AdminDashboard() {
               label="Manage"
               isActive={activeTab === "management"}
               onClick={() => setActiveTab("management")}
+            />
+          </div>
+          <div className="grid grid-cols-5 gap-2 mt-2 bg-white rounded-lg p-3 shadow-sm">
+            <MobileNavButton
+              icon={TrendingUp}
+              label="Analytics"
+              isActive={activeTab === "analytics"}
+              onClick={() => setActiveTab("analytics")}
             />
           </div>
         ) : (

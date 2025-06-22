@@ -1299,6 +1299,133 @@ Respond in JSON format as an array:
     }
   });
 
+  // Analytics endpoint for admin dashboard
+  app.get("/api/admin/analytics", async (req: Request, res: Response) => {
+    try {
+      // Get user activities for the last 7 days
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const { data: attendanceData, error: attendanceError } = await supabaseAdmin
+        .from('attendance_log')
+        .select('*')
+        .gte('date', sevenDaysAgo.toISOString().split('T')[0])
+        .order('date', { ascending: true });
+
+      const { data: slotsData, error: slotsError } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*');
+
+      const { data: sessionsData, error: sessionsError } = await supabaseAdmin
+        .from('prayer_sessions')
+        .select('*')
+        .gte('session_date', sevenDaysAgo.toISOString().split('T')[0]);
+
+      if (attendanceError || slotsError || sessionsError) {
+        console.error("Error fetching analytics data:", { attendanceError, slotsError, sessionsError });
+        return res.status(500).json({ error: "Failed to fetch analytics data" });
+      }
+
+      // Process data for charts
+      const userActivities = [];
+      const today = new Date();
+      
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        const dayAttendance = attendanceData?.filter(a => a.date === dateStr) || [];
+        const daySessions = sessionsData?.filter(s => s.session_date === dateStr) || [];
+        
+        userActivities.push({
+          date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          activities: dayAttendance.length + daySessions.length,
+          prayers: daySessions.length,
+          attendance: dayAttendance.filter(a => a.status === 'present').length
+        });
+      }
+
+      // Prayer slot coverage analysis
+      const prayerStats: Array<{timeSlot: string; coverage: number; attendance: number}> = [];
+      const timeSlots = ['00:00-02:59', '03:00-05:59', '06:00-08:59', '09:00-11:59', 
+                        '12:00-14:59', '15:00-17:59', '18:00-20:59', '21:00-23:59'];
+      
+      timeSlots.forEach(slot => {
+        const slotsInRange = slotsData?.filter(s => {
+          const slotHour = parseInt(s.slot_time.split(':')[0]);
+          const rangeStart = parseInt(slot.split('-')[0].split(':')[0]);
+          const rangeEnd = parseInt(slot.split('-')[1].split(':')[0]);
+          return slotHour >= rangeStart && slotHour <= rangeEnd;
+        }) || [];
+
+        const totalSlots = slotsInRange.length;
+        const activeSlots = slotsInRange.filter(s => s.status === 'active').length;
+        const attendedSlots = attendanceData?.filter(a => {
+          const slot = slotsInRange.find(s => s.user_id === a.user_id);
+          return slot && a.status === 'present';
+        }).length || 0;
+
+        prayerStats.push({
+          timeSlot: slot,
+          coverage: totalSlots > 0 ? Math.round((activeSlots / totalSlots) * 100) : 0,
+          attendance: activeSlots > 0 ? Math.round((attendedSlots / activeSlots) * 100) : 0
+        });
+      });
+
+      // Intercessor statistics
+      const totalRegistered = slotsData?.length || 0;
+      const totalActive = slotsData?.filter(s => s.status === 'active').length || 0;
+      const todayAttendance = attendanceData?.filter(a => a.date === today.toISOString().split('T')[0]) || [];
+      const activeToday = todayAttendance.filter(a => a.status === 'present').length;
+      const averageAttendance = totalActive > 0 ? (activeToday / totalActive) * 100 : 0;
+
+      // Weekly trends
+      const weeklyTrends = [];
+      for (let i = 3; i >= 0; i--) {
+        const weekStart = new Date(today);
+        weekStart.setDate(weekStart.getDate() - (i * 7));
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+
+        const weekSessions = sessionsData?.filter(s => {
+          const sessionDate = new Date(s.session_date);
+          return sessionDate >= weekStart && sessionDate <= weekEnd;
+        }) || [];
+
+        const weekSlots = slotsData?.filter(s => {
+          const createdDate = new Date(s.created_at);
+          return createdDate >= weekStart && createdDate <= weekEnd;
+        }) || [];
+
+        weeklyTrends.push({
+          week: `Week ${4-i}`,
+          newRegistrations: weekSlots.length,
+          totalSessions: weekSessions.length,
+          avgDuration: weekSessions.length > 0 ? 
+            Math.round(weekSessions.reduce((sum, s) => sum + (s.duration || 30), 0) / weekSessions.length) : 0
+        });
+      }
+
+      const analytics = {
+        userActivities,
+        prayerStats,
+        intercessorStats: {
+          totalRegistered,
+          totalActive,
+          activeToday,
+          averageAttendance: Math.round(averageAttendance)
+        },
+        weeklyTrends
+      };
+
+      res.json(analytics);
+    } catch (error) {
+      console.error("Analytics error:", error);
+      res.status(500).json({ error: "Failed to generate analytics" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Test Zoom API connection
   app.get("/api/admin/test-zoom", async (req: Request, res: Response) => {
