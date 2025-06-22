@@ -969,7 +969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Enhanced Bible Chat with immediate responses
+  // Enhanced Bible Chat with DeepSeek AI integration
   app.post("/api/bible-chat", async (req: Request, res: Response) => {
     try {
       const { message, context } = req.body;
@@ -978,46 +978,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Message is required" });
       }
 
-      const cleanedMessage = cleanAIResponse(message);
-      const lowerMessage = cleanedMessage.toLowerCase();
+      const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
+      if (!deepSeekApiKey) {
+        console.error("DeepSeek API key not found in environment variables");
+        return res.status(500).json({ error: "DeepSeek API key not configured. Please add DEEPSEEK_API_KEY to your secrets." });
+      }
 
-      // Provide immediate contextual biblical responses
-      let fallbackResponse = {
-        response: "📖 Welcome to the Bible Chat! How can I assist you spiritually today? ✨",
+      const cleanedMessage = cleanAIResponse(message);
+      
+      // Build context from previous messages
+      let conversationContext = "";
+      if (context && context.length > 0) {
+        conversationContext = context.slice(-3).map((msg: any) => 
+          `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+        ).join('\n');
+      }
+
+      // Create a comprehensive prompt for biblical chat
+      const prompt = `You are "The Intercessor," an AI Bible chat assistant for Global Intercessors. Your role is to provide biblical guidance, spiritual insights, and prayer support based on Scripture.
+
+User's message: "${cleanedMessage}"
+
+${conversationContext ? `Previous conversation:\n${conversationContext}\n` : ''}
+
+Please respond with biblical wisdom, relevant Scripture, and practical spiritual guidance. Format your response as JSON with these exact fields:
+
+{
+  "response": "Your encouraging, biblical response with proper spacing and relevant emojis (📖🙏✨💝🌟)",
+  "scripture": {
+    "reference": "Book Chapter:Verse",
+    "text": "The complete Bible verse text"
+  },
+  "insights": ["Spiritual insight 1", "Spiritual insight 2", "Spiritual insight 3"]
+}
+
+Guidelines:
+- Be encouraging and biblically grounded
+- Use appropriate emojis for warmth and engagement
+- Include proper spacing and line breaks for readability
+- Provide practical spiritual applications
+- Keep insights concise but meaningful
+- Always include a relevant Bible verse
+- Respond as a caring spiritual advisor`;
+
+      console.log('Calling DeepSeek API for Bible chat with key:', deepSeekApiKey ? `${deepSeekApiKey.substring(0, 8)}...` : 'undefined');
+
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${deepSeekApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are "The Intercessor," a biblical AI assistant providing spiritual guidance and biblical wisdom to Global Intercessors. Always respond with love, biblical truth, and practical spiritual insights.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 1200,
+          temperature: 0.8
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`DeepSeek API error: ${response.status} ${response.statusText}`, errorText);
+        throw new Error(`DeepSeek API error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices[0]?.message?.content;
+
+      if (!aiResponse) {
+        throw new Error('No response from DeepSeek API');
+      }
+
+      console.log('DeepSeek API response received successfully');
+
+      try {
+        const parsedResponse = JSON.parse(aiResponse);
+        res.json({
+          response: parsedResponse.response,
+          scripture: parsedResponse.scripture,
+          insights: parsedResponse.insights
+        });
+      } catch (parseError) {
+        console.error('Failed to parse DeepSeek response as JSON:', parseError);
+        
+        // Fallback response if JSON parsing fails
+        res.json({
+          response: `📖 ${cleanAIResponse(aiResponse)}\n\n✨ May God's Word bring you peace and understanding today! 🙏`,
+          scripture: {
+            reference: "Isaiah 55:11",
+            text: "So is my word that goes out from my mouth: It will not return to me empty, but will accomplish what I desire and achieve the purpose for which I sent it."
+          },
+          insights: ["God's Word is powerful", "Scripture accomplishes God's purposes", "Trust in divine guidance"]
+        });
+      }
+    } catch (error) {
+      console.error('Bible chat error:', error);
+      
+      // Provide a fallback response
+      res.json({
+        response: "📖 I'm having trouble connecting to provide you with personalized guidance right now, but remember that God's Word is always available to you! ✨\n\n🙏 Take a moment to seek Him in prayer, and He will guide your heart.",
         scripture: {
           reference: "Psalm 119:105",
           text: "Your word is a lamp for my feet, a light on my path."
         },
-        insights: ["Scripture illuminates our lives", "God's word guides us", "Find direction through the Bible"]
-      };
-
-      if (lowerMessage.includes('fear') || lowerMessage.includes('afraid')) {
-        fallbackResponse.response = "📖 When fear troubles your heart, remember that God is always with you! ✨\n\nFear is a natural human emotion, but as believers, we have access to divine peace that surpasses understanding. God's presence in our lives means we never face challenges alone. 🙏";
-        fallbackResponse.scripture = {
-          reference: "Isaiah 41:10",
-          text: "Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you with my righteous right hand."
-        };
-        fallbackResponse.insights = ["God's presence overcomes fear", "Divine strength is available", "Trust in God's protection"];
-      } else if (lowerMessage.includes('prayer') || lowerMessage.includes('pray')) {
-        fallbackResponse.response = "🙏 Prayer is our direct line to the Almighty! Let's seek His face together.\n\nThrough prayer, we align our hearts with God's will and experience His peace. It's both a privilege and a powerful tool for transformation. ✨";
-        fallbackResponse.scripture = {
-          reference: "1 Thessalonians 5:17",
-          text: "Pray without ceasing."
-        };
-        fallbackResponse.insights = ["Constant communication with God", "Prayer transforms hearts", "Seek God's will through prayer"];
-      } else if (lowerMessage.includes('wisdom') || lowerMessage.includes('wise')) {
-        fallbackResponse.response = "✨ True wisdom comes from above! Seek God's understanding in all things.\n\nGodly wisdom differs from worldly knowledge - it encompasses understanding God's heart and applying His truth to our daily lives. 📖";
-        fallbackResponse.scripture = {
-          reference: "James 1:5",
-          text: "If any of you lacks wisdom, let him ask God, who gives generously to all without reproach, and it will be given him."
-        };
-        fallbackResponse.insights = ["God gives wisdom freely", "Ask for divine understanding", "Wisdom guides right decisions"];
-      }
-
-      res.json(fallbackResponse);
-    } catch (error) {
-      console.error('Bible chat error:', error);
-      res.status(500).json({ error: 'Failed to process chat message' });
+        insights: ["Scripture illuminates our path", "God's guidance is constant", "Prayer connects us to divine wisdom"]
+      });
     }
   });
 
@@ -1026,8 +1101,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
       if (!deepSeekApiKey) {
-        return res.status(500).json({ error: "DeepSeek API key not configured" });
+        console.error("DeepSeek API key not found in environment variables");
+        return res.status(500).json({ error: "DeepSeek API key not configured. Please add DEEPSEEK_API_KEY to your secrets." });
       }
+
+      console.log('Bible verse search using DeepSeek API with key:', `${deepSeekApiKey.substring(0, 8)}...`);
 
       let prompt = `I need you to provide a Bible verse search response for: "${phrase}"\n`;
       prompt += `Bible Version: ${version}\n`;
@@ -1115,6 +1193,8 @@ Guidelines:
       if (!phrase) {
         return res.status(400).json({ error: "Phrase is required" });
       }
+
+      console.log('Bible verse search request:', { phrase, version, chapter, verse });
 
       // Call the handler function
       await handleBibleVerseSearch(req, res, phrase as string, version as string, chapter as string | undefined, verse as string | undefined);

@@ -49,11 +49,14 @@ export function AIBibleChatbook() {
       chapter?: string;
       verse?: string;
     }) => {
-      const response = await fetch("/api/bible-chat", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" }
+      const params = new URLSearchParams({
+        phrase: data.phrase,
+        version: data.version,
+        ...(data.chapter && { chapter: data.chapter }),
+        ...(data.verse && { verse: data.verse })
       });
+      
+      const response = await fetch(`/api/bible-verse?${params.toString()}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to generate Bible response');
