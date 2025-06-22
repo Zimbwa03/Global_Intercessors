@@ -75,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const { limit = '30' } = req.query;
-      
+
       console.log('Fetching attendance for user:', userId);
 
       // Get attendance from attendance_log table
@@ -980,205 +980,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const cleanedMessage = cleanAIResponse(message);
       const lowerMessage = cleanedMessage.toLowerCase();
-      
+
       // Provide immediate contextual biblical responses
-      let fallbackResponse;
-
-      if (lowerMessage.includes('prayer') || lowerMessage.includes('pray')) {
-        fallbackResponse = {
-          response: "Prayer is one of the most powerful spiritual disciplines God has given us. Jesus taught us to pray in Matthew 6, showing us the Lord's Prayer as a model. The Bible encourages us to 'pray without ceasing' (1 Thessalonians 5:17) and promises that 'the prayer of a righteous person is powerful and effective' (James 5:16). Through prayer, we commune with God, seek His will, and find strength for daily living.",
-          scripture: { 
-            reference: "Matthew 6:9-13", 
-            text: "This, then, is how you should pray: 'Our Father in heaven, hallowed be your name, your kingdom come, your will be done, on earth as it is in heaven. Give us today our daily bread. And forgive us our debts, as we also have forgiven our debtors. And lead us not into temptation, but deliver us from the evil one.'" 
-          },
-          insights: ["Prayer connects us with God", "Jesus taught us to pray", "Persistence in prayer brings results"]
-        };
-      } else if (lowerMessage.includes('faith') || lowerMessage.includes('believe')) {
-        fallbackResponse = {
-          response: "Faith is the foundation of the Christian life and our relationship with God. Hebrews 11:1 defines faith as 'confidence in what we hope for and assurance about what we do not see.' Faith comes by hearing the Word of God (Romans 10:17) and grows through our experiences with His faithfulness. Without faith, it's impossible to please God, but those who seek Him find that He rewards their faith.",
-          scripture: { 
-            reference: "Hebrews 11:6", 
-            text: "And without faith it is impossible to please God, because anyone who comes to him must believe that he exists and that he rewards those who earnestly seek him." 
-          },
-          insights: ["Faith pleases God", "Faith grows through God's Word", "God rewards those who seek Him"]
-        };
-      } else if (lowerMessage.includes('love') || lowerMessage.includes('loving')) {
-        fallbackResponse = {
-          response: "God's love is the very essence of who He is - '1 John 4:8 tells us that God is love.' His love for us was demonstrated supremely when He sent Jesus to die for our sins (John 3:16). As recipients of God's love, we are called to love Him with all our heart and to love our neighbors as ourselves (Matthew 22:37-39). Love is not just an emotion but an action that reflects God's character.",
-          scripture: { 
-            reference: "1 John 4:19", 
-            text: "We love because he first loved us." 
-          },
-          insights: ["God is love by nature", "Love requires action", "We love because God first loved us"]
-        };
-      } else if (lowerMessage.includes('wisdom') || lowerMessage.includes('wise')) {
-        fallbackResponse = {
-          response: "True wisdom comes from God and begins with fearing (having reverent awe of) the Lord (Proverbs 9:10). James 1:5 promises that if we lack wisdom, we can ask God, who gives generously to all without finding fault. Biblical wisdom is practical - it helps us live righteously and make decisions that honor God. The book of Proverbs is filled with God's wisdom for daily living.",
-          scripture: { 
-            reference: "James 1:5", 
-            text: "If any of you lacks wisdom, you should ask God, who gives generously to all without finding fault, and it will be given to you." 
-          },
-          insights: ["Wisdom begins with fearing God", "Ask God for wisdom", "Wisdom is practical for daily life"]
-        };
-      } else {
-        fallbackResponse = {
-          response: "Thank you for seeking biblical wisdom and guidance. God's Word is a lamp to our feet and a light to our path (Psalm 119:105). Scripture is God-breathed and profitable for teaching, reproof, correction, and training in righteousness (2 Timothy 3:16). I encourage you to continue studying God's Word, as it has the power to transform lives and provide guidance for every situation we face.",
-          scripture: { 
-            reference: "2 Timothy 3:16", 
-            text: "All Scripture is God-breathed and is useful for teaching, rebuking, correcting and training in righteousness." 
-          },
-          insights: ["Scripture guides our path", "God's Word transforms lives", "Study brings spiritual growth"]
-        };
-      }
-
-      res.json(fallbackResponse);
-    } catch (error) {
-      console.error("Bible chat error:", error);
-      
-      // Provide contextual biblical guidance based on message content
-      const message = req.body.message || '';
-      const lowerMessage = message.toLowerCase();
-      
       let fallbackResponse = {
-        response: "Thank you for seeking biblical wisdom. I encourage you to continue studying God's Word and seeking His guidance through prayer.",
-        scripture: { 
-          reference: "2 Timothy 3:16", 
-          text: "All Scripture is God-breathed and is useful for teaching, rebuking, correcting and training in righteousness." 
+        response: "📖 Welcome to the Bible Chat! How can I assist you spiritually today? ✨",
+        scripture: {
+          reference: "Psalm 119:105",
+          text: "Your word is a lamp for my feet, a light on my path."
         },
-        insights: ["Scripture guides our lives", "God's Word brings wisdom", "Seek divine understanding"]
+        insights: ["Scripture illuminates our lives", "God's word guides us", "Find direction through the Bible"]
       };
 
-      if (lowerMessage.includes('prayer') || lowerMessage.includes('pray')) {
-        fallbackResponse = {
-          response: "Prayer is one of the most powerful spiritual disciplines. The Bible teaches us to 'pray without ceasing' (1 Thessalonians 5:17) and promises that 'the prayer of a righteous person is powerful and effective' (James 5:16).",
-          scripture: { 
-            reference: "Matthew 6:9-13", 
-            text: "This, then, is how you should pray: 'Our Father in heaven, hallowed be your name, your kingdom come, your will be done, on earth as it is in heaven...'" 
-          },
-          insights: ["Prayer connects us with God", "Persistence in prayer", "Pray according to God's will"]
+      if (lowerMessage.includes('fear') || lowerMessage.includes('afraid')) {
+        fallbackResponse.response = "📖 When fear troubles your heart, remember that God is always with you! ✨\n\nFear is a natural human emotion, but as believers, we have access to divine peace that surpasses understanding. God's presence in our lives means we never face challenges alone. 🙏";
+        fallbackResponse.scripture = {
+          reference: "Isaiah 41:10",
+          text: "Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you with my righteous right hand."
         };
-      } else if (lowerMessage.includes('faith') || lowerMessage.includes('believe')) {
-        fallbackResponse = {
-          response: "Faith is the foundation of the Christian life. Hebrews 11:1 defines faith as 'confidence in what we hope for and assurance about what we do not see.' Faith grows through hearing God's Word and trusting in His promises.",
-          scripture: { 
-            reference: "Hebrews 11:6", 
-            text: "And without faith it is impossible to please God, because anyone who comes to him must believe that he exists and that he rewards those who earnestly seek him." 
-          },
-          insights: ["Faith pleases God", "Trust in God's promises", "Faith grows through God's Word"]
+        fallbackResponse.insights = ["God's presence overcomes fear", "Divine strength is available", "Trust in God's protection"];
+      } else if (lowerMessage.includes('prayer') || lowerMessage.includes('pray')) {
+        fallbackResponse.response = "🙏 Prayer is our direct line to the Almighty! Let's seek His face together.\n\nThrough prayer, we align our hearts with God's will and experience His peace. It's both a privilege and a powerful tool for transformation. ✨";
+        fallbackResponse.scripture = {
+          reference: "1 Thessalonians 5:17",
+          text: "Pray without ceasing."
         };
-      } else if (lowerMessage.includes('love') || lowerMessage.includes('loving')) {
-        fallbackResponse = {
-          response: "God's love is the foundation of our faith. 'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life' (John 3:16). We are called to love God and love others as ourselves.",
-          scripture: { 
-            reference: "1 John 4:19", 
-            text: "We love because he first loved us." 
-          },
-          insights: ["God's love is unconditional", "Love others as yourself", "God's love transforms us"]
+        fallbackResponse.insights = ["Constant communication with God", "Prayer transforms hearts", "Seek God's will through prayer"];
+      } else if (lowerMessage.includes('wisdom') || lowerMessage.includes('wise')) {
+        fallbackResponse.response = "✨ True wisdom comes from above! Seek God's understanding in all things.\n\nGodly wisdom differs from worldly knowledge - it encompasses understanding God's heart and applying His truth to our daily lives. 📖";
+        fallbackResponse.scripture = {
+          reference: "James 1:5",
+          text: "If any of you lacks wisdom, let him ask God, who gives generously to all without reproach, and it will be given him."
         };
+        fallbackResponse.insights = ["God gives wisdom freely", "Ask for divine understanding", "Wisdom guides right decisions"];
       }
 
       res.json(fallbackResponse);
     }
   });
 
-  // Enhanced Prayer Planner with DeepSeek AI
-  app.post("/api/prayer-planner", async (req: Request, res: Response) => {
+  // Bible Verse Search Handler Function
+  async function handleBibleVerseSearch(req: Request, res: Response, phrase: string, version: string, chapter?: string, verse?: string) {
     try {
-      const { query, category = 'personal', duration = 15 } = req.body;
+      const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
+      if (!deepSeekApiKey) {
+        return res.status(500).json({ error: "DeepSeek API key not configured" });
+      }
 
-      // Provide structured prayer plans based on category
-      const prayerPlans = {
-        nation: {
-          category: "Nation & Government",
-          prayerPoints: [
-            {
-              title: "Pray for National Leaders",
-              content: "Father, we lift up our nation's leaders to You. Grant them wisdom to make decisions that honor You and benefit all people. Help them to seek justice, love mercy, and walk humbly before You.",
-              bibleVerse: "I urge, then, first of all, that petitions, prayers, intercession and thanksgiving be made for all people—for kings and all those in authority, that we may live peaceful and quiet lives in all godliness and holiness.",
-              reference: "1 Timothy 2:1-2",
-              explanation: "God calls us to pray for our leaders, regardless of our political views, so that society can function peacefully and righteously."
-            },
-            {
-              title: "Pray for Justice and Righteousness",
-              content: "Lord, establish justice in our land. Where there is corruption, bring accountability. Where there is oppression, bring freedom. Let righteousness flow like a river through our nation.",
-              bibleVerse: "But let justice roll on like a river, righteousness like a never-failing stream!",
-              reference: "Amos 5:24",
-              explanation: "God desires justice and righteousness to characterize nations, flowing consistently like water that never stops."
-            },
-            {
-              title: "Pray for Unity and Healing",
-              content: "God of peace, heal the divisions in our nation. Help us to see beyond our differences and work together for the common good. Break down walls of hatred and build bridges of understanding.",
-              bibleVerse: "How good and pleasant it is when God's people live together in unity!",
-              reference: "Psalm 133:1",
-              explanation: "Unity among people brings God's blessing and reflects His heart for reconciliation and peace."
-            }
-          ],
-          totalPoints: 3
-        },
-        healing: {
-          category: "Healing & Health",
-          prayerPoints: [
-            {
-              title: "Pray for Physical Healing",
-              content: "Great Physician, we bring before You all who are suffering with illness and disease. Touch their bodies with Your healing power. Restore what is broken and bring complete wholeness.",
-              bibleVerse: "Heal the sick, raise the dead, cleanse those who have leprosy, drive out demons. Freely you have received; freely give.",
-              reference: "Matthew 10:8",
-              explanation: "Jesus gave His disciples authority to heal, demonstrating God's heart for physical restoration and wholeness."
-            },
-            {
-              title: "Pray for Emotional and Mental Healing",
-              content: "Lord, You are close to the brokenhearted. Bring healing to wounded souls, peace to anxious minds, and hope to those who despair. Let Your love cast out all fear.",
-              bibleVerse: "The Lord is close to the brokenhearted and saves those who are crushed in spirit.",
-              reference: "Psalm 34:18",
-              explanation: "God specially cares for those who are emotionally wounded and promises His presence in their pain."
-            },
-            {
-              title: "Pray for Healthcare Workers",
-              content: "Father, strengthen and protect all healthcare workers. Give them wisdom in treatment decisions, stamina for long hours, and compassion for those they serve. Protect them from harm.",
-              bibleVerse: "She opens her arms to the poor and extends her hands to the needy.",
-              reference: "Proverbs 31:20",
-              explanation: "Those who care for others reflect God's character and deserve our prayers and support."
-            }
-          ],
-          totalPoints: 3
-        },
-        family: {
-          category: "Family & Relationships",
-          prayerPoints: [
-            {
-              title: "Pray for Marriage Relationships",
-              content: "Lord, strengthen marriages and help husbands and wives to love each other as You intended. Build unity, trust, and mutual respect. Where there is conflict, bring reconciliation.",
-              bibleVerse: "Above all, love each other deeply, because love covers over a multitude of sins.",
-              reference: "1 Peter 4:8",
-              explanation: "Deep, sacrificial love is essential for healthy marriages and can overcome many difficulties and conflicts."
-            },
-            {
-              title: "Pray for Children and Youth",
-              content: "Heavenly Father, protect our children and young people. Guide them in truth, surround them with godly influences, and help them to grow in wisdom and favor with God and people.",
-              bibleVerse: "Start children off on the way they should go, and even when they are old they will not turn from it.",
-              reference: "Proverbs 22:6",
-              explanation: "Early spiritual training and guidance create a foundation that can last throughout a person's life."
-            },
-            {
-              title: "Pray for Family Unity",
-              content: "God of peace, help families to communicate with love and understanding. Heal broken relationships, restore trust where it has been damaged, and help family members to forgive each other.",
-              bibleVerse: "Be kind and compassionate to one another, forgiving each other, just as in Christ God forgave you.",
-              reference: "Ephesians 4:32",
-              explanation: "Forgiveness is essential for healthy family relationships and reflects how God has forgiven us."
-            }
-          ],
-          totalPoints: 3
-        }
-      };
+      let prompt = `I need you to provide a Bible verse search response for: "${phrase}"\n`;
+      prompt += `Bible Version: ${version}\n`;
 
-      const selectedPlan = prayerPlans[category as keyof typeof prayerPlans] || prayerPlans.family;
-      res.json(selectedPlan);
-    } catch (error) {
-      console.error("Prayer planner error:", error);
-      res.status(500).json({ 
-        error: "Failed to create prayer plan",
-        message: "Unable to generate prayer plan at this time. Please try again."
+      if (chapter && verse) {
+        prompt += `Specific Reference: ${chapter} ${verse}\n\n`;
+        prompt += `Please provide the exact verse from ${chapter} ${verse} in ${version} format, along with explanation and prayer point.`;
+      } else if (chapter) {
+        prompt += `Chapter: ${chapter}\n\n`;
+        prompt += `Please provide a relevant verse from ${chapter} related to "${phrase}" in ${version} format.`;
+      } else {
+        prompt += `\nPlease provide a relevant Bible verse from ${version} that relates to "${phrase}" with explanation and prayer point.`;
+      }
+
+      prompt += `\n\nFormat your response as JSON with these exact fields:
+{
+  "verse": "the complete Bible verse text in ${version}",
+  "reference": "Book Chapter:Verse format",
+  "version": "${version}",
+  "explanation": "Clear, encouraging explanation with proper spacing and relevant emojis (📖🙏✨💝🌟)",
+  "prayerPoint": "Practical prayer point based on this verse with emojis where appropriate"
+}
+
+Guidelines:
+- Use encouraging language with appropriate emojis
+- Include proper spacing and line breaks in explanations
+- Make it user-friendly and spiritually uplifting
+- Ensure the verse is accurate for the specified version`;
+
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${deepSeekApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 800,
+          temperature: 0.7
+        })
       });
+
+      if (!response.ok) {
+        throw new Error(`DeepSeek API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices[0]?.message?.content;
+
+      if (!aiResponse) {
+        throw new Error('No response from DeepSeek API');
+      }
+
+      try {
+        const parsedResponse = JSON.parse(aiResponse);
+        res.json({
+          verse: parsedResponse.verse,
+          reference: parsedResponse.reference,
+          version: parsedResponse.version || version,
+          explanation: parsedResponse.explanation,
+          prayerPoint: parsedResponse.prayerPoint
+        });
+      } catch (parseError) {
+        // Fallback response with proper formatting
+        res.json({
+          verse: "Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you with my righteous right hand.",
+          reference: "Isaiah 41:10",
+          version: version,
+          explanation: `📖 This beautiful verse reminds us of God's constant presence and support in our lives.\n\n✨ When we face uncertainty or challenges, we can trust that our Heavenly Father is right beside us, offering His strength and guidance.\n\n🙏 His righteous right hand represents His power and authority working on our behalf.`,
+          prayerPoint: "🙏 Heavenly Father, help me to remember Your faithful presence in every situation. Grant me peace knowing that Your strength is my foundation and Your love is my security. Amen. ✨"
+        });
+      }
+    } catch (error) {
+      console.error('Bible verse search error:', error);
+      res.status(500).json({ error: 'Failed to generate Bible response' });
+    }
+  }
+
+  // Bible Verse Search Endpoint
+  app.get("/api/bible-verse", async (req: Request, res: Response) => {
+    try {
+      const { phrase, version = 'NIV', chapter, verse } = req.query;
+
+      if (!phrase) {
+        return res.status(400).json({ error: "Phrase is required" });
+      }
+
+      // Call the handler function
+      await handleBibleVerseSearch(req, res, phrase as string, version as string, chapter as string | undefined, verse as string | undefined);
+    } catch (error) {
+      console.error('Bible verse search route error:', error);
+      res.status(500).json({ error: 'Failed to process Bible verse search' });
     }
   });
 

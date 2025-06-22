@@ -54,19 +54,22 @@ export function AIBibleChatbook() {
         body: JSON.stringify(data),
         headers: { "Content-Type": "application/json" }
       });
-      if (!response.ok) throw new Error('Failed to generate Bible response');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate Bible response');
+      }
       return response.json();
     },
     onSuccess: (data) => {
       setResponse(data);
       toast({
-        title: "Bible Response Generated",
-        description: "Your biblical guidance is ready!"
+        title: "✨ Bible Response Generated",
+        description: "📖 Your biblical guidance is ready!"
       });
     },
     onError: (error) => {
       toast({
-        title: "Error",
+        title: "❌ Error",
         description: "Failed to generate Bible response. Please try again.",
         variant: "destructive"
       });
@@ -83,7 +86,10 @@ export function AIBibleChatbook() {
         body: JSON.stringify(data),
         headers: { "Content-Type": "application/json" }
       });
-      if (!response.ok) throw new Error('Failed to process chat message');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to process chat message');
+      }
       return response.json();
     },
     onSuccess: (data) => {
@@ -100,7 +106,7 @@ export function AIBibleChatbook() {
     },
     onError: (error) => {
       toast({
-        title: "Error",
+        title: "❌ Error",
         description: "Failed to send message. Please try again.",
         variant: "destructive"
       });
@@ -166,30 +172,63 @@ export function AIBibleChatbook() {
   };
 
   const MessageBubble = ({ message }: { message: ChatMessage }) => (
-    <div className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
-      <div className={`max-w-[80%] rounded-lg p-3 ${
+    <div className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} mb-6`}>
+      <div className={`max-w-[85%] rounded-lg p-4 shadow-sm ${
         message.type === 'user' 
-          ? 'bg-blue-600 text-white' 
-          : 'bg-gray-100 text-gray-900 border'
+          ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white' 
+          : 'bg-white text-gray-900 border border-gray-200'
       }`}>
-        <p className="mb-2">{message.content}</p>
+        <div className="whitespace-pre-wrap leading-relaxed mb-3">
+          {message.content}
+        </div>
+        
         {message.scripture && (
-          <div className="mt-2 p-2 bg-blue-50 rounded border-l-4 border-blue-500">
-            <p className="text-sm font-semibold text-blue-700">{message.scripture.reference}</p>
-            <p className="text-sm italic">{message.scripture.text}</p>
+          <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-l-4 border-blue-500">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-semibold text-blue-700 flex items-center gap-1">
+                📖 {message.scripture.reference}
+              </p>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => copyToClipboard(`${message.scripture.reference}: "${message.scripture.text}"`)}
+                  className="p-1 hover:bg-blue-100 rounded text-blue-600"
+                >
+                  <Copy className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => speakText(message.scripture.text)}
+                  className="p-1 hover:bg-blue-100 rounded text-blue-600"
+                >
+                  <Volume2 className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+            <p className="text-sm italic text-gray-700 leading-relaxed">
+              "{message.scripture.text}"
+            </p>
           </div>
         )}
+        
         {message.insights && message.insights.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {message.insights.map((insight, idx) => (
-              <span key={idx} className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                {insight}
-              </span>
-            ))}
+          <div className="mt-3">
+            <p className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1">
+              ✨ Key Insights
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {message.insights.map((insight, idx) => (
+                <span 
+                  key={idx} 
+                  className="text-xs bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 px-3 py-1 rounded-full border border-green-200"
+                >
+                  {insight}
+                </span>
+              ))}
+            </div>
           </div>
         )}
-        <p className="text-xs opacity-70 mt-1">
-          {message.timestamp.toLocaleTimeString()}
+        
+        <p className="text-xs opacity-60 mt-3 flex items-center gap-1">
+          🕒 {message.timestamp.toLocaleTimeString()}
         </p>
       </div>
     </div>
@@ -355,16 +394,17 @@ export function AIBibleChatbook() {
           
           <CardContent className="space-y-4">
             {/* Bible Verse */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border-l-4 border-blue-500">
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-semibold text-blue-700 dark:text-blue-300">
-                  {response.reference}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:bg-blue-900/20 p-6 rounded-lg border-l-4 border-blue-500 shadow-sm">
+              <div className="flex items-start justify-between mb-3">
+                <h3 className="font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                  📖 {response.reference}
                 </h3>
                 <div className="flex gap-2">
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => copyToClipboard(`${response.reference}\n"${response.verse}"`)}
+                    className="hover:bg-blue-100"
                   >
                     <Copy className="w-4 h-4" />
                   </Button>
@@ -372,42 +412,42 @@ export function AIBibleChatbook() {
                     size="sm"
                     variant="ghost"
                     onClick={() => speakText(response.verse)}
+                    className="hover:bg-blue-100"
                   >
                     <Volume2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
-              <p className="text-gray-700 dark:text-gray-300 italic text-lg leading-relaxed">
+              <p className="text-gray-700 dark:text-gray-300 italic text-lg leading-relaxed font-medium">
                 "{response.verse}"
               </p>
             </div>
 
             {/* AI Explanation */}
-            <div className="space-y-2">
-              <h3 className="font-semibold flex items-center gap-2">
-                <Book className="w-4 h-4" />
-                AI Explanation
+            <div className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2 text-gray-800">
+                ✨ Biblical Insights
               </h3>
-              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:bg-gray-800 p-5 rounded-lg border">
+                <div className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                   {response.explanation}
-                </p>
+                </div>
               </div>
             </div>
 
             {/* Prayer Point */}
-            <div className="space-y-2">
-              <h3 className="font-semibold text-green-700 dark:text-green-300">
-                Suggested Prayer Point
+            <div className="space-y-3">
+              <h3 className="font-semibold text-green-700 dark:text-green-300 flex items-center gap-2">
+                🙏 Suggested Prayer Point
               </h3>
-              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border-l-4 border-green-500">
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:bg-green-900/20 p-5 rounded-lg border-l-4 border-green-500 shadow-sm">
+                <div className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap mb-3">
                   {response.prayerPoint}
-                </p>
+                </div>
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="mt-2"
+                  className="mt-2 hover:bg-green-100"
                   onClick={() => copyToClipboard(response.prayerPoint)}
                 >
                   <Copy className="w-4 h-4 mr-2" />
