@@ -265,32 +265,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Skip prayer slot
-  app.post("/api/prayer-slot/skip", async (req: Request, res: Response) => {
+  // Submit skip request
+  app.post("/api/prayer-slot/skip-request", async (req: Request, res: Response) => {
     try {
-      const { userId } = req.body;
+      const { userId, skipDays, reason } = req.body;
 
-      const { data: slot, error } = await supabaseAdmin
-        .from('prayer_slots')
-        .update({
-          status: 'skipped',
-          skip_start_date: new Date().toISOString(),
-          skip_end_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId)
+      if (!userId || !skipDays || !reason) {
+        return res.status(400).json({ error: "User ID, skip days, and reason are required" });
+      }
+
+      // Get user email for the request
+      const userEmail = await getUserEmail(userId);
+
+      const { data: request, error } = await supabaseAdmin
+        .from('skip_requests')
+        .insert([{
+          user_id: userId,
+          user_email: userEmail || `user-${userId}@placeholder.local`,
+          skip_days: parseInt(skipDays),
+          reason: reason.trim(),
+          status: 'pending',
+          created_at: new Date().toISOString()
+        }])
         .select()
         .single();
 
       if (error) {
-        console.error("Error skipping prayer slot:", error);
-        return res.status(500).json({ error: "Failed to skip prayer slot" });
+        console.error("Error creating skip request:", error);
+        return res.status(500).json({ error: "Failed to create skip request" });
       }
 
-      res.json(slot);
+      res.json({ 
+        success: true, 
+        message: "Skip request submitted successfully. Awaiting admin approval.",
+        request 
+      });
     } catch (error) {
-      console.error("Error skipping prayer slot:", error);
-      res.status(500).json({ error: "Failed to skip prayer slot" });
+      console.error("Error creating skip request:", error);
+      res.status(500).json({ error: "Failed to create skip request" });
+    }
+  });
+
+  // Get user's skip requests
+  app.get("/api/prayer-slot/skip-requests/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+
+      const { data: requests, error } = await supabaseAdmin
+        .from('skip_requests')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching skip requests:", error);
+        return res.status(500).json({ error: "Failed to fetch skip requests" });
+      }
+
+      res.json(requests || []);
+    } catch (error) {
+      console.error("Error fetching skip requests:", error);
+      res.status(500).json({ error: "Failed to fetch skip requests" });
+    }
+  });
+
+  // Admin: Get all skip requests
+  app.get("/api/admin/skip-requests", async (req: Request, res: Response) => {
+    try {
+      const { data: requests, error } = await supabaseAdmin
+        .from('skip_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching skip requests:", error);
+        return res.status(500).json({ error: "Failed to fetch skip requests" });
+      }
+
+      res.json(requests || []);
+    } catch (error) {
+      console.error("Error fetching skip requests:", error);
+      res.status(500).json({ error: "Failed to fetch skip requests" });
+    }
+  });
+
+  // Admin: Approve/Reject skip request
+  app.post("/api/admin/skip-requests/:requestId/action", async (req: Request, res: Response) => {
+    try {
+      const { requestId } = req.params;
+      const { action, adminComment } = req.body;
+
+      if (!['approve', 'reject'].includes(action)) {
+        return res.status(400).json({ error: "Action must be 'approve' or 'reject'" });
+      }
+
+      // Get the skip request
+      const { data: skipRequest, error: fetchError } = await supabaseAdmin
+        .from('skip_requests')
+        .select('*')
+        .eq('id', requestId)
+        .single();
+
+      if (fetchError || !skipRequest) {
+        return res.status(404).json({ error: "Skip request not found" });
+      }
+
+      if (skipRequest.status !== 'pending') {
+        return res.status(400).json({ error: "Skip request has already been processed" });
+      }
+
+      // Update the skip request status
+      const { error: updateError } = await supabaseAdmin
+        .from('skip_requests')
+        .update({
+          status: action === 'approve' ? 'approved' : 'rejected',
+          admin_comment: adminComment || null,
+          processed_at: new Date().toISOString()
+        })
+        .eq('id', requestId);
+
+      if (updateError) {
+        console.error("Error updating skip request:", updateError);
+        return res.status(500).json({ error: "Failed to update skip request" });
+      }
+
+      // If approved, update the prayer slot
+      if (action === 'approve') {
+        const skipEndDate = new Date();
+        skipEndDate.setDate(skipEndDate.getDate() + skipRequest.skip_days);
+
+        const { error: slotError } = await supabaseAdmin
+          .from('prayer_slots')
+          .update({
+            status: 'skipped',
+            skip_start_date: new Date().toISOString(),
+            skip_end_date: skipEndDate.toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', skipRequest.user_id);
+
+        if (slotError) {
+          console.error("Error updating prayer slot:", slotError);
+          return res.status(500).json({ error: "Failed to update prayer slot" });
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Skip request ${action === 'approve' ? 'approved' : 'rejected'} successfully` 
+      });
+    } catch (error) {
+      console.error("Error processing skip request:", error);
+      res.status(500).json({ error: "Failed to process skip request" });
     }
   });
 

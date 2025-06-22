@@ -32,7 +32,9 @@ import {
   Download,
   TrendingUp,
   UserCheck,
-  Timer
+  Timer,
+  AlertCircle,
+  RotateCcw
 } from "lucide-react";
 import { AnimatedCard } from "@/components/ui/animated-card";
 import { motion, AnimatePresence } from "framer-motion";
@@ -133,7 +135,18 @@ const MobileNavButton = ({ icon: Icon, label, isActive, onClick }: {
 );
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState('overview');
+
+  // Fetch skip requests for admin
+  const { data: skipRequests = [], refetch: refetchSkipRequests } = useQuery({
+    queryKey: ['admin-skip-requests'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/skip-requests');
+      if (!response.ok) throw new Error('Failed to fetch skip requests');
+      return response.json();
+    },
+    refetchOnWindowFocus: false
+  });
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [newUpdate, setNewUpdate] = useState({ 
     title: "", 
@@ -565,6 +578,7 @@ export default function AdminDashboard() {
     refetchFasting();
     refetchUpdates();
     refetchActivities();
+    refetchSkipRequests();
     toast({ title: "Data Refreshed", description: "All data has been refreshed" });
   };
 
@@ -1375,6 +1389,9 @@ export default function AdminDashboard() {
         return <FastingTab />;
       case "management":
         return <ManagementTab />;
+        
+        
+       
       default:
         return <OverviewTab />;
     }
@@ -1488,7 +1505,782 @@ export default function AdminDashboard() {
           </div>
         ) : (
           /* Desktop Navigation */
-          <div className="flex space-x-1 mb-6 bg-white rounded-lg p-2 shadow-sm">
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+<div className="flex space-x-1 mb-6 bg-white rounded-lg p-2 shadow-sm">
             <Button
               variant={activeTab === "overview" ? "default" : "ghost"}
               onClick={() => setActiveTab("overview")}
@@ -1521,6 +2313,14 @@ export default function AdminDashboard() {
               <Settings className="w-4 h-4 mr-2" />
               Management
             </Button>
+            <Button 
+              variant={activeTab === 'skip-requests' ? 'default' : 'ghost'} 
+              onClick={() => setActiveTab('skip-requests')}
+              className="flex-1"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Skip Requests
+            </Button>
           </div>
         )}
 
@@ -1536,6 +2336,153 @@ export default function AdminDashboard() {
             {renderTabContent()}
           </motion.div>
         </AnimatePresence>
+        
+        {activeTab === 'skip-requests' && (
+          <Card className="shadow-brand-lg border border-blue-100">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center shadow-brand">
+                  <RotateCcw className="w-5 h-5 text-brand-accent" />
+                </div>
+                <span className="font-poppins text-xl">Skip Requests Management</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {skipRequests.length === 0 ? (
+                  <div className="text-center py-8">
+                    <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">No skip requests found</p>
+                  </div>
+                ) : (
+                  skipRequests.map((request: any) => (
+                    <div 
+                      key={request.id}
+                      className="border border-gray-200 rounded-lg p-4 bg-gradient-to-r from-blue-50 to-white"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h4 className="font-semibold text-brand-text font-poppins">
+                            {request.user_email || `User ${request.user_id}`}
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            Requesting {request.skip_days} day{request.skip_days > 1 ? 's' : ''} skip
+                          </p>
+                        </div>
+                        <Badge 
+                          variant={
+                            request.status === 'pending' ? 'secondary' :
+                            request.status === 'approved' ? 'default' : 'destructive'
+                          }
+                          className="font-poppins"
+                        >
+                          {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                        </Badge>
+                      </div>
+
+                      <div className="mb-3">
+                        <h5 className="font-medium text-gray-700 mb-1">Reason:</h5>
+                        <p className="text-gray-600 text-sm bg-white p-2 rounded border">
+                          {request.reason}
+                        </p>
+                      </div>
+
+                      <div className="text-xs text-gray-500 mb-3">
+                        Submitted: {new Date(request.created_at).toLocaleString()}
+                        {request.processed_at && (
+                          <span className="ml-4">
+                            Processed: {new Date(request.processed_at).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+
+                      {request.admin_comment && (
+                        <div className="mb-3">
+                          <h5 className="font-medium text-gray-700 mb-1">Admin Comment:</h5>
+                          <p className="text-gray-600 text-sm bg-yellow-50 p-2 rounded border">
+                            {request.admin_comment}
+                          </p>
+                        </div>
+                      )}
+
+                      {request.status === 'pending' && (
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={async () => {
+                              try {
+                                const response = await fetch(`/api/admin/skip-requests/${request.id}/action`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ 
+                                    action: 'approve',
+                                    adminComment: 'Request approved by admin'
+                                  })
+                                });
+
+                                if (response.ok) {
+                                  toast({
+                                    title: "Request Approved",
+                                    description: "Skip request has been approved successfully.",
+                                  });
+                                  refetchSkipRequests();
+                                } else {
+                                  throw new Error('Failed to approve request');
+                                }
+                              } catch (error) {
+                                toast({
+                                  title: "Error",
+                                  description: "Failed to approve skip request.",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                            className="bg-green-600 hover:bg-green-700 text-white font-poppins"
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            onClick={async () => {
+                              try {
+                                const response = await fetch(`/api/admin/skip-requests/${request.id}/action`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ 
+                                    action: 'reject',
+                                    adminComment: 'Request rejected by admin'
+                                  })
+                                });
+
+                                if (response.ok) {
+                                  toast({
+                                    title: "Request Rejected",
+                                    description: "Skip request has been rejected.",
+                                  });
+                                  refetchSkipRequests();
+                                } else {
+                                  throw new Error('Failed to reject request');
+                                }
+                              } catch (error) {
+                                toast({
+                                  title: "Error",
+                                  description: "Failed to reject skip request.",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                            variant="destructive"
+                            className="font-poppins"
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

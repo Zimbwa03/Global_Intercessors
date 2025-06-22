@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,16 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Clock, Calendar, AlertCircle, RotateCcw, Edit3, CheckCircle2, XCircle } from "lucide-react";
+import { Clock, Calendar, AlertCircle, RotateCcw, Edit3, CheckCircle2, XCircle, Bell, TrendingUp, Users, Settings } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { notificationService } from '@/lib/notificationService';
 import { countdownService } from '@/lib/countdownService';
 import { AnimatedCard } from '@/components/ui/animated-card';
 import { SlotTransition } from '@/components/ui/slot-transition';
 import { motion, AnimatePresence } from 'framer-motion';
-
 
 interface CountdownTime {
   hours: number;
@@ -26,6 +29,17 @@ interface PrayerSlotManagementProps {
   userEmail?: string;
 }
 
+interface SkipRequest {
+  id: number;
+  user_id: string;
+  skip_days: number;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  admin_comment?: string;
+  created_at: string;
+  processed_at?: string;
+}
+
 export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -33,6 +47,9 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isChangeSlotModalOpen, setIsChangeSlotModalOpen] = useState(false);
+  const [isSkipRequestModalOpen, setIsSkipRequestModalOpen] = useState(false);
+  const [skipDays, setSkipDays] = useState('');
+  const [skipReason, setSkipReason] = useState('');
   const [countdown, setCountdown] = useState<CountdownTime>({ hours: 0, minutes: 0, seconds: 0 });
   const [slotChangeSuccess, setSlotChangeSuccess] = useState(false);
   const [isSlotChanging, setIsSlotChanging] = useState(false);
@@ -59,8 +76,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Removed auto-refresh to prevent form flickering
-
   // Fetch current prayer slot
   const { data: prayerSlotResponse, isLoading: isLoadingSlot, error: slotError } = useQuery({
     queryKey: ['prayer-slot', user?.id],
@@ -78,8 +93,56 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     },
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
-    staleTime: Infinity, // Never consider data stale
-    gcTime: Infinity // Keep in cache indefinitely
+    staleTime: Infinity,
+    gcTime: Infinity
+  });
+
+  // Fetch user's attendance records
+  const { data: attendanceRecords = [] } = useQuery({
+    queryKey: ['attendance', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      const response = await fetch(`/api/attendance/${user.id}?limit=30`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch attendance');
+      }
+
+      return response.json();
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false
+  });
+
+  // Fetch user's skip requests
+  const { data: skipRequests = [] } = useQuery({
+    queryKey: ['skip-requests', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      const response = await fetch(`/api/prayer-slot/skip-requests/${user.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch skip requests');
+      }
+
+      return response.json();
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false
+  });
+
+  // Fetch notifications/updates
+  const { data: notifications = [] } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const response = await fetch('/api/updates');
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications');
+      }
+
+      return response.json();
+    },
+    refetchOnWindowFocus: false
   });
 
   // Extract the prayer slot from the response
@@ -144,40 +207,47 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     },
     refetchOnWindowFocus: false,
     refetchOnMount: false,
-    staleTime: Infinity, // Never refresh automatically
+    staleTime: Infinity,
     gcTime: Infinity
   });
 
-  // Skip slot mutation
-  const skipSlotMutation = useMutation({
-    mutationFn: async () => {
+  // Submit skip request mutation
+  const submitSkipRequestMutation = useMutation({
+    mutationFn: async (data: { skipDays: string; reason: string }) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const response = await fetch('/api/prayer-slot/skip', {
+      const response = await fetch('/api/prayer-slot/skip-request', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({ 
+          userId: user.id, 
+          skipDays: data.skipDays,
+          reason: data.reason
+        }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to skip prayer slot');
+        throw new Error(errorData.error || 'Failed to submit skip request');
       }
 
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Slot Skipped",
-        description: "Your prayer slot has been skipped for 5 days.",
+        title: "Skip Request Submitted",
+        description: "Your skip request has been submitted and is awaiting admin approval.",
       });
-      queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
+      setIsSkipRequestModalOpen(false);
+      setSkipDays('');
+      setSkipReason('');
+      queryClient.invalidateQueries({ queryKey: ['skip-requests'] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Skip Failed",
+        title: "Request Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -219,7 +289,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         description: "Your prayer slot has been successfully updated.",
       });
 
-      // Only close modal without forcing refresh
       setIsChangeSlotModalOpen(false);
     },
     onError: (error: Error) => {
@@ -234,6 +303,29 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     },
   });
 
+  // Calculate attendance statistics
+  const calculateAttendanceStats = () => {
+    if (!attendanceRecords.length) return { rate: 0, streak: 0, total: 0, attended: 0 };
+
+    const total = attendanceRecords.length;
+    const attended = attendanceRecords.filter(record => record.attended).length;
+    const rate = (attended / total) * 100;
+
+    // Calculate current streak
+    let streak = 0;
+    for (let i = 0; i < attendanceRecords.length; i++) {
+      if (attendanceRecords[i].attended) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+
+    return { rate: Math.round(rate), streak, total, attended };
+  };
+
+  const attendanceStats = calculateAttendanceStats();
+
   // Helper function to get status text safely
   const getStatusText = (status: string | undefined) => {
     if (!status || typeof status !== 'string') return 'Unknown';
@@ -244,8 +336,26 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     changeSlotMutation.mutate({ newSlotTime });
   };
 
-  const handleSkipSlot = () => {
-    skipSlotMutation.mutate();
+  const handleSubmitSkipRequest = () => {
+    if (!skipDays || !skipReason.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide both skip duration and reason.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (parseInt(skipDays) < 1 || parseInt(skipDays) > 30) {
+      toast({
+        title: "Invalid Duration",
+        description: "Skip duration must be between 1 and 30 days.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    submitSkipRequestMutation.mutate({ skipDays, reason: skipReason });
   };
 
   const getStatusIcon = (status: string) => {
@@ -268,6 +378,12 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       default:
         return 'secondary';
     }
+  };
+
+  const getAttendanceColor = (rate: number) => {
+    if (rate >= 90) return 'text-green-600';
+    if (rate >= 70) return 'text-yellow-600';
+    return 'text-red-600';
   };
 
   if (isLoading) {
@@ -330,7 +446,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
           Prayer Slot Management
         </h2>
         <p className={`text-gray-600 ${isMobile ? 'text-sm' : ''}`}>
-          Manage your committed prayer time and schedule
+          Manage your committed prayer time, attendance, and notifications
         </p>
       </div>
 
@@ -454,17 +570,65 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
 
                   <div className={`flex ${isMobile ? 'flex-col gap-2' : 'gap-4'} justify-center`}>
                     {prayerSlot.status === 'active' && (
-                      <Button
-                        onClick={handleSkipSlot}
-                        disabled={skipSlotMutation.isPending}
-                        variant="outline"
-                        className={`border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-primary transition-brand font-poppins ${
-                          isMobile ? 'h-12 text-sm' : ''
-                        }`}
-                      >
-                        <RotateCcw className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                        {skipSlotMutation.isPending ? 'Processing...' : isMobile ? 'Skip (5 days)' : 'Request Skip (5 days)'}
-                      </Button>
+                      <Dialog open={isSkipRequestModalOpen} onOpenChange={setIsSkipRequestModalOpen}>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={`border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-primary transition-brand font-poppins ${
+                              isMobile ? 'h-12 text-sm' : ''
+                            }`}
+                          >
+                            <RotateCcw className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                            {isMobile ? 'Request Skip' : 'Request Skip Days'}
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle className="font-poppins">Request Skip Days</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="skipDays">Number of days to skip (1-30)</Label>
+                              <Input
+                                id="skipDays"
+                                type="number"
+                                min="1"
+                                max="30"
+                                value={skipDays}
+                                onChange={(e) => setSkipDays(e.target.value)}
+                                placeholder="Enter number of days"
+                                className="border-blue-200 focus:ring-brand-primary focus:border-brand-primary"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="skipReason">Reason for skipping</Label>
+                              <Textarea
+                                id="skipReason"
+                                value={skipReason}
+                                onChange={(e) => setSkipReason(e.target.value)}
+                                placeholder="Please explain why you need to skip these days..."
+                                className="border-blue-200 focus:ring-brand-primary focus:border-brand-primary min-h-[100px]"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={handleSubmitSkipRequest}
+                                disabled={submitSkipRequestMutation.isPending}
+                                className="bg-brand-primary hover:bg-blue-800 text-white font-poppins flex-1"
+                              >
+                                {submitSkipRequestMutation.isPending ? 'Submitting...' : 'Submit Request'}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={() => setIsSkipRequestModalOpen(false)}
+                                className="font-poppins"
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     )}
 
                     <Dialog open={isChangeSlotModalOpen} onOpenChange={setIsChangeSlotModalOpen}>
@@ -560,14 +724,193 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         </CardContent>
       </AnimatedCard>
 
-      {/* Slot Information */}
+      {/* Skip Requests Status */}
+      {skipRequests.length > 0 && (
+        <Card className="shadow-brand-lg border border-blue-100">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
+                <RotateCcw className="w-4 h-4 text-brand-accent" />
+              </div>
+              <span className="font-poppins">Skip Requests</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {skipRequests.slice(0, 3).map((request: SkipRequest) => (
+                <div 
+                  key={request.id}
+                  className="flex items-center justify-between py-3 px-4 bg-gradient-to-r from-blue-50 to-white rounded-lg border border-blue-100"
+                >
+                  <div>
+                    <p className="font-medium text-brand-text font-poppins">
+                      {request.skip_days} day{request.skip_days > 1 ? 's' : ''} skip request
+                    </p>
+                    <p className="text-sm text-gray-600">{request.reason}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(request.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Badge 
+                    variant={
+                      request.status === 'approved' ? 'default' : 
+                      request.status === 'rejected' ? 'destructive' : 'secondary'
+                    }
+                    className="font-poppins"
+                  >
+                    {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Attendance & Statistics */}
+      <Card className="shadow-brand-lg border border-blue-100">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
+              <TrendingUp className="w-4 h-4 text-brand-accent" />
+            </div>
+            <span className="font-poppins">Attendance & Performance</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} gap-4 mb-6`}>
+            <div className="text-center">
+              <div className={`text-2xl font-bold ${getAttendanceColor(attendanceStats.rate)} font-poppins`}>
+                {attendanceStats.rate}%
+              </div>
+              <div className="text-sm text-gray-600">Attendance Rate</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-brand-primary font-poppins">
+                {attendanceStats.streak}
+              </div>
+              <div className="text-sm text-gray-600">Current Streak</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600 font-poppins">
+                {attendanceStats.attended}
+              </div>
+              <div className="text-sm text-gray-600">Sessions Attended</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-600 font-poppins">
+                {attendanceStats.total}
+              </div>
+              <div className="text-sm text-gray-600">Total Sessions</div>
+            </div>
+          </div>
+
+          {attendanceRecords.length > 0 && (
+            <div>
+              <h4 className="font-semibold text-brand-text mb-3 font-poppins">Recent Attendance</h4>
+              <div className="space-y-2">
+                {attendanceRecords.slice(0, 5).map((record: any, index: number) => (
+                  <div 
+                    key={`attendance-${record.id}-${index}`}
+                    className="flex items-center justify-between py-2 px-3 bg-gradient-to-r from-blue-50 to-white rounded-lg border border-blue-100"
+                  >
+                    <div>
+                      <p className="font-medium text-brand-text font-poppins">
+                        {new Date(record.date).toLocaleDateString()}
+                      </p>
+                      {record.session_duration && (
+                        <p className="text-sm text-gray-600">{record.session_duration} minutes</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {record.attended ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-red-500" />
+                      )}
+                      <Badge 
+                        variant={record.attended ? 'default' : 'destructive'}
+                        className="font-poppins"
+                      >
+                        {record.attended ? 'Attended' : 'Missed'}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Notifications & Updates */}
+      {notifications.length > 0 && (
+        <Card className="shadow-brand-lg border border-blue-100">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
+                <Bell className="w-4 h-4 text-brand-accent" />
+              </div>
+              <span className="font-poppins">Notifications & Updates</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {notifications.slice(0, 5).map((notification: any, index: number) => (
+                <div 
+                  key={`notification-${notification.id}-${index}`}
+                  className={`p-4 rounded-lg border ${
+                    notification.pin_to_top 
+                      ? 'bg-gradient-to-r from-yellow-50 to-white border-yellow-200' 
+                      : 'bg-gradient-to-r from-blue-50 to-white border-blue-100'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-brand-text font-poppins mb-1">
+                        {notification.title}
+                      </h4>
+                      <p className={`text-gray-700 mb-2 ${isMobile ? 'text-sm' : ''}`}>
+                        {notification.description}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={
+                            notification.priority === 'critical' ? 'destructive' :
+                            notification.priority === 'high' ? 'default' : 'secondary'
+                          }
+                          className="text-xs font-poppins"
+                        >
+                          {notification.priority}
+                        </Badge>
+                        <span className="text-xs text-gray-500">
+                          {new Date(notification.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    {notification.pin_to_top && (
+                      <div className="ml-2">
+                        <Badge variant="outline" className="text-xs">
+                          Pinned
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Prayer Guidelines */}
       <Card className="shadow-brand-lg border border-blue-100">
         <CardHeader>
           <CardTitle className="flex items-center">
             <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
               <AlertCircle className="w-4 h-4 text-brand-accent" />
             </div>
-            <span className="font-poppins">Slot Guidelines</span>
+            <span className="font-poppins">Prayer Slot Guidelines</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -593,7 +936,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
             <div className="flex items-start gap-3">
               <div className="w-2 h-2 bg-brand-primary rounded-full mt-2 flex-shrink-0"></div>
               <p className={`text-gray-700 ${isMobile ? 'text-sm' : ''}`}>
-                Use the skip option sparingly - only for emergencies (5-day cooldown)
+                Skip requests require admin approval and should be used sparingly
               </p>
             </div>
           </div>

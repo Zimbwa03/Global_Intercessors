@@ -8,7 +8,6 @@ import { DashboardOverview } from "@/components/dashboard/dashboard-overview";
 import { PrayerSlotManagement } from "@/components/dashboard/prayer-slot-management";
 import { UpdatesAnnouncements } from "@/components/dashboard/updates-announcements";
 import { AIPrayerAssistant } from "@/components/dashboard/ai-prayer-assistant";
-import { NotificationSetup } from "@/components/dashboard/notification-setup";
 import { SlotCoverageMonitor } from "@/components/dashboard/slot-coverage-monitor";
 import { AIBibleChatbook } from "@/components/dashboard/ai-bible-chatbook";
 import { AIPrayerPlanner } from "@/components/dashboard/ai-prayer-planner";
@@ -107,8 +106,6 @@ export default function Dashboard() {
         return <DashboardOverview userEmail={user.email} />;
       case "prayer-slot":
         return <PrayerSlotManagement userEmail={user.email} />;
-      case "notifications":
-        return <NotificationSetup />;
       case "updates":
         return <UpdatesAnnouncements />;
       case "ai-assistant":
@@ -142,7 +139,7 @@ export default function Dashboard() {
             </div>
             <h1 className="font-bold text-lg font-poppins">Global Intercessors</h1>
           </div>
-          
+
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="sm" className="text-white hover:bg-blue-700/50">
@@ -172,7 +169,6 @@ export default function Dashboard() {
               { id: "prayer-slot", label: "Prayer", icon: "fas fa-clock" },
               { id: "audio-bible", label: "Audio", icon: "fas fa-volume-up" },
               { id: "ai-assistant", label: "AI Help", icon: "fas fa-robot" },
-              { id: "notifications", label: "Alerts", icon: "fas fa-bell" },
             ].map((item) => (
               <button
                 key={item.id}
