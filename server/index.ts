@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { setupVite, serveStatic, log } from "./vite";
 import { zoomAttendanceTracker } from "./services/zoomAttendanceTracker";
 import { registerRoutes } from "./routes";
+import { notificationScheduler } from "./services/notificationScheduler";
 
 const app = express();
 app.use(express.json());
@@ -39,6 +40,9 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
+  
+  // Start notification scheduler
+  notificationScheduler.start();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

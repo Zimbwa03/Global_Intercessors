@@ -48,6 +48,10 @@ export default function Dashboard() {
           } as AuthUser & { profile: any };
 
           setUser(enrichedUser);
+          
+          // Initialize notifications
+          await notificationService.initialize();
+          console.log('Notification service initialized:', notificationService.isEnabled());
         } catch (error) {
           console.error('Error fetching user profile:', error);
           setUser(user as AuthUser);

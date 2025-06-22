@@ -1472,45 +1472,47 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto p-4">
         {/* Mobile Navigation */}
         {isMobile ? (
-          <div className="grid grid-cols-5 gap-2 mb-6 bg-white rounded-lg p-3 shadow-sm">
-            <MobileNavButton
-              icon={BarChart3}
-              label="Overview"
-              isActive={activeTab === "overview"}
-              onClick={() => setActiveTab("overview")}
-            />
-            <MobileNavButton
-              icon={Clock}
-              label="Slots"
-              isActive={activeTab === "slots"}
-              onClick={() => setActiveTab("slots")}
-            />
-            <MobileNavButton
-              icon={UserCheck}
-              label="Activity"
-              isActive={activeTab === "activity"}
-              onClick={() => setActiveTab("activity")}
-            />
-            <MobileNavButton
-              icon={Calendar}
-              label="Fasting"
-              isActive={activeTab === "fasting"}
-              onClick={() => setActiveTab("fasting")}
-            />
-            <MobileNavButton
-              icon={Settings}
-              label="Manage"
-              isActive={activeTab === "management"}
-              onClick={() => setActiveTab("management")}
-            />
-          </div>
-          <div className="grid grid-cols-5 gap-2 mt-2 bg-white rounded-lg p-3 shadow-sm">
-            <MobileNavButton
-              icon={TrendingUp}
-              label="Analytics"
-              isActive={activeTab === "analytics"}
-              onClick={() => setActiveTab("analytics")}
-            />
+          <div className="mb-6">
+            <div className="grid grid-cols-5 gap-2 bg-white rounded-lg p-3 shadow-sm">
+              <MobileNavButton
+                icon={BarChart3}
+                label="Overview"
+                isActive={activeTab === "overview"}
+                onClick={() => setActiveTab("overview")}
+              />
+              <MobileNavButton
+                icon={Clock}
+                label="Slots"
+                isActive={activeTab === "slots"}
+                onClick={() => setActiveTab("slots")}
+              />
+              <MobileNavButton
+                icon={UserCheck}
+                label="Activity"
+                isActive={activeTab === "activity"}
+                onClick={() => setActiveTab("activity")}
+              />
+              <MobileNavButton
+                icon={Calendar}
+                label="Fasting"
+                isActive={activeTab === "fasting"}
+                onClick={() => setActiveTab("fasting")}
+              />
+              <MobileNavButton
+                icon={Settings}
+                label="Manage"
+                isActive={activeTab === "management"}
+                onClick={() => setActiveTab("management")}
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-2 mt-2 bg-white rounded-lg p-3 shadow-sm">
+              <MobileNavButton
+                icon={TrendingUp}
+                label="Analytics"
+                isActive={activeTab === "analytics"}
+                onClick={() => setActiveTab("analytics")}
+              />
+            </div>
           </div>
         ) : (
           /* Desktop Navigation */
