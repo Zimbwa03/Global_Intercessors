@@ -1071,9 +1071,16 @@ Guidelines:
       } catch (parseError) {
         console.error('Failed to parse DeepSeek response as JSON:', parseError);
         
-        // Fallback response if JSON parsing fails
+        // Fallback response if JSON parsing fails - clean the raw response
+        const cleanedResponse = cleanAIResponse(aiResponse)
+          .replace(/^```json\s*/, '')
+          .replace(/```\s*$/, '')
+          .replace(/^\{.*?"response"\s*:\s*"([^"]*)".*\}$/s, '$1')
+          .replace(/\\n/g, '\n')
+          .replace(/\\"/g, '"');
+        
         res.json({
-          response: `📖 ${cleanAIResponse(aiResponse)}\n\n✨ May God's Word bring you peace and understanding today! 🙏`,
+          response: cleanedResponse.includes('📖') ? cleanedResponse : `📖 ${cleanedResponse}`,
           scripture: {
             reference: "Isaiah 55:11",
             text: "So is my word that goes out from my mouth: It will not return to me empty, but will accomplish what I desire and achieve the purpose for which I sent it."
