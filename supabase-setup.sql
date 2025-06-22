@@ -1,5 +1,6 @@
 
--- Global Intercessors Database Setup Script
+-
+- Global Intercessors Database Setup Script
 -- Run this in your Supabase SQL Editor
 
 -- Drop existing triggers first to avoid dependency errors
