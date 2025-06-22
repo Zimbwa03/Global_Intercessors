@@ -1,0 +1,130 @@
+# Global Intercessors Prayer Management Platform
+
+## Overview
+
+The Global Intercessors Prayer Management Platform is a comprehensive full-stack web application designed to unite believers worldwide in continuous prayer coverage. The platform provides 24/7 prayer slot management, spiritual growth tracking, AI-powered prayer assistance, and global event coordination for faith-based communities.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite for fast development and optimized production builds
+- **Routing**: Wouter for lightweight client-side routing
+- **State Management**: TanStack Query (React Query) for server state management
+- **UI Framework**: Tailwind CSS with shadcn/ui component library
+- **Styling**: Custom brand colors and responsive design system
+- **Mobile Support**: Fully responsive with mobile-first approach using custom hooks
+
+### Backend Architecture
+- **Runtime**: Node.js 20 with Express.js server
+- **Language**: TypeScript with ES modules
+- **Database ORM**: Drizzle ORM for type-safe database operations
+- **Authentication**: Supabase Auth for user management
+- **API Design**: RESTful API endpoints with JSON responses
+- **Session Management**: Secure session handling with proper error boundaries
+
+### Database Design
+- **Primary Database**: PostgreSQL via Supabase
+- **Schema Management**: Drizzle Kit for migrations and schema evolution
+- **Row Level Security**: Implemented for data protection and access control
+- **Service Functions**: PostgreSQL functions for complex operations bypassing RLS when needed
+
+## Key Components
+
+### Authentication & Authorization
+- **User Authentication**: Supabase-powered sign-up/sign-in system
+- **Admin Management**: Role-based access control with admin dashboard
+- **Session Security**: JWT tokens with automatic refresh and secure storage
+- **User Profiles**: Extended user data storage with preferences and regional information
+
+### Prayer Management System
+- **Slot Assignment**: 48 half-hour prayer slots covering 24-hour global coverage
+- **Attendance Tracking**: Real-time monitoring of prayer session participation
+- **Slot Changes**: User-initiated slot transfer system with admin approval
+- **Skip Requests**: Temporary absence management with approval workflow
+- **Coverage Monitoring**: Real-time visualization of global prayer coverage
+
+### AI-Powered Features
+- **Prayer Assistant**: Intelligent prayer guidance and scripture integration
+- **Bible Chat**: Interactive biblical study with AI-powered insights
+- **Prayer Planner**: Structured prayer point generation and planning tools
+- **Audio Bible**: Integrated Bible listening with progress tracking
+
+### Admin Dashboard
+- **User Management**: Comprehensive user oversight and administration
+- **Global Updates**: Broadcast system for announcements and notifications
+- **Analytics**: Prayer attendance statistics and coverage metrics
+- **Event Management**: Fasting programs and special event coordination
+- **System Monitoring**: Real-time application health and performance metrics
+
+### Communication System
+- **Global Updates**: Priority-based announcement system with expiry management
+- **Notifications**: Push notification integration via Firebase Cloud Messaging
+- **Email Notifications**: SMTP-based email alerts for important updates
+- **Real-time Updates**: Live dashboard updates for all connected users
+
+## Data Flow
+
+### User Registration Flow
+1. User submits registration form via React frontend
+2. Supabase Auth creates authenticated user account
+3. Backend creates corresponding user profile in PostgreSQL
+4. User receives confirmation and is redirected to dashboard
+5. Profile data is synchronized across all components
+
+### Prayer Slot Management Flow
+1. User requests prayer slot assignment through interface
+2. System checks available slots and user eligibility
+3. Slot assignment is created with proper user linkage
+4. Real-time updates propagate to coverage monitoring
+5. Attendance tracking begins for assigned time slots
+
+### Admin Operations Flow
+1. Admin authenticates through dedicated login system
+2. Admin actions utilize service role privileges to bypass RLS
+3. Database operations are executed with elevated permissions
+4. Changes propagate to user interfaces in real-time
+5. Audit logs maintain record of administrative actions
+
+## External Dependencies
+
+### Core Services
+- **Supabase**: Primary backend-as-a-service for database and authentication
+- **Firebase**: Cloud messaging for push notifications
+- **Neon Database**: Backup PostgreSQL hosting option via Drizzle configuration
+
+### Development Tools
+- **Replit**: Primary development and deployment environment
+- **TypeScript**: Type safety across entire application stack
+- **ESLint/Prettier**: Code quality and formatting standards
+
+### UI/UX Libraries
+- **Radix UI**: Accessible component primitives
+- **Lucide React**: Modern icon system
+- **Framer Motion**: Animation and micro-interactions
+- **React Hook Form**: Form state management and validation
+
+## Deployment Strategy
+
+### Development Environment
+- **Platform**: Replit with integrated development workflow
+- **Hot Reload**: Vite HMR for rapid development iteration
+- **Environment Variables**: Secure secret management through Replit
+
+### Production Deployment
+- **Build Process**: Automated build pipeline with TypeScript compilation
+- **Static Assets**: Optimized bundling with Vite production build
+- **Server Deployment**: Express server with production optimizations
+- **Database Migration**: Automated schema updates via Drizzle
+
+### Environment Configuration
+- **Development**: Local Replit environment with development database
+- **Production**: Autoscale deployment with production database and secrets
+- **Monitoring**: Built-in error tracking and performance monitoring
+
+## Changelog
+- June 22, 2025. Initial setup
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
