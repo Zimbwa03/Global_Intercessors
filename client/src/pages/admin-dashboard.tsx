@@ -1390,9 +1390,8 @@ export default function AdminDashboard() {
         return <FastingTab />;
       case "management":
         return <ManagementTab />;
-        
-        
-       
+      case "analytics":
+        return <AnalyticsCharts />;
       default:
         return <OverviewTab />;
     }
