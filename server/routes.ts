@@ -70,6 +70,49 @@ async function getUserEmail(userId: string): Promise<string | null> {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Get user's attendance records
+  app.get("/api/attendance/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const { limit = '30' } = req.query;
+      
+      console.log('Fetching attendance for user:', userId);
+
+      // Get attendance from attendance_log table
+      const { data: attendanceRecords, error } = await supabaseAdmin
+        .from('attendance_log')
+        .select('*')
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+        .limit(parseInt(limit as string));
+
+      if (error) {
+        console.error('Error fetching attendance:', error);
+        return res.status(500).json({ error: 'Failed to fetch attendance data' });
+      }
+
+      // Format the data to match expected structure
+      const formattedAttendance = attendanceRecords?.map(record => ({
+        id: record.id,
+        user_id: record.user_id,
+        date: record.date,
+        attended: record.status === 'attended',
+        status: record.status,
+        session_duration: record.zoom_join_time && record.zoom_leave_time 
+          ? Math.floor((new Date(record.zoom_leave_time).getTime() - new Date(record.zoom_join_time).getTime()) / (1000 * 60))
+          : null,
+        created_at: record.created_at,
+        zoom_meeting_id: record.zoom_meeting_id
+      })) || [];
+
+      console.log('Found attendance records:', formattedAttendance.length);
+      res.json(formattedAttendance);
+    } catch (error) {
+      console.error('Error fetching attendance:', error);
+      res.status(500).json({ error: 'Failed to fetch attendance data' });
+    }
+  });
+
   // Get user's prayer slot
   app.get("/api/prayer-slot/:userId", async (req: Request, res: Response) => {
     try {

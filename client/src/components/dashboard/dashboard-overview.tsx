@@ -41,6 +41,78 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
     getCurrentUser();
   }, []);
 
+  // Fetch user's attendance statistics
+  const { data: attendanceStats } = useQuery({
+    queryKey: ['attendance-stats', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const response = await fetch(`/api/attendance/${user.id}?limit=100`);
+      if (!response.ok) throw new Error('Failed to fetch attendance');
+      const attendanceData = await response.json();
+      
+      // Calculate sessions this month
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      const thisMonthSessions = attendanceData.filter((record: any) => {
+        const recordDate = new Date(record.date || record.created_at);
+        return recordDate.getMonth() === currentMonth && 
+               recordDate.getFullYear() === currentYear &&
+               (record.attended || record.status === 'attended');
+      }).length;
+
+      // Calculate day streak
+      let dayStreak = 0;
+      const sortedAttendance = attendanceData
+        .filter((record: any) => record.attended || record.status === 'attended')
+        .sort((a: any, b: any) => new Date(b.date || b.created_at).getTime() - new Date(a.date || a.created_at).getTime());
+      
+      if (sortedAttendance.length > 0) {
+        const today = new Date();
+        let checkDate = new Date(today);
+        
+        for (const record of sortedAttendance) {
+          const recordDate = new Date(record.date || record.created_at);
+          const daysDiff = Math.floor((checkDate.getTime() - recordDate.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (daysDiff === dayStreak) {
+            dayStreak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+      }
+
+      return {
+        sessionsThisMonth: thisMonthSessions,
+        dayStreak: dayStreak
+      };
+    },
+    enabled: !!user?.id,
+    refetchInterval: 60000, // Refetch every minute
+  });
+
+  // Fetch global intercessors count
+  const { data: globalStats } = useQuery({
+    queryKey: ['global-intercessors'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/user-activities');
+      if (!response.ok) throw new Error('Failed to fetch global stats');
+      const userData = await response.json();
+      
+      // Count active users (those with prayer slots)
+      const activeIntercessors = userData.filter((user: any) => 
+        user.current_slot && user.total_sessions > 0
+      ).length;
+
+      return {
+        totalIntercessors: activeIntercessors
+      };
+    },
+    refetchInterval: 300000, // Refetch every 5 minutes
+  });
+
   // Fetch user's prayer slot with real-time updates
   const { data: prayerSlotResponse, refetch: refetchPrayerSlot } = useQuery({
     queryKey: ['prayer-slot', user?.id],
@@ -280,7 +352,9 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                 <i className="fas fa-calendar-check text-brand-accent group-hover:text-brand-primary transition-brand"></i>
               </div>
               <div>
-                <p className="text-2xl font-bold text-brand-text font-poppins">12</p>
+                <p className="text-2xl font-bold text-brand-text font-poppins">
+                  {attendanceStats?.sessionsThisMonth ?? 0}
+                </p>
                 <p className="text-sm text-gray-600">Sessions This Month</p>
               </div>
             </div>
@@ -294,7 +368,9 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                 <i className="fas fa-fire text-brand-accent group-hover:text-brand-primary transition-brand"></i>
               </div>
               <div>
-                <p className="text-2xl font-bold text-brand-text font-poppins">7</p>
+                <p className="text-2xl font-bold text-brand-text font-poppins">
+                  {attendanceStats?.dayStreak ?? 0}
+                </p>
                 <p className="text-sm text-gray-600">Day Streak</p>
               </div>
             </div>
@@ -308,8 +384,10 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                 <i className="fas fa-users text-brand-accent group-hover:text-brand-primary transition-brand"></i>
               </div>
               <div>
-                <p className="text-2xl font-bold text-brand-text font-poppins">245</p>
-                <p className="text-sm text-gray-600">Global Intercessors</p>
+                <p className="text-2xl font-bold text-brand-text font-poppins">
+                  {globalStats?.totalIntercessors ?? 0}
+                </p>
+                <p className="text-sm text-gray-600">Active Intercessors</p>
               </div>
             </div>
           </CardContent>
