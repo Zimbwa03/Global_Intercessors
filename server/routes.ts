@@ -602,26 +602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin endpoint for prayer sessions (deprecated - data now comes from Supabase)
-  app.get("/api/admin/prayer-sessions", async (req: Request, res: Response) => {
-    try {
-      const { data: sessions, error } = await supabaseAdmin
-        .from('prayer_sessions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (error) {
-        console.error("Error fetching prayer sessions:", error);
-        return res.status(500).json({ error: "Failed to fetch prayer sessions" });
-      }
-
-      res.json(sessions || []);
-    } catch (error) {
-      console.error("Error fetching prayer sessions:", error);
-      res.status(500).json({ error: "Failed to fetch prayer sessions" });
-    }
-  });
+  
 
   // Simple in-memory cache for geocoding results
   const geocodingCache = new Map<string, string>();
