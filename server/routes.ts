@@ -1015,9 +1015,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json(fallbackResponse);
-    } catch (error) {
-      console.error('Bible chat error:', error);
-      res.status(500).json({ error: 'Failed to process chat message' });
     }
   });
 
