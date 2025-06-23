@@ -1062,7 +1062,17 @@ Guidelines:
       console.log('DeepSeek API response received successfully');
 
       try {
-        const parsedResponse = JSON.parse(aiResponse);
+        // Clean the response from markdown formatting
+        let cleanedResponse = aiResponse.trim();
+        
+        // Remove markdown code blocks if present
+        if (cleanedResponse.startsWith('```json')) {
+          cleanedResponse = cleanedResponse.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+        } else if (cleanedResponse.startsWith('```')) {
+          cleanedResponse = cleanedResponse.replace(/^```\s*/, '').replace(/```\s*$/, '');
+        }
+        
+        const parsedResponse = JSON.parse(cleanedResponse);
         res.json({
           response: parsedResponse.response,
           scripture: parsedResponse.scripture,
@@ -1070,17 +1080,29 @@ Guidelines:
         });
       } catch (parseError) {
         console.error('Failed to parse DeepSeek response as JSON:', parseError);
+        console.error('Raw response:', aiResponse);
         
-        // Fallback response if JSON parsing fails - clean the raw response
-        const cleanedResponse = cleanAIResponse(aiResponse)
-          .replace(/^```json\s*/, '')
-          .replace(/```\s*$/, '')
-          .replace(/^\{[\s\S]*?"response"\s*:\s*"([^"]*)"[\s\S]*\}$/, '$1')
-          .replace(/\\n/g, '\n')
-          .replace(/\\"/g, '"');
+        // Extract response content manually if JSON parsing fails
+        let extractedResponse = aiResponse;
+        
+        // Try to extract the response field value
+        const responseMatch = aiResponse.match(/"response"\s*:\s*"([^"]+(?:\\.[^"]*)*)"/) || 
+                             aiResponse.match(/'response'\s*:\s*'([^']+(?:\\.[^']*)*)'/) ||
+                             aiResponse.match(/"response"\s*:\s*`([^`]+)`/);
+        
+        if (responseMatch) {
+          extractedResponse = responseMatch[1]
+            .replace(/\\n/g, '\n')
+            .replace(/\\"/g, '"')
+            .replace(/\\'/g, "'")
+            .replace(/\\t/g, '\t');
+        } else {
+          // Clean the entire response
+          extractedResponse = cleanAIResponse(aiResponse);
+        }
         
         res.json({
-          response: cleanedResponse.includes('📖') ? cleanedResponse : `📖 ${cleanedResponse}`,
+          response: extractedResponse.includes('📖') ? extractedResponse : `📖 ${extractedResponse}`,
           scripture: {
             reference: "Isaiah 55:11",
             text: "So is my word that goes out from my mouth: It will not return to me empty, but will accomplish what I desire and achieve the purpose for which I sent it."
