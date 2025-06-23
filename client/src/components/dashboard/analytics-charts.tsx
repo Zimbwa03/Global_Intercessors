@@ -60,7 +60,7 @@ export function AnalyticsCharts() {
     <div className="space-y-6">
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+        <Card className="bg-gradient-to-r from-blue-700 to-blue-800 text-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -72,38 +72,38 @@ export function AnalyticsCharts() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
+        <Card className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-green-100">Active Today</p>
+                <p className="text-emerald-100">Active Today</p>
                 <p className="text-2xl font-bold">{analytics.intercessorStats.activeToday}</p>
               </div>
-              <Activity className="w-8 h-8 text-green-200" />
+              <Activity className="w-8 h-8 text-emerald-200" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+        <Card className="bg-gradient-to-r from-amber-600 to-amber-700 text-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-orange-100">Avg Attendance</p>
+                <p className="text-amber-100">Avg Attendance</p>
                 <p className="text-2xl font-bold">{Math.round(analytics.intercessorStats.averageAttendance)}%</p>
               </div>
-              <Clock className="w-8 h-8 text-orange-200" />
+              <Clock className="w-8 h-8 text-amber-200" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+        <Card className="bg-gradient-to-r from-violet-600 to-violet-700 text-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-100">Active Slots</p>
+                <p className="text-violet-100">Active Slots</p>
                 <p className="text-2xl font-bold">{analytics.intercessorStats.totalActive}</p>
               </div>
-              <Calendar className="w-8 h-8 text-purple-200" />
+              <Calendar className="w-8 h-8 text-violet-200" />
             </div>
           </CardContent>
         </Card>
