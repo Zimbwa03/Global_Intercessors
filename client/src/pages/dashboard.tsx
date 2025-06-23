@@ -134,7 +134,7 @@ export default function Dashboard() {
         return <AIBibleChatbook />;
       case "prayer-planner":
         return <AIPrayerPlanner />;
-            case "audio-bible":
+      case "audio-bible":
         return (
           <AudioBiblePlayer
               isActive={true}
@@ -143,6 +143,10 @@ export default function Dashboard() {
               }}
           />
         );
+      case "notifications":
+        return <NotificationSetup />;
+      case "coverage-monitor":
+        return <SlotCoverageMonitor />;
       default:
         return <DashboardOverview userEmail={user.email} />;
     }
