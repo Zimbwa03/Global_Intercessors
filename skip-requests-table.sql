@@ -63,23 +63,38 @@ ALTER TABLE skip_requests ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can view their own skip requests" ON skip_requests;
 DROP POLICY IF EXISTS "Users can create their own skip requests" ON skip_requests;
 DROP POLICY IF EXISTS "Admins can view all skip requests" ON skip_requests;
+DROP POLICY IF EXISTS "Service role can do everything" ON skip_requests;
+DROP POLICY IF EXISTS "Allow authenticated users" ON skip_requests;
 
--- Create policies for skip_requests table
+-- Create comprehensive policies for skip_requests table
+-- 1. Service role can do everything (for backend operations)
+CREATE POLICY "Service role can do everything" ON skip_requests
+  FOR ALL USING (current_setting('role') = 'service_role');
+
+-- 2. Users can view their own skip requests
 CREATE POLICY "Users can view their own skip requests" ON skip_requests
-  FOR SELECT USING (auth.uid()::text = user_id::text);
+  FOR SELECT USING (auth.uid()::text = user_id::text OR current_setting('role') = 'service_role');
 
+-- 3. Users can create their own skip requests
 CREATE POLICY "Users can create their own skip requests" ON skip_requests
-  FOR INSERT WITH CHECK (auth.uid()::text = user_id::text);
+  FOR INSERT WITH CHECK (auth.uid()::text = user_id::text OR current_setting('role') = 'service_role');
 
--- Admin policies (replace with actual admin user IDs or use admin_users table)
+-- 4. Allow authenticated users to create skip requests (fallback)
+CREATE POLICY "Allow authenticated users" ON skip_requests
+  FOR INSERT TO authenticated WITH CHECK (true);
+
+-- 5. Admins can view and update all skip requests
 CREATE POLICY "Admins can view all skip requests" ON skip_requests
   FOR ALL USING (
     EXISTS (SELECT 1 FROM admin_users WHERE email = auth.jwt() ->> 'email' AND is_active = true)
+    OR current_setting('role') = 'service_role'
   );
 
 -- Grant permissions
 GRANT ALL ON skip_requests TO authenticated;
+GRANT ALL ON skip_requests TO service_role;
 GRANT USAGE, SELECT ON SEQUENCE skip_requests_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE skip_requests_id_seq TO service_role;
 
 -- Drop existing function and trigger if they exist
 DROP TRIGGER IF EXISTS skip_request_notification_trigger ON skip_requests;
@@ -124,3 +139,51 @@ CREATE TRIGGER skip_request_notification_trigger
   FOR EACH ROW
   WHEN (OLD.status = 'pending' AND NEW.status IN ('approved', 'rejected'))
   EXECUTE FUNCTION notify_skip_request_approval();
+
+-- Create a service function to handle skip request creation (bypasses RLS)
+CREATE OR REPLACE FUNCTION create_skip_request_service(
+  p_user_id TEXT,
+  p_user_email TEXT,
+  p_skip_days INTEGER,
+  p_reason TEXT
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  new_request_id INTEGER;
+  result json;
+BEGIN
+  -- Insert the skip request
+  INSERT INTO skip_requests (user_id, user_email, skip_days, reason, status, created_at)
+  VALUES (
+    p_user_id,
+    p_user_email,
+    p_skip_days,
+    p_reason,
+    'pending',
+    CURRENT_TIMESTAMP
+  )
+  RETURNING id INTO new_request_id;
+  
+  -- Return the created request data
+  SELECT json_build_object(
+    'id', id,
+    'user_id', user_id,
+    'user_email', user_email,
+    'skip_days', skip_days,
+    'reason', reason,
+    'status', status,
+    'created_at', created_at
+  ) INTO result
+  FROM skip_requests
+  WHERE id = new_request_id;
+  
+  RETURN result;
+END;
+$$;
+
+-- Grant execute permission on the service function
+GRANT EXECUTE ON FUNCTION create_skip_request_service(TEXT, TEXT, INTEGER, TEXT) TO service_role;
+GRANT EXECUTE ON FUNCTION create_skip_request_service(TEXT, TEXT, INTEGER, TEXT) TO authenticated;

@@ -277,23 +277,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get user email for the request
       const userEmail = await getUserEmail(userId);
 
+      console.log('Creating skip request with service function:', { userId, skipDays, reason, userEmail });
+
+      // Use the service function to create the skip request (bypasses RLS)
       const { data: request, error } = await supabaseAdmin
-        .from('skip_requests')
-        .insert([{
-          user_id: userId,
-          user_email: userEmail || `user-${userId}@placeholder.local`,
-          skip_days: parseInt(skipDays),
-          reason: reason.trim(),
-          status: 'pending',
-          created_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
+        .rpc('create_skip_request_service', {
+          p_user_id: userId,
+          p_user_email: userEmail || `user-${userId}@placeholder.local`,
+          p_skip_days: parseInt(skipDays),
+          p_reason: reason.trim()
+        });
 
       if (error) {
         console.error("Error creating skip request:", error);
         return res.status(500).json({ error: "Failed to create skip request" });
       }
+
+      console.log('Skip request created successfully:', request);
 
       res.json({ 
         success: true, 
