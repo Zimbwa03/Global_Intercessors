@@ -155,10 +155,10 @@ DECLARE
   new_request_id INTEGER;
   result json;
 BEGIN
-  -- Insert the skip request
+  -- Insert the skip request (cast TEXT to UUID)
   INSERT INTO skip_requests (user_id, user_email, skip_days, reason, status, created_at)
   VALUES (
-    p_user_id,
+    p_user_id::uuid,
     p_user_email,
     p_skip_days,
     p_reason,

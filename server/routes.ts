@@ -282,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Use the service function to create the skip request (bypasses RLS)
       const { data: request, error } = await supabaseAdmin
         .rpc('create_skip_request_service', {
-          p_user_id: userId,
+          p_user_id: userId, // This will be cast to UUID in the function
           p_user_email: userEmail || `user-${userId}@placeholder.local`,
           p_skip_days: parseInt(skipDays),
           p_reason: reason.trim()
