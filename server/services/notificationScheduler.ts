@@ -126,17 +126,26 @@ class NotificationScheduler {
   }
 
   private async sendPrayerReminder(slot: any, minutesUntil: number) {
-    // In a real implementation, you would send push notifications here
-    // For now, we'll create an update record
     try {
+      console.log(`📢 Sending ${minutesUntil}-minute prayer reminder for slot ${slot.slot_time} to user ${slot.user_email}`);
+      
+      // Get user's FCM token for push notifications
+      const { data: userProfile } = await supabaseAdmin
+        .from('user_profiles')
+        .select('fcm_token, notification_preferences')
+        .eq('id', slot.user_id)
+        .single();
+
+      // Create notification record for real-time updates
       await supabaseAdmin
         .from('updates')
         .insert({
-          title: `Prayer Reminder - ${minutesUntil} minutes`,
-          description: `Your prayer slot (${slot.slot_time}) starts in ${minutesUntil} minutes. Prepare your heart for intercession.`,
+          title: `Prayer Time Approaching`,
+          description: `Your prayer slot (${slot.slot_time}) starts in ${minutesUntil} minutes. Prepare your heart for intercession and join the global prayer coverage.`,
           type: 'prayer_reminder',
-          priority: 'normal',
+          priority: 'high',
           is_active: true,
+          user_specific: slot.user_id,
           created_at: new Date().toISOString()
         });
     } catch (error) {

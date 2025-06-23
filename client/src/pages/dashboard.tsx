@@ -51,7 +51,21 @@ export default function Dashboard() {
           
           // Initialize notifications
           await notificationService.initialize();
-          console.log('Notification service initialized:', notificationService.isEnabled());
+          console.log('Notification service initialized:', notificationService.getFCMToken() !== null);
+          
+          // Schedule prayer slot reminders if user has active slots
+          try {
+            const response = await fetch(`/api/prayer-slot/${user.id}`);
+            if (response.ok) {
+              const data = await response.json();
+              if (data.prayerSlot && data.prayerSlot.status === 'active') {
+                notificationService.scheduleSlotReminders(data.prayerSlot);
+                console.log('Prayer slot reminders scheduled for:', data.prayerSlot.slotTime);
+              }
+            }
+          } catch (error) {
+            console.error('Error scheduling prayer slot reminders:', error);
+          }
         } catch (error) {
           console.error('Error fetching user profile:', error);
           setUser(user as AuthUser);

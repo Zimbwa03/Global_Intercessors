@@ -136,6 +136,52 @@ class NotificationService {
   getFCMToken() {
     return this.fcmToken;
   }
+
+  isEnabled(): boolean {
+    return Notification.permission === 'granted';
+  }
+
+  async showPrayerSlotStart(slotTime: string): Promise<void> {
+    this.showLocalNotification(
+      'Prayer Time Now',
+      `Your prayer slot (${slotTime}) has started. Join your fellow intercessors in prayer.`,
+      'prayer-start'
+    );
+  }
+
+  async showMissedSlotNotification(slotTime: string, missedCount: number): Promise<void> {
+    this.showLocalNotification(
+      'Prayer Slot Missed',
+      `You missed your prayer slot (${slotTime}). This is your ${missedCount} missed session.`,
+      'missed-slot'
+    );
+  }
+
+  async showUpdateNotification(title: string, description: string): Promise<void> {
+    this.showLocalNotification(title, description, 'update');
+  }
+
+  async schedulePrayerNotifications(userSlots: Array<{ slotTime: string; isActive: boolean; id?: string }>): Promise<void> {
+    // Clear all existing reminders
+    this.reminderTimeouts.forEach((timeout) => clearTimeout(timeout));
+    this.reminderTimeouts.clear();
+
+    // Schedule reminders for active slots
+    for (const slot of userSlots.filter(s => s.isActive)) {
+      // Convert to PrayerSlot format
+      const prayerSlot: PrayerSlot = {
+        id: slot.id || '',
+        slotTime: slot.slotTime,
+        status: 'active',
+        userId: ''
+      };
+      this.scheduleSlotReminders(prayerSlot);
+    }
+  }
+
+  getPermissionStatus(): NotificationPermission {
+    return Notification.permission;
+  }
 }
 
 export const notificationService = new NotificationService();
