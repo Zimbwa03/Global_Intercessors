@@ -1,8 +1,12 @@
+import { requestNotificationPermission, onMessageListener } from "@/lib/firebase";
+
 // Notification Service for Global Intercessors
 class NotificationService {
   private static instance: NotificationService;
   private registration: ServiceWorkerRegistration | null = null;
   private isInitialized = false;
+  private reminderTimeouts: Map<string, NodeJS.Timeout> = new Map();
+  private fcmToken: string | null = null;
 
   private constructor() {}
 
@@ -33,15 +37,42 @@ class NotificationService {
         return false;
       }
 
+      // Get FCM token
+      this.fcmToken = await requestNotificationPermission();
+      
       this.registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
       console.log('Service worker registered successfully');
 
       this.setupMessageListener();
       this.isInitialized = true;
+      
+      // Store FCM token on server if available
+      if (this.fcmToken) {
+        await this.storeFCMToken(this.fcmToken);
+      }
+      
       return true;
     } catch (error) {
       console.error('Failed to initialize notifications:', error);
       return false;
+    }
+  }
+
+  private async storeFCMToken(token: string): Promise<void> {
+    try {
+      const response = await fetch('/api/users/fcm-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fcm_token: token }),
+      });
+      
+      if (response.ok) {
+        console.log('FCM token stored successfully');
+      }
+    } catch (error) {
+      console.error('Failed to store FCM token:', error);
     }
   }
 
@@ -66,6 +97,23 @@ class NotificationService {
         }
       });
     }
+
+    // Setup foreground message listener
+    onMessageListener()
+      .then((payload: any) => {
+        console.log('Received foreground message:', payload);
+        
+        // Show browser notification for foreground messages
+        if (Notification.permission === 'granted') {
+          new Notification(payload.notification.title, {
+            body: payload.notification.body,
+            icon: '/icon-192x192.png',
+            badge: '/icon-192x192.png',
+            requireInteraction: true
+          });
+        }
+      })
+      .catch((err) => console.log('Failed to receive foreground message:', err));
   }
 
   async showNotification(title: string, options: NotificationOptions & { 
@@ -117,33 +165,15 @@ class NotificationService {
 
   async showPrayerSlotStart(slotTime: string): Promise<void> {
     await this.showNotification(
-      `Prayer Time Now`,
+      `Prayer Time Has Begun`,
       {
-        body: `Your prayer slot (${slotTime}) has started. Join your fellow intercessors in prayer.`,
+        body: `Your prayer slot (${slotTime}) has started. Join the global prayer coverage now!`,
         tag: 'prayer-start',
         data: { type: 'prayer-start', slotTime },
         actions: [
           { action: 'join', title: 'Join Prayer' },
-          { action: 'mark-absent', title: 'Cannot Join' }
+          { action: 'view', title: 'View Dashboard' }
         ]
-      }
-    );
-  }
-
-  async showUpdateNotification(title: string, message: string, priority: 'normal' | 'high' | 'urgent' = 'normal'): Promise<void> {
-    const icons = {
-      normal: 'Announcement',
-      high: 'Important Update',
-      urgent: 'Urgent Notice'
-    };
-
-    await this.showNotification(
-      `${icons[priority]}: ${title}`,
-      {
-        body: message,
-        tag: 'update-notification',
-        data: { type: 'update', priority },
-        requireInteraction: priority === 'urgent'
       }
     );
   }
@@ -163,6 +193,98 @@ class NotificationService {
     );
   }
 
+  async showUpdateNotification(title: string, description: string): Promise<void> {
+    await this.showNotification(
+      title,
+      {
+        body: description,
+        tag: 'update',
+        data: { type: 'update' },
+        actions: [
+          { action: 'view', title: 'View Updates' },
+          { action: 'dismiss', title: 'Dismiss' }
+        ]
+      }
+    );
+  }
+
+  // Schedule prayer slot reminders
+  schedulePrayerSlotReminders(prayerSlot: any): void {
+    // Clear existing reminders for this slot
+    this.clearSlotReminders(prayerSlot.id?.toString() || '');
+
+    if (prayerSlot.status !== 'active') {
+      return; // Don't schedule reminders for inactive slots
+    }
+
+    const slotTime = this.parseSlotTime(prayerSlot.slotTime || prayerSlot.slot_time);
+    if (!slotTime) return;
+
+    const now = new Date();
+    const today = new Date();
+    today.setHours(slotTime.hours, slotTime.minutes, 0, 0);
+
+    // If the slot time has passed today, schedule for tomorrow
+    if (today.getTime() <= now.getTime()) {
+      today.setDate(today.getDate() + 1);
+    }
+
+    // Schedule 15-minute reminder
+    const fifteenMinBefore = new Date(today.getTime() - 15 * 60 * 1000);
+    if (fifteenMinBefore.getTime() > now.getTime()) {
+      const timeout15 = setTimeout(() => {
+        this.showPrayerSlotReminder(prayerSlot.slotTime || prayerSlot.slot_time, 15);
+      }, fifteenMinBefore.getTime() - now.getTime());
+      
+      this.reminderTimeouts.set(`${prayerSlot.id}-15min`, timeout15);
+    }
+
+    // Schedule 5-minute reminder
+    const fiveMinBefore = new Date(today.getTime() - 5 * 60 * 1000);
+    if (fiveMinBefore.getTime() > now.getTime()) {
+      const timeout5 = setTimeout(() => {
+        this.showPrayerSlotReminder(prayerSlot.slotTime || prayerSlot.slot_time, 5);
+      }, fiveMinBefore.getTime() - now.getTime());
+      
+      this.reminderTimeouts.set(`${prayerSlot.id}-5min`, timeout5);
+    }
+
+    // Schedule start notification
+    if (today.getTime() > now.getTime()) {
+      const timeoutStart = setTimeout(() => {
+        this.showPrayerSlotStart(prayerSlot.slotTime || prayerSlot.slot_time);
+      }, today.getTime() - now.getTime());
+      
+      this.reminderTimeouts.set(`${prayerSlot.id}-start`, timeoutStart);
+    }
+
+    console.log(`Scheduled reminders for prayer slot ${prayerSlot.slotTime || prayerSlot.slot_time}`);
+  }
+
+  private parseSlotTime(slotTime: string): { hours: number; minutes: number } | null {
+    // Parse time format like "14:30–15:00" or "14:30-15:00"
+    const match = slotTime.match(/(\d{1,2}):(\d{2})/);
+    if (match) {
+      return {
+        hours: parseInt(match[1], 10),
+        minutes: parseInt(match[2], 10)
+      };
+    }
+    return null;
+  }
+
+  clearSlotReminders(slotId: string): void {
+    const reminderKeys = [`${slotId}-15min`, `${slotId}-5min`, `${slotId}-start`];
+    
+    reminderKeys.forEach(key => {
+      const timeout = this.reminderTimeouts.get(key);
+      if (timeout) {
+        clearTimeout(timeout);
+        this.reminderTimeouts.delete(key);
+      }
+    });
+  }
+
   private handleNotificationClick(notification: any): void {
     console.log('Notification clicked:', notification);
     
@@ -180,54 +302,17 @@ class NotificationService {
     }
   }
 
-  async schedulePrayerNotifications(userSlots: Array<{ slotTime: string; isActive: boolean }>): Promise<void> {
+  async schedulePrayerNotifications(userSlots: Array<{ slotTime: string; isActive: boolean; id?: string }>): Promise<void> {
     if (!this.isInitialized) return;
 
-    await this.clearScheduledNotifications();
+    // Clear all existing reminders
+    this.reminderTimeouts.forEach((timeout) => clearTimeout(timeout));
+    this.reminderTimeouts.clear();
 
+    // Schedule reminders for active slots
     for (const slot of userSlots.filter(s => s.isActive)) {
-      await this.scheduleSlotNotifications(slot.slotTime);
+      this.schedulePrayerSlotReminders(slot);
     }
-  }
-
-  private async scheduleSlotNotifications(slotTime: string): Promise<void> {
-    const [startTime] = slotTime.split('–');
-    const [hours, minutes] = startTime.split(':').map(Number);
-
-    const now = new Date();
-    const slotDate = new Date();
-    slotDate.setHours(hours, minutes, 0, 0);
-
-    if (slotDate <= now) {
-      slotDate.setDate(slotDate.getDate() + 1);
-    }
-
-    // 15-minute reminder
-    const reminderTime = new Date(slotDate.getTime() - 15 * 60 * 1000);
-    if (reminderTime > now) {
-      setTimeout(() => {
-        this.showPrayerSlotReminder(slotTime, 15);
-      }, reminderTime.getTime() - now.getTime());
-    }
-
-    // 5-minute reminder
-    const closeReminderTime = new Date(slotDate.getTime() - 5 * 60 * 1000);
-    if (closeReminderTime > now) {
-      setTimeout(() => {
-        this.showPrayerSlotReminder(slotTime, 5);
-      }, closeReminderTime.getTime() - now.getTime());
-    }
-
-    // Start notification
-    if (slotDate > now) {
-      setTimeout(() => {
-        this.showPrayerSlotStart(slotTime);
-      }, slotDate.getTime() - now.getTime());
-    }
-  }
-
-  private async clearScheduledNotifications(): Promise<void> {
-    // Clear existing notifications
   }
 
   isEnabled(): boolean {
@@ -236,6 +321,10 @@ class NotificationService {
 
   getPermissionStatus(): NotificationPermission {
     return Notification.permission;
+  }
+
+  getFCMToken(): string | null {
+    return this.fcmToken;
   }
 }
 

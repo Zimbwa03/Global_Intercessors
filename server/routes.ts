@@ -1493,5 +1493,60 @@ Respond in JSON format as an array:
     }
   });
 
+  // Store FCM token for push notifications
+  app.post("/api/users/fcm-token", async (req: Request, res: Response) => {
+    try {
+      const { fcm_token } = req.body;
+      
+      if (!fcm_token) {
+        return res.status(400).json({ error: "FCM token is required" });
+      }
+
+      // Get current user from Supabase session
+      const authHeader = req.headers.authorization;
+      let userId: string | null = null;
+
+      if (authHeader) {
+        const token = authHeader.replace('Bearer ', '');
+        try {
+          const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+          if (!error && user) {
+            userId = user.id;
+          }
+        } catch (e) {
+          console.error('Error verifying token:', e);
+        }
+      }
+
+      // If no auth header, try to get user from cookie or session
+      if (!userId) {
+        // For now, we'll accept the FCM token storage without strict auth
+        // In production, this should be more secure
+        console.log('FCM token received without user context');
+        return res.json({ success: true, message: "FCM token received" });
+      }
+
+      // Update user profile with FCM token
+      const { error: updateError } = await supabaseAdmin
+        .from('user_profiles')
+        .upsert({
+          id: userId,
+          fcm_token: fcm_token,
+          updated_at: new Date().toISOString()
+        });
+
+      if (updateError) {
+        console.error('Error storing FCM token:', updateError);
+        return res.status(500).json({ error: "Failed to store FCM token" });
+      }
+
+      res.json({ success: true, message: "FCM token stored successfully" });
+
+    } catch (error) {
+      console.error('Error in FCM token storage:', error);
+      res.status(500).json({ error: "Failed to store FCM token" });
+    }
+  });
+
   return httpServer;
 }

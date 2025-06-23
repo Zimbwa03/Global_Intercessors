@@ -14,7 +14,7 @@ import { AIPrayerPlanner } from "@/components/dashboard/ai-prayer-planner";
 import { AudioBiblePlayer } from "@/components/dashboard/audio-bible-player";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { notificationService } from "@/services/notificationService";
+import { notificationService } from "@/lib/notificationService";
 
 export default function Dashboard() {
   const [user, setUser] = useState<AuthUser | null>(null);
