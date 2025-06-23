@@ -12,6 +12,7 @@ import { SlotCoverageMonitor } from "@/components/dashboard/slot-coverage-monito
 import { AIBibleChatbook } from "@/components/dashboard/ai-bible-chatbook";
 import { AIPrayerPlanner } from "@/components/dashboard/ai-prayer-planner";
 import { AudioBiblePlayer } from "@/components/dashboard/audio-bible-player";
+import { NotificationSetup } from "@/components/dashboard/notification-setup";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { notificationService } from "@/lib/notificationService";

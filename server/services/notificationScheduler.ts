@@ -148,6 +148,9 @@ class NotificationScheduler {
           user_specific: slot.user_id,
           created_at: new Date().toISOString()
         });
+
+      console.log(`✅ Prayer reminder notification created for user ${slot.user_email}`);
+
     } catch (error) {
       console.error('Error sending prayer reminder:', error);
     }
@@ -155,16 +158,22 @@ class NotificationScheduler {
 
   private async sendPrayerStartNotification(slot: any) {
     try {
+      console.log(`🚀 Sending prayer start notification for slot ${slot.slot_time} to user ${slot.user_email}`);
+      
       await supabaseAdmin
         .from('updates')
         .insert({
-          title: 'Prayer Time Now',
-          description: `Your prayer slot (${slot.slot_time}) has started. Join your fellow intercessors in prayer.`,
+          title: `Prayer Time Has Begun`,
+          description: `Your prayer slot (${slot.slot_time}) has started. Join the global prayer coverage now! Your fellow intercessors are counting on you.`,
           type: 'prayer_start',
-          priority: 'high',
+          priority: 'urgent',
           is_active: true,
+          user_specific: slot.user_id,
           created_at: new Date().toISOString()
         });
+
+      console.log(`✅ Prayer start notification created for user ${slot.user_email}`);
+
     } catch (error) {
       console.error('Error sending prayer start notification:', error);
     }
