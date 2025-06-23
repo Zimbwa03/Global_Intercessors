@@ -332,6 +332,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin: Get all skip requests
   app.get("/api/admin/skip-requests", async (req: Request, res: Response) => {
     try {
+      console.log('Admin fetching all skip requests...');
+      
       const { data: requests, error } = await supabaseAdmin
         .from('skip_requests')
         .select('*')
@@ -342,6 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Failed to fetch skip requests" });
       }
 
+      console.log(`Found ${requests?.length || 0} skip requests for admin`);
       res.json(requests || []);
     } catch (error) {
       console.error("Error fetching skip requests:", error);

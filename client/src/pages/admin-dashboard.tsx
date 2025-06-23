@@ -2300,12 +2300,20 @@ export default function AdminDashboard() {
               Overview
             </Button>
             <Button
+              variant={activeTab === "analytics" ? "default" : "ghost"}
+              onClick={() => setActiveTab("analytics")}
+              className="flex-1"
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Analytics
+            </Button>
+            <Button
               variant={activeTab === "fasting" ? "default" : "ghost"}
               onClick={() => setActiveTab("fasting")}
               className="flex-1"
             >
               <Calendar className="w-4 h-4 mr-2" />
-              Fasting Program
+              Fasting
             </Button>
             <Button
               variant={activeTab === "slots" ? "default" : "ghost"}
@@ -2313,7 +2321,7 @@ export default function AdminDashboard() {
               className="flex-1"
             >
               <Clock className="w-4 h-4 mr-2" />
-              Prayer Slots
+              Slots
             </Button>
             <Button
               variant={activeTab === "management" ? "default" : "ghost"}

@@ -90,11 +90,17 @@ CREATE POLICY "Admins can view all skip requests" ON skip_requests
     OR current_setting('role') = 'service_role'
   );
 
+-- 6. Additional admin policy for service role access
+CREATE POLICY "Service role full access to skip requests" ON skip_requests
+  FOR ALL USING (current_setting('role') = 'service_role');
+
 -- Grant permissions
 GRANT ALL ON skip_requests TO authenticated;
 GRANT ALL ON skip_requests TO service_role;
+GRANT ALL ON skip_requests TO anon;
 GRANT USAGE, SELECT ON SEQUENCE skip_requests_id_seq TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE skip_requests_id_seq TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE skip_requests_id_seq TO anon;
 
 -- Drop existing function and trigger if they exist
 DROP TRIGGER IF EXISTS skip_request_notification_trigger ON skip_requests;
