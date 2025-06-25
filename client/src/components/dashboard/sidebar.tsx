@@ -39,7 +39,10 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, isMobile
 
         {/* Mobile User Info */}
         <div className="p-4 border-b border-blue-700/50 relative">
-          <div className="flex items-center space-x-3">
+          <div 
+            className="flex items-center space-x-3 cursor-pointer hover:bg-blue-700/30 rounded-lg p-2 transition-colors"
+            onClick={() => onTabChange('profile')}
+          >
             <div className="w-10 h-10 bg-brand-accent rounded-full flex items-center justify-center">
               <i className="fas fa-user text-brand-primary"></i>
             </div>
@@ -49,6 +52,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, isMobile
               </p>
               <p className="text-xs text-blue-200">Intercessor</p>
             </div>
+            <i className="fas fa-chevron-right text-blue-200 text-xs"></i>
           </div>
         </div>
 
@@ -124,7 +128,10 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, isMobile
       {/* User Info */}
       {!isCollapsed && (
         <div className="p-4 border-b border-blue-700/50 relative">
-          <div className="flex items-center space-x-3">
+          <div 
+            className="flex items-center space-x-3 cursor-pointer hover:bg-blue-700/30 rounded-lg p-2 transition-colors"
+            onClick={() => onTabChange('profile')}
+          >
             <div className="w-10 h-10 bg-brand-accent rounded-full flex items-center justify-center shadow-brand">
               <i className="fas fa-user text-brand-primary"></i>
             </div>
@@ -134,6 +141,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, isMobile
               </p>
               <p className="text-xs text-blue-200">Intercessor</p>
             </div>
+            <i className="fas fa-chevron-right text-blue-200 text-xs"></i>
           </div>
         </div>
       )}

@@ -13,6 +13,7 @@ import { AIBibleChatbook } from "@/components/dashboard/ai-bible-chatbook";
 import { AIPrayerPlanner } from "@/components/dashboard/ai-prayer-planner";
 import { AudioBiblePlayer } from "@/components/dashboard/audio-bible-player";
 import { NotificationSetup } from "@/components/dashboard/notification-setup";
+import { UserProfile } from "@/components/dashboard/user-profile";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { notificationService } from "@/lib/notificationService";
@@ -147,6 +148,8 @@ export default function Dashboard() {
         return <NotificationSetup />;
       case "coverage-monitor":
         return <SlotCoverageMonitor />;
+      case "profile":
+        return <UserProfile userEmail={user.email} />;
       default:
         return <DashboardOverview userEmail={user.email} />;
     }
