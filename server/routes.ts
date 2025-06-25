@@ -334,6 +334,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('Admin fetching all skip requests...');
       
+      // First check if the table exists and has data
+      const { data: tableCheck, error: tableError } = await supabaseAdmin
+        .from('skip_requests')
+        .select('count(*)', { count: 'exact', head: true });
+
+      if (tableError) {
+        console.error("Skip requests table error:", tableError);
+        return res.status(500).json({ 
+          error: "Skip requests table not accessible",
+          details: tableError.message 
+        });
+      }
+
+      console.log('Skip requests table accessible, fetching data...');
+      
       const { data: requests, error } = await supabaseAdmin
         .from('skip_requests')
         .select('*')
@@ -341,14 +356,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (error) {
         console.error("Error fetching skip requests:", error);
-        return res.status(500).json({ error: "Failed to fetch skip requests" });
+        return res.status(500).json({ 
+          error: "Failed to fetch skip requests",
+          details: error.message 
+        });
       }
 
       console.log(`Found ${requests?.length || 0} skip requests for admin`);
+      console.log('Sample skip request data:', requests?.[0]);
+      
       res.json(requests || []);
     } catch (error) {
       console.error("Error fetching skip requests:", error);
-      res.status(500).json({ error: "Failed to fetch skip requests" });
+      res.status(500).json({ 
+        error: "Failed to fetch skip requests",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
@@ -1327,6 +1350,8 @@ Respond in JSON format as an array:
   // Analytics endpoint for admin dashboard
   app.get("/api/admin/analytics", async (req: Request, res: Response) => {
     try {
+      console.log('Fetching analytics data...');
+      
       // Get user activities for the last 7 days
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -1346,10 +1371,24 @@ Respond in JSON format as an array:
         .select('*')
         .gte('session_date', sevenDaysAgo.toISOString().split('T')[0]);
 
-      if (attendanceError || slotsError || sessionsError) {
-        console.error("Error fetching analytics data:", { attendanceError, slotsError, sessionsError });
-        return res.status(500).json({ error: "Failed to fetch analytics data" });
-      }
+      // Get unique users from prayer slots (actual intercessors)
+      const uniqueIntercessors = new Set();
+      slotsData?.forEach(slot => {
+        if (slot.user_id) {
+          uniqueIntercessors.add(slot.user_id);
+        }
+      });
+
+      console.log('Real data counts:', {
+        totalSlots: slotsData?.length || 0,
+        uniqueIntercessors: uniqueIntercessors.size,
+        attendanceRecords: attendanceData?.length || 0,
+        sessionRecords: sessionsData?.length || 0
+      });
+
+      if (attendanceError) console.error("Attendance error:", attendanceError);
+      if (slotsError) console.error("Slots error:", slotsError);
+      if (sessionsError) console.error("Sessions error:", sessionsError);
 
       // Process data for charts
       const userActivities = [];
@@ -1363,59 +1402,52 @@ Respond in JSON format as an array:
         const dayAttendance = attendanceData?.filter(a => a.date === dateStr) || [];
         const daySessions = sessionsData?.filter(s => s.session_date === dateStr) || [];
         
-        // Add sample activity data for demonstration
-        const sampleActivities = [15, 22, 18, 25, 19, 28, 24];
-        const samplePrayers = [8, 12, 9, 14, 10, 15, 13];
-        const sampleAttendance = [12, 18, 14, 20, 16, 22, 19];
-        
         userActivities.push({
           date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          activities: Math.max(dayAttendance.length + daySessions.length, sampleActivities[i]),
-          prayers: Math.max(daySessions.length, samplePrayers[i]),
-          attendance: Math.max(dayAttendance.filter(a => a.status === 'present').length, sampleAttendance[i])
+          activities: dayAttendance.length + daySessions.length,
+          prayers: daySessions.length,
+          attendance: dayAttendance.filter(a => a.status === 'present' || a.status === 'attended').length
         });
       }
 
-      // Prayer slot coverage analysis
+      // Prayer slot coverage analysis with real data
       const prayerStats: Array<{timeSlot: string; coverage: number; attendance: number}> = [];
       const timeSlots = ['00:00-02:59', '03:00-05:59', '06:00-08:59', '09:00-11:59', 
                         '12:00-14:59', '15:00-17:59', '18:00-20:59', '21:00-23:59'];
       
       timeSlots.forEach(slot => {
+        const rangeStart = parseInt(slot.split('-')[0].split(':')[0]);
+        const rangeEnd = parseInt(slot.split('-')[1].split(':')[0]);
+        
         const slotsInRange = slotsData?.filter(s => {
+          if (!s.slot_time) return false;
           const slotHour = parseInt(s.slot_time.split(':')[0]);
-          const rangeStart = parseInt(slot.split('-')[0].split(':')[0]);
-          const rangeEnd = parseInt(slot.split('-')[1].split(':')[0]);
           return slotHour >= rangeStart && slotHour <= rangeEnd;
         }) || [];
 
         const totalSlots = slotsInRange.length;
         const activeSlots = slotsInRange.filter(s => s.status === 'active').length;
+        
         const attendedSlots = attendanceData?.filter(a => {
           const slot = slotsInRange.find(s => s.user_id === a.user_id);
-          return slot && a.status === 'present';
+          return slot && (a.status === 'present' || a.status === 'attended');
         }).length || 0;
-
-        // Add sample coverage data for demonstration
-        const sampleCoverage = [75, 82, 88, 95, 92, 85, 78, 68];
-        const sampleAttendanceRate = [85, 88, 92, 96, 89, 82, 75, 71];
-        const slotIndex = timeSlots.indexOf(slot);
         
         prayerStats.push({
           timeSlot: slot,
-          coverage: Math.max(totalSlots > 0 ? Math.round((activeSlots / totalSlots) * 100) : 0, sampleCoverage[slotIndex]),
-          attendance: Math.max(activeSlots > 0 ? Math.round((attendedSlots / activeSlots) * 100) : 0, sampleAttendanceRate[slotIndex])
+          coverage: totalSlots > 0 ? Math.round((activeSlots / totalSlots) * 100) : 0,
+          attendance: activeSlots > 0 ? Math.round((attendedSlots / activeSlots) * 100) : 0
         });
       });
 
-      // Intercessor statistics with sample data for demonstration
-      const totalRegistered = Math.max(slotsData?.length || 0, 45); // Show at least 45 registered
-      const totalActive = Math.max(slotsData?.filter(s => s.status === 'active').length || 0, 38); // Show at least 38 active
+      // Real intercessor statistics
+      const totalRegistered = uniqueIntercessors.size;
+      const totalActive = slotsData?.filter(s => s.status === 'active').length || 0;
       const todayAttendance = attendanceData?.filter(a => a.date === today.toISOString().split('T')[0]) || [];
-      const activeToday = Math.max(todayAttendance.filter(a => a.status === 'present').length, 32); // Show at least 32 active today
-      const averageAttendance = totalActive > 0 ? (activeToday / totalActive) * 100 : 84; // Show 84% attendance
+      const activeToday = todayAttendance.filter(a => a.status === 'present' || a.status === 'attended').length;
+      const averageAttendance = totalActive > 0 ? (activeToday / totalActive) * 100 : 0;
 
-      // Weekly trends
+      // Weekly trends with real data
       const weeklyTrends = [];
       for (let i = 3; i >= 0; i--) {
         const weekStart = new Date(today);
@@ -1424,7 +1456,7 @@ Respond in JSON format as an array:
         weekEnd.setDate(weekEnd.getDate() + 6);
 
         const weekSessions = sessionsData?.filter(s => {
-          const sessionDate = new Date(s.session_date);
+          const sessionDate = new Date(s.session_date || s.created_at);
           return sessionDate >= weekStart && sessionDate <= weekEnd;
         }) || [];
 
@@ -1432,18 +1464,13 @@ Respond in JSON format as an array:
           const createdDate = new Date(s.created_at);
           return createdDate >= weekStart && createdDate <= weekEnd;
         }) || [];
-
-        // Add sample weekly trends for demonstration
-        const sampleRegistrations = [8, 12, 15, 18];
-        const sampleSessions = [156, 168, 175, 182];
-        const sampleDurations = [28, 31, 29, 32];
         
         weeklyTrends.push({
           week: `Week ${4-i}`,
-          newRegistrations: Math.max(weekSlots.length, sampleRegistrations[3-i]),
-          totalSessions: Math.max(weekSessions.length, sampleSessions[3-i]),
+          newRegistrations: weekSlots.length,
+          totalSessions: weekSessions.length,
           avgDuration: weekSessions.length > 0 ? 
-            Math.round(weekSessions.reduce((sum, s) => sum + (s.duration || 30), 0) / weekSessions.length) : sampleDurations[3-i]
+            Math.round(weekSessions.reduce((sum, s) => sum + (s.duration || 30), 0) / weekSessions.length) : 0
         });
       }
 
@@ -1458,6 +1485,12 @@ Respond in JSON format as an array:
         },
         weeklyTrends
       };
+
+      console.log('Analytics response:', {
+        totalRegistered: analytics.intercessorStats.totalRegistered,
+        totalActive: analytics.intercessorStats.totalActive,
+        activeToday: analytics.intercessorStats.activeToday
+      });
 
       res.json(analytics);
     } catch (error) {

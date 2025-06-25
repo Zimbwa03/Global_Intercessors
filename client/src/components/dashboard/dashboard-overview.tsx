@@ -97,20 +97,15 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
   const { data: globalStats } = useQuery({
     queryKey: ['global-intercessors'],
     queryFn: async () => {
-      const response = await fetch('/api/admin/user-activities');
+      const response = await fetch('/api/admin/analytics');
       if (!response.ok) throw new Error('Failed to fetch global stats');
-      const userData = await response.json();
+      const analyticsData = await response.json();
       
-      // Count active users (those with prayer slots)
-      const activeIntercessors = userData.filter((user: any) => 
-        user.current_slot && user.total_sessions > 0
-      ).length;
-
       return {
-        totalIntercessors: activeIntercessors
+        totalIntercessors: analyticsData.intercessorStats.totalRegistered
       };
     },
-    refetchInterval: 300000, // Refetch every 5 minutes
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
   // Fetch user's prayer slot with real-time updates
