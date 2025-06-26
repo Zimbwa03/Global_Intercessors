@@ -1684,6 +1684,97 @@ Respond in JSON format as an array:
     }
   });
 
+  // Manual attendance logging for immediate tracking
+  app.post("/api/attendance/manual-log", async (req: Request, res: Response) => {
+    try {
+      const { userId, userEmail, duration = 20 } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+
+      console.log('Manual attendance logging for:', { userId, userEmail, duration });
+
+      // Get user's prayer slot
+      const { data: prayerSlot, error: slotError } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (slotError || !prayerSlot) {
+        console.error('Error finding prayer slot:', slotError);
+        return res.status(404).json({ error: "No active prayer slot found for user" });
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const sessionStart = new Date(now.getTime() - (duration * 60 * 1000)); // Calculate start time
+
+      // Log attendance in attendance_log table
+      const attendanceData = {
+        user_id: userId,
+        slot_id: prayerSlot.id,
+        date: today,
+        status: 'attended',
+        zoom_join_time: sessionStart.toISOString(),
+        zoom_leave_time: now.toISOString(),
+        zoom_meeting_id: `manual_${Date.now()}`,
+        created_at: now.toISOString()
+      };
+
+      const { data: attendance, error: attendanceError } = await supabaseAdmin
+        .from('attendance_log')
+        .upsert(attendanceData, { 
+          onConflict: 'user_id,date',
+          ignoreDuplicates: false 
+        })
+        .select()
+        .single();
+
+      if (attendanceError) {
+        console.error('Error logging attendance:', attendanceError);
+        return res.status(500).json({ error: "Failed to log attendance" });
+      }
+
+      // Reset missed count and update last attended
+      const { error: updateError } = await supabaseAdmin
+        .from('prayer_slots')
+        .update({
+          missed_count: 0,
+          last_attended: now.toISOString(),
+          updated_at: now.toISOString()
+        })
+        .eq('id', prayerSlot.id);
+
+      if (updateError) {
+        console.error('Error updating prayer slot:', updateError);
+      }
+
+      console.log(`✅ Manual attendance logged for ${userEmail || userId} - ${duration} minutes`);
+
+      res.json({
+        success: true,
+        message: `Attendance logged successfully! ${duration} minutes recorded for today.`,
+        attendance: {
+          id: attendance.id,
+          user_id: attendance.user_id,
+          date: attendance.date,
+          attended: true,
+          status: attendance.status,
+          session_duration: duration,
+          created_at: attendance.created_at,
+          zoom_meeting_id: attendance.zoom_meeting_id
+        }
+      });
+
+    } catch (error) {
+      console.error('Error in manual attendance logging:', error);
+      res.status(500).json({ error: "Failed to log attendance" });
+    }
+  });
+
   // Store FCM token for push notifications
   app.post("/api/users/fcm-token", async (req: Request, res: Response) => {
     try {
@@ -1736,6 +1827,28 @@ Respond in JSON format as an array:
     } catch (error) {
       console.error('Error in FCM token storage:', error);
       res.status(500).json({ error: "Failed to store FCM token" });
+    }
+  });
+
+  // Force process Zoom meetings for attendance tracking
+  app.post("/api/admin/force-process-zoom", async (req: Request, res: Response) => {
+    try {
+      console.log('🔄 Admin forcing Zoom meeting processing...');
+      
+      const { zoomAttendanceTracker } = await import('./services/zoomAttendanceTracker.js');
+      const result = await zoomAttendanceTracker.forceProcessRecentMeetings();
+      
+      res.json({
+        success: true,
+        message: `Processed ${result.processed} meetings`,
+        processed: result.processed
+      });
+    } catch (error) {
+      console.error('Error force processing Zoom meetings:', error);
+      res.status(500).json({ 
+        error: "Failed to process Zoom meetings",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 

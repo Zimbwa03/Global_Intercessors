@@ -424,6 +424,108 @@ class ZoomAttendanceTracker {
     console.log('Manual attendance processing triggered');
     await this.processAttendance();
   }
+
+  // Manual attendance logging for immediate processing
+  async logManualAttendance(userId: string, userEmail: string, duration: number = 20) {
+    try {
+      console.log(`Logging manual attendance for ${userEmail}: ${duration} minutes`);
+
+      // Find user's prayer slot
+      const { data: prayerSlot } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (!prayerSlot) {
+        throw new Error('No active prayer slot found');
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const sessionStart = new Date(now.getTime() - (duration * 60 * 1000));
+
+      // Log attendance
+      const attendanceData = {
+        user_id: userId,
+        slot_id: prayerSlot.id,
+        date: today,
+        status: 'attended',
+        zoom_join_time: sessionStart,
+        zoom_leave_time: now,
+        zoom_meeting_id: `manual_${Date.now()}`
+      };
+
+      await supabaseAdmin
+        .from('attendance_log')
+        .upsert(attendanceData, { 
+          onConflict: 'user_id,date',
+          ignoreDuplicates: false 
+        });
+
+      // Reset missed count and update last attended
+      await supabaseAdmin
+        .from('prayer_slots')
+        .update({
+          missed_count: 0,
+          last_attended: now.toISOString()
+        })
+        .eq('id', prayerSlot.id);
+
+      console.log(`✅ Manual attendance logged for ${userEmail} - ${duration} minutes`);
+      return { success: true, duration };
+
+    } catch (error) {
+      console.error('Error logging manual attendance:', error);
+      throw error;
+    }
+  }
+
+  // Force process all recent meetings (for debugging)
+  async forceProcessRecentMeetings() {
+    try {
+      console.log('🔄 Force processing all recent meetings...');
+      
+      if (!this.zoomToken) {
+        await this.getAccessToken();
+      }
+
+      // Get meetings from last 3 days instead of just yesterday
+      const today = dayjs().format('YYYY-MM-DD');
+      const threeDaysAgo = dayjs().subtract(3, 'day').format('YYYY-MM-DD');
+
+      const response = await axios.get(
+        `https://api.zoom.us/v2/users/me/meetings`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.zoomToken}`,
+            'Content-Type': 'application/json'
+          },
+          params: {
+            type: 'previous_meetings',
+            from: threeDaysAgo,
+            to: today,
+            page_size: 100
+          }
+        }
+      );
+
+      const meetings = response.data.meetings || [];
+      console.log(`Found ${meetings.length} meetings in last 3 days`);
+
+      for (const meeting of meetings) {
+        console.log(`Processing meeting: ${meeting.topic} (${meeting.id})`);
+        await this.processMeetingAttendance(meeting);
+      }
+
+      return { processed: meetings.length };
+
+    } catch (error) {
+      console.error('Error in force processing:', error);
+      throw error;
+    }
+  }
 }
 
 export const zoomAttendanceTracker = new ZoomAttendanceTracker();
