@@ -65,34 +65,24 @@ DROP POLICY IF EXISTS "Users can create their own skip requests" ON skip_request
 DROP POLICY IF EXISTS "Admins can view all skip requests" ON skip_requests;
 DROP POLICY IF EXISTS "Service role can do everything" ON skip_requests;
 DROP POLICY IF EXISTS "Allow authenticated users" ON skip_requests;
+DROP POLICY IF EXISTS "Service role full access to skip requests" ON skip_requests;
 
--- Create comprehensive policies for skip_requests table
+-- Create simplified policies for skip_requests table
 -- 1. Service role can do everything (for backend operations)
 CREATE POLICY "Service role can do everything" ON skip_requests
   FOR ALL USING (current_setting('role') = 'service_role');
 
 -- 2. Users can view their own skip requests
 CREATE POLICY "Users can view their own skip requests" ON skip_requests
-  FOR SELECT USING (auth.uid()::text = user_id::text OR current_setting('role') = 'service_role');
+  FOR SELECT USING (auth.uid()::text = user_id::text);
 
 -- 3. Users can create their own skip requests
 CREATE POLICY "Users can create their own skip requests" ON skip_requests
-  FOR INSERT WITH CHECK (auth.uid()::text = user_id::text OR current_setting('role') = 'service_role');
+  FOR INSERT WITH CHECK (auth.uid()::text = user_id::text);
 
--- 4. Allow authenticated users to create skip requests (fallback)
-CREATE POLICY "Allow authenticated users" ON skip_requests
-  FOR INSERT TO authenticated WITH CHECK (true);
-
--- 5. Admins can view and update all skip requests
-CREATE POLICY "Admins can view all skip requests" ON skip_requests
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM admin_users WHERE email = auth.jwt() ->> 'email' AND is_active = true)
-    OR current_setting('role') = 'service_role'
-  );
-
--- 6. Additional admin policy for service role access
-CREATE POLICY "Service role full access to skip requests" ON skip_requests
-  FOR ALL USING (current_setting('role') = 'service_role');
+-- 4. Allow service role to insert skip requests (for the service function)
+CREATE POLICY "Service role can insert skip requests" ON skip_requests
+  FOR INSERT TO service_role WITH CHECK (true);
 
 -- Grant permissions
 GRANT ALL ON skip_requests TO authenticated;

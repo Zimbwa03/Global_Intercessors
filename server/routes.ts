@@ -334,21 +334,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('Admin fetching all skip requests...');
       
-      // First check if the table exists and has data
-      const { data: tableCheck, error: tableError } = await supabaseAdmin
-        .from('skip_requests')
-        .select('count(*)', { count: 'exact', head: true });
-
-      if (tableError) {
-        console.error("Skip requests table error:", tableError);
-        return res.status(500).json({ 
-          error: "Skip requests table not accessible",
-          details: tableError.message 
-        });
-      }
-
-      console.log('Skip requests table accessible, fetching data...');
-      
       const { data: requests, error } = await supabaseAdmin
         .from('skip_requests')
         .select('*')
