@@ -1532,6 +1532,90 @@ Respond in JSON format as an array:
   });
 
   const httpServer = createServer(app);
+  // Update Zoom link endpoint
+  app.post("/api/admin/zoom-link", async (req: Request, res: Response) => {
+    try {
+      const { zoomLink } = req.body;
+
+      if (!zoomLink || !zoomLink.trim()) {
+        return res.status(400).json({ error: "Zoom link is required" });
+      }
+
+      // Validate Zoom link format
+      const zoomLinkRegex = /^https:\/\/(.*\.)?zoom\.us\/j\/\d+(\?.*)?$/;
+      if (!zoomLinkRegex.test(zoomLink)) {
+        return res.status(400).json({ error: "Invalid Zoom link format" });
+      }
+
+      // Extract meeting ID from the URL
+      const meetingIdMatch = zoomLink.match(/\/j\/(\d+)/);
+      const meetingId = meetingIdMatch ? meetingIdMatch[1] : 'unknown';
+
+      // Store the zoom link in the database
+      const { data: zoomSession, error } = await supabaseAdmin
+        .from('zoom_meetings')
+        .insert([
+          {
+            meeting_id: meetingId,
+            meeting_uuid: `uuid_${meetingId}_${Date.now()}`,
+            topic: 'Global Intercessors Prayer Session',
+            start_time: new Date().toISOString(),
+            participant_count: 0,
+            processed: false,
+            zoom_link: zoomLink,
+            created_at: new Date().toISOString()
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error saving zoom link:', error);
+        throw error;
+      }
+
+      console.log('Zoom link updated successfully:', zoomLink);
+      res.json({ 
+        success: true,
+        message: 'Zoom link updated successfully', 
+        session: zoomSession 
+      });
+    } catch (error) {
+      console.error('Error updating zoom link:', error);
+      res.status(500).json({ error: 'Failed to update zoom link' });
+    }
+  });
+
+  // Get current zoom link/session
+  app.get("/api/admin/zoom-link", async (req: Request, res: Response) => {
+    try {
+      const { data: latestSession, error } = await supabaseAdmin
+        .from('zoom_meetings')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching zoom link:', error);
+        throw error;
+      }
+
+      // Format the response to match what the frontend expects
+      const response = latestSession ? {
+        zoomLink: latestSession.zoom_link || `https://zoom.us/j/${latestSession.meeting_id}`,
+        meetingId: latestSession.meeting_id,
+        topic: latestSession.topic,
+        createdAt: latestSession.created_at
+      } : null;
+
+      res.json(response);
+    } catch (error) {
+      console.error('Error fetching zoom link:', error);
+      res.status(500).json({ error: 'Failed to fetch zoom link' });
+    }
+  });
+
   // Test Zoom API connection
   app.get("/api/admin/test-zoom", async (req: Request, res: Response) => {
     try {
