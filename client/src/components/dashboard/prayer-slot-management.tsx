@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +52,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   const [countdown, setCountdown] = useState<CountdownTime>({ hours: 0, minutes: 0, seconds: 0 });
   const [slotChangeSuccess, setSlotChangeSuccess] = useState(false);
   const [isSlotChanging, setIsSlotChanging] = useState(false);
+  const [todayAttendance, setTodayAttendance] = useState<any>(null);
 
   // Check authentication status
   useEffect(() => {
@@ -384,6 +384,50 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     if (rate >= 90) return 'text-green-600';
     if (rate >= 70) return 'text-yellow-600';
     return 'text-red-600';
+  };
+
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("Error fetching user data:", error);
+          return;
+        }
+
+        if (data?.session?.user) {
+          setCurrentUserId(data.session.user.id);
+        } else {
+          setCurrentUserId(null);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
+
+    // Check attendance status every 30 seconds for real-time updates
+    const attendanceInterval = setInterval(fetchAttendanceStatus, 30000);
+    fetchAttendanceStatus();
+
+    return () => clearInterval(attendanceInterval);
+  }, []);
+
+  const fetchAttendanceStatus = async () => {
+    if (!currentUserId) return;
+    try {
+      const response = await fetch(`/api/attendance/status/${currentUserId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTodayAttendance(data);
+      }
+    } catch (error) {
+      console.error('Error fetching attendance status:', error);
+    }
   };
 
   if (isLoading) {
@@ -724,6 +768,28 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         </CardContent>
       </AnimatedCard>
 
+      {/* Automatic Attendance Status */}
+      <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+        <h4 className="text-sm font-medium text-green-900 mb-2">
+          🤖 Automatic Attendance Tracking
+        </h4>
+        <p className="text-xs text-green-700 mb-3">
+          Your attendance is automatically tracked when you join the Zoom prayer session during your slot time
+        </p>
+        <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-green-800">System Status: Active</span>
+          </div>
+          <span className="text-green-600">|</span>
+          <span className="text-green-700">
+            {todayAttendance?.hasAttendedToday ? 
+              `✅ Attended today at ${new Date(todayAttendance.attendanceRecord?.zoom_join_time || '').toLocaleTimeString()}` : 
+              '⏳ Waiting for Zoom session...'}
+          </span>
+        </div>
+      </div>
+
       {/* Skip Requests Status */}
       {skipRequests.length > 0 && (
         <Card className="shadow-brand-lg border border-blue-100">
@@ -770,7 +836,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       {/* Attendance & Statistics */}
       <Card className="shadow-brand-lg border border-blue-100">
         <CardHeader>
-          <CardTitle className="flex items-center">
+                    <CardTitle className="flex items-center">
             <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
               <TrendingUp className="w-4 h-4 text-brand-accent" />
             </div>

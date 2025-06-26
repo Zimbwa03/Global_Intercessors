@@ -1684,94 +1684,45 @@ Respond in JSON format as an array:
     }
   });
 
-  // Manual attendance logging for immediate tracking
-  app.post("/api/attendance/manual-log", async (req: Request, res: Response) => {
+  // Get real-time attendance status (automatic tracking)
+  app.get("/api/attendance/status/:userId", async (req: Request, res: Response) => {
     try {
-      const { userId, userEmail, duration = 20 } = req.body;
+      const { userId } = req.params;
+      const today = new Date().toISOString().split('T')[0];
 
-      if (!userId) {
-        return res.status(400).json({ error: "User ID is required" });
+      // Get today's attendance
+      const { data: todayAttendance, error } = await supabaseAdmin
+        .from('attendance_log')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('date', today)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching attendance status:', error);
+        return res.status(500).json({ error: "Failed to fetch attendance status" });
       }
 
-      console.log('Manual attendance logging for:', { userId, userEmail, duration });
-
       // Get user's prayer slot
-      const { data: prayerSlot, error: slotError } = await supabaseAdmin
+      const { data: prayerSlot } = await supabaseAdmin
         .from('prayer_slots')
         .select('*')
         .eq('user_id', userId)
         .eq('status', 'active')
         .single();
 
-      if (slotError || !prayerSlot) {
-        console.error('Error finding prayer slot:', slotError);
-        return res.status(404).json({ error: "No active prayer slot found for user" });
-      }
-
-      const today = new Date().toISOString().split('T')[0];
-      const now = new Date();
-      const sessionStart = new Date(now.getTime() - (duration * 60 * 1000)); // Calculate start time
-
-      // Log attendance in attendance_log table
-      const attendanceData = {
-        user_id: userId,
-        slot_id: prayerSlot.id,
-        date: today,
-        status: 'attended',
-        zoom_join_time: sessionStart.toISOString(),
-        zoom_leave_time: now.toISOString(),
-        zoom_meeting_id: `manual_${Date.now()}`,
-        created_at: now.toISOString()
+      const response = {
+        hasAttendedToday: !!todayAttendance && todayAttendance.status === 'attended',
+        attendanceRecord: todayAttendance,
+        prayerSlot: prayerSlot,
+        lastUpdated: new Date().toISOString(),
+        systemStatus: "Automatic Zoom tracking active"
       };
 
-      const { data: attendance, error: attendanceError } = await supabaseAdmin
-        .from('attendance_log')
-        .upsert(attendanceData, { 
-          onConflict: 'user_id,date',
-          ignoreDuplicates: false 
-        })
-        .select()
-        .single();
-
-      if (attendanceError) {
-        console.error('Error logging attendance:', attendanceError);
-        return res.status(500).json({ error: "Failed to log attendance" });
-      }
-
-      // Reset missed count and update last attended
-      const { error: updateError } = await supabaseAdmin
-        .from('prayer_slots')
-        .update({
-          missed_count: 0,
-          last_attended: now.toISOString(),
-          updated_at: now.toISOString()
-        })
-        .eq('id', prayerSlot.id);
-
-      if (updateError) {
-        console.error('Error updating prayer slot:', updateError);
-      }
-
-      console.log(`✅ Manual attendance logged for ${userEmail || userId} - ${duration} minutes`);
-
-      res.json({
-        success: true,
-        message: `Attendance logged successfully! ${duration} minutes recorded for today.`,
-        attendance: {
-          id: attendance.id,
-          user_id: attendance.user_id,
-          date: attendance.date,
-          attended: true,
-          status: attendance.status,
-          session_duration: duration,
-          created_at: attendance.created_at,
-          zoom_meeting_id: attendance.zoom_meeting_id
-        }
-      });
-
+      res.json(response);
     } catch (error) {
-      console.error('Error in manual attendance logging:', error);
-      res.status(500).json({ error: "Failed to log attendance" });
+      console.error('Error fetching attendance status:', error);
+      res.status(500).json({ error: "Failed to fetch attendance status" });
     }
   });
 
