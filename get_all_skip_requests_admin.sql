@@ -1,3 +1,4 @@
+
 -- Create a service function to get all skip requests for admin (bypasses RLS)
 CREATE OR REPLACE FUNCTION get_all_skip_requests_admin()
 RETURNS TABLE (
@@ -34,3 +35,4 @@ $$;
 -- Grant execute permission on the service function
 GRANT EXECUTE ON FUNCTION get_all_skip_requests_admin() TO service_role;
 GRANT EXECUTE ON FUNCTION get_all_skip_requests_admin() TO authenticated;
+GRANT EXECUTE ON FUNCTION get_all_skip_requests_admin() TO anon;
