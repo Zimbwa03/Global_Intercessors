@@ -107,12 +107,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('Found attendance records:', formattedAttendance.length);
       
-      // If no attendance records exist, create some realistic test data for demonstration
+      // If no attendance records exist, return mock data for demonstration
       if (formattedAttendance.length === 0) {
-        console.log('No attendance records found, creating test data for user:', userId);
+        console.log('No attendance records found, returning mock data for user:', userId);
         
-        // Create sample attendance data for the last 30 days
-        const sampleAttendance = [];
+        // Create realistic mock attendance data for the last 30 days
+        const mockAttendance = [];
         const now = new Date();
         
         for (let i = 0; i < 30; i++) {
@@ -124,37 +124,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const attended = Math.random() > 0.15;
           const sessionDuration = attended ? Math.floor(Math.random() * 20) + 10 : null; // 10-30 minutes
           
-          // Insert test data into database
-          const { data: insertedRecord, error: insertError } = await supabaseAdmin
-            .from('attendance_log')
-            .insert({
-              user_id: userId,
-              slot_id: 1, // Default slot ID
-              date: dateStr,
-              status: attended ? 'attended' : 'missed',
-              zoom_join_time: attended ? new Date(date.getTime() + Math.random() * 3600000).toISOString() : null,
-              zoom_leave_time: attended && sessionDuration ? new Date(date.getTime() + sessionDuration * 60000).toISOString() : null,
-              zoom_meeting_id: attended ? `test_meeting_${i}` : null
-            })
-            .select()
-            .single();
-            
-          if (!insertError && insertedRecord) {
-            sampleAttendance.push({
-              id: insertedRecord.id,
-              user_id: insertedRecord.user_id,
-              date: insertedRecord.date,
-              attended: insertedRecord.status === 'attended',
-              status: insertedRecord.status,
-              session_duration: sessionDuration,
-              created_at: insertedRecord.created_at,
-              zoom_meeting_id: insertedRecord.zoom_meeting_id
-            });
-          }
+          mockAttendance.push({
+            id: `mock_${i}`,
+            user_id: userId,
+            date: dateStr,
+            attended: attended,
+            status: attended ? 'attended' : 'missed',
+            session_duration: sessionDuration,
+            created_at: date.toISOString(),
+            zoom_meeting_id: attended ? `mock_meeting_${i}` : null
+          });
         }
         
-        console.log('Created', sampleAttendance.length, 'test attendance records');
-        return res.json(sampleAttendance);
+        console.log('Returning', mockAttendance.length, 'mock attendance records');
+        return res.json(mockAttendance);
       }
       
       res.json(formattedAttendance);
@@ -563,45 +546,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Failed to fetch prayer sessions" });
       }
 
-      // If no prayer sessions exist, create some realistic test data
+      // If no prayer sessions exist, return mock data for demonstration
       if (!sessions || sessions.length === 0) {
-        console.log('No prayer sessions found, creating test data for user:', userId);
+        console.log('No prayer sessions found, returning mock data for user:', userId);
         
-        const sampleSessions = [];
+        const mockSessions = [];
         const now = new Date();
+        
+        // Get user's slot time for realistic session scheduling
+        const { data: userSlot } = await supabaseAdmin
+          .from('prayer_slots')
+          .select('slot_time')
+          .eq('user_id', userId)
+          .single();
+          
+        const slotTime = userSlot?.slot_time || '12:00–12:30';
         
         for (let i = 0; i < 15; i++) {
           const sessionDate = new Date(now);
           sessionDate.setDate(sessionDate.getDate() - Math.floor(Math.random() * 30));
           
-          // Get user's slot time for realistic session scheduling
-          const { data: userSlot } = await supabaseAdmin
-            .from('prayer_slots')
-            .select('slot_time')
-            .eq('user_id', userId)
-            .single();
-            
-          const slotTime = userSlot?.slot_time || '12:00–12:30';
-          
-          const { data: insertedSession, error: insertError } = await supabaseAdmin
-            .from('prayer_sessions')
-            .insert({
-              user_id: userId,
-              slot_time: slotTime,
-              session_date: sessionDate.toISOString(),
-              status: Math.random() > 0.1 ? 'completed' : 'missed', // 90% completion rate
-              duration: Math.floor(Math.random() * 20) + 15 // 15-35 minutes
-            })
-            .select()
-            .single();
-            
-          if (!insertError && insertedSession) {
-            sampleSessions.push(insertedSession);
-          }
+          mockSessions.push({
+            id: `mock_session_${i}`,
+            user_id: userId,
+            slot_time: slotTime,
+            session_date: sessionDate.toISOString(),
+            status: Math.random() > 0.1 ? 'completed' : 'missed', // 90% completion rate
+            duration: Math.floor(Math.random() * 20) + 15, // 15-35 minutes
+            created_at: sessionDate.toISOString(),
+            updated_at: sessionDate.toISOString()
+          });
         }
         
-        console.log('Created', sampleSessions.length, 'test prayer sessions');
-        return res.json(sampleSessions);
+        console.log('Returning', mockSessions.length, 'mock prayer sessions');
+        return res.json(mockSessions);
       }
 
       res.json(sessions || []);
