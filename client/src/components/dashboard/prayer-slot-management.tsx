@@ -145,6 +145,19 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     refetchOnWindowFocus: false
   });
 
+  // Fetch current Zoom link
+  const { data: zoomLinkData } = useQuery({
+    queryKey: ['zoom-link'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/zoom-link');
+      if (!response.ok) {
+        throw new Error('Failed to fetch zoom link');
+      }
+      return response.json();
+    },
+    refetchOnWindowFocus: false
+  });
+
   // Extract the prayer slot from the response
   const prayerSlot = prayerSlotResponse?.prayerSlot;
 
@@ -308,13 +321,13 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     if (!attendanceRecords.length) return { rate: 0, streak: 0, total: 0, attended: 0 };
 
     const total = attendanceRecords.length;
-    const attended = attendanceRecords.filter(record => record.attended).length;
+    const attended = attendanceRecords.filter((record: any) => record.attended).length;
     const rate = (attended / total) * 100;
 
     // Calculate current streak
     let streak = 0;
     for (let i = 0; i < attendanceRecords.length; i++) {
-      if (attendanceRecords[i].attended) {
+      if ((attendanceRecords[i] as any).attended) {
         streak++;
       } else {
         break;
@@ -613,6 +626,19 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                   )}
 
                   <div className={`flex ${isMobile ? 'flex-col gap-2' : 'gap-4'} justify-center`}>
+                    {/* Join Zoom Meeting Button */}
+                    {zoomLinkData?.zoomLink && (
+                      <Button
+                        onClick={() => window.open(zoomLinkData.zoomLink, '_blank')}
+                        className={`bg-green-600 hover:bg-green-700 text-white font-poppins ${
+                          isMobile ? 'h-12 text-sm' : ''
+                        }`}
+                      >
+                        <Users className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                        {isMobile ? 'Join Zoom' : 'Join Zoom Meeting'}
+                      </Button>
+                    )}
+
                     {prayerSlot.status === 'active' && (
                       <Dialog open={isSkipRequestModalOpen} onOpenChange={setIsSkipRequestModalOpen}>
                         <DialogTrigger asChild>
