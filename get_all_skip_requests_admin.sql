@@ -2,7 +2,7 @@
 -- Create a service function to get all skip requests for admin (bypasses RLS)
 CREATE OR REPLACE FUNCTION get_all_skip_requests_admin()
 RETURNS TABLE (
-  id INTEGER,
+  id BIGINT,
   user_id TEXT,
   user_email TEXT,
   skip_days INTEGER,
@@ -18,7 +18,7 @@ AS $$
 BEGIN
   RETURN QUERY
   SELECT 
-    sr.id,
+    sr.id::bigint,
     sr.user_id::text,
     sr.user_email,
     sr.skip_days,
