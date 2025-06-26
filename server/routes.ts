@@ -413,34 +413,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { requestId } = req.params;
       const { action, adminComment } = req.body;
 
+      console.log('Processing skip request action:', { requestId, action, adminComment });
+
       if (!['approve', 'reject'].includes(action)) {
         return res.status(400).json({ error: "Action must be 'approve' or 'reject'" });
       }
 
-      // Get the skip request
+      // Get the skip request using service role to bypass RLS
       const { data: skipRequest, error: fetchError } = await supabaseAdmin
-        .from('skip_requests')
-        .select('*')
-        .eq('id', requestId)
-        .single();
+        .rpc('sql', {
+          query: `SELECT * FROM skip_requests WHERE id = ${parseInt(requestId)} LIMIT 1`
+        });
 
-      if (fetchError || !skipRequest) {
+      if (fetchError) {
+        console.error("Error fetching skip request:", fetchError);
+        return res.status(500).json({ error: "Failed to fetch skip request" });
+      }
+
+      if (!skipRequest || skipRequest.length === 0) {
+        console.error("Skip request not found:", requestId);
         return res.status(404).json({ error: "Skip request not found" });
       }
 
-      if (skipRequest.status !== 'pending') {
+      const request = skipRequest[0];
+
+      if (request.status !== 'pending') {
         return res.status(400).json({ error: "Skip request has already been processed" });
       }
 
-      // Update the skip request status
+      // Update the skip request status using raw SQL to bypass RLS
       const { error: updateError } = await supabaseAdmin
-        .from('skip_requests')
-        .update({
-          status: action === 'approve' ? 'approved' : 'rejected',
-          admin_comment: adminComment || null,
-          processed_at: new Date().toISOString()
-        })
-        .eq('id', requestId);
+        .rpc('sql', {
+          query: `
+            UPDATE skip_requests 
+            SET 
+              status = '${action === 'approve' ? 'approved' : 'rejected'}',
+              admin_comment = ${adminComment ? `'${adminComment.replace(/'/g, "''")}'` : 'NULL'},
+              processed_at = NOW()
+            WHERE id = ${parseInt(requestId)}
+          `
+        });
 
       if (updateError) {
         console.error("Error updating skip request:", updateError);
@@ -450,23 +462,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If approved, update the prayer slot
       if (action === 'approve') {
         const skipEndDate = new Date();
-        skipEndDate.setDate(skipEndDate.getDate() + skipRequest.skip_days);
+        skipEndDate.setDate(skipEndDate.getDate() + request.skip_days);
 
         const { error: slotError } = await supabaseAdmin
-          .from('prayer_slots')
-          .update({
-            status: 'skipped',
-            skip_start_date: new Date().toISOString(),
-            skip_end_date: skipEndDate.toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', skipRequest.user_id);
+          .rpc('sql', {
+            query: `
+              UPDATE prayer_slots 
+              SET 
+                status = 'skipped',
+                skip_start_date = NOW(),
+                skip_end_date = '${skipEndDate.toISOString()}',
+                updated_at = NOW()
+              WHERE user_id = '${request.user_id}'
+            `
+          });
 
         if (slotError) {
           console.error("Error updating prayer slot:", slotError);
           return res.status(500).json({ error: "Failed to update prayer slot" });
         }
       }
+
+      console.log(`Skip request ${requestId} ${action} successfully`);
 
       res.json({ 
         success: true, 
