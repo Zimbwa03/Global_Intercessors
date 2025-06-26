@@ -333,6 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/skip-requests", async (req: Request, res: Response) => {
     try {
       console.log('Admin fetching all skip requests...');
+      console.log('Using supabaseAdmin for skip requests query');
       
       const { data: requests, error } = await supabaseAdmin
         .from('skip_requests')
@@ -341,6 +342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (error) {
         console.error("Error fetching skip requests:", error);
+        console.error("Error details:", JSON.stringify(error, null, 2));
         return res.status(500).json({ 
           error: "Failed to fetch skip requests",
           details: error.message 
@@ -348,7 +350,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`Found ${requests?.length || 0} skip requests for admin`);
-      console.log('Sample skip request data:', requests?.[0]);
+      if (requests && requests.length > 0) {
+        console.log('Sample skip request data:', JSON.stringify(requests[0], null, 2));
+      } else {
+        console.log('No skip requests found in database');
+        
+        // Let's also try to check if the table exists by attempting a count
+        const { count, error: countError } = await supabaseAdmin
+          .from('skip_requests')
+          .select('*', { count: 'exact', head: true });
+          
+        if (countError) {
+          console.error('Error checking skip_requests table:', countError);
+        } else {
+          console.log('Skip requests table count:', count);
+        }
+      }
       
       res.json(requests || []);
     } catch (error) {

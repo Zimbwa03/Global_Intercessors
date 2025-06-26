@@ -114,6 +114,19 @@ export const updates = pgTable("updates", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Skip requests table for managing prayer slot skip requests
+export const skipRequests = pgTable("skip_requests", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  userEmail: text("user_email").notNull(),
+  skipDays: integer("skip_days").notNull(),
+  reason: text("reason").notNull(),
+  status: text("status").notNull().default("pending"), // "pending", "approved", "rejected"
+  adminComment: text("admin_comment"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  processedAt: timestamp("processed_at"),
+});
+
 export const insertPrayerSlotSchema = createInsertSchema(prayerSlots).omit({
   id: true,
   createdAt: true,
@@ -154,6 +167,11 @@ export const insertUpdatesSchema = createInsertSchema(updates).omit({
   createdAt: true,
 });
 
+export const insertSkipRequestSchema = createInsertSchema(skipRequests).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type PrayerSlot = typeof prayerSlots.$inferSelect;
 export type InsertPrayerSlot = z.infer<typeof insertPrayerSlotSchema>;
 export type AvailableSlot = typeof availableSlots.$inferSelect;
@@ -170,3 +188,5 @@ export type FastingRegistration = typeof fastingRegistrations.$inferSelect;
 export type InsertFastingRegistration = z.infer<typeof insertFastingRegistrationSchema>;
 export type Updates = typeof updates.$inferSelect;
 export type InsertUpdates = z.infer<typeof insertUpdatesSchema>;
+export type SkipRequest = typeof skipRequests.$inferSelect;
+export type InsertSkipRequest = z.infer<typeof insertSkipRequestSchema>;
