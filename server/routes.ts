@@ -388,18 +388,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (directError) {
             console.error("Direct query also failed:", directError);
             
-            // Last resort: disable RLS temporarily for this query
-            console.log('Trying query with RLS bypass...');
+            // Use the SQL function we created to bypass RLS
+            console.log('Trying query with service function...');
             const { data: rlsRequests, error: rlsError } = await supabaseAdmin
-              .rpc('sql', {
-                query: `
-                  SET row_security = off;
-                  SELECT id, user_id::text, user_email, skip_days, reason, status, admin_comment, created_at, processed_at 
-                  FROM skip_requests 
-                  ORDER BY created_at DESC;
-                  SET row_security = on;
-                `
-              });
+              .rpc('get_all_skip_requests_admin');
 
             if (rlsError) {
               console.error("RLS bypass failed:", rlsError);
@@ -455,38 +447,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get the skip request using service role to bypass RLS
       const { data: skipRequest, error: fetchError } = await supabaseAdmin
-        .rpc('sql', {
-          query: `SELECT * FROM skip_requests WHERE id = ${parseInt(requestId)} LIMIT 1`
-        });
+        .from('skip_requests')
+        .select('*')
+        .eq('id', parseInt(requestId))
+        .single();
 
       if (fetchError) {
         console.error("Error fetching skip request:", fetchError);
         return res.status(500).json({ error: "Failed to fetch skip request" });
       }
 
-      if (!skipRequest || skipRequest.length === 0) {
+      if (!skipRequest) {
         console.error("Skip request not found:", requestId);
         return res.status(404).json({ error: "Skip request not found" });
       }
 
-      const request = skipRequest[0];
+      const request = skipRequest;
 
       if (request.status !== 'pending') {
         return res.status(400).json({ error: "Skip request has already been processed" });
       }
 
-      // Update the skip request status using raw SQL to bypass RLS
+      // Update the skip request status using service role to bypass RLS
       const { error: updateError } = await supabaseAdmin
-        .rpc('sql', {
-          query: `
-            UPDATE skip_requests 
-            SET 
-              status = '${action === 'approve' ? 'approved' : 'rejected'}',
-              admin_comment = ${adminComment ? `'${adminComment.replace(/'/g, "''")}'` : 'NULL'},
-              processed_at = NOW()
-            WHERE id = ${parseInt(requestId)}
-          `
-        });
+        .from('skip_requests')
+        .update({
+          status: action === 'approve' ? 'approved' : 'rejected',
+          admin_comment: adminComment || null,
+          processed_at: new Date().toISOString()
+        })
+        .eq('id', parseInt(requestId));
 
       if (updateError) {
         console.error("Error updating skip request:", updateError);
@@ -499,17 +489,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         skipEndDate.setDate(skipEndDate.getDate() + request.skip_days);
 
         const { error: slotError } = await supabaseAdmin
-          .rpc('sql', {
-            query: `
-              UPDATE prayer_slots 
-              SET 
-                status = 'skipped',
-                skip_start_date = NOW(),
-                skip_end_date = '${skipEndDate.toISOString()}',
-                updated_at = NOW()
-              WHERE user_id = '${request.user_id}'
-            `
-          });
+          .from('prayer_slots')
+          .update({
+            status: 'skipped',
+            skip_start_date: new Date().toISOString(),
+            skip_end_date: skipEndDate.toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', request.user_id);
 
         if (slotError) {
           console.error("Error updating prayer slot:", slotError);
