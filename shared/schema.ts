@@ -127,6 +127,56 @@ export const skipRequests = pgTable("skip_requests", {
   processedAt: timestamp("processed_at"),
 });
 
+// Prayer Journey data for personalized visualizations
+export const prayerJourney = pgTable("prayer_journey", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  journeyType: text("journey_type").notNull(), // "milestone", "reflection", "insight", "breakthrough"
+  title: text("title").notNull(),
+  description: text("description"),
+  emotionalState: text("emotional_state"), // "joyful", "peaceful", "grateful", "seeking", "troubled", "hopeful"
+  prayerFocus: text("prayer_focus"), // "thanksgiving", "petition", "intercession", "praise", "confession"
+  scriptureMeditation: text("scripture_meditation"),
+  personalNotes: text("personal_notes"),
+  isPrivate: boolean("is_private").default(true),
+  tags: text("tags").array(), // ["family", "health", "ministry", "guidance", etc.]
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Prayer goals and spiritual milestones
+export const prayerGoals = pgTable("prayer_goals", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  goalType: text("goal_type").notNull(), // "attendance", "consistency", "duration", "scripture_reading", "fasting"
+  title: text("title").notNull(),
+  description: text("description"),
+  targetValue: integer("target_value"), // days, minutes, chapters, etc.
+  currentValue: integer("current_value").default(0),
+  targetDate: timestamp("target_date"),
+  status: text("status").notNull().default("active"), // "active", "completed", "paused", "cancelled"
+  isCompleted: boolean("is_completed").default(false),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Daily spiritual insights and growth tracking
+export const spiritualInsights = pgTable("spiritual_insights", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  insightDate: timestamp("insight_date").notNull(),
+  gratitudeNote: text("gratitude_note"),
+  prayerRequest: text("prayer_request"),
+  answeredPrayer: text("answered_prayer"),
+  spiritualGrowthArea: text("spiritual_growth_area"), // "faith", "patience", "love", "wisdom", "forgiveness"
+  bibleVerse: text("bible_verse"),
+  personalReflection: text("personal_reflection"),
+  moodRating: integer("mood_rating"), // 1-10 scale
+  faithLevel: integer("faith_level"), // 1-10 scale
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertPrayerSlotSchema = createInsertSchema(prayerSlots).omit({
   id: true,
   createdAt: true,
@@ -172,6 +222,23 @@ export const insertSkipRequestSchema = createInsertSchema(skipRequests).omit({
   createdAt: true,
 });
 
+export const insertPrayerJourneySchema = createInsertSchema(prayerJourney).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPrayerGoalsSchema = createInsertSchema(prayerGoals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSpiritualInsightsSchema = createInsertSchema(spiritualInsights).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type PrayerSlot = typeof prayerSlots.$inferSelect;
 export type InsertPrayerSlot = z.infer<typeof insertPrayerSlotSchema>;
 export type AvailableSlot = typeof availableSlots.$inferSelect;
@@ -190,3 +257,9 @@ export type Updates = typeof updates.$inferSelect;
 export type InsertUpdates = z.infer<typeof insertUpdatesSchema>;
 export type SkipRequest = typeof skipRequests.$inferSelect;
 export type InsertSkipRequest = z.infer<typeof insertSkipRequestSchema>;
+export type PrayerJourney = typeof prayerJourney.$inferSelect;
+export type InsertPrayerJourney = z.infer<typeof insertPrayerJourneySchema>;
+export type PrayerGoals = typeof prayerGoals.$inferSelect;
+export type InsertPrayerGoals = z.infer<typeof insertPrayerGoalsSchema>;
+export type SpiritualInsights = typeof spiritualInsights.$inferSelect;
+export type InsertSpiritualInsights = z.infer<typeof insertSpiritualInsightsSchema>;
