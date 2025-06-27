@@ -445,17 +445,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Action must be 'approve' or 'reject'" });
       }
 
-      // Get the skip request using service role to bypass RLS
-      const { data: skipRequest, error: fetchError } = await supabaseAdmin
-        .from('skip_requests')
-        .select('*')
-        .eq('id', parseInt(requestId))
-        .single();
-
+      // Get the skip request using service function to bypass RLS
+      const { data: skipRequestArray, error: fetchError } = await supabaseAdmin
+        .rpc('get_all_skip_requests_admin');
+      
       if (fetchError) {
-        console.error("Error fetching skip request:", fetchError);
-        return res.status(500).json({ error: "Failed to fetch skip request" });
+        console.error("Error fetching skip requests:", fetchError);
+        return res.status(500).json({ error: "Failed to fetch skip requests" });
       }
+
+      const skipRequest = skipRequestArray?.find((req: any) => req.id === parseInt(requestId));
 
       if (!skipRequest) {
         console.error("Skip request not found:", requestId);
@@ -1974,7 +1973,7 @@ Respond in JSON format as an array:
       ]);
 
       const csvContent = [csvHeaders, ...csvRows]
-        .map(row => row.map(field => `"${field}"`).join(','))
+        .map(row => row.map((field: any) => `"${field}"`).join(','))
         .join('\n');
 
       res.setHeader('Content-Type', 'text/csv');

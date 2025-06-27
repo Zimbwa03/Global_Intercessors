@@ -149,18 +149,6 @@ export default function AdminDashboard() {
     refetchOnWindowFocus: false
   });
 
-  // Fetch data allocation
-  const { data: dataAllocation = [], isLoading: dataAllocationLoading, refetch: refetchDataAllocation } = useQuery({
-    queryKey: ['admin-data-allocation', dataAllocationFilter.min, dataAllocationFilter.max],
-    queryFn: async () => {
-      const response = await fetch(`/api/admin/data-allocation?minAttendance=${dataAllocationFilter.min}&maxAttendance=${dataAllocationFilter.max}`);
-      if (!response.ok) throw new Error('Failed to fetch data allocation');
-      return response.json();
-    },
-    enabled: !!adminUser && activeTab === 'data-allocation',
-    refetchOnWindowFocus: false
-  });
-
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [newUpdate, setNewUpdate] = useState({ 
     title: "", 
@@ -177,6 +165,18 @@ export default function AdminDashboard() {
   const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'excellent' | 'good' | 'needs-improvement'>('all');
   const [sortOrder, setSortOrder] = useState<'highest' | 'lowest' | 'alphabetical'>('highest');
   const [dataAllocationFilter, setDataAllocationFilter] = useState({ min: 0, max: 100 });
+
+  // Fetch data allocation
+  const { data: dataAllocation = [], isLoading: dataAllocationLoading, refetch: refetchDataAllocation } = useQuery({
+    queryKey: ['admin-data-allocation', dataAllocationFilter.min, dataAllocationFilter.max],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/data-allocation?minAttendance=${dataAllocationFilter.min}&maxAttendance=${dataAllocationFilter.max}`);
+      if (!response.ok) throw new Error('Failed to fetch data allocation');
+      return response.json();
+    },
+    enabled: !!adminUser && activeTab === 'data-allocation',
+    refetchOnWindowFocus: false
+  });
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -2531,6 +2531,169 @@ export default function AdminDashboard() {
                       ))
                     )}
                   </div>
+                </CardContent>
+              </Card>
+            ) : activeTab === 'data-allocation' ? (
+              <Card className="shadow-brand-lg border border-blue-100">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center shadow-brand">
+                        <Download className="w-5 h-5 text-brand-accent" />
+                      </div>
+                      <span className="font-poppins text-xl">Data Allocation by Attendance</span>
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="secondary">{dataAllocation.length} Intercessors</Badge>
+                      <Button
+                        onClick={() => refetchDataAllocation()}
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center"
+                      >
+                        <RefreshCw className="w-4 h-4 mr-1" />
+                        Refresh
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {/* Attendance Filter Controls */}
+                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex flex-col md:flex-row md:items-center gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="min-attendance">Min Attendance %:</Label>
+                          <Input
+                            id="min-attendance"
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={dataAllocationFilter.min}
+                            onChange={(e) => setDataAllocationFilter(prev => ({ ...prev, min: parseInt(e.target.value) || 0 }))}
+                            className="w-20"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="max-attendance">Max Attendance %:</Label>
+                          <Input
+                            id="max-attendance"
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={dataAllocationFilter.max}
+                            onChange={(e) => setDataAllocationFilter(prev => ({ ...prev, max: parseInt(e.target.value) || 100 }))}
+                            className="w-20"
+                          />
+                        </div>
+                        <Button
+                          onClick={() => refetchDataAllocation()}
+                          size="sm"
+                          className="bg-brand-primary hover:bg-brand-primary/90"
+                        >
+                          Apply Filter
+                        </Button>
+                      </div>
+                      <div className="flex-1"></div>
+                      <Button
+                        onClick={() => {
+                          window.open(`/api/admin/data-allocation/download?minAttendance=${dataAllocationFilter.min}&maxAttendance=${dataAllocationFilter.max}`, '_blank');
+                          toast({
+                            title: "CSV Download Started",
+                            description: "Your intercessor data is being downloaded.",
+                          });
+                        }}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download CSV
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Data Allocation Table */}
+                  {dataAllocationLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+                      <p>Loading intercessor data...</p>
+                    </div>
+                  ) : dataAllocation.length > 0 ? (
+                    <ScrollArea className="h-96">
+                      <div className="space-y-4">
+                        {dataAllocation.map((intercessor: any, index: number) => (
+                          <div key={intercessor.user_id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center space-x-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold ${
+                                  intercessor.attendance_percentage >= 90 ? 'bg-green-500' :
+                                  intercessor.attendance_percentage >= 70 ? 'bg-yellow-500' : 'bg-red-500'
+                                }`}>
+                                  {index + 1}
+                                </div>
+                                <div>
+                                  <p className="font-semibold">{intercessor.full_name}</p>
+                                  <p className="text-sm text-gray-600">{intercessor.email}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="flex flex-col items-end">
+                                  <Badge 
+                                    variant={intercessor.attendance_percentage >= 90 ? 'default' : 
+                                             intercessor.attendance_percentage >= 70 ? 'secondary' : 'destructive'}
+                                    className={
+                                      intercessor.attendance_percentage >= 90 ? 'bg-green-500 text-white' :
+                                      intercessor.attendance_percentage >= 70 ? 'bg-yellow-500 text-white' :
+                                      'bg-red-500 text-white'
+                                    }
+                                  >
+                                    {intercessor.attendance_percentage}%
+                                  </Badge>
+                                  <span className="text-xs text-gray-500 mt-1">
+                                    {intercessor.attendance_percentage >= 90 ? 'Excellent' :
+                                     intercessor.attendance_percentage >= 70 ? 'Good' :
+                                     'Needs Improvement'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                              <div className="flex items-center text-gray-600">
+                                <Phone className="w-4 h-4 mr-2" />
+                                {intercessor.phone_number}
+                              </div>
+                              <div className="flex items-center text-gray-600">
+                                <Clock className="w-4 h-4 mr-2" />
+                                {intercessor.prayer_slot}
+                              </div>
+                              <div className="flex items-center text-gray-600">
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                {intercessor.attended_days}/{intercessor.total_days} days
+                              </div>
+                              <div className="flex items-center text-gray-600">
+                                <Calendar className="w-4 h-4 mr-2" />
+                                Joined: {new Date(intercessor.joined_date).toLocaleDateString()}
+                              </div>
+                            </div>
+
+                            {intercessor.last_attended && (
+                              <div className="mt-2 text-xs text-gray-500">
+                                Last attended: {new Date(intercessor.last_attended).toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  ) : (
+                    <div className="text-center py-12">
+                      <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600 font-medium">No intercessors found</p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Try adjusting the attendance percentage filter to see more results
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ) : (
