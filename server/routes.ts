@@ -1432,6 +1432,27 @@ Guidelines:
           
           return res.json({ verses: versesWithReferences });
 
+        case 'verse':
+          // Get individual verse content
+          if (!bibleId || !query) {
+            return res.status(400).json({ error: "bibleId and verse ID (query) parameters are required" });
+          }
+          
+          const verseResponse = await fetch(`${baseUrl}/bibles/${bibleId}/verses/${query}`, { headers });
+          if (!verseResponse.ok) {
+            throw new Error(`API.Bible error: ${verseResponse.status}`);
+          }
+          const verseData = await verseResponse.json();
+          
+          const verse = verseData.data;
+          const formattedVerse = {
+            ...verse,
+            text: verse.content ? verse.content.replace(/<[^>]*>/g, '').trim() : '',
+            reference: verse.reference
+          };
+          
+          return res.json({ verse: formattedVerse });
+
         case 'search':
           // Search verses by keyword/phrase
           if (!bibleId || !query) {
@@ -1447,14 +1468,21 @@ Guidelines:
           }
           const searchData = await searchResponse.json();
           
-          // Format search results with proper references
+          // Format search results - API.Bible returns 'passages' not 'verses'
+          const passages = searchData.data.passages || [];
           const formattedResults = {
-            verses: searchData.data.verses.map((verse: any) => ({
-              ...verse,
-              reference: verse.reference || `${verse.chapterId?.replace('.', ' ')}:${verse.verseNumber}`
+            verses: passages.map((passage: any) => ({
+              id: passage.id,
+              orgId: passage.orgId,
+              bibleId: passage.bibleId,
+              bookId: passage.bookId,
+              reference: passage.reference,
+              content: passage.content,
+              verseCount: passage.verseCount,
+              text: passage.content ? passage.content.replace(/<[^>]*>/g, '').trim() : '' // Strip HTML tags
             })),
             query: query,
-            total: searchData.data.total || searchData.data.verses.length
+            total: passages.length
           };
           
           return res.json({ results: formattedResults });
