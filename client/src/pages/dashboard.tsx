@@ -10,7 +10,7 @@ import { UpdatesAnnouncements } from "@/components/dashboard/updates-announcemen
 import { AIPrayerAssistant } from "@/components/dashboard/ai-prayer-assistant";
 import { SlotCoverageMonitor } from "@/components/dashboard/slot-coverage-monitor";
 import { AIBibleChatbook } from "@/components/dashboard/ai-bible-chatbook";
-import { AIPrayerPlanner } from "@/components/dashboard/ai-prayer-planner";
+import { PrayerPlanner } from "@/components/dashboard/prayer-planner";
 import { AudioBiblePlayer } from "@/components/dashboard/audio-bible-player";
 import { NotificationSetup } from "@/components/dashboard/notification-setup";
 import { UserProfile } from "@/components/dashboard/user-profile";
@@ -140,7 +140,7 @@ export default function Dashboard() {
       case "bible-search":
         return <BibleVerseSearch />;
       case "prayer-planner":
-        return <AIPrayerPlanner />;
+        return <PrayerPlanner />;
       case "audio-bible":
         return (
           <AudioBiblePlayer
@@ -204,6 +204,7 @@ export default function Dashboard() {
               { id: "audio-bible", label: "Audio", icon: "fas fa-volume-up" },
               { id: "bible-chatbook", label: "Bible Chat", icon: "fas fa-book" },
               { id: "bible-search", label: "Search", icon: "fas fa-search" },
+              { id: "prayer-planner", label: "Planner", icon: "fas fa-calendar-check" },
             ].map((item) => (
               <button
                 key={item.id}
