@@ -1425,10 +1425,15 @@ Guidelines:
           const versesData = await versesResponse.json();
           
           // Add reference information to each verse
-          const versesWithReferences = versesData.data.map((verse: any) => ({
-            ...verse,
-            reference: `${verse.chapterId.replace('.', ' ')}:${verse.verseNumber}`
-          }));
+          const versesWithReferences = versesData.data.map((verse: any) => {
+            // Extract verse number from verse ID (e.g., "JHN.14.28" -> "28")
+            const verseNumber = verse.id.split('.').pop();
+            return {
+              ...verse,
+              verseNumber: verseNumber,
+              reference: `${verse.chapterId.replace('.', ' ')}:${verseNumber}`
+            };
+          });
           
           return res.json({ verses: versesWithReferences });
 

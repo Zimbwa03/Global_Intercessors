@@ -49,6 +49,7 @@ interface BibleVerse {
   content: string;
   verseNumber: string;
   reference?: string;
+  text?: string;
 }
 
 interface SearchResult {
@@ -140,13 +141,27 @@ export function BibleVerseSearch() {
     }
   }, [bibles, selectedBible]);
 
+  // Fetch verse content when verse is selected
+  const { data: verseContent, isLoading: verseLoading } = useQuery({
+    queryKey: ['bible-verse-content', selectedBible, selectedVerse],
+    queryFn: async () => {
+      const response = await fetch(`/api/bible-verse?action=verse&bibleId=${selectedBible}&query=${selectedVerse}`);
+      if (!response.ok) throw new Error('Failed to fetch verse content');
+      const data = await response.json();
+      return data.verse as BibleVerse;
+    },
+    enabled: !!(selectedBible && selectedVerse)
+  });
+
   // Get current verse when verse is selected
   useEffect(() => {
-    if (verses && selectedVerse) {
+    if (verseContent) {
+      setCurrentVerse(verseContent);
+    } else if (verses && selectedVerse) {
       const verse = verses.find(v => v.id === selectedVerse);
       setCurrentVerse(verse || null);
     }
-  }, [verses, selectedVerse]);
+  }, [verses, selectedVerse, verseContent]);
 
   const handleSearch = () => {
     if (!searchQuery.trim()) {
@@ -470,9 +485,16 @@ export function BibleVerseSearch() {
                 </Button>
               </div>
             </div>
-            <blockquote className="text-lg leading-relaxed text-gray-800 italic border-l-4 border-brand-primary pl-4">
-              "{currentVerse.content}"
-            </blockquote>
+            {verseLoading ? (
+              <div className="flex items-center space-x-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Loading verse content...</span>
+              </div>
+            ) : (
+              <blockquote className="text-lg leading-relaxed text-gray-800 italic border-l-4 border-brand-primary pl-4">
+                "{currentVerse.text || currentVerse.content || 'Verse content not available'}"
+              </blockquote>
+            )}
           </CardContent>
         </Card>
       )}
@@ -526,7 +548,7 @@ export function BibleVerseSearch() {
                       </div>
                     </div>
                     <p className="text-gray-700 leading-relaxed">
-                      "{verse.content}"
+                      "{verse.text || verse.content || 'Verse content not available'}"
                     </p>
                   </motion.div>
                 ))}
