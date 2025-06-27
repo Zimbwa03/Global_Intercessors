@@ -137,6 +137,8 @@ export default function Dashboard() {
         return <AIPrayerAssistant />;
       case "bible-chatbook":
         return <AIBibleChatbook />;
+      case "bible-search":
+        return <BibleVerseSearch />;
       case "prayer-planner":
         return <AIPrayerPlanner />;
       case "audio-bible":
@@ -201,6 +203,7 @@ export default function Dashboard() {
               { id: "prayer-journey", label: "Journey", icon: "fas fa-route" },
               { id: "audio-bible", label: "Audio", icon: "fas fa-volume-up" },
               { id: "bible-chatbook", label: "Bible Chat", icon: "fas fa-book" },
+              { id: "bible-search", label: "Search", icon: "fas fa-search" },
             ].map((item) => (
               <button
                 key={item.id}
