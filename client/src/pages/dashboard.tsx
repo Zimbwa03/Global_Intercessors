@@ -15,6 +15,7 @@ import { AudioBiblePlayer } from "@/components/dashboard/audio-bible-player";
 import { NotificationSetup } from "@/components/dashboard/notification-setup";
 import { UserProfile } from "@/components/dashboard/user-profile";
 import { PrayerJourneyVisualizer } from "@/components/dashboard/prayer-journey-visualizer";
+import { BibleVerseSearch } from "@/components/dashboard/bible-verse-search";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { notificationService } from "@/lib/notificationService";

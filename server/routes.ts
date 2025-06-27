@@ -1345,22 +1345,133 @@ Guidelines:
     }
   }
 
-  // Bible Verse Search Endpoint
+  // Enhanced Bible Verse Search Endpoint with API.Bible integration
   app.get("/api/bible-verse", async (req: Request, res: Response) => {
-    try {
-      const { phrase, version = 'NIV', chapter, verse } = req.query;
+    const { action, phrase, version = "KJV", chapter, verse, bibleId, bookId, chapterId, query } = req.query;
 
-      if (!phrase) {
-        return res.status(400).json({ error: "Phrase is required" });
+    try {
+      const bibleApiKey = process.env.BIBLE_API;
+      if (!bibleApiKey) {
+        console.error("Bible API key not found in environment variables");
+        return res.status(500).json({ error: "Bible API key not configured. Please add BIBLE_API to your secrets." });
       }
 
-      console.log('Bible verse search request:', { phrase, version, chapter, verse });
+      const baseUrl = 'https://api.scripture.api.bible/v1';
+      const headers = {
+        'api-key': bibleApiKey,
+        'Content-Type': 'application/json'
+      };
 
-      // Call the handler function
-      await handleBibleVerseSearch(req, res, phrase as string, version as string, chapter as string | undefined, verse as string | undefined);
+      console.log('Bible API request:', { action, bibleId, bookId, chapterId, query });
+
+      switch (action) {
+        case 'bibles':
+          // Get list of available Bibles
+          const biblesResponse = await fetch(`${baseUrl}/bibles`, { headers });
+          if (!biblesResponse.ok) {
+            throw new Error(`API.Bible error: ${biblesResponse.status}`);
+          }
+          const biblesData = await biblesResponse.json();
+          
+          // Filter for English Bibles and popular versions
+          const filteredBibles = biblesData.data.filter((bible: any) => 
+            bible.language.id === 'eng' && 
+            (bible.abbreviation.includes('KJV') || 
+             bible.abbreviation.includes('NIV') || 
+             bible.abbreviation.includes('ESV') || 
+             bible.abbreviation.includes('NASB') ||
+             bible.abbreviation.includes('NLT') ||
+             bible.abbreviation.includes('CSB'))
+          );
+
+          return res.json({ bibles: filteredBibles });
+
+        case 'books':
+          // Get books for a specific Bible
+          if (!bibleId) {
+            return res.status(400).json({ error: "bibleId parameter is required" });
+          }
+          
+          const booksResponse = await fetch(`${baseUrl}/bibles/${bibleId}/books`, { headers });
+          if (!booksResponse.ok) {
+            throw new Error(`API.Bible error: ${booksResponse.status}`);
+          }
+          const booksData = await booksResponse.json();
+          return res.json({ books: booksData.data });
+
+        case 'chapters':
+          // Get chapters for a specific book
+          if (!bibleId || !bookId) {
+            return res.status(400).json({ error: "bibleId and bookId parameters are required" });
+          }
+          
+          const chaptersResponse = await fetch(`${baseUrl}/bibles/${bibleId}/books/${bookId}/chapters`, { headers });
+          if (!chaptersResponse.ok) {
+            throw new Error(`API.Bible error: ${chaptersResponse.status}`);
+          }
+          const chaptersData = await chaptersResponse.json();
+          return res.json({ chapters: chaptersData.data });
+
+        case 'verses':
+          // Get verses for a specific chapter
+          if (!bibleId || !chapterId) {
+            return res.status(400).json({ error: "bibleId and chapterId parameters are required" });
+          }
+          
+          const versesResponse = await fetch(`${baseUrl}/bibles/${bibleId}/chapters/${chapterId}/verses`, { headers });
+          if (!versesResponse.ok) {
+            throw new Error(`API.Bible error: ${versesResponse.status}`);
+          }
+          const versesData = await versesResponse.json();
+          
+          // Add reference information to each verse
+          const versesWithReferences = versesData.data.map((verse: any) => ({
+            ...verse,
+            reference: `${verse.chapterId.replace('.', ' ')}:${verse.verseNumber}`
+          }));
+          
+          return res.json({ verses: versesWithReferences });
+
+        case 'search':
+          // Search verses by keyword/phrase
+          if (!bibleId || !query) {
+            return res.status(400).json({ error: "bibleId and query parameters are required" });
+          }
+          
+          const searchResponse = await fetch(
+            `${baseUrl}/bibles/${bibleId}/search?query=${encodeURIComponent(query as string)}`, 
+            { headers }
+          );
+          if (!searchResponse.ok) {
+            throw new Error(`API.Bible error: ${searchResponse.status}`);
+          }
+          const searchData = await searchResponse.json();
+          
+          // Format search results with proper references
+          const formattedResults = {
+            verses: searchData.data.verses.map((verse: any) => ({
+              ...verse,
+              reference: verse.reference || `${verse.chapterId?.replace('.', ' ')}:${verse.verseNumber}`
+            })),
+            query: query,
+            total: searchData.data.total || searchData.data.verses.length
+          };
+          
+          return res.json({ results: formattedResults });
+
+        default:
+          // Legacy support for existing Bible verse search
+          if (!phrase) {
+            return res.status(400).json({ error: "Phrase parameter is required for legacy search" });
+          }
+          await handleBibleVerseSearch(req, res, phrase as string, version as string, chapter as string, verse as string);
+      }
     } catch (error) {
-      console.error('Bible verse search route error:', error);
-      res.status(500).json({ error: 'Failed to process Bible verse search' });
+      console.error('Bible API error:', error);
+      res.status(500).json({ 
+        error: 'Failed to fetch Bible data',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 

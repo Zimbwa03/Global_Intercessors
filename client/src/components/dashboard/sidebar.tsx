@@ -20,6 +20,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, isMobile
     { id: "updates", label: "Updates", icon: "fas fa-bullhorn" },
     { id: "audio-bible", label: "Audio Bible", icon: "fas fa-volume-up" },
     { id: "bible-chatbook", label: "Bible Chatbook", icon: "fas fa-book" },
+    { id: "bible-search", label: "Bible Search", icon: "fas fa-search" },
     { id: "prayer-planner", label: "Prayer Planner", icon: "fas fa-heart" },
   ];
 
