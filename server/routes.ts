@@ -2365,5 +2365,192 @@ Respond in JSON format as an array:
     };
   }
 
+  // Enhanced Prayer Planner API Endpoints
+  
+  // Get daily prayer plan
+  app.get("/api/prayer-planner/daily", async (req: Request, res: Response) => {
+    try {
+      const { date } = req.query;
+      
+      if (!date) {
+        return res.status(400).json({ error: "Date parameter is required" });
+      }
+
+      // For now, return mock data structure until database schema is implemented
+      const mockPrayerPlan = {
+        id: `plan-${date}`,
+        date: date as string,
+        prayerPoints: [],
+        totalPoints: 0,
+        completedPoints: 0
+      };
+
+      res.json(mockPrayerPlan);
+    } catch (error) {
+      console.error('Error fetching daily prayer plan:', error);
+      res.status(500).json({ error: 'Failed to fetch prayer plan' });
+    }
+  });
+
+  // Create new prayer point
+  app.post("/api/prayer-planner/points", async (req: Request, res: Response) => {
+    try {
+      const { title, content, notes, category, date } = req.body;
+
+      if (!title || !content || !category || !date) {
+        return res.status(400).json({ error: "Title, content, category, and date are required" });
+      }
+
+      // Mock response until database implementation
+      const newPoint = {
+        id: `point-${Date.now()}`,
+        title,
+        content,
+        notes: notes || "",
+        category,
+        isCompleted: false,
+        createdAt: new Date().toISOString(),
+        order: 1
+      };
+
+      res.json({ 
+        success: true, 
+        point: newPoint,
+        message: "Prayer point created successfully" 
+      });
+    } catch (error) {
+      console.error('Error creating prayer point:', error);
+      res.status(500).json({ error: 'Failed to create prayer point' });
+    }
+  });
+
+  // Update prayer point
+  app.put("/api/prayer-planner/points/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      // Mock response until database implementation
+      res.json({ 
+        success: true, 
+        message: "Prayer point updated successfully",
+        pointId: id,
+        updates
+      });
+    } catch (error) {
+      console.error('Error updating prayer point:', error);
+      res.status(500).json({ error: 'Failed to update prayer point' });
+    }
+  });
+
+  // Delete prayer point
+  app.delete("/api/prayer-planner/points/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      // Mock response until database implementation
+      res.json({ 
+        success: true, 
+        message: "Prayer point deleted successfully",
+        pointId: id
+      });
+    } catch (error) {
+      console.error('Error deleting prayer point:', error);
+      res.status(500).json({ error: 'Failed to delete prayer point' });
+    }
+  });
+
+  // AI Assistant for prayer point generation
+  app.post("/api/prayer-planner/ai-assist", async (req: Request, res: Response) => {
+    try {
+      const { prompt, category } = req.body;
+
+      if (!prompt) {
+        return res.status(400).json({ error: "Prompt is required" });
+      }
+
+      const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
+      if (!deepSeekApiKey) {
+        return res.status(500).json({ 
+          error: "DeepSeek API key not configured. Please add DEEPSEEK_API_KEY to your secrets."
+        });
+      }
+
+      console.log('AI Prayer Assistant request:', { prompt, category });
+
+      const systemPrompt = `You are DeepSeek Assistant, a helpful AI companion for Christian intercessors. 
+      
+Your task is to help generate meaningful prayer points based on the user's request. 
+
+Create a structured prayer point that includes:
+1. A clear, specific title
+2. Detailed prayer content with guidance on how to pray
+3. A relevant Bible verse to support the prayer
+4. An explanation of the spiritual significance
+
+Category context: ${category || 'general prayer'}
+User request: ${prompt}
+
+Please respond in JSON format:
+{
+  "title": "Clear, specific prayer point title",
+  "content": "Detailed prayer content with specific guidance on how to pray about this topic",
+  "bibleVerse": "Relevant Bible verse text",
+  "reference": "Bible verse reference (Book Chapter:Verse)",
+  "explanation": "Brief explanation of the spiritual significance and why this prayer matters"
+}
+
+Make it personal, biblical, and actionable for intercession.`;
+
+      const response = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${deepSeekApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`DeepSeek API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices[0]?.message?.content;
+
+      if (!aiResponse) {
+        throw new Error('No response from DeepSeek API');
+      }
+
+      try {
+        const parsedResponse = JSON.parse(aiResponse);
+        res.json(parsedResponse);
+      } catch (parseError) {
+        // Fallback response if JSON parsing fails
+        res.json({
+          title: "AI-Generated Prayer Point",
+          content: aiResponse,
+          bibleVerse: "The Lord is near to all who call on him, to all who call on him in truth.",
+          reference: "Psalm 145:18",
+          explanation: "This prayer point was generated to help guide your intercession time with specific focus and biblical foundation."
+        });
+      }
+    } catch (error) {
+      console.error('AI Prayer Assistant error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate AI prayer assistance',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   return httpServer;
 }
