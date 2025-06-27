@@ -1443,18 +1443,29 @@ Guidelines:
             return res.status(400).json({ error: "bibleId and verse ID (query) parameters are required" });
           }
           
+          console.log('Fetching verse:', `${baseUrl}/bibles/${bibleId}/verses/${query}`);
+          
           const verseResponse = await fetch(`${baseUrl}/bibles/${bibleId}/verses/${query}`, { headers });
           if (!verseResponse.ok) {
+            console.error(`API.Bible verse error: ${verseResponse.status}`);
             throw new Error(`API.Bible error: ${verseResponse.status}`);
           }
           const verseData = await verseResponse.json();
           
+          console.log('Individual verse API response:', JSON.stringify(verseData, null, 2));
+          
           const verse = verseData.data;
+          const cleanContent = verse.content ? verse.content.replace(/<[^>]*>/g, '').trim() : '';
+          
           const formattedVerse = {
             ...verse,
-            text: verse.content ? verse.content.replace(/<[^>]*>/g, '').trim() : '',
-            reference: verse.reference
+            text: cleanContent || 'Verse content not available',
+            content: verse.content,
+            reference: verse.reference,
+            verseNumber: verse.id ? verse.id.split('.').pop() : verse.verseNumber
           };
+          
+          console.log('Formatted verse response:', formattedVerse);
           
           return res.json({ verse: formattedVerse });
 

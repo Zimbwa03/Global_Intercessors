@@ -159,7 +159,18 @@ export function BibleVerseSearch() {
       setCurrentVerse(verseContent);
     } else if (verses && selectedVerse) {
       const verse = verses.find(v => v.id === selectedVerse);
-      setCurrentVerse(verse || null);
+      if (verse) {
+        // Clean the content and ensure we have text
+        const cleanedVerse = {
+          ...verse,
+          text: verse.content ? verse.content.replace(/<[^>]*>/g, '').trim() : 
+                verse.text ? verse.text.replace(/<[^>]*>/g, '').trim() : 
+                'Verse content not available'
+        };
+        setCurrentVerse(cleanedVerse);
+      } else {
+        setCurrentVerse(null);
+      }
     }
   }, [verses, selectedVerse, verseContent]);
 
@@ -492,7 +503,7 @@ export function BibleVerseSearch() {
               </div>
             ) : (
               <blockquote className="text-lg leading-relaxed text-gray-800 italic border-l-4 border-brand-primary pl-4">
-                "{currentVerse.text || currentVerse.content || 'Verse content not available'}"
+                "{currentVerse.text || (currentVerse.content ? currentVerse.content.replace(/<[^>]*>/g, '').trim() : 'Verse content not available')}"
               </blockquote>
             )}
           </CardContent>
