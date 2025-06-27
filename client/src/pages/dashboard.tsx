@@ -14,6 +14,7 @@ import { AIPrayerPlanner } from "@/components/dashboard/ai-prayer-planner";
 import { AudioBiblePlayer } from "@/components/dashboard/audio-bible-player";
 import { NotificationSetup } from "@/components/dashboard/notification-setup";
 import { UserProfile } from "@/components/dashboard/user-profile";
+import { PrayerJourneyVisualizer } from "@/components/dashboard/prayer-journey-visualizer";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { notificationService } from "@/lib/notificationService";
@@ -127,6 +128,8 @@ export default function Dashboard() {
         return <DashboardOverview userEmail={user.email} />;
       case "prayer-slot":
         return <PrayerSlotManagement userEmail={user.email} />;
+      case "prayer-journey":
+        return <PrayerJourneyVisualizer userId={user.id} />;
       case "updates":
         return <UpdatesAnnouncements />;
       case "ai-assistant":
@@ -194,6 +197,7 @@ export default function Dashboard() {
             {[
               { id: "dashboard", label: "Dashboard", icon: "fas fa-home" },
               { id: "prayer-slot", label: "Prayer", icon: "fas fa-clock" },
+              { id: "prayer-journey", label: "Journey", icon: "fas fa-route" },
               { id: "audio-bible", label: "Audio", icon: "fas fa-volume-up" },
               { id: "bible-chatbook", label: "Bible Chat", icon: "fas fa-book" },
             ].map((item) => (
