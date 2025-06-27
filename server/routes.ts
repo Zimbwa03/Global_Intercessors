@@ -1465,7 +1465,7 @@ Guidelines:
           }
           
           const searchResponse = await fetch(
-            `${baseUrl}/bibles/${bibleId}/search?query=${encodeURIComponent(query as string)}`, 
+            `${baseUrl}/bibles/${bibleId}/search?query=${encodeURIComponent(query as string)}&limit=50`, 
             { headers }
           );
           if (!searchResponse.ok) {
@@ -1473,21 +1473,48 @@ Guidelines:
           }
           const searchData = await searchResponse.json();
           
-          // Format search results - API.Bible returns 'passages' not 'verses'
-          const passages = searchData.data.passages || [];
+          console.log('Search API response:', JSON.stringify(searchData, null, 2));
+          
+          // API.Bible returns different structures - check for both 'verses' and 'passages'
+          let searchResults = [];
+          
+          if (searchData.data) {
+            // Try verses first (newer API format)
+            if (searchData.data.verses && Array.isArray(searchData.data.verses)) {
+              searchResults = searchData.data.verses;
+            }
+            // Fallback to passages (older API format)  
+            else if (searchData.data.passages && Array.isArray(searchData.data.passages)) {
+              searchResults = searchData.data.passages;
+            }
+            // Direct data array
+            else if (Array.isArray(searchData.data)) {
+              searchResults = searchData.data;
+            }
+          }
+          
+          console.log('Found search results:', searchResults.length);
+          
           const formattedResults = {
-            verses: passages.map((passage: any) => ({
-              id: passage.id,
-              orgId: passage.orgId,
-              bibleId: passage.bibleId,
-              bookId: passage.bookId,
-              reference: passage.reference,
-              content: passage.content,
-              verseCount: passage.verseCount,
-              text: passage.content ? passage.content.replace(/<[^>]*>/g, '').trim() : '' // Strip HTML tags
-            })),
+            verses: searchResults.map((item: any) => {
+              // Clean HTML tags from content
+              const cleanContent = item.content ? item.content.replace(/<[^>]*>/g, '').trim() : '';
+              
+              return {
+                id: item.id || item.verseId,
+                orgId: item.orgId,
+                bibleId: item.bibleId || bibleId,
+                bookId: item.bookId,
+                chapterId: item.chapterId,
+                reference: item.reference,
+                content: item.content,
+                verseCount: item.verseCount,
+                verseNumber: item.verseNumber,
+                text: cleanContent
+              };
+            }),
             query: query,
-            total: passages.length
+            total: searchResults.length
           };
           
           return res.json({ results: formattedResults });
