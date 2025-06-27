@@ -1860,5 +1860,131 @@ Respond in JSON format as an array:
     }
   });
 
+  // Admin: Data Allocation - Get intercessor data with attendance filtering
+  app.get("/api/admin/data-allocation", async (req: Request, res: Response) => {
+    try {
+      const { minAttendance = 0, maxAttendance = 100 } = req.query;
+      
+      console.log('Fetching data allocation with attendance filter:', { minAttendance, maxAttendance });
+
+      // Get all prayer slots with user information
+      const { data: prayerSlots, error: slotsError } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*')
+        .eq('status', 'active');
+
+      if (slotsError) {
+        console.error("Error fetching prayer slots:", slotsError);
+        return res.status(500).json({ error: "Failed to fetch prayer slots" });
+      }
+
+      // Get all attendance records
+      const { data: attendanceRecords, error: attendanceError } = await supabaseAdmin
+        .from('attendance_log')
+        .select('*')
+        .gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]); // Last 30 days
+
+      if (attendanceError) {
+        console.error("Error fetching attendance records:", attendanceError);
+        return res.status(500).json({ error: "Failed to fetch attendance records" });
+      }
+
+      // Process data for each intercessor
+      const intercessorData = [];
+      
+      for (const slot of prayerSlots || []) {
+        // Get user profile for additional information (phone, full name)
+        const { data: userProfile } = await supabaseAdmin
+          .from('user_profiles')
+          .select('*')
+          .eq('user_id', slot.user_id)
+          .single();
+
+        // Calculate attendance for this user over the last 30 days
+        const userAttendance = (attendanceRecords || []).filter(record => record.user_id === slot.user_id);
+        const totalDays = 30;
+        const attendedDays = userAttendance.filter(record => record.status === 'attended').length;
+        const attendancePercentage = totalDays > 0 ? Math.round((attendedDays / totalDays) * 100) : 0;
+
+        // Apply attendance filter
+        if (attendancePercentage >= parseInt(minAttendance as string) && 
+            attendancePercentage <= parseInt(maxAttendance as string)) {
+          
+          intercessorData.push({
+            user_id: slot.user_id,
+            email: slot.user_email,
+            prayer_slot: slot.slot_time,
+            full_name: userProfile?.full_name || 'Not provided',
+            phone_number: userProfile?.phone_number || 'Not provided',
+            attendance_percentage: attendancePercentage,
+            attended_days: attendedDays,
+            total_days: totalDays,
+            current_status: slot.status,
+            joined_date: slot.created_at,
+            last_attended: userAttendance.length > 0 ? 
+              userAttendance.filter(r => r.status === 'attended')
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]?.date : null
+          });
+        }
+      }
+
+      // Sort by attendance percentage (highest first)
+      intercessorData.sort((a, b) => b.attendance_percentage - a.attendance_percentage);
+
+      console.log(`Found ${intercessorData.length} intercessors matching criteria`);
+      res.json(intercessorData);
+    } catch (error) {
+      console.error("Error in data allocation:", error);
+      res.status(500).json({ error: "Failed to fetch data allocation" });
+    }
+  });
+
+  // Admin: Download CSV for data allocation
+  app.get("/api/admin/data-allocation/download", async (req: Request, res: Response) => {
+    try {
+      const { minAttendance = 0, maxAttendance = 100 } = req.query;
+
+      // Get the same data as the regular endpoint
+      const response = await fetch(`http://localhost:5000/api/admin/data-allocation?minAttendance=${minAttendance}&maxAttendance=${maxAttendance}`);
+      const intercessorData = await response.json();
+
+      // Create CSV content
+      const csvHeaders = [
+        'Full Name',
+        'Email',
+        'Phone Number',
+        'Prayer Slot',
+        'Attendance Percentage',
+        'Days Attended (30 days)',
+        'Current Status',
+        'Joined Date',
+        'Last Attended'
+      ];
+
+      const csvRows = intercessorData.map((intercessor: any) => [
+        intercessor.full_name,
+        intercessor.email,
+        intercessor.phone_number,
+        intercessor.prayer_slot,
+        `${intercessor.attendance_percentage}%`,
+        `${intercessor.attended_days}/${intercessor.total_days}`,
+        intercessor.current_status,
+        new Date(intercessor.joined_date).toLocaleDateString(),
+        intercessor.last_attended ? new Date(intercessor.last_attended).toLocaleDateString() : 'Never'
+      ]);
+
+      const csvContent = [csvHeaders, ...csvRows]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="intercessor-data-${minAttendance}-${maxAttendance}percent-${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send(csvContent);
+    } catch (error) {
+      console.error("Error generating CSV:", error);
+      res.status(500).json({ error: "Failed to generate CSV" });
+    }
+  });
+
   return httpServer;
 }

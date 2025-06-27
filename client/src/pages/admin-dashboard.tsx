@@ -148,6 +148,19 @@ export default function AdminDashboard() {
     },
     refetchOnWindowFocus: false
   });
+
+  // Fetch data allocation
+  const { data: dataAllocation = [], isLoading: dataAllocationLoading, refetch: refetchDataAllocation } = useQuery({
+    queryKey: ['admin-data-allocation', dataAllocationFilter.min, dataAllocationFilter.max],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/data-allocation?minAttendance=${dataAllocationFilter.min}&maxAttendance=${dataAllocationFilter.max}`);
+      if (!response.ok) throw new Error('Failed to fetch data allocation');
+      return response.json();
+    },
+    enabled: !!adminUser && activeTab === 'data-allocation',
+    refetchOnWindowFocus: false
+  });
+
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [newUpdate, setNewUpdate] = useState({ 
     title: "", 
@@ -163,6 +176,7 @@ export default function AdminDashboard() {
   const [zoomLink, setZoomLink] = useState("");
   const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'excellent' | 'good' | 'needs-improvement'>('all');
   const [sortOrder, setSortOrder] = useState<'highest' | 'lowest' | 'alphabetical'>('highest');
+  const [dataAllocationFilter, setDataAllocationFilter] = useState({ min: 0, max: 100 });
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -2338,6 +2352,14 @@ export default function AdminDashboard() {
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Skip Requests
+            </Button>
+            <Button 
+              variant={activeTab === 'data-allocation' ? 'default' : 'ghost'} 
+              onClick={() => setActiveTab('data-allocation')}
+              className="flex-1"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Data Allocation
             </Button>
           </div>
         )}
