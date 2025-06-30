@@ -24,22 +24,82 @@ CREATE TABLE IF NOT EXISTS prayer_plans (
 -- =====================================================
 -- 2. PRAYER POINTS TABLE
 -- =====================================================
-CREATE TABLE IF NOT EXISTS prayer_points (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    prayer_plan_id UUID REFERENCES prayer_plans(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
-    content TEXT NOT NULL,
-    notes TEXT,
-    category VARCHAR(100) NOT NULL,
-    scripture_reference VARCHAR(100),
-    scripture_text TEXT,
-    is_completed BOOLEAN DEFAULT false,
-    order_position INTEGER NOT NULL DEFAULT 1,
-    estimated_duration INTEGER DEFAULT 5, -- minutes
-    priority_level VARCHAR(20) DEFAULT 'normal' CHECK (priority_level IN ('low', 'normal', 'high', 'urgent')),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- First check if prayer_points table exists and create/modify as needed
+DO $$
+BEGIN
+    -- Create the table if it doesn't exist
+    IF NOT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'prayer_points') THEN
+        CREATE TABLE prayer_points (
+            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+            prayer_plan_id UUID NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            content TEXT NOT NULL,
+            notes TEXT,
+            category VARCHAR(100) NOT NULL,
+            scripture_reference VARCHAR(100),
+            scripture_text TEXT,
+            is_completed BOOLEAN DEFAULT false,
+            order_position INTEGER NOT NULL DEFAULT 1,
+            estimated_duration INTEGER DEFAULT 5, -- minutes
+            priority_level VARCHAR(20) DEFAULT 'normal' CHECK (priority_level IN ('low', 'normal', 'high', 'urgent')),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+    ELSE
+        -- Add missing columns if table exists but columns don't
+        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='prayer_plan_id') THEN
+            ALTER TABLE prayer_points ADD COLUMN prayer_plan_id UUID NOT NULL;
+        END IF;
+        
+        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='title') THEN
+            ALTER TABLE prayer_points ADD COLUMN title VARCHAR(255) NOT NULL;
+        END IF;
+        
+        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='content') THEN
+            ALTER TABLE prayer_points ADD COLUMN content TEXT NOT NULL;
+        END IF;
+        
+        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='notes') THEN
+            ALTER TABLE prayer_points ADD COLUMN notes TEXT;
+        END IF;
+        
+        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='category') THEN
+            ALTER TABLE prayer_points ADD COLUMN category VARCHAR(100) NOT NULL;
+        END IF;
+        
+        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='scripture_reference') THEN
+            ALTER TABLE prayer_points ADD COLUMN scripture_reference VARCHAR(100);
+        END IF;
+        
+        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='scripture_text') THEN
+            ALTER TABLE prayer_points ADD COLUMN scripture_text TEXT;
+        END IF;
+        
+        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='is_completed') THEN
+            ALTER TABLE prayer_points ADD COLUMN is_completed BOOLEAN DEFAULT false;
+        END IF;
+        
+        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='order_position') THEN
+            ALTER TABLE prayer_points ADD COLUMN order_position INTEGER NOT NULL DEFAULT 1;
+        END IF;
+        
+        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='estimated_duration') THEN
+            ALTER TABLE prayer_points ADD COLUMN estimated_duration INTEGER DEFAULT 5;
+        END IF;
+        
+        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='priority_level') THEN
+            ALTER TABLE prayer_points ADD COLUMN priority_level VARCHAR(20) DEFAULT 'normal' CHECK (priority_level IN ('low', 'normal', 'high', 'urgent'));
+        END IF;
+        
+        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='created_at') THEN
+            ALTER TABLE prayer_points ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+        END IF;
+        
+        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='updated_at') THEN
+            ALTER TABLE prayer_points ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+        END IF;
+    END IF;
+END $$;
 
 -- =====================================================
 -- 3. PRAYER CATEGORIES TABLE
@@ -104,6 +164,24 @@ CREATE TABLE IF NOT EXISTS ai_prayer_assistance (
     feedback TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- =====================================================
+-- ADD FOREIGN KEY CONSTRAINTS (After all tables are created)
+-- =====================================================
+-- Add foreign key constraint for prayer_points -> prayer_plans
+DO $$
+BEGIN
+    -- Check if foreign key constraint already exists
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'fk_prayer_points_plan_id' 
+        AND table_name = 'prayer_points'
+    ) THEN
+        ALTER TABLE prayer_points 
+        ADD CONSTRAINT fk_prayer_points_plan_id 
+        FOREIGN KEY (prayer_plan_id) REFERENCES prayer_plans(id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
 -- =====================================================
 -- INDEXES FOR PERFORMANCE
