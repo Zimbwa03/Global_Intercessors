@@ -24,81 +24,87 @@ CREATE TABLE IF NOT EXISTS prayer_plans (
 -- =====================================================
 -- 2. PRAYER POINTS TABLE
 -- =====================================================
--- First check if prayer_points table exists and create/modify as needed
+CREATE TABLE IF NOT EXISTS prayer_points (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    prayer_plan_id UUID NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    notes TEXT,
+    category VARCHAR(100) NOT NULL,
+    scripture_reference VARCHAR(100),
+    scripture_text TEXT,
+    is_completed BOOLEAN DEFAULT false,
+    order_position INTEGER NOT NULL DEFAULT 1,
+    estimated_duration INTEGER DEFAULT 5, -- minutes
+    priority_level VARCHAR(20) DEFAULT 'normal' CHECK (priority_level IN ('low', 'normal', 'high', 'urgent')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Add missing columns to existing prayer_points table
 DO $$
 BEGIN
-    -- Create the table if it doesn't exist
-    IF NOT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'prayer_points') THEN
-        CREATE TABLE prayer_points (
-            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-            prayer_plan_id UUID NOT NULL,
-            title VARCHAR(255) NOT NULL,
-            content TEXT NOT NULL,
-            notes TEXT,
-            category VARCHAR(100) NOT NULL,
-            scripture_reference VARCHAR(100),
-            scripture_text TEXT,
-            is_completed BOOLEAN DEFAULT false,
-            order_position INTEGER NOT NULL DEFAULT 1,
-            estimated_duration INTEGER DEFAULT 5, -- minutes
-            priority_level VARCHAR(20) DEFAULT 'normal' CHECK (priority_level IN ('low', 'normal', 'high', 'urgent')),
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-        );
-    ELSE
-        -- Add missing columns if table exists but columns don't
-        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='prayer_plan_id') THEN
-            ALTER TABLE prayer_points ADD COLUMN prayer_plan_id UUID NOT NULL;
-        END IF;
-        
-        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='title') THEN
-            ALTER TABLE prayer_points ADD COLUMN title VARCHAR(255) NOT NULL;
-        END IF;
-        
-        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='content') THEN
-            ALTER TABLE prayer_points ADD COLUMN content TEXT NOT NULL;
-        END IF;
-        
-        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='notes') THEN
-            ALTER TABLE prayer_points ADD COLUMN notes TEXT;
-        END IF;
-        
-        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='category') THEN
-            ALTER TABLE prayer_points ADD COLUMN category VARCHAR(100) NOT NULL;
-        END IF;
-        
-        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='scripture_reference') THEN
-            ALTER TABLE prayer_points ADD COLUMN scripture_reference VARCHAR(100);
-        END IF;
-        
-        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='scripture_text') THEN
-            ALTER TABLE prayer_points ADD COLUMN scripture_text TEXT;
-        END IF;
-        
-        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='is_completed') THEN
-            ALTER TABLE prayer_points ADD COLUMN is_completed BOOLEAN DEFAULT false;
-        END IF;
-        
-        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='order_position') THEN
-            ALTER TABLE prayer_points ADD COLUMN order_position INTEGER NOT NULL DEFAULT 1;
-        END IF;
-        
-        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='estimated_duration') THEN
-            ALTER TABLE prayer_points ADD COLUMN estimated_duration INTEGER DEFAULT 5;
-        END IF;
-        
-        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='priority_level') THEN
-            ALTER TABLE prayer_points ADD COLUMN priority_level VARCHAR(20) DEFAULT 'normal' CHECK (priority_level IN ('low', 'normal', 'high', 'urgent'));
-        END IF;
-        
-        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='created_at') THEN
-            ALTER TABLE prayer_points ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
-        END IF;
-        
-        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='updated_at') THEN
-            ALTER TABLE prayer_points ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
-        END IF;
+    -- Add missing columns if they don't exist
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='prayer_plan_id') THEN
+        ALTER TABLE prayer_points ADD COLUMN prayer_plan_id UUID NOT NULL;
     END IF;
+    
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='title') THEN
+        ALTER TABLE prayer_points ADD COLUMN title VARCHAR(255) NOT NULL DEFAULT 'Untitled Prayer Point';
+    END IF;
+    
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='content') THEN
+        ALTER TABLE prayer_points ADD COLUMN content TEXT NOT NULL DEFAULT '';
+    END IF;
+    
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='notes') THEN
+        ALTER TABLE prayer_points ADD COLUMN notes TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='category') THEN
+        ALTER TABLE prayer_points ADD COLUMN category VARCHAR(100) NOT NULL DEFAULT 'general';
+    END IF;
+    
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='scripture_reference') THEN
+        ALTER TABLE prayer_points ADD COLUMN scripture_reference VARCHAR(100);
+    END IF;
+    
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='scripture_text') THEN
+        ALTER TABLE prayer_points ADD COLUMN scripture_text TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='is_completed') THEN
+        ALTER TABLE prayer_points ADD COLUMN is_completed BOOLEAN DEFAULT false;
+    END IF;
+    
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='order_position') THEN
+        ALTER TABLE prayer_points ADD COLUMN order_position INTEGER NOT NULL DEFAULT 1;
+    END IF;
+    
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='estimated_duration') THEN
+        ALTER TABLE prayer_points ADD COLUMN estimated_duration INTEGER DEFAULT 5;
+    END IF;
+    
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='priority_level') THEN
+        ALTER TABLE prayer_points ADD COLUMN priority_level VARCHAR(20) DEFAULT 'normal';
+        
+        -- Add constraint after column is created
+        ALTER TABLE prayer_points ADD CONSTRAINT prayer_points_priority_level_check 
+        CHECK (priority_level IN ('low', 'normal', 'high', 'urgent'));
+    END IF;
+    
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='created_at') THEN
+        ALTER TABLE prayer_points ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+    END IF;
+    
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='prayer_points' AND column_name='updated_at') THEN
+        ALTER TABLE prayer_points ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+    END IF;
+
+EXCEPTION
+    WHEN duplicate_object THEN
+        -- Constraint already exists, continue
+        NULL;
 END $$;
 
 -- =====================================================
