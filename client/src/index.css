@@ -3,51 +3,57 @@
 @tailwind utilities;
 
 :root {
-  --background: 220 20% 98%; /* #F9FAFB */
-  --foreground: 222 84% 5%; /* #111827 */
-  --muted: 220 14% 96%;
-  --muted-foreground: 215 16% 47%;
+  --background: 0 0% 100%; /* White #FFFFFF */
+  --foreground: 345 11% 14%; /* Dark Gray #231F20 */
+  --muted: 37 20% 95%; /* Light Gold tint */
+  --muted-foreground: 345 11% 35%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 84% 5%;
+  --popover-foreground: 345 11% 14%;
   --card: 0 0% 100%;
-  --card-foreground: 222 84% 5%;
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --primary: 214 88% 33%; /* #1E3A8A */
+  --card-foreground: 345 11% 14%;
+  --border: 37 20% 90%;
+  --input: 37 20% 95%;
+  --primary: 139 76% 16%; /* Deep Forest Green #104220 */
   --primary-foreground: 0 0% 100%;
-  --secondary: 214 95% 88%; /* #BFDBFE */
-  --secondary-foreground: 214 88% 33%;
-  --accent: 38 92% 58%; /* #FBBF24 */
-  --accent-foreground: 214 88% 33%;
+  --secondary: 37 50% 62%; /* Warm Gold #D2AA68 */
+  --secondary-foreground: 345 11% 14%;
+  --accent: 37 50% 62%; /* Warm Gold #D2AA68 */
+  --accent-foreground: 139 76% 16%;
   --destructive: 0 84% 60%;
-  --destructive-foreground: 60 9% 98%;
-  --ring: 214 88% 33%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 139 76% 16%;
   --radius: 0.75rem;
   
-  /* Custom brand colors */
-  --brand-primary: 214 88% 33%; /* #1E3A8A */
-  --brand-secondary: 214 95% 88%; /* #BFDBFE */
-  --brand-accent: 38 92% 58%; /* #FBBF24 */
-  --brand-background: 220 20% 98%; /* #F9FAFB */
-  --brand-text: 222 84% 5%; /* #111827 */
+  /* Global Intercessors Brand Colors */
+  --gi-primary: 139 76% 16%; /* Deep Forest Green #104220 */
+  --gi-gold: 37 50% 62%; /* Warm Gold #D2AA68 */
+  --gi-white: 0 0% 100%; /* White #FFFFFF */
+  --gi-dark: 345 11% 14%; /* Dark Gray #231F20 */
+  
+  /* Custom brand colors for compatibility */
+  --brand-primary: 139 76% 16%; /* #104220 */
+  --brand-secondary: 37 50% 62%; /* #D2AA68 */
+  --brand-accent: 37 50% 72%; /* Lighter gold for accents */
+  --brand-background: 0 0% 100%; /* #FFFFFF */
+  --brand-text: 345 11% 14%; /* #231F20 */
 }
 
 .dark {
-  --background: 222 84% 5%;
-  --foreground: 0 0% 98%;
-  --muted: 215 28% 17%;
-  --muted-foreground: 215 20% 65%;
-  --popover: 222 84% 5%;
+  --background: 345 11% 8%; /* Dark version of GI dark gray */
+  --foreground: 0 0% 98%; /* Light text */
+  --muted: 139 30% 15%; /* Dark green muted */
+  --muted-foreground: 37 20% 70%; /* Light gold text */
+  --popover: 345 11% 12%;
   --popover-foreground: 0 0% 98%;
-  --card: 222 84% 5%;
+  --card: 345 11% 10%;
   --card-foreground: 0 0% 98%;
-  --border: 215 28% 17%;
-  --input: 215 28% 17%;
-  --primary: 214 88% 33%;
+  --border: 139 30% 20%;
+  --input: 139 30% 15%;
+  --primary: 139 76% 26%; /* Lighter forest green for dark mode */
   --primary-foreground: 0 0% 100%;
-  --secondary: 215 28% 17%;
-  --secondary-foreground: 0 0% 98%;
-  --accent: 38 92% 58%;
+  --secondary: 37 50% 72%; /* Lighter gold for dark mode */
+  --secondary-foreground: 345 11% 14%;
+  --accent: 37 60% 75%; /* Bright gold accent for dark mode */
   --accent-foreground: 214 88% 33%;
   --destructive: 0 63% 31%;
   --destructive-foreground: 0 0% 98%;

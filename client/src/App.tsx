@@ -21,6 +21,7 @@ function Router() {
       <Route path="/prayer-slot-management" component={PrayerSlotManagement} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
+      <Route path="/admin" component={AdminDashboard} />
       <Route path="/create-admin" component={CreateAdmin} />
       <Route path="/bible-chat" component={BibleChatPage} />
       <Route path="/prayer-planner" component={PrayerPlanner} />

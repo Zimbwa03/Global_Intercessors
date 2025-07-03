@@ -61,6 +61,19 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Global Intercessors Brand Colors
+        "gi-primary": "hsl(var(--gi-primary))", // Deep Forest Green #104220
+        "gi-gold": "hsl(var(--gi-gold))", // Warm Gold #D2AA68
+        "gi-white": "hsl(var(--gi-white))", // White #FFFFFF
+        "gi-dark": "hsl(var(--gi-dark))", // Dark Gray #231F20
+        // Legacy brand colors for backward compatibility
+        brand: {
+          primary: "hsl(var(--brand-primary))",
+          secondary: "hsl(var(--brand-secondary))",
+          accent: "hsl(var(--brand-accent))",
+          background: "hsl(var(--brand-background))",
+          text: "hsl(var(--brand-text))",
+        },
       },
       keyframes: {
         "accordion-down": {
