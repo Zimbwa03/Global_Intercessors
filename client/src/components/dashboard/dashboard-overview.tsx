@@ -46,11 +46,11 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
     queryKey: ['attendance-stats', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      
+
       const response = await fetch(`/api/attendance/${user.id}?limit=100`);
       if (!response.ok) throw new Error('Failed to fetch attendance');
       const attendanceData = await response.json();
-      
+
       // Calculate sessions this month
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
@@ -66,15 +66,15 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
       const sortedAttendance = attendanceData
         .filter((record: any) => record.attended || record.status === 'attended')
         .sort((a: any, b: any) => new Date(b.date || b.created_at).getTime() - new Date(a.date || a.created_at).getTime());
-      
+
       if (sortedAttendance.length > 0) {
         const today = new Date();
         let checkDate = new Date(today);
-        
+
         for (const record of sortedAttendance) {
           const recordDate = new Date(record.date || record.created_at);
           const daysDiff = Math.floor((checkDate.getTime() - recordDate.getTime()) / (1000 * 60 * 60 * 24));
-          
+
           if (daysDiff === dayStreak) {
             dayStreak++;
             checkDate.setDate(checkDate.getDate() - 1);
@@ -100,7 +100,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
       const response = await fetch('/api/admin/analytics');
       if (!response.ok) throw new Error('Failed to fetch global stats');
       const analyticsData = await response.json();
-      
+
       return {
         totalIntercessors: analyticsData.intercessorStats.totalRegistered
       };
