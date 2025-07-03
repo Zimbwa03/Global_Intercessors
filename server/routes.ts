@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { supabaseAdmin } from "./supabase";
 import axios from "axios";
+import * as htmlPdf from 'html-pdf-node';
 
 // Helper function to clean AI responses from markdown formatting
 function cleanAIResponse(text: string): string {
@@ -2994,67 +2995,246 @@ Make it personal, biblical, and actionable for intercession.`;
       
       Format as structured text suitable for a professional report.`;
 
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "deepseek-chat",
-          messages: [
-            {
-              role: "system",
-              content: "You are a professional report writer specializing in prayer ministry analytics. Provide comprehensive, encouraging, and actionable insights."
+      let narrative = "Report narrative generated successfully.";
+      
+      // Try to get AI narrative, but continue if it fails
+      try {
+        const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
+        if (deepSeekApiKey) {
+          const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${deepSeekApiKey}`
             },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          max_tokens: 2000,
-          temperature: 0.7
-        })
-      });
+            body: JSON.stringify({
+              model: "deepseek-chat",
+              messages: [
+                {
+                  role: "system",
+                  content: "You are a professional report writer specializing in prayer ministry analytics. Provide comprehensive, encouraging, and actionable insights."
+                },
+                {
+                  role: "user",
+                  content: prompt
+                }
+              ],
+              max_tokens: 2000,
+              temperature: 0.7
+            })
+          });
 
-      if (!response.ok) {
-        throw new Error(`DeepSeek API error: ${response.status}`);
+          if (response.ok) {
+            const aiResponse = await response.json();
+            narrative = aiResponse.choices[0]?.message?.content || "Report narrative generated successfully.";
+          }
+        }
+      } catch (aiError) {
+        console.error('AI generation failed, using fallback:', aiError);
       }
 
-      const aiResponse = await response.json();
-      const narrative = aiResponse.choices[0]?.message?.content || "Report narrative generated successfully.";
+      // Create HTML content for PDF conversion
+      const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Global Intercessors Weekly Report</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 40px; 
+            line-height: 1.6; 
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #64748b;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            border-left: 4px solid #3b82f6;
+            background-color: #f8fafc;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 15px;
+        }
+        .metric {
+            display: inline-block;
+            margin: 10px 20px 10px 0;
+            padding: 10px 15px;
+            background-color: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #64748b;
+            display: block;
+        }
+        .metric-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e40af;
+        }
+        .daily-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .day-item {
+            text-align: center;
+            padding: 10px;
+            background-color: white;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        .intercessors-list {
+            columns: 2;
+            column-gap: 30px;
+            margin: 15px 0;
+        }
+        .intercessor-item {
+            break-inside: avoid;
+            margin: 5px 0;
+            padding: 5px 10px;
+            background-color: white;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+        }
+        .narrative {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">GLOBAL INTERCESSORS WEEKLY REPORT</div>
+        <div class="subtitle">${reportData.report_date}</div>
+    </div>
 
-      // For now, return the narrative as plain text
-      // In production, this would generate a PDF or PPTX file
-      res.setHeader('Content-Type', 'text/plain');
-      res.setHeader('Content-Disposition', 'attachment; filename="weekly-report.txt"');
+    <div class="section">
+        <div class="section-title">📊 Key Metrics</div>
+        <div class="metric">
+            <span class="metric-label">Total Coverage</span>
+            <span class="metric-value">${reportData.coverage_analysis.coverage_rate}%</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Weekly Change</span>
+            <span class="metric-value">${reportData.current_week.total_slots_covered - reportData.previous_week.total_slots_covered > 0 ? '+' : ''}${reportData.current_week.total_slots_covered - reportData.previous_week.total_slots_covered}</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Daily Average</span>
+            <span class="metric-value">${reportData.coverage_analysis.average_daily_coverage}</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Total Slots</span>
+            <span class="metric-value">${reportData.current_week.total_slots_covered}/${reportData.total_slots_available}</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">📅 Daily Coverage Breakdown</div>
+        <div class="daily-breakdown">
+            ${Object.entries(reportData.current_week.daily_coverage).map(([day, count]) => 
+              `<div class="day-item">
+                 <div style="font-weight: bold; color: #1e40af;">${day}</div>
+                 <div style="font-size: 16px; margin-top: 5px;">${count} slots</div>
+               </div>`
+            ).join('')}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">🙏 EFZ Prayer Program - Week ${reportData.efz_prayer_program.week_number}</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="background-color: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <h4 style="color: #1e40af; margin-top: 0;">Wednesday Session</h4>
+                <p><strong>Total Participants:</strong> ${reportData.efz_prayer_program.wednesday_session.participants}</p>
+                <p><strong>GI Participants:</strong> ${reportData.efz_prayer_program.wednesday_session.gi_participants}</p>
+                <p><strong>Participation Rate:</strong> ${reportData.efz_prayer_program.wednesday_session.participation_rate}</p>
+            </div>
+            <div style="background-color: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <h4 style="color: #1e40af; margin-top: 0;">Sunday Session</h4>
+                <p><strong>Total Participants:</strong> ${reportData.efz_prayer_program.sunday_session.participants}</p>
+                <p><strong>GI Participants:</strong> ${reportData.efz_prayer_program.sunday_session.gi_participants}</p>
+                <p><strong>Participation Rate:</strong> ${reportData.efz_prayer_program.sunday_session.participation_rate}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">⭐ Consistent Intercessors</div>
+        <div class="intercessors-list">
+            ${reportData.platform_manning_consistent_intercessors.map((name: string) => 
+              `<div class="intercessor-item">${name}</div>`
+            ).join('')}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">📝 Analysis & Insights</div>
+        <div class="narrative">${narrative}</div>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px; color: #64748b; font-size: 12px;">
+        Generated on: ${new Date().toLocaleString()}
+    </div>
+</body>
+</html>`;
+
+      // Generate PDF from HTML
+      const options = { 
+        format: 'A4',
+        margin: {
+          top: '20mm',
+          bottom: '20mm',
+          left: '15mm',
+          right: '15mm'
+        }
+      };
       
-      const fullReport = `
-GLOBAL INTERCESSORS WEEKLY REPORT
-${reportData.report_date}
-=====================================
-
-${narrative}
-
-RAW DATA:
----------
-Total Coverage: ${reportData.coverage_analysis.coverage_rate}% (${reportData.current_week.total_slots_covered}/${reportData.total_slots_available})
-Weekly Change: ${reportData.current_week.total_slots_covered - reportData.previous_week.total_slots_covered} slots
-Average Daily Coverage: ${reportData.coverage_analysis.average_daily_coverage} slots
-Total Variance: ${reportData.coverage_analysis.total_variance} uncovered slots
-
-DAILY BREAKDOWN:
-${Object.entries(reportData.current_week.daily_coverage).map(([day, count]) => 
-  `${day}: ${count} slots`
-).join('\n')}
-
-CONSISTENT INTERCESSORS:
-${reportData.platform_manning_consistent_intercessors.join(', ')}
-
-Generated on: ${new Date().toISOString()}
-      `;
+      const file = { content: htmlContent };
       
-      res.send(fullReport);
+      try {
+        const pdfBuffer = await htmlPdf.generatePdf(file, options);
+        
+        // Set proper PDF headers
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="Global_Intercessors_Weekly_Report_${reportData.report_date.replace(/\s+/g, '_')}.pdf"`);
+        
+        // Send the actual PDF buffer
+        res.send(pdfBuffer);
+      } catch (pdfError) {
+        console.error('PDF generation failed:', pdfError);
+        
+        // Fallback to HTML download if PDF generation fails
+        res.setHeader('Content-Type', 'text/html');
+        res.setHeader('Content-Disposition', `attachment; filename="Global_Intercessors_Weekly_Report_${reportData.report_date.replace(/\s+/g, '_')}.html"`);
+        res.send(htmlContent);
+      }
+      
     } catch (error) {
       console.error('Error generating weekly report:', error);
       res.status(500).json({ error: 'Failed to generate weekly report' });
