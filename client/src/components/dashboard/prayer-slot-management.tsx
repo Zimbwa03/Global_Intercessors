@@ -267,6 +267,45 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     },
   });
 
+  // Manual attendance logging mutation
+  const logAttendanceMutation = useMutation({
+    mutationFn: async ({ duration }: { duration: number }) => {
+      if (!user?.id || !user?.email) throw new Error('User not authenticated');
+
+      const response = await fetch('/api/attendance/manual-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          userEmail: user.email,
+          duration: duration
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to log attendance');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Attendance Logged",
+        description: `Successfully logged ${data.data.duration} minutes of prayer for ${data.data.slotTime}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to log attendance. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Change slot mutation
   const changeSlotMutation = useMutation({
     mutationFn: async (data: { newSlotTime: string; userEmail?: string }) => {
@@ -636,6 +675,20 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                       >
                         <Users className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
                         {isMobile ? 'Join Zoom' : 'Join Zoom Meeting'}
+                      </Button>
+                    )}
+
+                    {/* Manual Attendance Logging Button */}
+                    {prayerSlot.status === 'active' && (
+                      <Button
+                        onClick={() => logAttendanceMutation.mutate({ duration: 20 })}
+                        disabled={logAttendanceMutation.isPending}
+                        className={`bg-blue-600 hover:bg-blue-700 text-white font-poppins ${
+                          isMobile ? 'h-12 text-sm' : ''
+                        }`}
+                      >
+                        <CheckCircle2 className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                        {logAttendanceMutation.isPending ? 'Logging...' : (isMobile ? 'Log Prayer' : 'Log Prayer Attendance')}
                       </Button>
                     )}
 

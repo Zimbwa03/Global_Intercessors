@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { supabaseAdmin } from "./supabase";
+import axios from "axios";
 
 // Helper function to clean AI responses from markdown formatting
 function cleanAIResponse(text: string): string {
@@ -1875,7 +1876,6 @@ Respond in JSON format as an array:
       }
 
       // Try to get access token
-      const axios = require('axios');
       const tokenResponse = await axios.post('https://zoom.us/oauth/token', 
         `grant_type=account_credentials&account_id=${accountId}`,
         {
@@ -1953,6 +1953,92 @@ Respond in JSON format as an array:
         details: error.response?.data || error.message,
         suggestion: "Check your Zoom credentials in the Secrets tab"
       });
+    }
+  });
+
+  // Manual attendance logging endpoint
+  app.post("/api/attendance/manual-log", async (req: Request, res: Response) => {
+    try {
+      const { userId, userEmail, duration } = req.body;
+      
+      if (!userId || !userEmail) {
+        return res.status(400).json({ error: "User ID and email are required" });
+      }
+
+      console.log(`📝 Manual attendance request: ${userEmail} (${duration || 20} minutes)`);
+      console.log(`🔍 Looking for prayer slot with user_id: ${userId}`);
+
+      // Use direct table access with service role key to bypass RLS
+      const { data: prayerSlot, error: slotError } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .limit(1)
+        .single();
+
+      console.log('📊 Prayer slot direct query result:', { prayerSlot, slotError });
+
+      if (slotError || !prayerSlot) {
+        console.log('❌ No active prayer slot found:', slotError?.message || 'No data returned');
+        return res.status(404).json({ error: "No active prayer slot found" });
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const sessionDuration = duration || 20;
+      const sessionStart = new Date(now.getTime() - (sessionDuration * 60 * 1000));
+
+      // Log attendance
+      const attendanceData = {
+        user_id: userId,
+        slot_id: prayerSlot.id,
+        date: today,
+        status: 'attended',
+        zoom_join_time: sessionStart,
+        zoom_leave_time: now,
+        zoom_meeting_id: `manual_${Date.now()}`
+      };
+
+      const { error: attendanceError } = await supabaseAdmin
+        .from('attendance_log')
+        .upsert(attendanceData, { 
+          onConflict: 'user_id,date',
+          ignoreDuplicates: false 
+        });
+
+      if (attendanceError) {
+        console.error('Error logging attendance:', attendanceError);
+        return res.status(500).json({ error: "Failed to log attendance" });
+      }
+
+      // Reset missed count and update last attended
+      const { error: updateError } = await supabaseAdmin
+        .from('prayer_slots')
+        .update({
+          missed_count: 0,
+          last_attended: now.toISOString()
+        })
+        .eq('id', prayerSlot.id);
+
+      if (updateError) {
+        console.error('Error updating prayer slot:', updateError);
+      }
+
+      console.log(`✅ Manual attendance logged for ${userEmail} - ${sessionDuration} minutes`);
+      
+      res.json({ 
+        success: true, 
+        message: "Manual attendance logged successfully",
+        data: { 
+          duration: sessionDuration, 
+          date: today,
+          slotTime: prayerSlot.slot_time
+        }
+      });
+    } catch (error) {
+      console.error('Error processing manual attendance:', error);
+      res.status(500).json({ error: "Failed to process manual attendance" });
     }
   });
 

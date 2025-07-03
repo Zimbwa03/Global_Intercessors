@@ -99,9 +99,8 @@ class ZoomAttendanceTracker {
   // Main attendance processing function
   private async processAttendance() {
     try {
-      if (!this.zoomToken) {
-        await this.getAccessToken();
-      }
+      // Always refresh token before processing to ensure it's valid
+      await this.getAccessToken();
     } catch (error) {
       console.error('Failed to get Zoom access token:', error);
       return;
@@ -175,6 +174,36 @@ class ZoomAttendanceTracker {
         url: error.config?.url,
         params: error.config?.params
       });
+      
+      // If token is expired, try to refresh it once
+      if (error.response?.status === 401 && error.response?.data?.code === 124) {
+        console.log('🔄 Token expired, attempting to refresh...');
+        try {
+          await this.getAccessToken();
+          // Retry the request with new token
+          const retryResponse = await axios.get(
+            `https://api.zoom.us/v2/users/me/meetings`,
+            {
+              headers: {
+                Authorization: `Bearer ${this.zoomToken}`,
+                'Content-Type': 'application/json'
+              },
+              params: {
+                type: 'previous_meetings',
+                from: dayjs().subtract(7, 'day').format('YYYY-MM-DD'),
+                to: dayjs().format('YYYY-MM-DD'),
+                page_size: 300
+              }
+            }
+          );
+          console.log('✅ Token refresh successful, retry completed');
+          return retryResponse.data.meetings || [];
+        } catch (refreshError) {
+          console.error('❌ Token refresh failed:', refreshError);
+          return [];
+        }
+      }
+      
       return [];
     }
   }
