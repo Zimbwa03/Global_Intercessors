@@ -216,7 +216,7 @@ export default function AdminLogin() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gi-primary/600 hover:bg-gi-primary/700 text-white"
+              className="w-full hover:bg-gi-primary/700 text-white bg-[#104220f7]"
             >
               {isLoading ? (
                 <>
