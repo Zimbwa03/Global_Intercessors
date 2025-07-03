@@ -1,0 +1,241 @@
+# Replit AI Prompt for Global Intercessors Weekly Report Application
+
+## Project Title
+
+Global Intercessors Weekly Prayer Report Application
+
+## Project Goal
+
+Develop a web application that provides interactive analytics and generates weekly reports for the Global Intercessors prayer platform, mirroring the structure and content of their existing PowerPoint reports. The application should be user-friendly and visually appealing.
+
+## Key Features
+
+1.  **Dashboard/Home Page**: A landing page displaying key highlights from the most recent weekly report.
+2.  **Analytics Tab**: An interactive section with visualizations of weekly prayer participation data.
+3.  **Report Tab**: A section to generate and download comprehensive weekly reports.
+
+## Technical Stack Recommendations
+
+*   **Frontend**: React.js for a dynamic and responsive user interface.
+*   **Backend**: Flask (Python) for handling data processing and report generation logic.
+*   **Charting Library**: Chart.js or Plotly.js for creating interactive and customizable charts.
+*   **Report Generation**: Python libraries such as `python-pptx` for PowerPoint generation or `ReportLab`/`fpdf2` for PDF generation, depending on the desired output format. Given the original document is PPTX, `python-pptx` is preferred.
+
+## Data Structure (Example for a single week's data)
+
+Assume the weekly data will be provided in a structured format, similar to the following JSON:
+
+```json
+{
+  "report_date": "16-22 June 2025",
+  "total_slots_available": 336,
+  "current_week": {
+    "total_slots_covered": 238,
+    "daily_coverage": {
+      "Monday": 35,
+      "Tuesday": 32,
+      "Wednesday": 30,
+      "Thursday": 39,
+      "Friday": 34,
+      "Saturday": 30,
+      "Sunday": 35
+    }
+  },
+  "previous_week": {
+    "total_slots_covered": 242,
+    "daily_coverage": {
+      "Monday": 43,
+      "Tuesday": 30,
+      "Wednesday": 30,
+      "Thursday": 30,
+      "Friday": 30,
+      "Saturday": 25,
+      "Sunday": 25
+    }
+  },
+  "efz_prayer_program": {
+    "week_number": 11,
+    "wednesday_session": {
+      "participants": 22,
+      "gi_participants": 13,
+      "participation_rate": "59%",
+      "decline_from_last_week": "28%"
+    },
+    "sunday_session": {
+      "participants": 21,
+      "gi_participants": 17,
+      "participation_rate": "77%"
+    }
+  },
+  "platform_manning_consistent_intercessors": [
+    "Ms. Nyarai Seda",
+    "Mrs. Ruth Sango",
+    "Ms. Petronella Maramba",
+    "Mr. Joseph Muleya",
+    "Ms. Susan Mashiri",
+    "Mr. Nyasha Mungure",
+    "Mrs. Lisa Ncube",
+    "Mr. Kimberly Mukupe",
+    "Ms Blessing Mawereza",
+    "Ms. Shanissi Mutanga",
+    "Mr. Godknows Mugaduyi",
+    "Ms. Blessing Siboniso",
+    "Ms. Marrymore Matewe",
+    "Mr. Tawanda Mubako",
+    "Ms. Vimbai Debwe",
+    "Dr. Rejoice Nharaunda",
+    "Ms. Bethel Mutyandaedza"
+  ],
+  "gi_weekly_meeting_mrs_m": {
+    "testimonies": [
+      {
+        "name": "Mr. Panashe Pemhiwa",
+        "summary": "Reflected on the importance of prayer and fasting, especially in areas like marriage, business, and calling. Shared how, after a prayer fast, he was chosen to lead a geomatics engineering project for a smart city development in Zimbabwe. Engaged in national and international platforms, including dialogue with the Botswana ambassador. Organizing a “Warm the Elderly” initiative, with churches contributing to clothe elderly people in need. Was selected to help direct and speak at a major upcoming National Youth Empowerment Conference. Expressed gratitude for spiritual leaders like Pastor Pilani who continuously encourage and equip young people."
+      },
+      {
+        "name": "Ms. Nyarai Seda",
+        "summary": "Shared a word from 2 Thessalonians 1:6–7, emphasizing that God sees suffering and promises relief. It was a message of hope for those going through long seasons of hardship."
+      },
+      {
+        "name": "Pastor Petronella Maramba",
+        "summary": "Testified of experiencing a series of financial breakthroughs. Obedience in giving even when it felt uncomfortable, led her to unexpected provision. She also shared a personal project of rural development (rehabilitating a road and bridge) that began with faith and small steps but has gained momentum through God's favor."
+      },
+      {
+        "name": "Ms. Cecilia Sakatira",
+        "summary": "Shared how their work with refugees is rooted in biblical values, particularly God’s call to justice and care for the oppressed. Despite working with people of different faiths, the goal is holistic restoration of body, soul, and spirit. This Christ-centered approach drew attention and collaboration interest from global institutions like UNHCR and various embassies."
+      }
+    ],
+    "mrs_m_message": "Mrs. M emphasized that Jesus Christ is the center of everything. According to Mrs. M “It’s not about our title or mission—it's all about Jesus. He is the center, the reason, the truth, and the one who holds all things together.” She warned against idolizing biblical characters or structures. All Scripture points to Jesus. Mrs. M mentioned that Jesus Christ is the foundation, fulfillment, and essence of both the Old and New Testaments. Drawing from Ephesians 2:20, she emphasized that Christ is not only the cornerstone but also the embodiment of the fivefold ministry—apostle, prophet, evangelist, pastor, and teacher. These roles are not rooted in human titles but are found fully in Him. Mrs. M emphasized the importance of discernment, urging that all teachings and ministries be evaluated through the Spirit of Christ rather than through emotional attachment or cultural loyalty. Mrs. M encouraged all the intercessors to immerse themselves deeply in the Word not for memory, but transformation. She mentioned that the Word must be foundational in both prayer and life."
+  },
+  "young_global_intercessors_workshop": {
+    "dates": "June 17 to 19",
+    "participants": 52,
+    "location": "Management Training Bureau (MTB)",
+    "teachers": [
+      "Pastor Petronella Maramba",
+      "Pastor Philani Nyatsanza",
+      "Pastor Munashe Zvarimwa",
+      "Mrs. Paula Chipfuyamiti",
+      "Mr. Ruramai Mataranyika",
+      "Ms. Ottilia Chidavaenzi"
+    ],
+    "facilitators": [
+      "Mrs. Paida Mudzengerere",
+      "Ms. Nyarai Seda",
+      "Mr. Godknows Mugaduyi"
+    ],
+    "objectives": [
+      "Reiterate founding values and vision of Higherlife Foundation(HLF) and Global Intercessors (GI) to the young people.",
+      "To emphasize the importance of prayer, faith and the Word and how integrate it into their daily lives, in principle and practice.",
+      "Equip students to prioritize prayer and intercession and become influential in shaping a prayer-focused culture within their tertiary and community settings, through participation in YGI and Y&D activities.",
+      "Empower YGI leaders to drive positive change within their respective institutions and communities.",
+      "Educate individuals on the roles and responsibilities of YGI Coordinator and the YGI structure."
+    ]
+  },
+  "next_steps": [
+    "Develop a Dashboard which details the GIs who take up their slots for posting in the Group.",
+    "Prepare for the prayer retreat.",
+    "Look for prayer leaders to take up prayer sessions on the EFZ platform during the month of July."
+  ],
+  "calendar_of_events": [
+    "12 July International Day of Hope",
+    "15 July World Youth Skills Day",
+    "18 July Nelson Mandela International Day"
+  ]
+}
+```
+
+## Application Flow
+
+1.  **Data Ingestion**: The application should be able to ingest weekly report data (initially from the provided JSON structure, with potential for future integration with Excel/PPTX parsing).
+2.  **Dashboard Display**: The home page should dynamically display key metrics and summaries from the latest ingested data.
+3.  **Analytics Visualization**: The Analytics tab should render interactive charts based on the daily and weekly participation data. The charts should be clear, concise, and easy to interpret.
+4.  **Report Generation**: The Report tab should have a button to trigger the generation of a new report. This report should be structured similarly to the provided PowerPoint, populating the content with the latest data. The report should be downloadable.
+
+## Design and Styling
+
+*   **Visual Consistency**: The application's design should align with the existing PowerPoint's aesthetic (e.g., color scheme, font choices, and overall professional yet spiritual tone).
+*   **User Experience**: The interface should be intuitive and easy to navigate for users who may not be technically proficient.
+
+## Replit AI Specific Instructions
+
+*   **Project Setup**: Set up a React frontend and Flask backend within the Replit environment.
+*   **Dependencies**: Install necessary libraries for React, Flask, charting, and report generation.
+*   **Placeholder Data**: Use the provided JSON data structure as initial placeholder data for development. The application should be designed to easily switch to real-time data or other data sources in the future.
+*   **Deepseek AI Integration**: Integrate Deepseek AI for generating the textual content of the report sections. The prompt for Deepseek AI should be carefully crafted to ensure the generated text is coherent, relevant, and aligns with the tone and content of the original report. For example, when generating the 
+
+
+narrative for the 'Participation on the Prayer Platform' slide, Deepseek AI should be instructed to use the `current_week.total_slots_covered`, `previous_week.total_slots_covered`, and `total_slots_available` from the JSON data to construct a summary similar to the original slide.
+
+## Deepseek AI Integration Details
+
+Deepseek AI will be used to generate the narrative content for the report sections, ensuring that the generated text is coherent, relevant, and aligns with the tone and content of the original report. The Flask backend will serve as an intermediary, sending specific data points from the weekly report to Deepseek AI and then incorporating the generated text into the final report.
+
+Here's how Deepseek AI should be utilized for each section:
+
+### 1. Prayer Platform Weekly Report (Title Slide)
+
+*   **Deepseek AI Prompt**: "Generate a concise and impactful title for a weekly prayer report, including the date range [report_date]."
+*   **Data Input**: `report_date`
+
+### 2. Participation on the Prayer Platform
+
+*   **Deepseek AI Prompt**: "Based on the following data, write a summary of prayer platform participation for the current week. Highlight total slots covered, comparison to the previous week, and percentage change. Also, provide a brief analysis of the slots coverage, noting any increases or decreases and potential reasons. Current week total slots covered: [current_week.total_slots_covered], Previous week total slots covered: [previous_week.total_slots_covered], Total slots available: [total_slots_available]."
+*   **Data Input**: `current_week.total_slots_covered`, `previous_week.total_slots_covered`, `total_slots_available`
+
+### 3. Weekly Data Analysis
+
+*   **Deepseek AI Prompt**: "Analyze the weekly intercession slot participation based on the provided daily coverage data. Identify days with the highest and lowest coverage for the current week and compare them to the previous week's trends. Provide a comprehensive summary explaining any significant changes or observations, such as the impact of external events (e.g., workshops). Include the overall coverage rate, average daily coverage, and total variance. Daily coverage current week: [current_week.daily_coverage], Daily coverage previous week: [previous_week.daily_coverage], Coverage Rate: [calculated_coverage_rate], Average Daily Coverage: [calculated_average_daily_coverage], Total Variance: [calculated_total_variance]."
+*   **Data Input**: `current_week.daily_coverage`, `previous_week.daily_coverage`, `calculated_coverage_rate`, `calculated_average_daily_coverage`, `calculated_total_variance` (these calculated values will be derived in the Flask backend before sending to Deepseek AI).
+
+### 4. Report on Platform Manning
+
+*   **Deepseek AI Prompt**: "Generate a list of individuals who consistently manned the prayer platform throughout the week, emphasizing their dedication. Use the provided list of names. Consistent intercessors: [platform_manning_consistent_intercessors]."
+*   **Data Input**: `platform_manning_consistent_intercessors`
+
+### 5. The Ongoing EFZ Led Prayer Program
+
+*   **Deepseek AI Prompt**: "Summarize the key aspects of the EFZ Led Prayer Program for week [efz_prayer_program.week_number]. Detail the participation in Wednesday's and Sunday's sessions, including the number of participants, Global Intercessors participants, and participation rates. Compare current week's participation rates to previous week's where applicable, and explain any observed declines or improvements. Wednesday session: [efz_prayer_program.wednesday_session], Sunday session: [efz_prayer_program.sunday_session]."
+*   **Data Input**: `efz_prayer_program.week_number`, `efz_prayer_program.wednesday_session`, `efz_prayer_program.sunday_session`
+
+### 6. Young Global Intercessors Workshop
+
+*   **Deepseek AI Prompt**: "Provide a detailed overview of the Young Global Intercessors Workshop held from [young_global_intercessors_workshop.dates]. Include the number of participants, location, and a list of teachers and facilitators. Clearly state the objectives of the workshop. Workshop details: [young_global_intercessors_workshop]."
+*   **Data Input**: `young_global_intercessors_workshop`
+
+### 7. Global Intercessors Weekly Meeting With Mrs. M
+
+*   **Deepseek AI Prompt**: "Summarize the testimonies shared during the Global Intercessors Weekly Meeting with Mrs. M. For each testimony, include the name of the individual and a brief summary of their sharing. Following the testimonies, summarize Mrs. M's message, highlighting key themes such as the centrality of Jesus Christ, warnings against idolization, the foundation of scripture, and the importance of discernment and immersion in the Word. Testimonies: [gi_weekly_meeting_mrs_m.testimonies], Mrs. M's message: [gi_weekly_meeting_mrs_m.mrs_m_message]."
+*   **Data Input**: `gi_weekly_meeting_mrs_m.testimonies`, `gi_weekly_meeting_mrs_m.mrs_m_message`
+
+### 8. Next Steps and Calendar of Events
+
+*   **Deepseek AI Prompt**: "List the key next steps for the upcoming week and outline important calendar events. Next steps: [next_steps], Calendar of events: [calendar_of_events]."
+*   **Data Input**: `next_steps`, `calendar_of_events`
+
+## Implementation Details for Replit AI
+
+*   **Frontend (React)**:
+    *   Create components for the Dashboard, Analytics, and Report tabs.
+    *   Use Chart.js/Plotly.js to render the daily participation chart in the Analytics tab. The chart should be dynamic and update based on the data.
+    *   Implement a button in the Report tab that triggers a backend API call to generate the report.
+*   **Backend (Flask)**:
+    *   Create API endpoints for:
+        *   Retrieving weekly report data (initially from the provided JSON).
+        *   Triggering report generation.
+    *   Implement logic to calculate `calculated_coverage_rate`, `calculated_average_daily_coverage`, and `calculated_total_variance` before sending data to Deepseek AI.
+    *   Integrate with Deepseek AI's API to generate textual content for each report section based on the provided prompts and data.
+    *   Use `python-pptx` to create the PowerPoint presentation, populating it with the generated text and charts. Ensure the slide structure and styling (fonts, colors, layouts) closely match the provided `WeeklyGIReport-16-22June2025.pptx`.
+    *   Provide a downloadable link for the generated PPTX file.
+
+## Output
+
+The final output from Replit AI should be a functional web application that:
+
+1.  Displays interactive analytics of prayer participation.
+2.  Generates a comprehensive weekly report in PPTX format, dynamically populated with data and narratives generated by Deepseek AI.
+3.  Maintains the visual and structural integrity of the original PowerPoint document.
+
+This prompt provides a detailed roadmap for Replit AI to develop the desired application, leveraging Deepseek AI for intelligent content generation and ensuring the final product meets the user's specific requirements. The provided JSON structure serves as a concrete example of the data format, allowing for clear data mapping and processing within the application.
+
+
