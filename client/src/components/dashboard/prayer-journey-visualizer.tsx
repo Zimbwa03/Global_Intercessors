@@ -112,7 +112,7 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
   const getEmotionalStateColor = (state: string) => {
     switch (state) {
       case 'joyful': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'peaceful': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'peaceful': return 'bg-gi-primary/100 text-gi-primary/800 border-gi-primary/200';
       case 'grateful': return 'bg-green-100 text-green-800 border-green-200';
       case 'seeking': return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'hopeful': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
@@ -146,7 +146,7 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
     return (
       <div className="space-y-6">
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gi-primary/primary border-t-transparent mx-auto mb-4"></div>
           <h2 className="text-xl font-poppins font-semibold text-brand-text mb-2">Loading Your Prayer Journey...</h2>
           <p className="text-gray-600">Gathering your spiritual insights and growth data...</p>
         </div>
@@ -157,14 +157,14 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
   const renderOverview = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {/* Journey Stats */}
-      <Card className="border border-blue-100 shadow-lg">
+      <Card className="border border-gi-primary/100 shadow-lg">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Journey Entries</p>
-              <p className="text-2xl font-bold text-brand-primary">{stats.totalEntries}</p>
+              <p className="text-2xl font-bold text-gi-primary">{stats.totalEntries}</p>
             </div>
-            <BookOpen className="w-8 h-8 text-brand-primary" />
+            <BookOpen className="w-8 h-8 text-gi-primary" />
           </div>
         </CardContent>
       </Card>
@@ -218,10 +218,10 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="flex items-start space-x-4 p-4 bg-gradient-to-r from-blue-50 to-white rounded-lg border border-blue-100 hover:shadow-md transition-shadow"
+              className="flex items-start space-x-4 p-4 bg-gradient-to-r from-blue-50 to-white rounded-lg border border-gi-primary/100 hover:shadow-md transition-shadow"
             >
               <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-brand-primary rounded-full flex items-center justify-center">
+                <div className="w-10 h-10 bg-gi-primary rounded-full flex items-center justify-center">
                   <IconComponent className="w-5 h-5 text-white" />
                 </div>
               </div>
@@ -234,7 +234,7 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
                 </div>
                 <p className="text-gray-600 text-sm mb-2">{entry.description}</p>
                 {entry.scriptureMeditation && (
-                  <div className="bg-blue-50 p-2 rounded text-xs text-blue-800 mb-2">
+                  <div className="bg-gi-primary/50 p-2 rounded text-xs text-gi-primary/800 mb-2">
                     📖 {entry.scriptureMeditation}
                   </div>
                 )}
@@ -259,7 +259,7 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-3">
-                  <Target className="w-5 h-5 text-brand-primary" />
+                  <Target className="w-5 h-5 text-gi-primary" />
                   <div>
                     <h4 className="font-semibold text-brand-text">{goal.title}</h4>
                     <p className="text-sm text-gray-600">{goal.description}</p>
@@ -277,7 +277,7 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
-                    className="bg-brand-primary rounded-full h-2 transition-all duration-300"
+                    className="bg-gi-primary rounded-full h-2 transition-all duration-300"
                     style={{ width: `${Math.min(progress, 100)}%` }}
                   ></div>
                 </div>
@@ -315,7 +315,7 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
                   </Badge>
                 )}
                 {insight.faithLevel && (
-                  <Badge className="bg-blue-100 text-blue-800">
+                  <Badge className="bg-gi-primary/100 text-gi-primary/800">
                     Faith: {insight.faithLevel}/10
                   </Badge>
                 )}
@@ -331,13 +331,13 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
             
             {insight.prayerRequest && (
               <div className="mb-3">
-                <h5 className="text-sm font-medium text-blue-700 mb-1">🤲 Prayer Request</h5>
+                <h5 className="text-sm font-medium text-gi-primary/700 mb-1">🤲 Prayer Request</h5>
                 <p className="text-sm text-gray-600">{insight.prayerRequest}</p>
               </div>
             )}
             
             {insight.bibleVerse && (
-              <div className="bg-blue-50 p-2 rounded text-xs text-blue-800 mb-2">
+              <div className="bg-gi-primary/50 p-2 rounded text-xs text-gi-primary/800 mb-2">
                 📖 {insight.bibleVerse}
               </div>
             )}
@@ -355,7 +355,7 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="shadow-lg border border-blue-100">
+      <Card className="shadow-lg border border-gi-primary/100">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-3">
@@ -418,7 +418,7 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
           {activeTab === 'overview' && (
             <div>
               {renderOverview()}
-              <Card className="shadow-lg border border-blue-100">
+              <Card className="shadow-lg border border-gi-primary/100">
                 <CardHeader>
                   <CardTitle className="text-lg font-poppins">Recent Journey Highlights</CardTitle>
                 </CardHeader>
@@ -430,7 +430,7 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
           )}
           
           {activeTab === 'journey' && (
-            <Card className="shadow-lg border border-blue-100">
+            <Card className="shadow-lg border border-gi-primary/100">
               <CardHeader>
                 <CardTitle className="text-lg font-poppins">Prayer Journey Timeline</CardTitle>
               </CardHeader>
@@ -441,7 +441,7 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
           )}
           
           {activeTab === 'goals' && (
-            <Card className="shadow-lg border border-blue-100">
+            <Card className="shadow-lg border border-gi-primary/100">
               <CardHeader>
                 <CardTitle className="text-lg font-poppins">Spiritual Goals & Milestones</CardTitle>
               </CardHeader>
@@ -452,7 +452,7 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
           )}
           
           {activeTab === 'insights' && (
-            <Card className="shadow-lg border border-blue-100">
+            <Card className="shadow-lg border border-gi-primary/100">
               <CardHeader>
                 <CardTitle className="text-lg font-poppins">Daily Spiritual Insights</CardTitle>
               </CardHeader>
@@ -473,7 +473,7 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
             <p className="text-gray-600 mb-4">
               Begin documenting your spiritual growth and prayer experiences
             </p>
-            <Button className="bg-brand-primary hover:bg-brand-primary/90">
+            <Button className="bg-gi-primary hover:bg-gi-primary/90">
               <Plus className="w-4 h-4 mr-2" />
               Add First Entry
             </Button>

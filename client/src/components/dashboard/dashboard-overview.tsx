@@ -232,33 +232,33 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
             <h1 className="text-3xl font-bold mb-2 font-poppins">
               {getTimeBasedGreeting().text}, {getUserName(userEmail)}! {getTimeBasedGreeting().emoji}
             </h1>
-            <p className="text-blue-100">Ready for your prayer session today</p>
+            <p className="text-gi-primary/100">Ready for your prayer session today</p>
           </>
         ) : (
           <>
             <h1 className="text-3xl font-bold mb-2 font-poppins">Welcome back!</h1>
-            <p className="text-blue-100">Loading your information...</p>
+            <p className="text-gi-primary/100">Loading your information...</p>
           </>
         )}
       </div>
 
       {/* Prayer Slot Card */}
-      <Card className="shadow-brand-lg border border-blue-100">
+      <Card className="shadow-brand-lg border border-gi-primary/100">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
-              <i className="fas fa-clock text-brand-accent text-sm"></i>
+            <div className="w-8 h-8 bg-gi-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
+              <i className="fas fa-clock text-gi-gold text-sm"></i>
             </div>
             <span className="font-poppins">Your Prayer Slot</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg p-4 border border-blue-100">
+          <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg p-4 border border-gi-primary/100">
             <div className="flex items-center justify-between mb-3">
               <div>
                 {prayerSlot ? (
                   <>
-                    <h3 className="text-2xl font-bold text-brand-primary font-poppins">{prayerSlot.slotTime}</h3>
+                    <h3 className="text-2xl font-bold text-gi-primary font-poppins">{prayerSlot.slotTime}</h3>
                     <div className="flex items-center mt-1">
                       <i className={`${getStatusIcon(prayerSlot?.status || 'inactive')} ${getStatusColor(prayerSlot?.status || 'inactive')} mr-2`}></i>
                       <span className={`font-semibold ${getStatusColor(prayerSlot?.status || 'inactive')} font-poppins`}>
@@ -276,7 +276,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
               {prayerSlot?.status === 'active' && (
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Next session in:</p>
-                  <p className="text-lg font-bold text-brand-primary font-poppins">
+                  <p className="text-lg font-bold text-gi-primary font-poppins">
                     {String(nextSession.hours).padStart(2, '0')}:
                     {String(nextSession.minutes).padStart(2, '0')}:
                     {String(nextSession.seconds).padStart(2, '0')}
@@ -289,7 +289,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
               <Button 
                 onClick={handleRequestSkip}
                 variant="outline"
-                className="w-full border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-primary transition-brand font-poppins"
+                className="w-full border-gi-primary/accent text-gi-gold hover:bg-gi-gold hover:text-gi-primary transition-brand font-poppins"
               >
                 <i className="fas fa-pause mr-2"></i>
                 Request Skip (5 days)
@@ -310,11 +310,11 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
       </Card>
 
       {/* Reminder Settings */}
-      <Card className="shadow-brand-lg border border-blue-100">
+      <Card className="shadow-brand-lg border border-gi-primary/100">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
-              <i className="fas fa-bell text-brand-accent text-sm"></i>
+            <div className="w-8 h-8 bg-gi-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
+              <i className="fas fa-bell text-gi-gold text-sm"></i>
             </div>
             <span className="font-poppins">Reminder Settings</span>
           </CardTitle>
@@ -340,11 +340,11 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
 
       {/* Quick Stats */}
       <div className="grid md:grid-cols-3 gap-4">
-        <Card className="shadow-brand-lg border border-blue-100 hover:shadow-xl transition-brand group">
+        <Card className="shadow-brand-lg border border-gi-primary/100 hover:shadow-xl transition-brand group">
           <CardContent className="p-4">
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand group-hover:bg-brand-accent transition-brand">
-                <i className="fas fa-calendar-check text-brand-accent group-hover:text-brand-primary transition-brand"></i>
+              <div className="w-10 h-10 bg-gi-primary rounded-lg flex items-center justify-center mr-3 shadow-brand group-hover:bg-gi-gold transition-brand">
+                <i className="fas fa-calendar-check text-gi-gold group-hover:text-gi-primary transition-brand"></i>
               </div>
               <div>
                 <p className="text-2xl font-bold text-brand-text font-poppins">
@@ -356,11 +356,11 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
           </CardContent>
         </Card>
 
-        <Card className="shadow-brand-lg border border-blue-100 hover:shadow-xl transition-brand group">
+        <Card className="shadow-brand-lg border border-gi-primary/100 hover:shadow-xl transition-brand group">
           <CardContent className="p-4">
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand group-hover:bg-brand-accent transition-brand">
-                <i className="fas fa-fire text-brand-accent group-hover:text-brand-primary transition-brand"></i>
+              <div className="w-10 h-10 bg-gi-primary rounded-lg flex items-center justify-center mr-3 shadow-brand group-hover:bg-gi-gold transition-brand">
+                <i className="fas fa-fire text-gi-gold group-hover:text-gi-primary transition-brand"></i>
               </div>
               <div>
                 <p className="text-2xl font-bold text-brand-text font-poppins">
@@ -372,11 +372,11 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
           </CardContent>
         </Card>
 
-        <Card className="shadow-brand-lg border border-blue-100 hover:shadow-xl transition-brand group">
+        <Card className="shadow-brand-lg border border-gi-primary/100 hover:shadow-xl transition-brand group">
           <CardContent className="p-4">
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand group-hover:bg-brand-accent transition-brand">
-                <i className="fas fa-users text-brand-accent group-hover:text-brand-primary transition-brand"></i>
+              <div className="w-10 h-10 bg-gi-primary rounded-lg flex items-center justify-center mr-3 shadow-brand group-hover:bg-gi-gold transition-brand">
+                <i className="fas fa-users text-gi-gold group-hover:text-gi-primary transition-brand"></i>
               </div>
               <div>
                 <p className="text-2xl font-bold text-brand-text font-poppins">

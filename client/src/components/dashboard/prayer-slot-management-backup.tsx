@@ -204,7 +204,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       case 'skipped':
         return <XCircle className={`text-red-500 ${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />;
       default:
-        return <Clock className={`text-blue-500 ${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />;
+        return <Clock className={`text-gi-primary/500 ${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />;
     }
   };
 
@@ -223,7 +223,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     return (
       <div className="space-y-6">
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gi-primary/primary border-t-transparent mx-auto mb-4"></div>
           <h2 className="text-xl font-poppins font-semibold text-brand-text mb-2">Loading...</h2>
           <p className="text-gray-600">Checking authentication status...</p>
         </div>
@@ -235,7 +235,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     return (
       <div className="space-y-6">
         <div className="text-center py-12">
-          <AlertCircle className="w-12 h-12 text-brand-primary mx-auto mb-4" />
+          <AlertCircle className="w-12 h-12 text-gi-primary mx-auto mb-4" />
           <h2 className="text-xl font-poppins font-semibold text-brand-text mb-2">Authentication Required</h2>
           <p className="text-gray-600">Please log in to access your prayer slot management.</p>
         </div>
@@ -247,7 +247,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     return (
       <div className="space-y-6">
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gi-primary/primary border-t-transparent mx-auto mb-4"></div>
           <p className="text-brand-text font-poppins">Loading your prayer slot...</p>
         </div>
       </div>
@@ -263,7 +263,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
           <p className="text-gray-600 mb-4">Failed to load your prayer slot. Please try again.</p>
           <Button
             onClick={() => queryClient.invalidateQueries({ queryKey: ['prayer-slot'] })}
-            className="bg-brand-primary hover:bg-blue-800 text-white font-poppins"
+            className="bg-gi-primary hover:bg-gi-primary/800 text-white font-poppins"
           >
             Retry
           </Button>
@@ -287,12 +287,12 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       <AnimatedCard 
         animationType="slideIn" 
         delay={0.2}
-        className={`shadow-brand-lg border border-blue-100 ${isMobile ? 'mx-0' : ''}`}
+        className={`shadow-brand-lg border border-gi-primary/100 ${isMobile ? 'mx-0' : ''}`}
       >
         <CardHeader className={isMobile ? 'pb-4' : ''}>
           <CardTitle className={`flex items-center ${isMobile ? 'text-lg' : ''}`}>
             <motion.div 
-              className={`bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand ${
+              className={`bg-gi-primary rounded-lg flex items-center justify-center mr-3 shadow-brand ${
                 isMobile ? 'w-6 h-6' : 'w-8 h-8'
               }`}
               animate={{
@@ -301,13 +301,13 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
               }}
               transition={{ duration: 0.6, ease: "easeInOut" }}
             >
-              <Clock className={`text-brand-accent ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+              <Clock className={`text-gi-gold ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
             </motion.div>
             <span className="font-poppins">Current Prayer Slot</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg border border-blue-100 p-4">
+          <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg border border-gi-primary/100 p-4">
             <AnimatePresence mode="wait">
               {prayerSlot && prayerSlot.slotTime ? (
                 <motion.div 
@@ -336,7 +336,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                         Next session in:
                       </p>
                       <motion.div 
-                        className={`font-bold text-brand-primary font-poppins ${
+                        className={`font-bold text-gi-primary font-poppins ${
                           isMobile ? 'text-xl' : 'text-2xl'
                         }`}
                         animate={{
@@ -400,7 +400,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                         onClick={handleSkipSlot}
                         disabled={skipSlotMutation.isPending}
                         variant="outline"
-                        className={`border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-primary transition-brand font-poppins ${
+                        className={`border-gi-primary/accent text-gi-gold hover:bg-gi-gold hover:text-gi-primary transition-brand font-poppins ${
                           isMobile ? 'h-12 text-sm' : ''
                         }`}
                       >
@@ -413,7 +413,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                       <DialogTrigger asChild>
                         <Button
                           variant="outline"
-                          className={`border-brand-primary text-brand-primary hover:bg-blue-50 transition-brand font-poppins ${
+                          className={`border-gi-primary/primary text-gi-primary hover:bg-gi-primary/50 transition-brand font-poppins ${
                             isMobile ? 'h-12 text-sm' : ''
                           }`}
                         >
@@ -427,7 +427,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                         </DialogHeader>
                         <div className="space-y-4">
                           <Select onValueChange={handleChangeSlot}>
-                            <SelectTrigger className="border-blue-200 focus:ring-brand-primary focus:border-brand-primary">
+                            <SelectTrigger className="border-gi-primary/200 focus:ring-brand-primary focus:border-gi-primary/primary">
                               <SelectValue placeholder="Choose your new time slot" />
                             </SelectTrigger>
                             <SelectContent className="max-h-60">
@@ -443,7 +443,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                             </SelectContent>
                           </Select>
                           {changeSlotMutation.isPending && (
-                            <p className="text-sm text-brand-primary">Updating your slot...</p>
+                            <p className="text-sm text-gi-primary">Updating your slot...</p>
                           )}
                         </div>
                       </DialogContent>
@@ -462,7 +462,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                   <p className="text-gray-600 mb-4">You don't have a prayer slot assigned yet.</p>
                   <Dialog open={isChangeSlotModalOpen} onOpenChange={setIsChangeSlotModalOpen}>
                     <DialogTrigger asChild>
-                      <Button className="bg-brand-primary hover:bg-blue-800 text-white font-poppins">
+                      <Button className="bg-gi-primary hover:bg-gi-primary/800 text-white font-poppins">
                         <Calendar className="w-4 h-4 mr-2" />
                         Select Your Prayer Slot
                       </Button>
@@ -473,7 +473,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                       </DialogHeader>
                       <div className="space-y-4">
                         <Select onValueChange={handleChangeSlot}>
-                          <SelectTrigger className="border-blue-200 focus:ring-brand-primary focus:border-brand-primary">
+                          <SelectTrigger className="border-gi-primary/200 focus:ring-brand-primary focus:border-gi-primary/primary">
                             <SelectValue placeholder="Choose your time slot" />
                           </SelectTrigger>
                           <SelectContent className="max-h-60">
@@ -489,7 +489,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                           </SelectContent>
                         </Select>
                         {changeSlotMutation.isPending && (
-                          <p className="text-sm text-brand-primary">Setting up your slot...</p>
+                          <p className="text-sm text-gi-primary">Setting up your slot...</p>
                         )}
                       </div>
                     </DialogContent>
@@ -502,11 +502,11 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       </AnimatedCard>
 
       {/* Slot Information */}
-      <Card className="shadow-brand-lg border border-blue-100">
+      <Card className="shadow-brand-lg border border-gi-primary/100">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
-              <AlertCircle className="w-4 h-4 text-brand-accent" />
+            <div className="w-8 h-8 bg-gi-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
+              <AlertCircle className="w-4 h-4 text-gi-gold" />
             </div>
             <span className="font-poppins">Slot Guidelines</span>
           </CardTitle>
@@ -514,25 +514,25 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
         <CardContent>
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-brand-primary rounded-full mt-2 flex-shrink-0"></div>
+              <div className="w-2 h-2 bg-gi-primary rounded-full mt-2 flex-shrink-0"></div>
               <p className={`text-gray-700 ${isMobile ? 'text-sm' : ''}`}>
                 Commit to a daily 1-hour prayer session at your selected time
               </p>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-brand-primary rounded-full mt-2 flex-shrink-0"></div>
+              <div className="w-2 h-2 bg-gi-primary rounded-full mt-2 flex-shrink-0"></div>
               <p className={`text-gray-700 ${isMobile ? 'text-sm' : ''}`}>
                 Join the Zoom meeting during your assigned slot for group prayer
               </p>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-brand-primary rounded-full mt-2 flex-shrink-0"></div>
+              <div className="w-2 h-2 bg-gi-primary rounded-full mt-2 flex-shrink-0"></div>
               <p className={`text-gray-700 ${isMobile ? 'text-sm' : ''}`}>
                 Missing sessions will affect your commitment status
               </p>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-brand-primary rounded-full mt-2 flex-shrink-0"></div>
+              <div className="w-2 h-2 bg-gi-primary rounded-full mt-2 flex-shrink-0"></div>
               <p className={`text-gray-700 ${isMobile ? 'text-sm' : ''}`}>
                 Use the skip option sparingly - only for emergencies (5-day cooldown)
               </p>

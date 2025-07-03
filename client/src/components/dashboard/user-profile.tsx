@@ -121,7 +121,7 @@ export function UserProfile({ userEmail }: UserProfileProps) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-2xl text-brand-primary mb-4"></i>
+          <i className="fas fa-spinner fa-spin text-2xl text-gi-primary mb-4"></i>
           <p className="text-gray-600">Loading profile...</p>
         </div>
       </div>
@@ -135,7 +135,7 @@ export function UserProfile({ userEmail }: UserProfileProps) {
         {!isEditing && (
           <Button
             onClick={() => setIsEditing(true)}
-            className="bg-brand-primary hover:bg-brand-primary/90"
+            className="bg-gi-primary hover:bg-gi-primary/90"
           >
             <Edit2 className="w-4 h-4 mr-2" />
             Edit Profile
@@ -146,7 +146,7 @@ export function UserProfile({ userEmail }: UserProfileProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <User className="w-5 h-5 text-brand-primary" />
+            <User className="w-5 h-5 text-gi-primary" />
             <span>Personal Information</span>
           </CardTitle>
         </CardHeader>
@@ -254,7 +254,7 @@ export function UserProfile({ userEmail }: UserProfileProps) {
                 <Button
                   type="submit"
                   disabled={updateProfileMutation.isPending}
-                  className="bg-brand-primary hover:bg-brand-primary/90"
+                  className="bg-gi-primary hover:bg-gi-primary/90"
                 >
                   {updateProfileMutation.isPending ? (
                     <i className="fas fa-spinner fa-spin w-4 h-4 mr-2"></i>
@@ -273,7 +273,7 @@ export function UserProfile({ userEmail }: UserProfileProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <i className="fas fa-shield-alt w-5 h-5 text-brand-primary"></i>
+            <i className="fas fa-shield-alt w-5 h-5 text-gi-primary"></i>
             <span>Account Status</span>
           </CardTitle>
         </CardHeader>

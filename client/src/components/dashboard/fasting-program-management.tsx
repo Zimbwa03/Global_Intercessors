@@ -190,7 +190,7 @@ export function FastingProgramManagement() {
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-blue-600" />
+              <Calendar className="h-4 w-4 text-gi-primary/600" />
               <div>
                 <p className="text-sm text-gray-600">Days Until Start</p>
                 <p className="text-2xl font-bold">{programDetails.days_until_start}</p>

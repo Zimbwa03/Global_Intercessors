@@ -7,12 +7,12 @@ export function StatisticsSection() {
   ];
 
   return (
-    <section className="py-20 bg-brand-primary text-white relative overflow-hidden">
+    <section className="py-20 bg-gi-primary text-white relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-blue-800/50 to-blue-900/30"></div>
       <div className="container mx-auto px-6 relative">
         <div className="text-center mb-16">
           <h2 className="font-poppins text-4xl md:text-5xl font-bold mb-6">Global Impact</h2>
-          <p className="text-xl text-blue-100 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-gi-primary/100 max-w-3xl mx-auto leading-relaxed">
             See how our community is making a difference around the world through unified prayer and fellowship.
           </p>
         </div>
@@ -21,8 +21,8 @@ export function StatisticsSection() {
           {stats.map((stat, index) => (
             <div key={index} className="text-center group">
               <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-brand shadow-brand">
-                <div className="text-4xl md:text-5xl font-bold text-brand-accent mb-2 font-poppins group-hover:scale-110 transition-brand">{stat.value}</div>
-                <div className="text-lg text-blue-100 font-medium">{stat.label}</div>
+                <div className="text-4xl md:text-5xl font-bold text-gi-gold mb-2 font-poppins group-hover:scale-110 transition-brand">{stat.value}</div>
+                <div className="text-lg text-gi-primary/100 font-medium">{stat.label}</div>
               </div>
             </div>
           ))}

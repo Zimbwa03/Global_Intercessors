@@ -106,7 +106,7 @@ export function UpdatesAnnouncements() {
   const getTypeColor = (type: string) => {
     switch (type) {
       case "fast": return "bg-purple-100 text-purple-700 border-purple-200";
-      case "event": return "bg-blue-100 text-blue-700 border-blue-200";
+      case "event": return "bg-gi-primary/100 text-gi-primary/700 border-gi-primary/200";
       case "general": return "bg-green-100 text-green-700 border-green-200";
       default: return "bg-gray-100 text-gray-700 border-gray-200";
     }
@@ -121,7 +121,7 @@ export function UpdatesAnnouncements() {
 
       {isLoading ? (
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-4 border-gi-primary/primary border-t-transparent mx-auto mb-4"></div>
           <p>Loading updates...</p>
         </div>
       ) : (
@@ -131,8 +131,8 @@ export function UpdatesAnnouncements() {
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-3">
-                  <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center">
-                    <i className={`${getTypeIcon(announcement.type)} text-brand-accent`}></i>
+                  <div className="w-10 h-10 bg-gi-primary rounded-lg flex items-center justify-center">
+                    <i className={`${getTypeIcon(announcement.type)} text-gi-gold`}></i>
                   </div>
                   <div>
                     <CardTitle className="text-xl text-gray-800">{announcement.title}</CardTitle>
@@ -155,7 +155,7 @@ export function UpdatesAnnouncements() {
               {announcement.registrationRequired && announcement.id === "fasting-program" && (
                 <Button 
                   onClick={() => setShowFastingRegistration(true)}
-                  className="bg-blue-600 text-white hover:bg-blue-700 font-semibold"
+                  className="bg-gi-primary/600 text-white hover:bg-gi-primary/700 font-semibold"
                 >
                   <i className="fas fa-user-plus mr-2"></i>
                   Register for Fasting Program
@@ -163,7 +163,7 @@ export function UpdatesAnnouncements() {
               )}
 
               {announcement.registrationRequired && announcement.id !== "fasting-program" && (
-                <Button className="bg-brand-accent text-brand-primary hover:bg-yellow-400 font-semibold">
+                <Button className="bg-gi-gold text-gi-primary hover:bg-yellow-400 font-semibold">
                   <i className="fas fa-user-plus mr-2"></i>
                   Register for Event
                 </Button>

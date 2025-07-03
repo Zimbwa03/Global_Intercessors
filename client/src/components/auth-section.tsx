@@ -152,23 +152,23 @@ export function AuthSection() {
       <div className="container mx-auto px-6">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-12">
-            <div className="w-16 h-16 bg-brand-accent rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-brand-lg">
-              <i className="fas fa-door-open text-brand-primary text-2xl"></i>
+            <div className="w-16 h-16 bg-gi-gold rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-brand-lg">
+              <i className="fas fa-door-open text-gi-primary text-2xl"></i>
             </div>
             <h2 className="font-poppins text-4xl font-bold text-brand-text mb-4">Join Our Community</h2>
             <p className="text-gray-600 text-lg">Start your spiritual journey with thousands of believers worldwide</p>
           </div>
 
-          <Card className="bg-white rounded-2xl shadow-brand-lg border border-blue-100">
+          <Card className="bg-white rounded-2xl shadow-brand-lg border border-gi-primary/100">
             <CardContent className="p-8">
               {/* Auth Tabs */}
-              <div className="flex mb-8 bg-blue-50 rounded-xl p-1">
+              <div className="flex mb-8 bg-gi-primary/50 rounded-xl p-1">
                 <Button
                   onClick={() => setIsLogin(true)}
                   className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-brand font-poppins ${
                     isLogin 
-                      ? 'bg-brand-primary text-white shadow-brand' 
-                      : 'bg-transparent text-gray-600 hover:text-brand-primary hover:bg-transparent'
+                      ? 'bg-gi-primary text-white shadow-brand' 
+                      : 'bg-transparent text-gray-600 hover:text-gi-primary hover:bg-transparent'
                   }`}
                 >
                   Sign In
@@ -177,8 +177,8 @@ export function AuthSection() {
                   onClick={() => setIsLogin(false)}
                   className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-brand font-poppins ${
                     !isLogin 
-                      ? 'bg-brand-primary text-white shadow-brand' 
-                      : 'bg-transparent text-gray-600 hover:text-brand-primary hover:bg-transparent'
+                      ? 'bg-gi-primary text-white shadow-brand' 
+                      : 'bg-transparent text-gray-600 hover:text-gi-primary hover:bg-transparent'
                   }`}
                 >
                   Sign Up
@@ -196,7 +196,7 @@ export function AuthSection() {
                       value={formData.email}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
+                      className="w-full px-4 py-3 border border-gi-primary/200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
                       placeholder="Enter your email"
                     />
                   </div>
@@ -208,14 +208,14 @@ export function AuthSection() {
                       value={formData.password}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
+                      className="w-full px-4 py-3 border border-gi-primary/200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
                       placeholder="Enter your password"
                     />
                   </div>
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-brand-accent text-brand-primary py-3 rounded-xl font-semibold hover:bg-brand-accent-dark transition-brand flex items-center justify-center shadow-brand font-poppins"
+                    className="w-full bg-gi-gold text-gi-primary py-3 rounded-xl font-semibold hover:bg-gi-gold-dark transition-brand flex items-center justify-center shadow-brand font-poppins"
                   >
                     {isLoading ? (
                       <>
@@ -237,7 +237,7 @@ export function AuthSection() {
                       value={formData.name}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
+                      className="w-full px-4 py-3 border border-gi-primary/200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
                       placeholder="Enter your full name"
                     />
                   </div>
@@ -249,7 +249,7 @@ export function AuthSection() {
                       value={formData.email}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
+                      className="w-full px-4 py-3 border border-gi-primary/200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
                       placeholder="Enter your email"
                     />
                   </div>
@@ -261,7 +261,7 @@ export function AuthSection() {
                       value={formData.password}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
+                      className="w-full px-4 py-3 border border-gi-primary/200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
                       placeholder="Create a password"
                     />
                   </div>
@@ -273,14 +273,14 @@ export function AuthSection() {
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
+                      className="w-full px-4 py-3 border border-gi-primary/200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
                       placeholder="Confirm your password"
                     />
                   </div>
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-brand-accent text-brand-primary py-3 rounded-xl font-semibold hover:bg-brand-accent-dark transition-brand flex items-center justify-center shadow-brand font-poppins"
+                    className="w-full bg-gi-gold text-gi-primary py-3 rounded-xl font-semibold hover:bg-gi-gold-dark transition-brand flex items-center justify-center shadow-brand font-poppins"
                   >
                     {isLoading ? (
                       <>
@@ -301,7 +301,7 @@ export function AuthSection() {
                   <Button
                     onClick={() => navigate("/admin/login")}
                     variant="outline"
-                    className="w-full border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 py-3 rounded-xl font-semibold transition-brand flex items-center justify-center font-poppins"
+                    className="w-full border-gi-primary/200 text-gi-primary/600 hover:bg-gi-primary/50 hover:border-gi-primary/300 py-3 rounded-xl font-semibold transition-brand flex items-center justify-center font-poppins"
                   >
                     <i className="fas fa-shield-alt mr-2"></i>
                     Admin Portal

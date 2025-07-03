@@ -173,7 +173,7 @@ export default function AdminLogin() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-gi-primary/600 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fas fa-shield-alt text-white text-2xl"></i>
           </div>
           <CardTitle className="text-2xl font-bold text-gray-800">Admin Portal</CardTitle>
@@ -216,7 +216,7 @@ export default function AdminLogin() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              className="w-full bg-gi-primary/600 hover:bg-gi-primary/700 text-white"
             >
               {isLoading ? (
                 <>
@@ -232,9 +232,9 @@ export default function AdminLogin() {
             </Button>
           </form>
 
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm">
-            <h4 className="font-semibold text-blue-800 mb-2">First Time Login?</h4>
-            <ol className="text-blue-700 space-y-1 text-xs">
+          <div className="mt-4 p-3 bg-gi-primary/50 rounded-lg text-sm">
+            <h4 className="font-semibold text-gi-primary/800 mb-2">First Time Login?</h4>
+            <ol className="text-gi-primary/700 space-y-1 text-xs">
               <li>1. Your email must be added via /create-admin first</li>
               <li>2. Enter your email and create a new password</li>
               <li>3. This will create your Supabase Auth account</li>
@@ -249,7 +249,7 @@ export default function AdminLogin() {
             <Button
               variant="link"
               onClick={() => setLocation("/")}
-              className="text-blue-600 text-sm mt-2"
+              className="text-gi-primary/600 text-sm mt-2"
             >
               Back to Main Site
             </Button>

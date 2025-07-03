@@ -68,7 +68,7 @@ export default function CreateAdmin() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-gi-primary/600 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fas fa-user-plus text-white text-2xl"></i>
           </div>
           <CardTitle className="text-2xl font-bold text-gray-800">Create Admin User</CardTitle>
@@ -95,7 +95,7 @@ export default function CreateAdmin() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              className="w-full bg-gi-primary/600 hover:bg-gi-primary/700 text-white"
             >
               {isLoading ? (
                 <>
@@ -111,9 +111,9 @@ export default function CreateAdmin() {
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-semibold text-blue-800 mb-2">Instructions:</h4>
-            <ol className="text-sm text-blue-700 space-y-1">
+          <div className="mt-6 p-4 bg-gi-primary/50 rounded-lg">
+            <h4 className="font-semibold text-gi-primary/800 mb-2">Instructions:</h4>
+            <ol className="text-sm text-gi-primary/700 space-y-1">
               <li>1. Enter the email address of the person you want to make an admin</li>
               <li>2. They must first create a regular account using that same email</li>
               <li>3. After creating the admin role, they can access /admin/login</li>
@@ -125,7 +125,7 @@ export default function CreateAdmin() {
             <Button
               variant="link"
               onClick={() => window.location.href = "/"}
-              className="text-blue-600 text-sm"
+              className="text-gi-primary/600 text-sm"
             >
               Back to Main Site
             </Button>

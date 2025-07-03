@@ -127,7 +127,7 @@ const MobileNavButton = ({ icon: Icon, label, isActive, onClick }: {
     onClick={onClick}
     className={`flex flex-col items-center justify-center p-3 rounded-lg transition-all duration-200 ${
       isActive 
-        ? 'bg-brand-primary text-white shadow-lg' 
+        ? 'bg-gi-primary text-white shadow-lg' 
         : 'text-gray-600 hover:bg-gray-100'
     }`}
   >
@@ -603,7 +603,7 @@ export default function AdminDashboard() {
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <AnimatedCard animationType="fadeIn" className="w-full max-w-md">
           <CardContent className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-gi-primary/primary border-t-transparent mx-auto mb-4"></div>
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Verifying Admin Access</h2>
             <p className="text-gray-600">Please wait while we authenticate your credentials...</p>
           </CardContent>
@@ -627,8 +627,8 @@ export default function AdminDashboard() {
           <AnimatedCard animationType="slideIn" delay={0.1}>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Clock className="w-4 h-4 text-blue-600" />
+                <div className="p-2 bg-gi-primary/100 rounded-lg">
+                  <Clock className="w-4 h-4 text-gi-primary/600" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Active Slots</p>
@@ -694,7 +694,7 @@ export default function AdminDashboard() {
               {updates.slice(0, 5).length > 0 ? (
                 updates.slice(0, 5).map((update) => (
                   <div key={update.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="p-1 bg-brand-primary rounded-full">
+                    <div className="p-1 bg-gi-primary rounded-full">
                       <CheckCircle className="w-3 h-3 text-white" />
                     </div>
                     <div className="flex-1">
@@ -731,7 +731,7 @@ export default function AdminDashboard() {
         <CardContent>
           {slotsLoading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-gi-primary/primary border-t-transparent mx-auto mb-4"></div>
               <p>Loading prayer slots...</p>
             </div>
           ) : prayerSlots.length > 0 ? (
@@ -854,7 +854,7 @@ export default function AdminDashboard() {
 
           {activitiesLoading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-gi-primary/primary border-t-transparent mx-auto mb-4"></div>
               <p>Loading activity data...</p>
             </div>
           ) : filteredAndSortedActivities.length > 0 ? (
@@ -998,7 +998,7 @@ export default function AdminDashboard() {
         <CardContent>
           {fastingLoading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-gi-primary/primary border-t-transparent mx-auto mb-4"></div>
               <p>Loading fasting registrations...</p>
             </div>
           ) : fastingRegistrations.length > 0 ? (
@@ -1215,7 +1215,7 @@ export default function AdminDashboard() {
               <Button 
                 type="submit" 
                 disabled={createUpdateMutation.isPending || !newUpdate.title.trim() || !newUpdate.description.trim()}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                className="flex-1 bg-gi-primary/600 hover:bg-gi-primary/700 text-white font-medium"
               >
                 {createUpdateMutation.isPending ? (
                   <>
@@ -1248,7 +1248,7 @@ export default function AdminDashboard() {
         <CardContent>
           {updatesLoading ? (
             <div className="text-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-2 border-brand-primary border-t-transparent mx-auto mb-2"></div>
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-gi-primary/primary border-t-transparent mx-auto mb-2"></div>
               <p className="text-sm text-gray-600">Loading updates...</p>
             </div>
           ) : updates.length > 0 ? (
@@ -1281,7 +1281,7 @@ export default function AdminDashboard() {
                       <div className="flex items-center space-x-2">
                         <span className="text-xs text-green-600">✓ Published</span>
                         {update.pinToTop && (
-                          <span className="text-xs text-blue-600">📌 Pinned</span>
+                          <span className="text-xs text-gi-primary/600">📌 Pinned</span>
                         )}
                       </div>
                     </div>
@@ -1308,9 +1308,9 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           {currentZoomLink && typeof currentZoomLink === 'object' && 'zoomLink' in currentZoomLink && (
-            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+            <div className="mb-4 p-3 bg-gi-primary/50 rounded-lg">
               <p className="text-sm text-gray-600 mb-1">Current Zoom Link:</p>
-              <p className="text-blue-600 font-mono text-sm break-all">{(currentZoomLink as any).zoomLink}</p>
+              <p className="text-gi-primary/600 font-mono text-sm break-all">{(currentZoomLink as any).zoomLink}</p>
             </div>
           )}
           <form onSubmit={handleUpdateZoomLink} className="space-y-4">
@@ -1350,8 +1350,8 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{prayerSlots.length}</div>
+            <div className="p-3 bg-gi-primary/50 rounded-lg">
+              <div className="text-2xl font-bold text-gi-primary/600">{prayerSlots.length}</div>
               <div className="text-xs text-gray-600">Prayer Slots</div>
             </div>
             <div className="p-3 bg-green-50 rounded-lg">
@@ -1419,7 +1419,7 @@ export default function AdminDashboard() {
         <div className="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Shield className="w-6 h-6 text-brand-primary" />
+              <Shield className="w-6 h-6 text-gi-primary" />
               <div>
                 <h1 className="text-lg font-bold text-gray-900">Admin Portal</h1>
                 <p className="text-xs text-gray-500">Global Intercessors</p>
@@ -1449,13 +1449,13 @@ export default function AdminDashboard() {
 
       {/* Desktop Header */}
       {!isMobile && (
-        <div className="bg-brand-primary text-white p-6">
+        <div className="bg-gi-primary text-white p-6">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Shield className="w-8 h-8" />
               <div>
                 <h1 className="text-2xl font-bold">Global Intercessors Admin</h1>
-                <p className="text-blue-100 text-sm">Management Dashboard</p>
+                <p className="text-gi-primary/100 text-sm">Management Dashboard</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -1464,7 +1464,7 @@ export default function AdminDashboard() {
                 onClick={refreshAllData}
                 variant="outline"
                 size="sm"
-                className="text-brand-primary border-white hover:bg-blue-50"
+                className="text-gi-primary border-white hover:bg-gi-primary/50"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Refresh
@@ -1473,7 +1473,7 @@ export default function AdminDashboard() {
                 onClick={handleSignOut}
                 variant="outline"
                 size="sm"
-                className="text-brand-primary border-white hover:bg-blue-50"
+                className="text-gi-primary border-white hover:bg-gi-primary/50"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
@@ -2375,12 +2375,12 @@ export default function AdminDashboard() {
             transition={{ duration: 0.2 }}
           >
             {activeTab === 'skip-requests' ? (
-              <Card className="shadow-brand-lg border border-blue-100">
+              <Card className="shadow-brand-lg border border-gi-primary/100">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center shadow-brand">
-                        <RotateCcw className="w-5 h-5 text-brand-accent" />
+                      <div className="w-10 h-10 bg-gi-primary rounded-lg flex items-center justify-center shadow-brand">
+                        <RotateCcw className="w-5 h-5 text-gi-gold" />
                       </div>
                       <span className="font-poppins text-xl">Skip Requests Management</span>
                     </span>
@@ -2535,12 +2535,12 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             ) : activeTab === 'data-allocation' ? (
-              <Card className="shadow-brand-lg border border-blue-100">
+              <Card className="shadow-brand-lg border border-gi-primary/100">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center shadow-brand">
-                        <Download className="w-5 h-5 text-brand-accent" />
+                      <div className="w-10 h-10 bg-gi-primary rounded-lg flex items-center justify-center shadow-brand">
+                        <Download className="w-5 h-5 text-gi-gold" />
                       </div>
                       <span className="font-poppins text-xl">Data Allocation by Attendance</span>
                     </span>
@@ -2590,7 +2590,7 @@ export default function AdminDashboard() {
                         <Button
                           onClick={() => refetchDataAllocation()}
                           size="sm"
-                          className="bg-brand-primary hover:bg-brand-primary/90"
+                          className="bg-gi-primary hover:bg-gi-primary/90"
                         >
                           Apply Filter
                         </Button>
@@ -2615,7 +2615,7 @@ export default function AdminDashboard() {
                   {/* Data Allocation Table */}
                   {dataAllocationLoading ? (
                     <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+                      <div className="animate-spin rounded-full h-8 w-8 border-4 border-gi-primary/primary border-t-transparent mx-auto mb-4"></div>
                       <p>Loading intercessor data...</p>
                     </div>
                   ) : dataAllocation.length > 0 ? (

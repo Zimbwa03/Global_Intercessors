@@ -64,10 +64,10 @@ export function AnalyticsCharts() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100">Total Intercessors</p>
+                <p className="text-gi-primary/100">Total Intercessors</p>
                 <p className="text-2xl font-bold">{analytics.intercessorStats.totalRegistered}</p>
               </div>
-              <Users className="w-8 h-8 text-blue-200" />
+              <Users className="w-8 h-8 text-gi-primary/200" />
             </div>
           </CardContent>
         </Card>

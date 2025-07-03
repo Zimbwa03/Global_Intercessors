@@ -217,12 +217,12 @@ export function FastingRegistration() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Card className="shadow-lg border-blue-100">
+      <Card className="shadow-lg border-gi-primary/100">
         <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-t-lg">
           <CardTitle className="text-center text-2xl font-bold">
             3 Days & 3 Nights Fasting Program – June
           </CardTitle>
-          <p className="text-center text-blue-100 mt-2">
+          <p className="text-center text-gi-primary/100 mt-2">
             Join our special fasting and prayer program with transport reimbursement
           </p>
         </CardHeader>
@@ -232,7 +232,7 @@ export function FastingRegistration() {
             {/* Full Name */}
             <div className="space-y-2">
               <Label htmlFor="fullName" className="flex items-center gap-2">
-                <User className="w-4 h-4 text-blue-600" />
+                <User className="w-4 h-4 text-gi-primary/600" />
                 Full Name *
               </Label>
               <Input
@@ -241,7 +241,7 @@ export function FastingRegistration() {
                 placeholder="Enter your full name"
                 value={formData.fullName}
                 onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
-                className="border-gray-300 focus:border-blue-500"
+                className="border-gray-300 focus:border-gi-primary/500"
                 required
               />
             </div>
@@ -249,7 +249,7 @@ export function FastingRegistration() {
             {/* WhatsApp Phone Number */}
             <div className="space-y-2">
               <Label htmlFor="phoneNumber" className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-blue-600" />
+                <Phone className="w-4 h-4 text-gi-primary/600" />
                 WhatsApp Phone Number *
               </Label>
               <Input
@@ -258,7 +258,7 @@ export function FastingRegistration() {
                 placeholder="+1234567890"
                 value={formData.phoneNumber}
                 onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                className="border-gray-300 focus:border-blue-500"
+                className="border-gray-300 focus:border-gi-primary/500"
                 required
               />
               <p className="text-sm text-gray-600">Include country code (e.g., +1, +234)</p>
@@ -267,7 +267,7 @@ export function FastingRegistration() {
             {/* Region/Town */}
             <div className="space-y-2">
               <Label htmlFor="region" className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-blue-600" />
+                <MapPin className="w-4 h-4 text-gi-primary/600" />
                 Region or Town *
               </Label>
               <Input
@@ -276,7 +276,7 @@ export function FastingRegistration() {
                 placeholder="Enter your region or town"
                 value={formData.region}
                 onChange={(e) => setFormData(prev => ({ ...prev, region: e.target.value }))}
-                className="border-gray-300 focus:border-blue-500"
+                className="border-gray-300 focus:border-gi-primary/500"
                 required
               />
             </div>
@@ -284,7 +284,7 @@ export function FastingRegistration() {
             {/* Travel Cost */}
             <div className="space-y-2">
               <Label htmlFor="travelCost" className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-blue-600" />
+                <DollarSign className="w-4 h-4 text-gi-primary/600" />
                 Estimated Travel Cost
               </Label>
               <Input
@@ -293,7 +293,7 @@ export function FastingRegistration() {
                 placeholder="Enter amount (e.g., 50.00)"
                 value={formData.travelCost || ""}
                 onChange={(e) => setFormData(prev => ({ ...prev, travelCost: e.target.value || "0" }))}
-                className="border-gray-300 focus:border-blue-500"
+                className="border-gray-300 focus:border-gi-primary/500"
               />
               <p className="text-sm text-gray-600">Enter your estimated travel cost for reimbursement</p>
             </div>
@@ -301,13 +301,13 @@ export function FastingRegistration() {
             {/* GPS Location */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-blue-600" />
+                <MapPin className="w-4 h-4 text-gi-primary/600" />
                 GPS Location Verification
               </Label>
               <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border">
                 {locationStatus === "detecting" && (
-                  <div className="flex items-center gap-2 text-blue-600">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent" />
+                  <div className="flex items-center gap-2 text-gi-primary/600">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-gi-primary/600 border-t-transparent" />
                     Detecting your location...
                   </div>
                 )}
@@ -347,7 +347,7 @@ export function FastingRegistration() {
             </div>
 
             {/* GPS Agreement Checkbox */}
-            <div className="flex items-start space-x-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <div className="flex items-start space-x-3 p-4 bg-gi-primary/50 dark:bg-gi-primary/900/20 rounded-lg">
               <Checkbox
                 id="gpsAgreement"
                 checked={formData.agreedToGPS}
@@ -365,7 +365,7 @@ export function FastingRegistration() {
             {/* Submit Button */}
             <Button 
               type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-semibold"
+              className="w-full bg-gi-primary/600 hover:bg-gi-primary/700 text-white py-3 text-lg font-semibold"
               disabled={registrationMutation.isPending || locationStatus !== "success"}
             >
               {registrationMutation.isPending ? (

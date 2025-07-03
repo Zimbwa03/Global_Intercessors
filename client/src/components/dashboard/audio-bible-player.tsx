@@ -208,7 +208,7 @@ export function AudioBiblePlayer({ isActive, slotTime, onPlaybackChange }: Audio
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
-          <i className="fas fa-bible text-blue-600"></i>
+          <i className="fas fa-bible text-gi-primary/600"></i>
           <span>Audio Bible Player</span>
           {isActive && (
             <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold">
@@ -257,10 +257,10 @@ export function AudioBiblePlayer({ isActive, slotTime, onPlaybackChange }: Audio
         </div>
 
         {/* Current Video Info */}
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <h3 className="font-semibold text-blue-800 mb-2">Now Playing</h3>
-          <p className="text-blue-600">{currentVideo.title}</p>
-          <p className="text-sm text-blue-500 mt-1">
+        <div className="bg-gi-primary/50 p-4 rounded-lg">
+          <h3 className="font-semibold text-gi-primary/800 mb-2">Now Playing</h3>
+          <p className="text-gi-primary/600">{currentVideo.title}</p>
+          <p className="text-sm text-gi-primary/500 mt-1">
             {selectedBook} Chapter {selectedChapter}
           </p>
         </div>
@@ -293,7 +293,7 @@ export function AudioBiblePlayer({ isActive, slotTime, onPlaybackChange }: Audio
             <Button
               onClick={handlePlay}
               disabled={progressMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-gi-primary/600 hover:bg-gi-primary/700 text-white"
             >
               <i className="fas fa-play mr-2"></i>
               Play Audio Bible

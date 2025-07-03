@@ -12,23 +12,23 @@ export function HeroSection({ onGetStarted, onLearnMore }: HeroSectionProps) {
       <div className="container mx-auto px-6 relative">
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-8">
-            <div className="w-20 h-20 bg-brand-accent rounded-full flex items-center justify-center mx-auto mb-6 shadow-brand-lg transform hover:scale-110 transition-brand">
-              <i className="fas fa-globe text-brand-primary text-3xl"></i>
+            <div className="w-20 h-20 bg-gi-gold rounded-full flex items-center justify-center mx-auto mb-6 shadow-brand-lg transform hover:scale-110 transition-brand">
+              <i className="fas fa-globe text-gi-primary text-3xl"></i>
             </div>
             <h1 className="font-poppins text-5xl md:text-7xl font-bold mb-6 leading-tight tracking-tight">
               Global Intercessors
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-blue-100 leading-relaxed font-medium">
+            <p className="text-xl md:text-2xl mb-8 text-gi-primary/100 leading-relaxed font-medium">
               Uniting the World in Prayer, 24 Hours a Day
             </p>
-            <p className="text-lg md:text-xl mb-12 text-blue-200 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl mb-12 text-gi-primary/200 max-w-2xl mx-auto leading-relaxed">
               Join thousands of believers worldwide in continuous prayer coverage, spiritual growth, and fellowship through our comprehensive prayer platform.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
             <Button 
               onClick={onGetStarted}
-              className="bg-brand-accent text-brand-primary px-8 py-4 rounded-xl font-semibold text-lg hover:bg-brand-accent-dark transform hover:scale-105 transition-brand shadow-brand-lg font-poppins"
+              className="bg-gi-gold text-gi-primary px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gi-gold-dark transform hover:scale-105 transition-brand shadow-brand-lg font-poppins"
             >
               <i className="fas fa-rocket mr-3"></i>
               Join the Prayer Movement
@@ -36,7 +36,7 @@ export function HeroSection({ onGetStarted, onLearnMore }: HeroSectionProps) {
             <Button 
               variant="outline"
               onClick={onLearnMore}
-              className="border-2 border-blue-200 text-blue-100 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-blue-100 hover:text-brand-primary transition-brand shadow-brand font-poppins"
+              className="border-2 border-gi-primary/200 text-gi-primary/100 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gi-primary/100 hover:text-gi-primary transition-brand shadow-brand font-poppins"
             >
               <i className="fas fa-play mr-3"></i>
               Learn More

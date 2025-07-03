@@ -245,7 +245,7 @@ export function BibleVerseSearch() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="shadow-lg border border-blue-100">
+      <Card className="shadow-lg border border-gi-primary/100">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-3">
@@ -466,7 +466,7 @@ export function BibleVerseSearch() {
 
       {/* Current Verse Display */}
       {currentVerse && searchMode === 'browse' && (
-        <Card className="shadow-lg border border-blue-100">
+        <Card className="shadow-lg border border-gi-primary/100">
           <CardContent className="p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
@@ -502,7 +502,7 @@ export function BibleVerseSearch() {
                 <span>Loading verse content...</span>
               </div>
             ) : (
-              <blockquote className="text-lg leading-relaxed text-gray-800 italic border-l-4 border-brand-primary pl-4">
+              <blockquote className="text-lg leading-relaxed text-gray-800 italic border-l-4 border-gi-primary/primary pl-4">
                 "{currentVerse.text || (currentVerse.content ? currentVerse.content.replace(/<[^>]*>/g, '').trim() : 'Verse content not available')}"
               </blockquote>
             )}
@@ -512,7 +512,7 @@ export function BibleVerseSearch() {
 
       {/* Search Results */}
       {searchMode === 'search' && searchResults && (
-        <Card className="shadow-lg border border-blue-100">
+        <Card className="shadow-lg border border-gi-primary/100">
           <CardHeader>
             <CardTitle className="text-lg font-poppins">
               Search Results for "{searchQuery}"
@@ -530,7 +530,7 @@ export function BibleVerseSearch() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="p-4 bg-gradient-to-r from-blue-50 to-white rounded-lg border border-blue-100 hover:shadow-md transition-all"
+                    className="p-4 bg-gradient-to-r from-blue-50 to-white rounded-lg border border-gi-primary/100 hover:shadow-md transition-all"
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div>

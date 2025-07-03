@@ -10,7 +10,7 @@ export default function BibleChatPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-3">
-            <Book className="w-10 h-10 text-blue-600" />
+            <Book className="w-10 h-10 text-gi-primary/600" />
             AI-Powered Bible Study Assistant
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
@@ -21,7 +21,7 @@ export default function BibleChatPage() {
 
         {/* Main Bible Chat Interface */}
         <div className="mb-8">
-          <Card className="border-2 border-blue-200 shadow-lg">
+          <Card className="border-2 border-gi-primary/200 shadow-lg">
             <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
               <CardTitle className="flex items-center">
                 <MessageCircle className="w-6 h-6 mr-3" />
@@ -36,9 +36,9 @@ export default function BibleChatPage() {
 
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="text-center p-6 hover:shadow-lg transition-shadow border-2 border-blue-100">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MessageCircle className="w-6 h-6 text-blue-600" />
+          <Card className="text-center p-6 hover:shadow-lg transition-shadow border-2 border-gi-primary/100">
+            <div className="w-12 h-12 bg-gi-primary/100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MessageCircle className="w-6 h-6 text-gi-primary/600" />
             </div>
             <h3 className="font-semibold text-lg mb-2">Interactive Chat</h3>
             <p className="text-gray-600 text-sm">
@@ -79,15 +79,15 @@ export default function BibleChatPage() {
 
         {/* Additional Information */}
         <div className="mt-8 text-center">
-          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-gi-primary/200">
             <CardContent className="p-6">
               <div className="flex items-center justify-center mb-4">
-                <Globe className="w-8 h-8 text-blue-600 mr-3" />
-                <h3 className="text-xl font-semibold text-blue-800">
+                <Globe className="w-8 h-8 text-gi-primary/600 mr-3" />
+                <h3 className="text-xl font-semibold text-gi-primary/800">
                   Multiple Bible Versions Supported
                 </h3>
               </div>
-              <p className="text-blue-700 max-w-2xl mx-auto">
+              <p className="text-gi-primary/700 max-w-2xl mx-auto">
                 Access KJV, NIV, ESV, NASB, and NLT Bible versions with AI-powered contextual understanding 
                 and cross-reference capabilities for comprehensive biblical study.
               </p>

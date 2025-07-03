@@ -212,7 +212,7 @@ export default function PrayerSlotManagement() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
         <Card className="w-96 shadow-brand-lg">
           <CardContent className="p-6 text-center">
-            <AlertCircle className="w-12 h-12 text-brand-primary mx-auto mb-4" />
+            <AlertCircle className="w-12 h-12 text-gi-primary mx-auto mb-4" />
             <h2 className="text-xl font-poppins font-semibold text-brand-text mb-2">Authentication Required</h2>
             <p className="text-gray-600">Please log in to access your prayer slot management.</p>
           </CardContent>
@@ -225,7 +225,7 @@ export default function PrayerSlotManagement() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-primary border-t-transparent mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gi-primary/primary border-t-transparent mx-auto mb-4"></div>
           <p className="text-brand-text font-poppins">Loading your prayer slot...</p>
         </div>
       </div>
@@ -242,20 +242,20 @@ export default function PrayerSlotManagement() {
         </div>
 
         {/* Current Slot Status */}
-        <Card className="shadow-brand-lg border border-blue-100">
+        <Card className="shadow-brand-lg border border-gi-primary/100">
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center shadow-brand">
-                <Clock className="w-5 h-5 text-brand-accent" />
+              <div className="w-10 h-10 bg-gi-primary rounded-lg flex items-center justify-center shadow-brand">
+                <Clock className="w-5 h-5 text-gi-gold" />
               </div>
               <span className="font-poppins text-xl">Your Prayer Slot</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 border border-blue-100">
+            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 border border-gi-primary/100">
               {prayerSlot ? (
                 <div className="text-center">
-                  <h2 className="text-4xl font-bold text-brand-primary mb-4 font-poppins">
+                  <h2 className="text-4xl font-bold text-gi-primary mb-4 font-poppins">
                     {prayerSlot.slotTime}
                   </h2>
                   <div className="flex items-center justify-center gap-2 mb-6">
@@ -268,7 +268,7 @@ export default function PrayerSlotManagement() {
                   {prayerSlot.status === 'active' && (
                     <div className="mb-6">
                       <p className="text-sm text-gray-600 mb-2">Next session in:</p>
-                      <div className="text-3xl font-bold text-brand-primary font-poppins">
+                      <div className="text-3xl font-bold text-gi-primary font-poppins">
                         {String(countdown.hours).padStart(2, '0')}:
                         {String(countdown.minutes).padStart(2, '0')}:
                         {String(countdown.seconds).padStart(2, '0')}
@@ -298,7 +298,7 @@ export default function PrayerSlotManagement() {
                         onClick={handleSkipSlot}
                         disabled={skipSlotMutation.isPending}
                         variant="outline"
-                        className="border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-primary transition-brand font-poppins"
+                        className="border-gi-primary/accent text-gi-gold hover:bg-gi-gold hover:text-gi-primary transition-brand font-poppins"
                       >
                         <RotateCcw className="w-4 h-4 mr-2" />
                         {skipSlotMutation.isPending ? 'Processing...' : 'Request Skip (5 days)'}
@@ -309,7 +309,7 @@ export default function PrayerSlotManagement() {
                       <DialogTrigger asChild>
                         <Button 
                           variant="outline"
-                          className="border-brand-primary text-brand-primary hover:bg-blue-50 transition-brand font-poppins"
+                          className="border-gi-primary/primary text-gi-primary hover:bg-gi-primary/50 transition-brand font-poppins"
                         >
                           <Edit3 className="w-4 h-4 mr-2" />
                           Change Time Slot
@@ -324,7 +324,7 @@ export default function PrayerSlotManagement() {
                         </div>
                         <div className="space-y-4">
                           <Select onValueChange={handleChangeSlot}>
-                            <SelectTrigger className="border-blue-200 focus:ring-brand-primary focus:border-brand-primary">
+                            <SelectTrigger className="border-gi-primary/200 focus:ring-brand-primary focus:border-gi-primary/primary">
                               <SelectValue placeholder="Choose a new time slot" />
                             </SelectTrigger>
                             <SelectContent className="max-h-60">
@@ -342,7 +342,7 @@ export default function PrayerSlotManagement() {
                             </SelectContent>
                           </Select>
                           {changeSlotMutation.isPending && (
-                            <p className="text-sm text-brand-primary">Updating your slot...</p>
+                            <p className="text-sm text-gi-primary">Updating your slot...</p>
                           )}
                         </div>
                       </DialogContent>
@@ -356,7 +356,7 @@ export default function PrayerSlotManagement() {
                   <p className="text-gray-600 mb-4">You don't have a prayer slot assigned yet.</p>
                   <Dialog open={isChangeSlotModalOpen} onOpenChange={setIsChangeSlotModalOpen}>
                     <DialogTrigger asChild>
-                      <Button className="bg-brand-primary hover:bg-blue-800 text-white font-poppins">
+                      <Button className="bg-gi-primary hover:bg-gi-primary/800 text-white font-poppins">
                         <Calendar className="w-4 h-4 mr-2" />
                         Select Your Prayer Slot
                       </Button>
@@ -370,7 +370,7 @@ export default function PrayerSlotManagement() {
                       </div>
                       <div className="space-y-4">
                         <Select onValueChange={handleChangeSlot}>
-                          <SelectTrigger className="border-blue-200 focus:ring-brand-primary focus:border-brand-primary">
+                          <SelectTrigger className="border-gi-primary/200 focus:ring-brand-primary focus:border-gi-primary/primary">
                             <SelectValue placeholder="Choose your time slot" />
                           </SelectTrigger>
                           <SelectContent className="max-h-60">
@@ -388,7 +388,7 @@ export default function PrayerSlotManagement() {
                           </SelectContent>
                         </Select>
                         {changeSlotMutation.isPending && (
-                          <p className="text-sm text-brand-primary">Setting up your slot...</p>
+                          <p className="text-sm text-gi-primary">Setting up your slot...</p>
                         )}
                       </div>
                     </DialogContent>
@@ -400,11 +400,11 @@ export default function PrayerSlotManagement() {
         </Card>
 
         {/* Prayer Guidelines */}
-        <Card className="shadow-brand-lg border border-blue-100">
+        <Card className="shadow-brand-lg border border-gi-primary/100">
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center shadow-brand">
-                <AlertCircle className="w-5 h-5 text-brand-accent" />
+              <div className="w-10 h-10 bg-gi-primary rounded-lg flex items-center justify-center shadow-brand">
+                <AlertCircle className="w-5 h-5 text-gi-gold" />
               </div>
               <span className="font-poppins text-xl">Prayer Slot Guidelines</span>
             </CardTitle>
@@ -413,7 +413,7 @@ export default function PrayerSlotManagement() {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-brand-primary rounded-full flex items-center justify-center mt-0.5">
+                  <div className="w-6 h-6 bg-gi-primary rounded-full flex items-center justify-center mt-0.5">
                     <CheckCircle2 className="w-3 h-3 text-white" />
                   </div>
                   <div>
@@ -423,8 +423,8 @@ export default function PrayerSlotManagement() {
                 </div>
                 
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-brand-accent rounded-full flex items-center justify-center mt-0.5">
-                    <Clock className="w-3 h-3 text-brand-primary" />
+                  <div className="w-6 h-6 bg-gi-gold rounded-full flex items-center justify-center mt-0.5">
+                    <Clock className="w-3 h-3 text-gi-primary" />
                   </div>
                   <div>
                     <h4 className="font-semibold text-brand-text font-poppins">Skip Policy</h4>
@@ -445,7 +445,7 @@ export default function PrayerSlotManagement() {
                 </div>
                 
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 bg-brand-primary rounded-full flex items-center justify-center mt-0.5">
+                  <div className="w-6 h-6 bg-gi-primary rounded-full flex items-center justify-center mt-0.5">
                     <Calendar className="w-3 h-3 text-white" />
                   </div>
                   <div>
@@ -459,11 +459,11 @@ export default function PrayerSlotManagement() {
         </Card>
 
         {/* Recent Prayer Sessions */}
-        <Card className="shadow-brand-lg border border-blue-100">
+        <Card className="shadow-brand-lg border border-gi-primary/100">
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center shadow-brand">
-                <Calendar className="w-5 h-5 text-brand-accent" />
+              <div className="w-10 h-10 bg-gi-primary rounded-lg flex items-center justify-center shadow-brand">
+                <Calendar className="w-5 h-5 text-gi-gold" />
               </div>
               <span className="font-poppins text-xl">Recent Prayer Sessions</span>
             </CardTitle>
@@ -474,7 +474,7 @@ export default function PrayerSlotManagement() {
                 sessionHistory.map((session: PrayerSession, index: number) => (
                   <div 
                     key={session.id} 
-                    className="flex items-center justify-between py-3 px-4 bg-gradient-to-r from-blue-50 to-white rounded-lg border border-blue-100"
+                    className="flex items-center justify-between py-3 px-4 bg-gradient-to-r from-blue-50 to-white rounded-lg border border-gi-primary/100"
                   >
                     <div className="flex items-center gap-3">
                       {getStatusIcon(session.status)}

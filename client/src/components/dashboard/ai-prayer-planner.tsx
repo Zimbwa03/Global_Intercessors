@@ -116,7 +116,7 @@ export function AIPrayerPlanner() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Heart className="w-5 h-5 text-brand-primary" />
+            <Heart className="w-5 h-5 text-gi-primary" />
             AI-Powered Prayer Point Planner
           </CardTitle>
           <p className="text-sm text-gray-600">
@@ -148,7 +148,7 @@ export function AIPrayerPlanner() {
           >
             {plannerMutation.isPending ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-brand-primary border-t-transparent mr-2" />
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-gi-primary/primary border-t-transparent mr-2" />
                 Generating Prayer Points...
               </>
             ) : (
@@ -167,7 +167,7 @@ export function AIPrayerPlanner() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <Heart className="w-5 h-5 text-brand-primary" />
+                <Heart className="w-5 h-5 text-gi-primary" />
                 Prayer Points for {prayerCategories.find(c => c.value === selectedCategory)?.label}
               </CardTitle>
               <div className="flex gap-2">
@@ -188,7 +188,7 @@ export function AIPrayerPlanner() {
             {prayerPlan.prayerPoints.map((point, index) => (
               <div key={index} className="border rounded-lg p-4 space-y-3">
                 <div className="flex items-start justify-between">
-                  <h3 className="font-semibold text-lg text-brand-primary">
+                  <h3 className="font-semibold text-lg text-gi-primary">
                     {index + 1}. {point.title}
                   </h3>
                   <div className="flex gap-2">
@@ -214,8 +214,8 @@ export function AIPrayerPlanner() {
                 </p>
 
                 {/* Bible Verse */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border-l-4 border-blue-500">
-                  <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">
+                <div className="bg-gi-primary/50 dark:bg-gi-primary/900/20 p-3 rounded-lg border-l-4 border-gi-primary/500">
+                  <p className="text-sm font-medium text-gi-primary/700 dark:text-gi-primary/300 mb-1">
                     {point.reference}
                   </p>
                   <p className="text-gray-700 dark:text-gray-300 italic">

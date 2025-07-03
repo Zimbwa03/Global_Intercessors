@@ -32,10 +32,10 @@ export function TestimonialsSection() {
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {testimonials.map((testimonial, index) => (
-            <div key={index} className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-8 shadow-brand-lg hover:shadow-xl transition-brand border border-blue-100 group">
+            <div key={index} className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-8 shadow-brand-lg hover:shadow-xl transition-brand border border-gi-primary/100 group">
               <div className="flex items-center mb-6">
-                <div className="w-12 h-12 bg-brand-primary rounded-full flex items-center justify-center mr-4 shadow-brand group-hover:bg-brand-accent transition-brand">
-                  <span className="text-brand-accent group-hover:text-brand-primary font-bold text-lg font-poppins transition-brand">{testimonial.initials}</span>
+                <div className="w-12 h-12 bg-gi-primary rounded-full flex items-center justify-center mr-4 shadow-brand group-hover:bg-gi-gold transition-brand">
+                  <span className="text-gi-gold group-hover:text-gi-primary font-bold text-lg font-poppins transition-brand">{testimonial.initials}</span>
                 </div>
                 <div>
                   <h4 className="font-bold text-brand-text font-poppins">{testimonial.name}</h4>
@@ -45,7 +45,7 @@ export function TestimonialsSection() {
               <p className="text-gray-700 leading-relaxed mb-4">
                 {testimonial.content}
               </p>
-              <div className="flex text-brand-accent">
+              <div className="flex text-gi-gold">
                 {[...Array(5)].map((_, i) => (
                   <i key={i} className="fas fa-star hover:scale-110 transition-brand"></i>
                 ))}

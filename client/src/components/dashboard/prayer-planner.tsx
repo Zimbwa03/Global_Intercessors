@@ -69,7 +69,7 @@ interface PrayerGuideSection {
 }
 
 const prayerCategories = [
-  { value: "personal", label: "Personal Growth", icon: "🙏", color: "bg-blue-100 text-blue-800" },
+  { value: "personal", label: "Personal Growth", icon: "🙏", color: "bg-gi-primary/100 text-gi-primary/800" },
   { value: "family", label: "Family & Relationships", icon: "👨‍👩‍👧‍👦", color: "bg-green-100 text-green-800" },
   { value: "church", label: "Church & Ministry", icon: "⛪", color: "bg-purple-100 text-purple-800" },
   { value: "nation", label: "Nation & Government", icon: "🏛️", color: "bg-red-100 text-red-800" },
@@ -276,7 +276,7 @@ export function PrayerPlanner() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="shadow-lg border border-blue-100">
+      <Card className="shadow-lg border border-gi-primary/100">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-3">
@@ -354,7 +354,7 @@ export function PrayerPlanner() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-blue-500" />
+                  <Calendar className="w-5 h-5 text-gi-primary/500" />
                   <span className="font-medium">
                     {isToday(parseISO(selectedDate)) ? 'Today\'s Plan' : format(parseISO(selectedDate), 'MMMM d, yyyy')}
                   </span>

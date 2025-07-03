@@ -34,16 +34,16 @@ export function FeaturesSection() {
         
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {features.map((feature, index) => (
-            <Card key={index} className="bg-white rounded-2xl shadow-brand-lg hover:shadow-xl transition-brand border border-blue-100 group hover:-translate-y-2">
+            <Card key={index} className="bg-white rounded-2xl shadow-brand-lg hover:shadow-xl transition-brand border border-gi-primary/100 group hover:-translate-y-2">
               <CardContent className="p-8">
-                <div className="w-16 h-16 bg-brand-primary rounded-2xl flex items-center justify-center mb-6 group-hover:bg-brand-accent transition-brand shadow-brand">
-                  <i className={`${feature.icon} text-brand-accent group-hover:text-brand-primary text-2xl transition-brand`}></i>
+                <div className="w-16 h-16 bg-gi-primary rounded-2xl flex items-center justify-center mb-6 group-hover:bg-gi-gold transition-brand shadow-brand">
+                  <i className={`${feature.icon} text-gi-gold group-hover:text-gi-primary text-2xl transition-brand`}></i>
                 </div>
                 <h3 className="font-poppins text-2xl font-bold text-brand-text mb-4">{feature.title}</h3>
                 <p className="text-gray-600 leading-relaxed mb-6">
                   {feature.description}
                 </p>
-                <div className="flex items-center text-brand-accent font-semibold cursor-pointer hover:text-brand-primary transition-brand group">
+                <div className="flex items-center text-gi-gold font-semibold cursor-pointer hover:text-gi-primary transition-brand group">
                   <span className="font-poppins">{feature.cta}</span>
                   <i className="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-brand"></i>
                 </div>

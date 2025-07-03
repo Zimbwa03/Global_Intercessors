@@ -11,7 +11,7 @@ export default function PrayerPlannerPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-3">
-            <Heart className="w-10 h-10 text-brand-primary" />
+            <Heart className="w-10 h-10 text-gi-primary" />
             AI-Powered Prayer Planner
           </h1>
           <p className="text-gray-600 max-w-3xl mx-auto">
@@ -38,7 +38,7 @@ export default function PrayerPlannerPage() {
 
           {/* AI Prayer Assistant Component */}
           <div className="space-y-6">
-            <Card className="border-2 border-blue-200 shadow-lg">
+            <Card className="border-2 border-gi-primary/200 shadow-lg">
               <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
                 <CardTitle className="flex items-center">
                   <Target className="w-6 h-6 mr-3" />
@@ -65,8 +65,8 @@ export default function PrayerPlannerPage() {
           </Card>
 
           <Card className="text-center p-6 hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 bg-gi-primary/100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-6 h-6 text-gi-primary/600" />
             </div>
             <h3 className="font-semibold text-lg mb-2">Scripture Integration</h3>
             <p className="text-gray-600 text-sm">

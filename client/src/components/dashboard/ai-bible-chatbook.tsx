@@ -137,21 +137,21 @@ export function AIBibleChatbook() {
         </div>
 
         {message.scripture && (
-          <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-l-4 border-blue-500">
+          <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-l-4 border-gi-primary/500">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-blue-700 flex items-center gap-1">
+              <p className="text-sm font-semibold text-gi-primary/700 flex items-center gap-1">
                 📖 {message.scripture.reference}
               </p>
               <div className="flex gap-1">
                 <button
                   onClick={() => copyToClipboard(`${message.scripture.reference}: "${message.scripture.text}"`)}
-                  className="p-1 hover:bg-blue-100 rounded text-blue-600"
+                  className="p-1 hover:bg-gi-primary/100 rounded text-gi-primary/600"
                 >
                   <Copy className="w-3 h-3" />
                 </button>
                 <button
                   onClick={() => speakText(message.scripture.text)}
-                  className="p-1 hover:bg-blue-100 rounded text-blue-600"
+                  className="p-1 hover:bg-gi-primary/100 rounded text-gi-primary/600"
                 >
                   <Volume2 className="w-3 h-3" />
                 </button>
@@ -194,7 +194,7 @@ export function AIBibleChatbook() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <MessageCircle className="w-5 h-5 text-brand-primary" />
+            <MessageCircle className="w-5 h-5 text-gi-primary" />
             Interactive Bible Chat
           </CardTitle>
           <p className="text-sm text-gray-600">

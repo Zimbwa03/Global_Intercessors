@@ -27,9 +27,9 @@ const statusConfig = {
   },
   available: {
     icon: Clock,
-    color: 'bg-blue-500',
-    textColor: 'text-blue-700',
-    bgColor: 'bg-blue-50',
+    color: 'bg-gi-primary/500',
+    textColor: 'text-gi-primary/700',
+    bgColor: 'bg-gi-primary/50',
     label: 'Available'
   },
   changing: {
@@ -119,7 +119,7 @@ export function SlotTransition({ status, slotTime, isChanging, className }: Slot
           initial="enter"
           animate="center"
           exit="exit"
-          className={`flex items-center gap-3 p-4 rounded-lg border-2 border-transparent ${config.bgColor} hover:border-blue-200 transition-colors duration-200`}
+          className={`flex items-center gap-3 p-4 rounded-lg border-2 border-transparent ${config.bgColor} hover:border-gi-primary/200 transition-colors duration-200`}
         >
           {/* Status Icon with Pulse Effect */}
           <motion.div 

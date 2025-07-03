@@ -110,10 +110,10 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-brand-neutral">
+      <div className="min-h-screen flex items-center justify-center bg-gi-white">
         <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-4xl text-brand-primary mb-4"></i>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <i className="fas fa-spinner fa-spin text-4xl text-gi-primary mb-4"></i>
+          <p className="text-gi-dark/80">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -163,19 +163,19 @@ export default function Dashboard() {
 
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-brand-neutral">
+      <div className="min-h-screen bg-gi-white">
         {/* Mobile Header */}
-        <header className="bg-brand-primary text-white p-4 flex items-center justify-between shadow-lg">
+        <header className="bg-gi-primary text-white p-4 flex items-center justify-between shadow-lg">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-brand-accent rounded-full flex items-center justify-center">
-              <i className="fas fa-praying-hands text-brand-primary text-sm"></i>
+            <div className="w-8 h-8 bg-gi-gold rounded-full flex items-center justify-center">
+              <i className="fas fa-praying-hands text-gi-primary text-sm"></i>
             </div>
             <h1 className="font-bold text-lg font-poppins">Global Intercessors</h1>
           </div>
 
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-white hover:bg-blue-700/50">
+              <Button variant="ghost" size="sm" className="text-white hover:bg-gi-primary/80">
                 <i className="fas fa-bars"></i>
               </Button>
             </SheetTrigger>
@@ -211,7 +211,7 @@ export default function Dashboard() {
                 onClick={() => setActiveTab(item.id)}
                 className={`flex flex-col items-center px-3 py-2 rounded-lg transition-colors whitespace-nowrap ${
                   activeTab === item.id
-                    ? "bg-brand-primary text-white"
+                    ? "bg-gi-primary text-white"
                     : "text-gray-600 hover:bg-gray-100"
                 }`}
               >

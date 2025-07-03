@@ -118,7 +118,7 @@ export function AIPrayerAssistant() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
-          <Heart className="w-6 h-6 text-brand-primary" />
+          <Heart className="w-6 h-6 text-gi-primary" />
           AI Prayer Assistant
         </h2>
         <p className="text-gray-600">Get biblical guidance and structured prayer points for your needs</p>
@@ -128,7 +128,7 @@ export function AIPrayerAssistant() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Target className="w-5 h-5 text-brand-primary" />
+            <Target className="w-5 h-5 text-gi-primary" />
             Share Your Prayer Need
           </CardTitle>
         </CardHeader>
@@ -148,7 +148,7 @@ export function AIPrayerAssistant() {
           >
             {prayerAssistantMutation.isPending ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-brand-primary border-t-transparent mr-2" />
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-gi-primary/primary border-t-transparent mr-2" />
                 Generating Prayer Guidance...
               </>
             ) : (
@@ -185,11 +185,11 @@ export function AIPrayerAssistant() {
 
       {/* Prayer Response */}
       {response && (
-        <Card className="border-2 border-brand-primary">
+        <Card className="border-2 border-gi-primary/primary">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-brand-primary" />
+                <BookOpen className="w-5 h-5 text-gi-primary" />
                 Your Prayer Guidance
               </CardTitle>
               <Button
@@ -208,14 +208,14 @@ export function AIPrayerAssistant() {
             {response.bibleVerses.length > 0 && (
               <div>
                 <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-blue-600" />
+                  <BookOpen className="w-5 h-5 text-gi-primary/600" />
                   Scripture Foundation
                 </h3>
                 <div className="space-y-3">
                   {response.bibleVerses.map((verse, index) => (
-                    <div key={index} className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+                    <div key={index} className="bg-gi-primary/50 p-4 rounded-lg border-l-4 border-gi-primary/500">
                       <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-medium text-blue-800">
+                        <h4 className="font-medium text-gi-primary/800">
                           {verse.reference} ({verse.version})
                         </h4>
                         <div className="flex gap-2">
@@ -235,7 +235,7 @@ export function AIPrayerAssistant() {
                           </Button>
                         </div>
                       </div>
-                      <p className="text-blue-700 italic">"{verse.verse}"</p>
+                      <p className="text-gi-primary/700 italic">"{verse.verse}"</p>
                     </div>
                   ))}
                 </div>
@@ -286,7 +286,7 @@ export function AIPrayerAssistant() {
             <div className="flex space-x-3">
               <Button
                 variant="outline"
-                className="border-brand-primary text-brand-primary hover:bg-brand-neutral"
+                className="border-gi-primary/primary text-gi-primary hover:bg-gi-primary/neutral"
                 onClick={copyAllPrayerPoints}
               >
                 <Copy className="w-4 h-4 mr-2" />
@@ -294,7 +294,7 @@ export function AIPrayerAssistant() {
               </Button>
               <Button
                 variant="outline"
-                className="border-brand-primary text-brand-primary hover:bg-brand-neutral"
+                className="border-gi-primary/primary text-gi-primary hover:bg-gi-primary/neutral"
                 onClick={() => {
                   const shareText = `Prayer Guidance:\n\n${response.prayerPoints.join('\n')}\n\n${response.encouragement}`;
                   if (navigator.share) {

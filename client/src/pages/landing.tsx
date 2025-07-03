@@ -27,15 +27,15 @@ export default function Landing() {
   return (
     <div className="min-h-screen">
       {/* Header/Navigation - Mobile Optimized */}
-      <header className="bg-brand-primary text-white shadow-brand-lg relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-800/30 to-blue-900/20"></div>
+      <header className="bg-gi-primary text-white shadow-brand-lg relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-gi-primary/30 to-gi-primary/20"></div>
         <nav className={`container mx-auto relative ${isMobile ? 'px-4 py-3' : 'px-6 py-4'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className={`bg-brand-accent rounded-full flex items-center justify-center shadow-brand ${
+              <div className={`bg-gi-gold rounded-full flex items-center justify-center shadow-brand ${
                 isMobile ? 'w-8 h-8' : 'w-10 h-10'
               }`}>
-                <i className={`fas fa-praying-hands text-brand-primary ${isMobile ? 'text-base' : 'text-lg'}`}></i>
+                <i className={`fas fa-praying-hands text-gi-primary ${isMobile ? 'text-base' : 'text-lg'}`}></i>
               </div>
               <h1 className={`font-bold font-poppins ${isMobile ? 'text-xl' : 'text-2xl'}`}>
                 Global Intercessors
@@ -45,7 +45,7 @@ export default function Landing() {
             {isMobile ? (
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-lg hover:bg-blue-700/50 transition-colors"
+                className="p-2 rounded-lg hover:bg-gi-primary/700/50 transition-colors"
               >
                 <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'} text-xl`}></i>
               </button>
@@ -53,19 +53,19 @@ export default function Landing() {
               <div className="flex items-center space-x-6">
                 <button 
                   onClick={() => scrollToSection('features')}
-                  className="hover:text-brand-accent transition-brand font-medium"
+                  className="hover:text-gi-gold transition-brand font-medium"
                 >
                   Features
                 </button>
                 <button 
                   onClick={() => scrollToSection('contact')}
-                  className="hover:text-brand-accent transition-brand font-medium"
+                  className="hover:text-gi-gold transition-brand font-medium"
                 >
                   About
                 </button>
                 <Button 
                   onClick={scrollToAuth}
-                  className="bg-brand-accent text-brand-primary px-6 py-2 rounded-lg font-semibold hover:bg-brand-accent-dark transition-brand shadow-brand font-poppins"
+                  className="bg-gi-gold text-gi-primary px-6 py-2 rounded-lg font-semibold hover:bg-gi-gold/90 transition-brand shadow-brand font-poppins"
                 >
                   Get Started
                 </Button>
@@ -75,14 +75,14 @@ export default function Landing() {
 
           {/* Mobile Menu */}
           {isMobile && isMobileMenuOpen && (
-            <div className="mt-4 pt-4 border-t border-blue-700/50">
+            <div className="mt-4 pt-4 border-t border-gi-primary/50">
               <div className="flex flex-col space-y-4">
                 <button 
                   onClick={() => {
                     scrollToSection('features');
                     setIsMobileMenuOpen(false);
                   }}
-                  className="text-left py-2 px-4 rounded-lg hover:bg-blue-700/50 transition-colors"
+                  className="text-left py-2 px-4 rounded-lg hover:bg-gi-primary/50 transition-colors"
                 >
                   Features
                 </button>
@@ -91,7 +91,7 @@ export default function Landing() {
                     scrollToSection('contact');
                     setIsMobileMenuOpen(false);
                   }}
-                  className="text-left py-2 px-4 rounded-lg hover:bg-blue-700/50 transition-colors"
+                  className="text-left py-2 px-4 rounded-lg hover:bg-gi-primary/50 transition-colors"
                 >
                   About
                 </button>
@@ -100,7 +100,7 @@ export default function Landing() {
                     scrollToAuth();
                     setIsMobileMenuOpen(false);
                   }}
-                  className="bg-brand-accent text-brand-primary font-semibold w-full mt-2"
+                  className="bg-gi-gold text-gi-primary font-semibold w-full mt-2"
                 >
                   Get Started
                 </Button>
@@ -111,14 +111,14 @@ export default function Landing() {
       </header>
 
       {/* Hero Section - Mobile Optimized */}
-      <section className={`bg-gradient-to-br from-brand-neutral to-blue-50 ${isMobile ? 'py-12' : 'py-24'}`}>
+      <section className={`bg-gradient-to-br from-gi-white to-gi-gold/10 ${isMobile ? 'py-12' : 'py-24'}`}>
         <div className={`container mx-auto text-center ${isMobile ? 'px-4' : 'px-6'}`}>
           <div className={`max-w-4xl mx-auto ${isMobile ? 'space-y-6' : 'space-y-8'}`}>
-            <h1 className={`font-bold text-brand-text font-poppins ${
+            <h1 className={`font-bold text-gi-dark font-poppins ${
               isMobile ? 'text-3xl leading-tight' : 'text-5xl lg:text-6xl'
             }`}>
               Unite in Prayer
-              <span className="text-brand-primary block">Transform the World</span>
+              <span className="text-gi-primary block">Transform the World</span>
             </h1>
             <p className={`text-gray-600 max-w-2xl mx-auto leading-relaxed ${
               isMobile ? 'text-base px-2' : 'text-xl'
@@ -129,7 +129,7 @@ export default function Landing() {
             <div className={`flex gap-4 justify-center ${isMobile ? 'flex-col items-center' : ''}`}>
               <Button 
                 onClick={scrollToAuth}
-                className={`bg-brand-primary hover:bg-blue-800 text-white font-semibold transition-brand shadow-brand font-poppins ${
+                className={`bg-gi-primary hover:bg-gi-primary/800 text-white font-semibold transition-brand shadow-brand font-poppins ${
                   isMobile ? 'w-full max-w-sm px-8 py-4 text-lg' : 'px-8 py-4 text-lg'
                 }`}
               >
@@ -139,7 +139,7 @@ export default function Landing() {
               <Button 
                 onClick={scrollToFeatures}
                 variant="outline"
-                className={`border-brand-primary text-brand-primary hover:bg-blue-50 font-semibold transition-brand font-poppins ${
+                className={`border-gi-primary/primary text-gi-primary hover:bg-gi-primary/50 font-semibold transition-brand font-poppins ${
                   isMobile ? 'w-full max-w-sm px-8 py-4 text-lg' : 'px-8 py-4 text-lg'
                 }`}
               >
