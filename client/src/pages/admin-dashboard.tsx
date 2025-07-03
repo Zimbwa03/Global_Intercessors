@@ -1419,7 +1419,11 @@ export default function AdminDashboard() {
         <div className="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Shield className="w-6 h-6 text-gi-primary" />
+              <img 
+                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                alt="Global Intercessors Icon" 
+                className="w-6 h-6 object-contain"
+              />
               <div>
                 <h1 className="text-lg font-bold text-gray-900">Admin Portal</h1>
                 <p className="text-xs text-gray-500">Global Intercessors</p>
@@ -1452,7 +1456,11 @@ export default function AdminDashboard() {
         <div className="bg-gi-primary text-white p-6">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Shield className="w-8 h-8" />
+              <img 
+                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                alt="Global Intercessors Icon" 
+                className="w-8 h-8 object-contain"
+              />
               <div>
                 <h1 className="text-2xl font-bold">Global Intercessors Admin</h1>
                 <p className="text-gi-primary/100 text-sm">Management Dashboard</p>

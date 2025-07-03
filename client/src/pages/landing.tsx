@@ -32,11 +32,11 @@ export default function Landing() {
         <nav className={`container mx-auto relative ${isMobile ? 'px-4 py-3' : 'px-6 py-4'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className={`bg-gi-gold rounded-full flex items-center justify-center shadow-brand ${
-                isMobile ? 'w-8 h-8' : 'w-10 h-10'
-              }`}>
-                <i className={`fas fa-praying-hands text-gi-primary ${isMobile ? 'text-base' : 'text-lg'}`}></i>
-              </div>
+              <img 
+                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                alt="Global Intercessors Icon" 
+                className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} object-contain`}
+              />
               <h1 className={`font-bold font-poppins ${isMobile ? 'text-xl' : 'text-2xl'}`}>
                 Global Intercessors
               </h1>

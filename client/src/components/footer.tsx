@@ -33,9 +33,11 @@ export function Footer() {
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           <div className="md:col-span-2">
             <div className="flex items-center space-x-3 mb-6">
-              <div className="w-12 h-12 bg-gi-gold rounded-full flex items-center justify-center shadow-brand">
-                <i className="fas fa-praying-hands text-gi-primary text-xl"></i>
-              </div>
+              <img 
+                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                alt="Global Intercessors Icon" 
+                className="w-12 h-12 object-contain"
+              />
               <h3 className="text-2xl font-bold font-poppins">Global Intercessors</h3>
             </div>
             <p className="text-gi-primary/100 leading-relaxed mb-6 max-w-md">

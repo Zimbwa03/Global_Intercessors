@@ -173,8 +173,12 @@ export default function AdminLogin() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-gi-primary/600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i className="fas fa-shield-alt text-white text-2xl"></i>
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+              alt="Global Intercessors Icon" 
+              className="w-16 h-16 object-contain"
+            />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-800">Admin Portal</CardTitle>
           <p className="text-gray-600">Global Intercessors Management</p>

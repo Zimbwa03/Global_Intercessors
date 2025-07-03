@@ -32,9 +32,11 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, isMobile
         {/* Mobile Header */}
         <div className="p-4 border-b border-gi-primary/50 relative">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gi-gold rounded-full flex items-center justify-center">
-              <i className="fas fa-praying-hands text-gi-primary text-sm"></i>
-            </div>
+            <img 
+              src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+              alt="Global Intercessors Icon" 
+              className="w-8 h-8 object-contain"
+            />
             <h2 className="font-bold text-lg font-poppins">Global Intercessors</h2>
           </div>
         </div>
@@ -110,9 +112,11 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, isMobile
         <div className="flex items-center justify-between">
           {!isCollapsed && (
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gi-gold rounded-full flex items-center justify-center shadow-brand">
-                <i className="fas fa-praying-hands text-gi-primary text-sm"></i>
-              </div>
+              <img 
+                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                alt="Global Intercessors Icon" 
+                className="w-8 h-8 object-contain"
+              />
               <h2 className="font-bold text-lg font-poppins">Global Intercessors</h2>
             </div>
           )}

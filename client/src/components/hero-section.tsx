@@ -12,8 +12,12 @@ export function HeroSection({ onGetStarted, onLearnMore }: HeroSectionProps) {
       <div className="container mx-auto px-6 relative">
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-8">
-            <div className="w-20 h-20 bg-gi-gold rounded-full flex items-center justify-center mx-auto mb-6 shadow-brand-lg transform hover:scale-110 transition-brand">
-              <i className="fas fa-globe text-gi-primary text-3xl"></i>
+            <div className="flex justify-center mb-6">
+              <img 
+                src="/src/assets/GI_Logo_Main_1751586542563.png" 
+                alt="Global Intercessors Logo" 
+                className="h-20 w-auto object-contain transform hover:scale-110 transition-all duration-300"
+              />
             </div>
             <h1 className="font-poppins text-5xl md:text-7xl font-bold mb-6 leading-tight tracking-tight">
               Global Intercessors
