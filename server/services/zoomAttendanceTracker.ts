@@ -129,7 +129,9 @@ class ZoomAttendanceTracker {
   private async getRecentZoomMeetings() {
     try {
       const today = dayjs().format('YYYY-MM-DD');
-      const yesterday = dayjs().subtract(1, 'day').format('YYYY-MM-DD');
+      const sevenDaysAgo = dayjs().subtract(7, 'day').format('YYYY-MM-DD');
+
+      console.log(`🔍 Searching for meetings from ${sevenDaysAgo} to ${today}`);
 
       const response = await axios.get(
         `https://api.zoom.us/v2/users/me/meetings`,
@@ -140,17 +142,39 @@ class ZoomAttendanceTracker {
           },
           params: {
             type: 'previous_meetings',
-            from: yesterday,
+            from: sevenDaysAgo,
             to: today,
-            page_size: 100
+            page_size: 300
           }
         }
       );
 
-      console.log(`Found ${response.data.meetings?.length || 0} recent meetings`);
-      return response.data.meetings || [];
-    } catch (error) {
-      console.error('Error fetching Zoom meetings:', error.response?.data || error.message);
+      const meetings = response.data.meetings || [];
+      console.log(`📊 Found ${meetings.length} meetings in the last 7 days`);
+      
+      if (meetings.length > 0) {
+        console.log('📋 Sample meeting data:', JSON.stringify(meetings[0], null, 2));
+        meetings.forEach((meeting: any, index: number) => {
+          console.log(`📅 Meeting ${index + 1}: ${meeting.topic} (${meeting.id}) - ${meeting.start_time}`);
+        });
+      } else {
+        console.log('⚠️ No meetings found. This could mean:');
+        console.log('  1. No Zoom meetings were held in the date range');
+        console.log('  2. Meetings are under a different user account');
+        console.log('  3. Meeting history retention settings');
+        console.log('  4. API permissions or scope issues');
+      }
+
+      return meetings;
+    } catch (error: any) {
+      console.error('❌ Error fetching Zoom meetings:', error.response?.data || error.message);
+      console.error('🔍 Debug info:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        headers: error.response?.headers,
+        url: error.config?.url,
+        params: error.config?.params
+      });
       return [];
     }
   }

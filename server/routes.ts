@@ -107,37 +107,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('Found attendance records:', formattedAttendance.length);
       
-      // If no attendance records exist, return mock data for demonstration
+      // If no attendance records exist, suggest generating test data
       if (formattedAttendance.length === 0) {
-        console.log('No attendance records found, returning mock data for user:', userId);
+        console.log('No attendance records found for user:', userId);
         
-        // Create realistic mock attendance data for the last 30 days
-        const mockAttendance = [];
-        const now = new Date();
-        
-        for (let i = 0; i < 30; i++) {
-          const date = new Date(now);
-          date.setDate(date.getDate() - i);
-          const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD format
-          
-          // Simulate realistic attendance pattern (85% attendance rate)
-          const attended = Math.random() > 0.15;
-          const sessionDuration = attended ? Math.floor(Math.random() * 20) + 10 : null; // 10-30 minutes
-          
-          mockAttendance.push({
-            id: `mock_${i}`,
-            user_id: userId,
-            date: dateStr,
-            attended: attended,
-            status: attended ? 'attended' : 'missed',
-            session_duration: sessionDuration,
-            created_at: date.toISOString(),
-            zoom_meeting_id: attended ? `mock_meeting_${i}` : null
-          });
-        }
-        
-        console.log('Returning', mockAttendance.length, 'mock attendance records');
-        return res.json(mockAttendance);
+        // Return empty array with suggestion to generate test data
+        return res.json({
+          attendance: [],
+          message: "No attendance records found. Use the admin panel to generate test data or ensure Zoom tracking is working.",
+          suggestion: "POST /api/admin/generate-test-attendance with userId to create test data"
+        });
       }
       
       res.json(formattedAttendance);
@@ -1871,7 +1850,7 @@ Respond in JSON format as an array:
     }
   });
 
-  // Test Zoom API connection
+  // Test Zoom API connection with comprehensive debugging
   app.get("/api/admin/test-zoom", async (req: Request, res: Response) => {
     try {
       const clientId = process.env.ZOOM_CLIENT_ID;
@@ -1897,7 +1876,7 @@ Respond in JSON format as an array:
 
       // Try to get access token
       const axios = require('axios');
-      const response = await axios.post('https://zoom.us/oauth/token', 
+      const tokenResponse = await axios.post('https://zoom.us/oauth/token', 
         `grant_type=account_credentials&account_id=${accountId}`,
         {
           headers: {
@@ -1907,17 +1886,72 @@ Respond in JSON format as an array:
         }
       );
 
+      const accessToken = tokenResponse.data.access_token;
+
+      // Test getting user info
+      const userResponse = await axios.get('https://api.zoom.us/v2/users/me', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      // Test getting meetings (last 7 days)
+      const today = new Date().toISOString().split('T')[0];
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      const meetingsResponse = await axios.get('https://api.zoom.us/v2/users/me/meetings', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        params: {
+          type: 'previous_meetings',
+          from: sevenDaysAgo,
+          to: today,
+          page_size: 100
+        }
+      });
+
+      // Test getting live meetings
+      const liveMeetingsResponse = await axios.get('https://api.zoom.us/v2/users/me/meetings', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        params: {
+          type: 'live',
+          page_size: 100
+        }
+      });
+
       res.json({ 
         success: true, 
-        message: "Zoom API connection successful",
-        tokenType: response.data.token_type,
-        expiresIn: response.data.expires_in
+        message: "Zoom API connection and data retrieval successful",
+        tokenType: tokenResponse.data.token_type,
+        expiresIn: tokenResponse.data.expires_in,
+        user: {
+          id: userResponse.data.id,
+          email: userResponse.data.email,
+          displayName: userResponse.data.display_name
+        },
+        meetings: {
+          totalPastMeetings: meetingsResponse.data.meetings?.length || 0,
+          pastMeetings: meetingsResponse.data.meetings?.slice(0, 3) || [],
+          totalLiveMeetings: liveMeetingsResponse.data.meetings?.length || 0,
+          liveMeetings: liveMeetingsResponse.data.meetings || []
+        },
+        dateRange: {
+          from: sevenDaysAgo,
+          to: today
+        }
       });
     } catch (error: any) {
       console.error('Zoom API test failed:', error.response?.data || error.message);
       res.status(500).json({ 
         error: "Zoom API connection failed",
-        details: error.response?.data || error.message
+        details: error.response?.data || error.message,
+        suggestion: "Check your Zoom credentials in the Secrets tab"
       });
     }
   });
@@ -2036,6 +2070,172 @@ Respond in JSON format as an array:
       console.error('Error force processing Zoom meetings:', error);
       res.status(500).json({ 
         error: "Failed to process Zoom meetings",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Manual attendance logging for testing
+  app.post("/api/admin/log-attendance", async (req: Request, res: Response) => {
+    try {
+      const { userId, userEmail, duration = 20 } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+
+      console.log('🔄 Admin manually logging attendance...', { userId, userEmail, duration });
+
+      const { zoomAttendanceTracker } = await import('./services/zoomAttendanceTracker.js');
+      const result = await zoomAttendanceTracker.logManualAttendance(userId, userEmail || '', duration);
+      
+      res.json({
+        success: true,
+        message: `Manual attendance logged successfully`,
+        result
+      });
+    } catch (error) {
+      console.error('Error logging manual attendance:', error);
+      res.status(500).json({ 
+        error: "Failed to log manual attendance",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Get all attendance records for debugging
+  app.get("/api/admin/attendance-debug", async (req: Request, res: Response) => {
+    try {
+      console.log('🔍 Admin debugging attendance records...');
+
+      // Get all attendance records
+      const { data: attendanceRecords, error: attendanceError } = await supabaseAdmin
+        .from('attendance_log')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (attendanceError) {
+        console.error("Error fetching attendance records:", attendanceError);
+        return res.status(500).json({ error: "Failed to fetch attendance records" });
+      }
+
+      // Get all prayer slots
+      const { data: prayerSlots, error: slotsError } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (slotsError) {
+        console.error("Error fetching prayer slots:", slotsError);
+        return res.status(500).json({ error: "Failed to fetch prayer slots" });
+      }
+
+      // Get all zoom meetings
+      const { data: zoomMeetings, error: zoomError } = await supabaseAdmin
+        .from('zoom_meetings')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (zoomError) {
+        console.error("Error fetching zoom meetings:", zoomError);
+        return res.status(500).json({ error: "Failed to fetch zoom meetings" });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          attendanceRecords: attendanceRecords || [],
+          prayerSlots: prayerSlots || [],
+          zoomMeetings: zoomMeetings || [],
+          counts: {
+            totalAttendance: attendanceRecords?.length || 0,
+            totalSlots: prayerSlots?.length || 0,
+            totalZoomMeetings: zoomMeetings?.length || 0
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error in attendance debug:', error);
+      res.status(500).json({ 
+        error: "Failed to debug attendance",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Generate test attendance data for development
+  app.post("/api/admin/generate-test-attendance", async (req: Request, res: Response) => {
+    try {
+      const { userId, days = 30 } = req.body;
+      
+      console.log('🔄 Generating test attendance data...', { userId, days });
+
+      // Get user's prayer slot
+      const { data: prayerSlot } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (!prayerSlot) {
+        return res.status(404).json({ error: "No active prayer slot found for user" });
+      }
+
+      const testAttendanceRecords = [];
+      const today = new Date();
+
+      for (let i = 0; i < days; i++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+
+        // Simulate 85% attendance rate
+        const attended = Math.random() > 0.15;
+        const status = attended ? 'attended' : 'missed';
+
+        const attendanceRecord = {
+          user_id: userId,
+          slot_id: prayerSlot.id,
+          date: dateStr,
+          status: status,
+          zoom_join_time: attended ? new Date(date.getTime() + Math.random() * 1800000).toISOString() : null, // Random time within 30 min
+          zoom_leave_time: attended ? new Date(date.getTime() + 1800000 + Math.random() * 1200000).toISOString() : null, // 30-50 min session
+          zoom_meeting_id: attended ? `test_meeting_${Date.now()}_${i}` : null,
+          created_at: date.toISOString()
+        };
+
+        testAttendanceRecords.push(attendanceRecord);
+      }
+
+      // Insert test records
+      const { data: insertedRecords, error } = await supabaseAdmin
+        .from('attendance_log')
+        .upsert(testAttendanceRecords, { 
+          onConflict: 'user_id,date',
+          ignoreDuplicates: false 
+        })
+        .select();
+
+      if (error) {
+        console.error('Error inserting test attendance:', error);
+        return res.status(500).json({ error: "Failed to generate test attendance data" });
+      }
+
+      console.log(`✅ Generated ${testAttendanceRecords.length} test attendance records`);
+
+      res.json({
+        success: true,
+        message: `Generated ${testAttendanceRecords.length} test attendance records`,
+        recordsGenerated: testAttendanceRecords.length,
+        sampleRecords: testAttendanceRecords.slice(0, 3)
+      });
+    } catch (error) {
+      console.error('Error generating test attendance:', error);
+      res.status(500).json({ 
+        error: "Failed to generate test attendance data",
         details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
