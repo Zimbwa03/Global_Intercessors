@@ -36,7 +36,15 @@ export function FeaturesSection() {
           {features.map((feature, index) => (
             <Card key={index} className="bg-white rounded-2xl shadow-brand-lg hover:shadow-xl transition-brand border border-gi-primary/100 group hover:-translate-y-2">
               <CardContent className="p-8">
-                <div className="w-16 h-16 bg-gi-primary rounded-2xl flex items-center justify-center mb-6 group-hover:bg-gi-gold transition-brand shadow-brand">
+                <div className="w-16 h-16 bg-gi-primary rounded-2xl flex items-center justify-center mb-6 group-hover:bg-gi-gold transition-brand shadow-brand relative">
+                  <img 
+                    src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                    alt="Global Intercessors Icon" 
+                    className="w-8 h-8 object-contain opacity-75 group-hover:opacity-100 transition-brand absolute"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
                   <i className={`${feature.icon} text-gi-gold group-hover:text-gi-primary text-2xl transition-brand`}></i>
                 </div>
                 <h3 className="font-poppins text-2xl font-bold text-brand-text mb-4">{feature.title}</h3>

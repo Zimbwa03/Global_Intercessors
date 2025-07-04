@@ -153,7 +153,15 @@ export function AuthSection() {
         <div className="max-w-md mx-auto">
           <div className="text-center mb-12">
             <div className="w-16 h-16 bg-gi-gold rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-brand-lg">
-              <i className="fas fa-door-open text-gi-primary text-2xl"></i>
+              <img 
+                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                alt="Global Intercessors Icon" 
+                className="w-8 h-8 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  console.error('Auth section logo failed to load');
+                }}
+              />
             </div>
             <h2 className="font-poppins text-4xl font-bold text-brand-text mb-4">Join Our Community</h2>
             <p className="text-gray-600 text-lg">Start your spiritual journey with thousands of believers worldwide</p>

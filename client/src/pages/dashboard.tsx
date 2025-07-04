@@ -52,11 +52,11 @@ export default function Dashboard() {
           } as AuthUser & { profile: any };
 
           setUser(enrichedUser);
-          
+
           // Initialize notifications
           await notificationService.initialize();
           console.log('Notification service initialized:', notificationService.getFCMToken() !== null);
-          
+
           // Schedule prayer slot reminders if user has active slots
           try {
             const response = await fetch(`/api/prayer-slot/${user.id}`);

@@ -139,10 +139,10 @@ export default function PrayerSlotManagement() {
       const now = new Date();
       const [startTime] = prayerSlot.slotTime.split('–');
       const [hours, minutes] = startTime.split(':').map(Number);
-      
+
       const nextSession = new Date();
       nextSession.setHours(hours, minutes, 0, 0);
-      
+
       // If the time has passed today, set for tomorrow
       if (nextSession <= now) {
         nextSession.setDate(nextSession.getDate() + 1);
@@ -304,7 +304,7 @@ export default function PrayerSlotManagement() {
                         {skipSlotMutation.isPending ? 'Processing...' : 'Request Skip (5 days)'}
                       </Button>
                     )}
-                    
+
                     <Dialog open={isChangeSlotModalOpen} onOpenChange={setIsChangeSlotModalOpen}>
                       <DialogTrigger asChild>
                         <Button 
@@ -421,7 +421,7 @@ export default function PrayerSlotManagement() {
                     <p className="text-sm text-gray-600">Dedicate 30 minutes of focused prayer during your assigned slot</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 bg-gi-gold rounded-full flex items-center justify-center mt-0.5">
                     <Clock className="w-3 h-3 text-gi-primary" />
@@ -432,7 +432,7 @@ export default function PrayerSlotManagement() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center mt-0.5">
@@ -443,7 +443,7 @@ export default function PrayerSlotManagement() {
                     <p className="text-sm text-gray-600">Missing 5 days in a row will auto-release your slot to other intercessors</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 bg-gi-primary rounded-full flex items-center justify-center mt-0.5">
                     <Calendar className="w-3 h-3 text-white" />

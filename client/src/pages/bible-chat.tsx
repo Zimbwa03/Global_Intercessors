@@ -37,7 +37,15 @@ export default function BibleChatPage() {
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="text-center p-6 hover:shadow-lg transition-shadow border-2 border-gi-primary/100">
-            <div className="w-12 h-12 bg-gi-primary/100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-12 h-12 bg-gi-primary/100 rounded-full flex items-center justify-center mx-auto mb-4 relative">
+              <img 
+                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                alt="Global Intercessors Icon" 
+                className="w-6 h-6 object-contain absolute opacity-50"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
               <MessageCircle className="w-6 h-6 text-gi-primary/600" />
             </div>
             <h3 className="font-semibold text-lg mb-2">Interactive Chat</h3>

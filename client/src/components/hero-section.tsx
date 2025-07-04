@@ -14,9 +14,13 @@ export function HeroSection({ onGetStarted, onLearnMore }: HeroSectionProps) {
           <div className="mb-8">
             <div className="flex justify-center mb-6">
               <img 
-                src="/src/assets/GI_Logo_Main_1751586542563.png" 
+                src="/src/assets/GI_Lion_Logo.png" 
                 alt="Global Intercessors Logo" 
                 className="h-20 w-auto object-contain transform hover:scale-110 transition-all duration-300"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  console.error('Hero logo failed to load');
+                }}
               />
             </div>
             <h1 className="font-poppins text-5xl md:text-7xl font-bold mb-6 leading-tight tracking-tight">

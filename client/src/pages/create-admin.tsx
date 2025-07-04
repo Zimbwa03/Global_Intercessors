@@ -51,7 +51,7 @@ export default function CreateAdmin() {
         title: "Admin Created Successfully",
         description: `${email} has been added as an administrator and can now log in`,
       });
-      
+
       setEmail("");
     } catch (error: any) {
       toast({
