@@ -33,9 +33,9 @@ export default function Landing() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <img 
-                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
-                alt="Global Intercessors Icon" 
-                className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} object-contain`}
+                src="/client/src/assets/GI_Global_Logo.png" 
+                alt="Global Intercessors" 
+                className={`${isMobile ? 'h-8 w-auto' : 'h-10 w-auto'} object-contain`}
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   console.error('Landing page logo failed to load');

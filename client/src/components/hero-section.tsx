@@ -14,12 +14,12 @@ export function HeroSection({ onGetStarted, onLearnMore }: HeroSectionProps) {
           <div className="mb-8">
             <div className="flex justify-center mb-6">
               <img 
-                src="/src/assets/GI_Lion_Logo.png" 
+                src="/client/src/assets/GI_Global_Logo.png" 
                 alt="Global Intercessors Logo" 
-                className="h-20 w-auto object-contain transform hover:scale-110 transition-all duration-300"
+                className="h-24 w-auto object-contain transform hover:scale-110 transition-all duration-300 drop-shadow-lg"
                 onError={(e) => {
+                  console.error('Hero logo failed to load, falling back to text');
                   e.currentTarget.style.display = 'none';
-                  console.error('Hero logo failed to load');
                 }}
               />
             </div>

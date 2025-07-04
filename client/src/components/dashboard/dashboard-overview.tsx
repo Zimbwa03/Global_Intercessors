@@ -31,6 +31,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [nextSession, setNextSession] = useState({ hours: 2, minutes: 15, seconds: 30 });
   const [user, setUser] = useState<any>(null);
+  const [isHovered, setIsHovered] = useState<string | null>(null);
 
   // Get current user
   useEffect(() => {
@@ -225,76 +226,169 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Header */}
-      <div className="gradient-brand text-white rounded-2xl p-6 shadow-brand-lg">
-        {userEmail ? (
-          <>
-            <h1 className="text-3xl font-bold mb-2 font-poppins">
-              {getTimeBasedGreeting().text}, {getUserName(userEmail)}! {getTimeBasedGreeting().emoji}
-            </h1>
-            <p className="text-gi-primary/100">Ready for your prayer session today</p>
-          </>
-        ) : (
-          <>
-            <h1 className="text-3xl font-bold mb-2 font-poppins">Welcome back!</h1>
-            <p className="text-gi-primary/100">Loading your information...</p>
-          </>
-        )}
-      </div>
-
-      {/* Prayer Slot Card */}
-      <Card className="shadow-brand-lg border border-gi-primary/100">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <div className="w-8 h-8 bg-gi-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
-              <i className="fas fa-clock text-gi-gold text-sm"></i>
-            </div>
-            <span className="font-poppins">Your Prayer Slot</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg p-4 border border-gi-primary/100">
-            <div className="flex items-center justify-between mb-3">
+      {/* Enhanced Welcome Header with Logo */}
+      <div className="bg-gradient-to-br from-gi-primary via-gi-primary/90 to-gi-primary/80 text-white rounded-2xl p-8 shadow-2xl relative overflow-hidden border border-gi-gold/20">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gi-gold/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gi-gold/10 rounded-full blur-2xl"></div>
+        
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              <img 
+                src="/client/src/assets/GI_Global_Logo.png" 
+                alt="Global Intercessors" 
+                className="h-16 w-auto object-contain drop-shadow-lg"
+                onError={(e) => {
+                  console.error('Dashboard logo failed to load');
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
               <div>
-                {prayerSlot ? (
+                {userEmail ? (
                   <>
-                    <h3 className="text-2xl font-bold text-gi-primary font-poppins">{prayerSlot.slotTime}</h3>
-                    <div className="flex items-center mt-1">
-                      <i className={`${getStatusIcon(prayerSlot?.status || 'inactive')} ${getStatusColor(prayerSlot?.status || 'inactive')} mr-2`}></i>
-                      <span className={`font-semibold ${getStatusColor(prayerSlot?.status || 'inactive')} font-poppins`}>
-                        {prayerSlot?.status ? prayerSlot.status.charAt(0).toUpperCase() + prayerSlot.status.slice(1) : 'No Status'}
-                      </span>
-                    </div>
+                    <h1 className="text-3xl font-bold font-poppins">
+                      {getTimeBasedGreeting().text}, {getUserName(userEmail)}! {getTimeBasedGreeting().emoji}
+                    </h1>
+                    <p className="text-gi-gold/90 text-lg">Ready for your prayer session today</p>
                   </>
                 ) : (
-                  <div>
-                    <p className="text-gray-600">No prayer slot assigned</p>
-                    <p className="text-sm text-gray-500 mt-1">Please select a slot in Prayer Slot Management</p>
+                  <>
+                    <h1 className="text-3xl font-bold font-poppins">Welcome back!</h1>
+                    <p className="text-gi-gold/90">Loading your information...</p>
+                  </>
+                )}
+              </div>
+            </div>
+            
+            <div className="hidden md:flex items-center space-x-2 bg-gi-gold/20 backdrop-blur-sm rounded-lg px-4 py-2">
+              <i className="fas fa-calendar-alt text-gi-gold"></i>
+              <span className="text-gi-gold font-medium">
+                {new Date().toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </span>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-gi-gold/30">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gi-gold rounded-full flex items-center justify-center">
+                  <i className="fas fa-praying-hands text-gi-primary"></i>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gi-gold">{attendanceStats?.sessionsThisMonth ?? 0}</p>
+                  <p className="text-sm text-white/80">Sessions This Month</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-gi-gold/30">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gi-gold rounded-full flex items-center justify-center">
+                  <i className="fas fa-fire text-gi-primary"></i>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gi-gold">{attendanceStats?.dayStreak ?? 0}</p>
+                  <p className="text-sm text-white/80">Day Streak</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-gi-gold/30">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gi-gold rounded-full flex items-center justify-center">
+                  <i className="fas fa-globe text-gi-primary"></i>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gi-gold">{globalStats?.totalIntercessors ?? 0}</p>
+                  <p className="text-sm text-white/80">Active Intercessors</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Enhanced Prayer Slot Card */}
+      <Card 
+        className="shadow-2xl border border-gi-primary/20 hover:shadow-3xl transition-all duration-300 overflow-hidden"
+        onMouseEnter={() => setIsHovered('prayer-slot')}
+        onMouseLeave={() => setIsHovered(null)}
+      >
+        <CardHeader className="bg-gradient-to-r from-gi-primary/5 to-gi-gold/5 border-b border-gi-primary/10">
+          <CardTitle className="flex items-center">
+            <div className={`w-10 h-10 bg-gi-primary rounded-xl flex items-center justify-center mr-3 shadow-lg transition-transform duration-300 ${
+              isHovered === 'prayer-slot' ? 'scale-110' : ''
+            }`}>
+              <i className="fas fa-clock text-gi-gold"></i>
+            </div>
+            <span className="font-poppins text-xl text-gi-primary">Your Prayer Slot</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="bg-gradient-to-br from-gi-primary/5 via-white to-gi-gold/5 rounded-xl p-6 border border-gi-primary/10 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gi-gold/10 rounded-full blur-xl"></div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  {prayerSlot ? (
+                    <>
+                      <h3 className="text-3xl font-bold text-gi-primary font-poppins mb-2">{prayerSlot.slotTime}</h3>
+                      <div className="flex items-center">
+                        <div className={`w-3 h-3 rounded-full mr-2 ${
+                          prayerSlot?.status === 'active' ? 'bg-green-500 animate-pulse' : 
+                          prayerSlot?.status === 'missed' ? 'bg-red-500' : 'bg-yellow-500'
+                        }`}></div>
+                        <span className={`font-semibold ${getStatusColor(prayerSlot?.status || 'inactive')} font-poppins text-lg`}>
+                          {prayerSlot?.status ? prayerSlot.status.charAt(0).toUpperCase() + prayerSlot.status.slice(1) : 'No Status'}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <i className="fas fa-calendar-plus text-4xl text-gi-primary/40 mb-4"></i>
+                      <p className="text-gi-primary text-lg font-medium">No prayer slot assigned</p>
+                      <p className="text-gi-primary/60 mt-2">Please select a slot in Prayer Slot Management</p>
+                    </div>
+                  )}
+                </div>
+                
+                {prayerSlot?.status === 'active' && (
+                  <div className="text-right bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-gi-gold/30">
+                    <p className="text-sm text-gi-primary/70 mb-1">Next session in:</p>
+                    <div className="flex items-center space-x-1">
+                      <div className="bg-gi-primary text-white px-2 py-1 rounded font-bold text-lg">
+                        {String(nextSession.hours).padStart(2, '0')}
+                      </div>
+                      <span className="text-gi-primary font-bold">:</span>
+                      <div className="bg-gi-primary text-white px-2 py-1 rounded font-bold text-lg">
+                        {String(nextSession.minutes).padStart(2, '0')}
+                      </div>
+                      <span className="text-gi-primary font-bold">:</span>
+                      <div className="bg-gi-primary text-white px-2 py-1 rounded font-bold text-lg">
+                        {String(nextSession.seconds).padStart(2, '0')}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
-              {prayerSlot?.status === 'active' && (
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">Next session in:</p>
-                  <p className="text-lg font-bold text-gi-primary font-poppins">
-                    {String(nextSession.hours).padStart(2, '0')}:
-                    {String(nextSession.minutes).padStart(2, '0')}:
-                    {String(nextSession.seconds).padStart(2, '0')}
-                  </p>
-                </div>
+
+              {prayerSlot?.status === "active" && (
+                <Button 
+                  onClick={handleRequestSkip}
+                  variant="outline"
+                  className="w-full border-2 border-gi-gold/50 text-gi-primary hover:bg-gi-gold hover:text-white hover:border-gi-gold transition-all duration-300 font-poppins py-3 text-lg font-semibold"
+                >
+                  <i className="fas fa-pause mr-2"></i>
+                  Request Skip (5 days)
+                </Button>
               )}
             </div>
-
-            {prayerSlot?.status === "active" && (
-              <Button 
-                onClick={handleRequestSkip}
-                variant="outline"
-                className="w-full border-gi-primary/accent text-gi-gold hover:bg-gi-gold hover:text-gi-primary transition-brand font-poppins"
-              >
-                <i className="fas fa-pause mr-2"></i>
-                Request Skip (5 days)
-              </Button>
-            )}
           </div>
 
           {/*missedDays > 0 && (
@@ -309,85 +403,48 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
         </CardContent>
       </Card>
 
-      {/* Reminder Settings */}
-      <Card className="shadow-brand-lg border border-gi-primary/100">
-        <CardHeader>
+      {/* Enhanced Reminder Settings */}
+      <Card 
+        className="shadow-2xl border border-gi-primary/20 hover:shadow-3xl transition-all duration-300"
+        onMouseEnter={() => setIsHovered('reminder')}
+        onMouseLeave={() => setIsHovered(null)}
+      >
+        <CardHeader className="bg-gradient-to-r from-gi-primary/5 to-gi-gold/5 border-b border-gi-primary/10">
           <CardTitle className="flex items-center">
-            <div className="w-8 h-8 bg-gi-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
-              <i className="fas fa-bell text-gi-gold text-sm"></i>
+            <div className={`w-10 h-10 bg-gi-primary rounded-xl flex items-center justify-center mr-3 shadow-lg transition-transform duration-300 ${
+              isHovered === 'reminder' ? 'scale-110' : ''
+            }`}>
+              <i className="fas fa-bell text-gi-gold"></i>
             </div>
-            <span className="font-poppins">Reminder Settings</span>
+            <span className="font-poppins text-xl text-gi-primary">Reminder Settings</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gi-primary/5 to-gi-gold/5 rounded-xl border border-gi-primary/10">
             <div>
-              <label htmlFor="reminders" className="text-base font-medium font-poppins">
+              <label htmlFor="reminders" className="text-lg font-semibold font-poppins text-gi-primary">
                 Prayer Session Reminders
               </label>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-gi-primary/70 mt-1">
                 Get notified 15 minutes before your prayer session
               </p>
             </div>
-            <Switch
-              id="reminders"
-              checked={remindersEnabled}
-              onCheckedChange={handleReminderToggle}
-            />
+            <div className="flex items-center space-x-3">
+              <span className={`text-sm font-medium ${remindersEnabled ? 'text-green-600' : 'text-gray-500'}`}>
+                {remindersEnabled ? 'ON' : 'OFF'}
+              </span>
+              <Switch
+                id="reminders"
+                checked={remindersEnabled}
+                onCheckedChange={handleReminderToggle}
+                className="data-[state=checked]:bg-gi-primary"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Quick Stats */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <Card className="shadow-brand-lg border border-gi-primary/100 hover:shadow-xl transition-brand group">
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-gi-primary rounded-lg flex items-center justify-center mr-3 shadow-brand group-hover:bg-gi-gold transition-brand">
-                <i className="fas fa-calendar-check text-gi-gold group-hover:text-gi-primary transition-brand"></i>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-brand-text font-poppins">
-                  {attendanceStats?.sessionsThisMonth ?? 0}
-                </p>
-                <p className="text-sm text-gray-600">Sessions This Month</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-brand-lg border border-gi-primary/100 hover:shadow-xl transition-brand group">
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-gi-primary rounded-lg flex items-center justify-center mr-3 shadow-brand group-hover:bg-gi-gold transition-brand">
-                <i className="fas fa-fire text-gi-gold group-hover:text-gi-primary transition-brand"></i>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-brand-text font-poppins">
-                  {attendanceStats?.dayStreak ?? 0}
-                </p>
-                <p className="text-sm text-gray-600">Day Streak</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-brand-lg border border-gi-primary/100 hover:shadow-xl transition-brand group">
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-gi-primary rounded-lg flex items-center justify-center mr-3 shadow-brand group-hover:bg-gi-gold transition-brand">
-                <i className="fas fa-users text-gi-gold group-hover:text-gi-primary transition-brand"></i>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-brand-text font-poppins">
-                  {globalStats?.totalIntercessors ?? 0}
-                </p>
-                <p className="text-sm text-gray-600">Active Intercessors</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      
     </div>
   );
 }
