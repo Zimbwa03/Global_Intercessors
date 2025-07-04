@@ -175,9 +175,13 @@ export default function AdminLogin() {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <img 
-              src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+              src="/client/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
               alt="Global Intercessors Icon" 
               className="w-16 h-16 object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                console.error('Admin login logo failed to load');
+              }}
             />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-800">Admin Portal</CardTitle>

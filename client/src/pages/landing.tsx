@@ -33,15 +33,19 @@ export default function Landing() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <img 
-                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                src="/client/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
                 alt="Global Intercessors Icon" 
                 className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} object-contain`}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  console.error('Landing page logo failed to load');
+                }}
               />
               <h1 className={`font-bold font-poppins ${isMobile ? 'text-xl' : 'text-2xl'}`}>
                 Global Intercessors
               </h1>
             </div>
-            
+
             {isMobile ? (
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -149,6 +153,17 @@ export default function Landing() {
           </div>
         </div>
       </section>
+       <div className="flex justify-center mb-8">
+          <img 
+            src="/client/src/assets/GI_Logo_Main_1751586542563.png" 
+            alt="Global Intercessors Logo" 
+            className="h-24 object-contain max-w-full"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              console.error('Hero logo failed to load');
+            }}
+          />
+        </div>
 
       {/* Statistics Section */}
       <StatisticsSection />

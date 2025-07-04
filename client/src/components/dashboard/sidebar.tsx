@@ -33,9 +33,13 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, isMobile
         <div className="p-4 border-b border-gi-primary/50 relative">
           <div className="flex items-center space-x-3">
             <img 
-              src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+              src="/client/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
               alt="Global Intercessors Icon" 
-              className="w-8 h-8 object-contain"
+              className="w-8 h-8 object-contain flex-shrink-0"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                console.error('Mobile logo failed to load');
+              }}
             />
             <h2 className="font-bold text-lg font-poppins">Global Intercessors</h2>
           </div>
@@ -113,9 +117,13 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, isMobile
           {!isCollapsed && (
             <div className="flex items-center space-x-3">
               <img 
-                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                src="/client/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
                 alt="Global Intercessors Icon" 
-                className="w-8 h-8 object-contain"
+                className="w-8 h-8 object-contain flex-shrink-0"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  console.error('Logo failed to load');
+                }}
               />
               <h2 className="font-bold text-lg font-poppins">Global Intercessors</h2>
             </div>
