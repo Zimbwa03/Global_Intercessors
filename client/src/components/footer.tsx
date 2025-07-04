@@ -34,7 +34,7 @@ export function Footer() {
           <div className="md:col-span-2">
             <div className="flex items-center space-x-3 mb-6">
               <img 
-                src="/client/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
                 alt="Global Intercessors Icon" 
                 className="w-12 h-12 object-contain"
               />

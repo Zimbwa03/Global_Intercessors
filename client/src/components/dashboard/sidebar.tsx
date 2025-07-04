@@ -33,7 +33,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, isMobile
         <div className="p-4 border-b border-gi-primary/50 relative">
           <div className="flex items-center space-x-3">
             <img 
-              src="/client/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+              src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
               alt="Global Intercessors Icon" 
               className="w-8 h-8 object-contain flex-shrink-0"
               onError={(e) => {
@@ -117,7 +117,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, isMobile
           {!isCollapsed && (
             <div className="flex items-center space-x-3">
               <img 
-                src="/client/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
                 alt="Global Intercessors Icon" 
                 className="w-8 h-8 object-contain flex-shrink-0"
                 onError={(e) => {

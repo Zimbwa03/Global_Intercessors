@@ -175,7 +175,7 @@ export default function AdminLogin() {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <img 
-              src="/client/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+              src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
               alt="Global Intercessors Icon" 
               className="w-16 h-16 object-contain"
               onError={(e) => {

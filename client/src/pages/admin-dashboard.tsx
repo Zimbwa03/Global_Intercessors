@@ -1457,7 +1457,7 @@ export default function AdminDashboard() {
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <img 
-                src="/client/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
                 alt="Global Intercessors Icon" 
                 className="w-8 h-8 object-contain flex-shrink-0"
                 onError={(e) => {

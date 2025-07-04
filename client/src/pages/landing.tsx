@@ -33,7 +33,7 @@ export default function Landing() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <img 
-                src="/client/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
                 alt="Global Intercessors Icon" 
                 className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} object-contain`}
                 onError={(e) => {
@@ -155,9 +155,9 @@ export default function Landing() {
       </section>
        <div className="flex justify-center mb-8">
           <img 
-            src="/client/src/assets/GI_Logo_Main_1751586542563.png" 
+            src="/src/assets/GI_Lion_Logo.png" 
             alt="Global Intercessors Logo" 
-            className="h-24 object-contain max-w-full"
+            className="h-32 object-contain max-w-full"
             onError={(e) => {
               e.currentTarget.style.display = 'none';
               console.error('Hero logo failed to load');
