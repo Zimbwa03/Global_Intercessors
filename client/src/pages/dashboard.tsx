@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 import { MobileSidebar } from "@/components/dashboard/mobile-sidebar";
 import { MobileHeader } from "@/components/dashboard/mobile-header";
 import { DashboardOverview } from "@/components/dashboard/dashboard-overview";
+import { MobileDashboardOverview } from "@/components/dashboard/mobile-dashboard-overview";
 import { PrayerSlotManagement } from "@/components/dashboard/prayer-slot-management";
 import { UpdatesAnnouncements } from "@/components/dashboard/updates-announcements";
 import { AIPrayerAssistant } from "@/components/dashboard/ai-prayer-assistant";
@@ -129,7 +130,9 @@ export default function Dashboard() {
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <DashboardOverview userEmail={user.email} />;
+        return isMobile 
+          ? <MobileDashboardOverview userEmail={user.email || ""} onTabChange={setActiveTab} />
+          : <DashboardOverview userEmail={user.email} />;
       case "prayer-slots":
         return <PrayerSlotManagement userEmail={user.email} />;
       case "bible-chat":

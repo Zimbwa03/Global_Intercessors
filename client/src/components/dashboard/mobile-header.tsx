@@ -14,7 +14,8 @@ export function MobileHeader({
   onMenuToggle, 
   userProfile, 
   activeTab,
-  unreadCount = 0 
+  unreadCount = 0,
+  onTabChange
 }: MobileHeaderProps) {
   
   const getPageTitle = (tab: string) => {
