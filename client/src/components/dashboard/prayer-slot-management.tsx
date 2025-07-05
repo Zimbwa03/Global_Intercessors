@@ -545,7 +545,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
           Manage your committed prayer time, attendance, and notifications
         </p>
       </div>
-
       {/* Current Slot Status with Animations */}
       <AnimatedCard 
         animationType="slideIn" 
@@ -683,9 +682,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                       <Button
                         onClick={() => logAttendanceMutation.mutate({ duration: 20 })}
                         disabled={logAttendanceMutation.isPending}
-                        className={`bg-gi-primary/600 hover:bg-gi-primary/700 text-white font-poppins ${
-                          isMobile ? 'h-12 text-sm' : ''
-                        }`}
+                        className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 px-4 py-2 hover:bg-gi-primary/700 text-white font-poppins h-12 text-sm bg-[#0a481d]"
                       >
                         <CheckCircle2 className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
                         {logAttendanceMutation.isPending ? 'Logging...' : (isMobile ? 'Log Prayer' : 'Log Prayer Attendance')}
@@ -846,7 +843,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
           </div>
         </CardContent>
       </AnimatedCard>
-
       {/* Automatic Attendance Status */}
       <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
         <h4 className="text-sm font-medium text-green-900 mb-2">
@@ -868,7 +864,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
           </span>
         </div>
       </div>
-
       {/* Skip Requests Status */}
       {skipRequests.length > 0 && (
         <Card className="shadow-brand-lg border border-gi-primary/100">
@@ -911,7 +906,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
           </CardContent>
         </Card>
       )}
-
       {/* Attendance & Statistics */}
       <Card className="shadow-brand-lg border border-gi-primary/100">
         <CardHeader>
@@ -987,7 +981,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
           )}
         </CardContent>
       </Card>
-
       {/* Notifications & Updates */}
       {notifications.length > 0 && (
         <Card className="shadow-brand-lg border border-gi-primary/100">
@@ -1047,7 +1040,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
           </CardContent>
         </Card>
       )}
-
       {/* Prayer Guidelines */}
       <Card className="shadow-brand-lg border border-gi-primary/100">
         <CardHeader>
