@@ -1,5 +1,5 @@
 -- ============================================
--- Global Intercessors User Profiles Table
+-- Global Intercessors User Profiles Table (Supabase Compatible)
 -- ============================================
 
 -- Create user_profiles table
@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     country TEXT,
     city TEXT,
     timezone TEXT,
-    coordinates POINT,
+    latitude DECIMAL,
+    longitude DECIMAL,
     
     -- Spiritual profile
     denomination TEXT,
@@ -33,7 +34,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
         "prayer_reminders": true,
         "community_updates": true,
         "fasting_alerts": true
-    }',
+    }'::jsonb,
     
     -- Profile settings
     profile_visibility TEXT DEFAULT 'community' CHECK (profile_visibility IN ('public', 'community', 'private')),
@@ -81,16 +82,6 @@ CREATE POLICY "Community can view public profiles" ON user_profiles
         (profile_visibility = 'community' AND auth.uid() IS NOT NULL)
     );
 
--- Admins can view all profiles (simplified - check user_profiles for admin role)
-CREATE POLICY "Admins can view all profiles" ON user_profiles
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM user_profiles up 
-            WHERE up.user_id = auth.uid() 
-            AND up.notification_preferences->>'role' = 'admin'
-        )
-    );
-
 -- ============================================
 -- Functions for Profile Management
 -- ============================================
@@ -110,7 +101,7 @@ CREATE TRIGGER update_user_profiles_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_user_profile_updated_at();
 
--- Function to create user profile manually (call this after user signup)
+-- Function to create user profile manually
 CREATE OR REPLACE FUNCTION create_user_profile_manual(
     p_user_id UUID,
     p_email TEXT,
@@ -130,7 +121,7 @@ BEGIN
     
     RETURN profile_id;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to update last_active timestamp
 CREATE OR REPLACE FUNCTION update_user_last_active(user_email TEXT)
@@ -140,7 +131,7 @@ BEGIN
     SET last_active = NOW() 
     WHERE email = user_email;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to increment prayer streak
 CREATE OR REPLACE FUNCTION increment_prayer_streak(user_email TEXT, prayer_minutes INTEGER DEFAULT 30)
@@ -149,10 +140,10 @@ DECLARE
     last_prayer_date DATE;
     today DATE := CURRENT_DATE;
 BEGIN
-    -- Get the last prayer date from prayer sessions or attendance
-    SELECT MAX(DATE(created_at)) INTO last_prayer_date
-    FROM prayer_sessions 
-    WHERE user_email = increment_prayer_streak.user_email;
+    -- Get the last prayer date from the user's activity
+    SELECT MAX(DATE(last_active)) INTO last_prayer_date
+    FROM user_profiles 
+    WHERE email = increment_prayer_streak.user_email;
     
     -- Update prayer streak and total minutes
     UPDATE user_profiles 
@@ -167,7 +158,7 @@ BEGIN
         last_active = NOW()
     WHERE email = increment_prayer_streak.user_email;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to get user profile with computed fields
 CREATE OR REPLACE FUNCTION get_user_profile_with_stats(user_email TEXT)
@@ -182,6 +173,8 @@ RETURNS TABLE(
     country TEXT,
     city TEXT,
     timezone TEXT,
+    latitude DECIMAL,
+    longitude DECIMAL,
     denomination TEXT,
     years_of_faith INTEGER,
     spiritual_gifts TEXT[],
@@ -212,6 +205,8 @@ BEGIN
         up.country,
         up.city,
         up.timezone,
+        up.latitude,
+        up.longitude,
         up.denomination,
         up.years_of_faith,
         up.spiritual_gifts,
@@ -235,66 +230,28 @@ BEGIN
     FROM user_profiles up
     WHERE up.email = get_user_profile_with_stats.user_email;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================
--- Sample Data (Optional - for testing)
+-- Sample usage after user signup
 -- ============================================
 
--- Insert sample profile data (uncomment if needed for testing)
 /*
-INSERT INTO user_profiles (
-    user_id,
-    email,
-    full_name,
-    display_name,
-    country,
-    city,
-    timezone,
-    denomination,
-    years_of_faith,
-    spiritual_gifts,
-    prayer_languages,
-    preferred_prayer_time,
-    prayer_duration_minutes
-) VALUES (
-    '00000000-0000-0000-0000-000000000000', -- Replace with actual user ID
-    'intercessor@example.com',
-    'John Doe',
-    'Brother John',
-    'United States',
-    'New York',
-    'America/New_York',
-    'Christian',
-    10,
-    ARRAY['intercession', 'prophecy', 'healing'],
-    ARRAY['English', 'Spanish', 'tongues'],
-    '06:00',
-    30
+-- After a user signs up, call this to create their profile:
+SELECT create_user_profile_manual(
+    'user-uuid-here',
+    'user@example.com',
+    'User Full Name'
 );
+
+-- To update user activity:
+SELECT update_user_last_active('user@example.com');
+
+-- To track prayer session:
+SELECT increment_prayer_streak('user@example.com', 30);
+
+-- To get full profile with stats:
+SELECT * FROM get_user_profile_with_stats('user@example.com');
 */
 
--- ============================================
--- Maintenance and Cleanup
--- ============================================
-
--- Function to clean up inactive profiles (older than 2 years with no activity)
-CREATE OR REPLACE FUNCTION cleanup_inactive_profiles()
-RETURNS INTEGER AS $$
-DECLARE
-    deleted_count INTEGER;
-BEGIN
-    DELETE FROM user_profiles 
-    WHERE 
-        last_active < NOW() - INTERVAL '2 years'
-        AND join_date < NOW() - INTERVAL '2 years';
-    
-    GET DIAGNOSTICS deleted_count = ROW_COUNT;
-    RETURN deleted_count;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create a scheduled job to run cleanup monthly (requires pg_cron extension)
--- SELECT cron.schedule('cleanup-inactive-profiles', '0 0 1 * *', 'SELECT cleanup_inactive_profiles();');
-
-COMMENT ON TABLE user_profiles IS 'Comprehensive user profiles for Global Intercessors platform with spiritual and prayer-related information';
+COMMENT ON TABLE user_profiles IS 'User profiles for Global Intercessors platform with spiritual and prayer tracking';
