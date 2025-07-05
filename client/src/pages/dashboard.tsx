@@ -251,7 +251,7 @@ export default function Dashboard() {
         onTabChange={setActiveTab}
         onSignOut={handleSignOut}
         userEmail={user.email}
-        
+
       />
 
       {/* Desktop Main Content */}

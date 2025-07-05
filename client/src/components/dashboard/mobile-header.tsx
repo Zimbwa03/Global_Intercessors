@@ -51,6 +51,10 @@ export function MobileHeader({
               src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
               alt="GI" 
               className="w-8 h-8 rounded-full"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                console.error('Mobile header logo failed to load');
+              }}
             />
             <div>
               <h1 className="text-lg font-bold text-gi-primary">
@@ -70,7 +74,11 @@ export function MobileHeader({
             variant="ghost"
             size="sm"
             className="relative text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-            onClick={() => onTabChange && onTabChange('updates')}
+            onClick={() => {
+              if (onTabChange) {
+                onTabChange('updates');
+              }
+            }}
           >
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
@@ -85,7 +93,11 @@ export function MobileHeader({
             variant="ghost"
             size="sm"
             className="p-1"
-            onClick={() => onTabChange && onTabChange('profile')}
+            onClick={() => {
+              if (onTabChange) {
+                onTabChange('profile');
+              }
+            }}
           >
             <div className="relative">
               <div className="w-8 h-8 bg-gi-gold rounded-full flex items-center justify-center overflow-hidden">
