@@ -7,6 +7,7 @@ interface MobileHeaderProps {
   userProfile?: any;
   activeTab: string;
   unreadCount?: number;
+  onTabChange?: (tab: string) => void;
 }
 
 export function MobileHeader({ 
@@ -22,9 +23,11 @@ export function MobileHeader({
       case 'prayer-slots': return 'Prayer Slots';
       case 'bible-chat': return 'Bible Chat';
       case 'prayer-planner': return 'Prayer Planner';
+      case 'bible-verse-search': return 'Bible Search';
       case 'analytics': return 'Analytics';
       case 'profile': return 'Profile';
       case 'settings': return 'Settings';
+      case 'updates': return 'Updates';
       default: return 'Global Intercessors';
     }
   };
@@ -62,24 +65,16 @@ export function MobileHeader({
 
         {/* Right side - Actions */}
         <div className="flex items-center space-x-2">
-          {/* Search Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            <Search className="h-5 w-5" />
-          </Button>
-
-          {/* Notifications */}
+          {/* Updates Button */}
           <Button
             variant="ghost"
             size="sm"
             className="relative text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+            onClick={() => onTabChange && onTabChange('updates')}
           >
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
@@ -90,6 +85,7 @@ export function MobileHeader({
             variant="ghost"
             size="sm"
             className="p-1"
+            onClick={() => onTabChange && onTabChange('profile')}
           >
             <div className="relative">
               <div className="w-8 h-8 bg-gi-gold rounded-full flex items-center justify-center overflow-hidden">

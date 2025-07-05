@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [unreadUpdates, setUnreadUpdates] = useState(3); // Track unread updates
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -161,6 +162,10 @@ export default function Dashboard() {
           <p className="text-gray-600">Track your prayer consistency and spiritual growth metrics.</p>
         </div>;
       case "updates":
+        // Mark updates as read when viewed
+        if (unreadUpdates > 0) {
+          setUnreadUpdates(0);
+        }
         return <UpdatesAnnouncements />;
       case "profile":
         return <UserProfile userEmail={user.email} />;
@@ -182,7 +187,8 @@ export default function Dashboard() {
           onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
           userProfile={user.profileData || user.user_metadata}
           activeTab={activeTab}
-          unreadCount={3}
+          unreadCount={unreadUpdates}
+          onTabChange={setActiveTab}
         />
 
         {/* Mobile Sidebar */}
@@ -200,8 +206,8 @@ export default function Dashboard() {
         />
 
         {/* Mobile Main Content */}
-        <main className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
-          <div className="p-4 pb-20">
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+          <div className="p-6 pb-24 space-y-6">
             {renderContent()}
           </div>
         </main>
@@ -213,9 +219,9 @@ export default function Dashboard() {
               {[
                 { id: "dashboard", label: "Home", icon: "🏠" },
                 { id: "prayer-slots", label: "Prayer", icon: "🕒" },
-                { id: "bible-chat", label: "Bible", icon: "📖" },
+                { id: "bible-chat", label: "Bible Chat", icon: "📖" },
                 { id: "prayer-planner", label: "Plan", icon: "📋" },
-                { id: "profile", label: "Profile", icon: "👤" },
+                { id: "bible-verse-search", label: "Bible Search", icon: "🔍" },
               ].map((item) => (
                 <button
                   key={item.id}

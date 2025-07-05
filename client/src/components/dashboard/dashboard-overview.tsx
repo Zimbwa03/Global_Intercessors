@@ -230,7 +230,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
       <div className="bg-gradient-to-br from-gi-primary via-gi-primary/90 to-gi-primary/80 text-white rounded-2xl p-8 shadow-2xl relative overflow-hidden border border-gi-gold/20">
         <div className="absolute top-0 right-0 w-32 h-32 bg-gi-gold/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-gi-gold/10 rounded-full blur-2xl"></div>
-        
+
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
@@ -259,7 +259,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                 )}
               </div>
             </div>
-            
+
             <div className="hidden md:flex items-center space-x-2 bg-gi-gold/20 backdrop-blur-sm rounded-lg px-4 py-2">
               <i className="fas fa-calendar-alt text-gi-gold"></i>
               <span className="text-gi-gold font-medium">
@@ -272,7 +272,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
               </span>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-gi-gold/30">
               <div className="flex items-center space-x-3">
@@ -285,7 +285,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-gi-gold/30">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-gi-gold rounded-full flex items-center justify-center">
@@ -297,7 +297,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-gi-gold/30">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-gi-gold rounded-full flex items-center justify-center">
@@ -332,7 +332,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
         <CardContent className="p-6">
           <div className="bg-gradient-to-br from-gi-primary/5 via-white to-gi-gold/5 rounded-xl p-6 border border-gi-primary/10 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-20 h-20 bg-gi-gold/10 rounded-full blur-xl"></div>
-            
+
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -357,7 +357,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                     </div>
                   )}
                 </div>
-                
+
                 {prayerSlot?.status === 'active' && (
                   <div className="text-right bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-gi-gold/30">
                     <p className="text-sm text-gi-primary/70 mb-1">Next session in:</p>
@@ -444,7 +444,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
         </CardContent>
       </Card>
 
-      
+
     </div>
   );
 }
