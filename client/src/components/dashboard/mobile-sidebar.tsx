@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { X, Menu, User, Home, Calendar, Book, MessageCircle, BarChart, Settings, LogOut } from "lucide-react";
+import { X, Menu, User, Home, Calendar, Book, MessageCircle, BarChart, Settings, LogOut, Clock, Bell, TrendingUp, FileText, Heart, Shield, Search, Users, Star, Zap } from "lucide-react";
 
 interface MobileSidebarProps {
   activeTab: string;
@@ -23,13 +23,19 @@ export function MobileSidebar({
   onToggle
 }: MobileSidebarProps) {
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: Home },
-    { id: "prayer-slots", label: "Prayer Slots", icon: Calendar },
-    { id: "bible-chat", label: "Bible Chat", icon: Book },
-    { id: "prayer-planner", label: "Prayer Planner", icon: MessageCircle },
-    { id: "analytics", label: "Analytics", icon: BarChart },
-    { id: "profile", label: "Profile", icon: User },
-    { id: "settings", label: "Settings", icon: Settings },
+    { id: "dashboard", label: "Dashboard", icon: Home, description: "Overview & Quick Stats" },
+    { id: "prayer-slots", label: "Prayer Slots", icon: Calendar, description: "Manage Your Prayer Time" },
+    { id: "bible-chat", label: "Bible Chat", icon: Book, description: "AI-Powered Bible Study" },
+    { id: "prayer-planner", label: "Prayer Planner", icon: MessageCircle, description: "Plan Your Prayers" },
+    { id: "bible-verse-search", label: "Bible Verse Search", icon: Search, description: "Find Scripture" },
+    { id: "prayer-journey", label: "Prayer Journey", icon: TrendingUp, description: "Track Your Growth" },
+    { id: "audio-bible", label: "Audio Bible", icon: Heart, description: "Listen to Scripture" },
+    { id: "notifications", label: "Notifications", icon: Bell, description: "Prayer Reminders" },
+    { id: "fasting-program", label: "Fasting Program", icon: Star, description: "Join Fasting Events" },
+    { id: "analytics", label: "Analytics", icon: BarChart, description: "Prayer Statistics" },
+    { id: "updates", label: "Updates", icon: FileText, description: "Latest Announcements" },
+    { id: "profile", label: "Profile", icon: User, description: "Personal Information" },
+    { id: "settings", label: "Settings", icon: Settings, description: "App Preferences" },
   ];
 
   const handleItemClick = (tabId: string) => {
@@ -56,9 +62,9 @@ export function MobileSidebar({
         <div className="flex items-center justify-between p-4 border-b border-gi-primary/20">
           <div className="flex items-center space-x-3">
             <img 
-              src="/src/assets/GI_Logo_Main_1751586542563.png" 
+              src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
               alt="Global Intercessors" 
-              className="w-10 h-10 rounded-full bg-gi-gold p-1"
+              className="w-10 h-10 rounded-full bg-white/10 p-1"
             />
             <div>
               <h2 className="text-lg font-bold text-white">Global Intercessors</h2>
@@ -121,14 +127,24 @@ export function MobileSidebar({
                     onClick={() => handleItemClick(item.id)}
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start text-left hover:bg-gi-primary/20 transition-colors font-medium",
+                      "w-full justify-start text-left hover:bg-gi-primary/20 transition-all duration-200 font-medium h-auto p-3",
                       activeTab === item.id 
-                        ? "bg-gi-gold text-gi-primary shadow-lg" 
+                        ? "bg-gi-gold text-gi-primary shadow-lg transform scale-105" 
                         : "text-white"
                     )}
                   >
-                    <Icon className="h-5 w-5 mr-3" />
-                    <span>{item.label}</span>
+                    <div className="flex items-center w-full">
+                      <Icon className="h-5 w-5 mr-3 flex-shrink-0" />
+                      <div className="flex-1 text-left">
+                        <div className="font-semibold text-sm">{item.label}</div>
+                        <div className={cn(
+                          "text-xs mt-0.5",
+                          activeTab === item.id ? "text-gi-primary/70" : "text-white/60"
+                        )}>
+                          {item.description}
+                        </div>
+                      </div>
+                    </div>
                   </Button>
                 </li>
               );

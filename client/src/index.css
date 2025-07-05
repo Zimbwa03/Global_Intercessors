@@ -142,13 +142,14 @@
 /* Mobile-first design utilities */
 @media (max-width: 768px) {
   .mobile-container {
-    padding: 0.5rem;
+    padding: 1rem;
   }
   
   .mobile-card {
-    margin: 0.5rem 0;
+    margin: 0.75rem 0;
     border-radius: var(--mobile-border-radius);
-    padding: 1rem;
+    padding: 1.25rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
   
   .mobile-header {
@@ -168,29 +169,49 @@
   .mobile-content {
     padding-bottom: var(--mobile-bottom-nav-height);
     padding-top: var(--mobile-header-height);
+    min-height: 100vh;
   }
   
   .mobile-text-base {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+  
+  .mobile-text-lg {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+  }
+  
+  .mobile-text-xl {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 700;
   }
   
   .mobile-button {
-    padding: 0.75rem 1.5rem;
-    font-size: 0.875rem;
-    border-radius: 0.5rem;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 0.75rem;
     width: 100%;
+    letter-spacing: 0.025em;
   }
   
   .mobile-input {
-    padding: 0.75rem;
+    padding: 1rem;
     font-size: 1rem;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
+    border-width: 2px;
   }
   
   .mobile-grid {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 1.25rem;
+  }
+  
+  .mobile-spacing {
+    margin-bottom: 1.5rem;
   }
   
   .mobile-sidebar {

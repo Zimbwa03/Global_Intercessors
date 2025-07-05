@@ -129,20 +129,16 @@ export default function Dashboard() {
     switch (activeTab) {
       case "dashboard":
         return <DashboardOverview userEmail={user.email} />;
-      case "prayer-slot":
+      case "prayer-slots":
         return <PrayerSlotManagement userEmail={user.email} />;
-      case "prayer-journey":
-        return <PrayerJourneyVisualizer userId={user.id} />;
-      case "updates":
-        return <UpdatesAnnouncements />;
-      case "ai-assistant":
-        return <AIPrayerAssistant />;
-      case "bible-chatbook":
+      case "bible-chat":
         return <AIBibleChatbook />;
-      case "bible-search":
-        return <BibleVerseSearch />;
       case "prayer-planner":
         return <PrayerPlanner />;
+      case "bible-verse-search":
+        return <BibleVerseSearch />;
+      case "prayer-journey":
+        return <PrayerJourneyVisualizer userId={user.id} />;
       case "audio-bible":
         return (
           <AudioBiblePlayer
@@ -154,10 +150,25 @@ export default function Dashboard() {
         );
       case "notifications":
         return <NotificationSetup />;
-      case "coverage-monitor":
-        return <SlotCoverageMonitor />;
+      case "fasting-program":
+        return <div className="p-6 bg-white rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold text-gi-primary mb-4">Fasting Program</h2>
+          <p className="text-gray-600">Join our community fasting events and spiritual growth programs.</p>
+        </div>;
+      case "analytics":
+        return <div className="p-6 bg-white rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold text-gi-primary mb-4">Prayer Analytics</h2>
+          <p className="text-gray-600">Track your prayer consistency and spiritual growth metrics.</p>
+        </div>;
+      case "updates":
+        return <UpdatesAnnouncements />;
       case "profile":
         return <UserProfile userEmail={user.email} />;
+      case "settings":
+        return <div className="p-6 bg-white rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold text-gi-primary mb-4">Settings</h2>
+          <p className="text-gray-600">Customize your app preferences and notification settings.</p>
+        </div>;
       default:
         return <DashboardOverview userEmail={user.email} />;
     }
@@ -196,28 +207,30 @@ export default function Dashboard() {
         </main>
 
         {/* Mobile Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 lg:hidden z-20">
-          <div className="flex items-center justify-around p-2">
-            {[
-              { id: "dashboard", label: "Home", icon: "fas fa-home" },
-              { id: "prayer-slots", label: "Prayer", icon: "fas fa-clock" },
-              { id: "bible-chatbook", label: "Bible", icon: "fas fa-book" },
-              { id: "prayer-planner", label: "Plan", icon: "fas fa-calendar-check" },
-              { id: "profile", label: "Profile", icon: "fas fa-user" },
-            ].map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`flex flex-col items-center px-3 py-2 rounded-lg transition-colors min-w-0 ${
-                  activeTab === item.id
-                    ? "text-gi-primary bg-gi-primary/10"
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                }`}
-              >
-                <i className={`${item.icon} text-lg mb-1`}></i>
-                <span className="text-xs font-medium truncate">{item.label}</span>
-              </button>
-            ))}
+        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t-2 border-gi-primary/20 lg:hidden z-20 shadow-lg">
+          <div className="safe-bottom">
+            <div className="flex items-center justify-around py-2 px-1">
+              {[
+                { id: "dashboard", label: "Home", icon: "🏠" },
+                { id: "prayer-slots", label: "Prayer", icon: "🕒" },
+                { id: "bible-chat", label: "Bible", icon: "📖" },
+                { id: "prayer-planner", label: "Plan", icon: "📋" },
+                { id: "profile", label: "Profile", icon: "👤" },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`flex flex-col items-center px-2 py-3 rounded-xl transition-all duration-200 min-w-0 flex-1 max-w-[64px] touch-button ${
+                    activeTab === item.id
+                      ? "text-gi-primary bg-gi-gold/20 scale-105 shadow-md"
+                      : "text-gray-600 dark:text-gray-400 hover:bg-gi-primary/5"
+                  }`}
+                >
+                  <span className="text-lg mb-1">{item.icon}</span>
+                  <span className="text-xs font-semibold truncate leading-tight">{item.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

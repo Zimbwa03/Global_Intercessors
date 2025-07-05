@@ -49,27 +49,27 @@ export function MobileOptimizedCard({
 
   return (
     <div className={cn(
-      "bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700",
+      "bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700",
       isMobile ? "mobile-card" : "p-6",
       className
     )}>
       {(title || subtitle) && (
         <div className={cn(
           "border-b border-gray-200 dark:border-gray-700",
-          isMobile ? "pb-3 mb-4" : "pb-4 mb-6"
+          isMobile ? "pb-4 mb-5" : "pb-4 mb-6"
         )}>
           {title && (
             <h2 className={cn(
               "font-bold text-gi-primary dark:text-white",
-              isMobile ? "text-lg" : "text-xl"
+              isMobile ? "mobile-text-xl" : "text-xl"
             )}>
               {title}
             </h2>
           )}
           {subtitle && (
             <p className={cn(
-              "text-gray-600 dark:text-gray-400",
-              isMobile ? "text-sm mt-1" : "text-base mt-2"
+              "text-gray-600 dark:text-gray-400 leading-relaxed",
+              isMobile ? "mobile-text-base mt-2" : "text-base mt-2"
             )}>
               {subtitle}
             </p>
@@ -142,9 +142,9 @@ export function MobileOptimizedButton({
   };
 
   const sizeClasses = {
-    sm: isMobile ? "px-3 py-2 text-sm" : "px-4 py-2 text-sm",
-    md: isMobile ? "px-4 py-3 text-base" : "px-6 py-3 text-base",
-    lg: isMobile ? "px-6 py-4 text-lg" : "px-8 py-4 text-lg"
+    sm: isMobile ? "px-4 py-3 text-sm font-medium" : "px-4 py-2 text-sm",
+    md: isMobile ? "mobile-button" : "px-6 py-3 text-base",
+    lg: isMobile ? "px-8 py-5 text-lg font-semibold" : "px-8 py-4 text-lg"
   };
 
   return (
