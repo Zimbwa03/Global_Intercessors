@@ -311,7 +311,7 @@ export function InteractiveLandingPage({ onGetStarted, onLearnMore }: Interactiv
                 initial={{ y: 50, opacity: 0 }}
                 animate={heroInView ? { y: 0, opacity: 1 } : {}}
                 transition={{ duration: 0.8, delay: 0.4 }}
-                className="font-poppins text-5xl md:text-8xl font-bold mb-8 leading-tight"
+                className="font-poppins text-3xl sm:text-5xl md:text-6xl lg:text-8xl font-bold mb-6 sm:mb-8 leading-tight px-4"
               >
                 Global Intercessors
               </motion.h1>
@@ -320,7 +320,7 @@ export function InteractiveLandingPage({ onGetStarted, onLearnMore }: Interactiv
                 initial={{ y: 30, opacity: 0 }}
                 animate={heroInView ? { y: 0, opacity: 1 } : {}}
                 transition={{ duration: 0.8, delay: 0.6 }}
-                className="text-2xl md:text-4xl mb-6 text-gi-gold font-medium"
+                className="text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-4 sm:mb-6 text-gi-gold font-medium px-4"
               >
                 Uniting the World in Prayer
               </motion.p>
@@ -329,7 +329,7 @@ export function InteractiveLandingPage({ onGetStarted, onLearnMore }: Interactiv
                 initial={{ y: 20, opacity: 0 }}
                 animate={heroInView ? { y: 0, opacity: 1 } : {}}
                 transition={{ duration: 0.8, delay: 0.8 }}
-                className="text-xl md:text-2xl mb-12 text-white/90 max-w-4xl mx-auto leading-relaxed"
+                className="text-lg sm:text-xl md:text-2xl mb-8 sm:mb-12 text-white/90 max-w-4xl mx-auto leading-relaxed px-6"
               >
                 Experience the power of united prayer through our revolutionary platform. 
                 Join believers worldwide in continuous intercession, spiritual growth, and divine connection.
@@ -339,15 +339,15 @@ export function InteractiveLandingPage({ onGetStarted, onLearnMore }: Interactiv
                 initial={{ y: 20, opacity: 0 }}
                 animate={heroInView ? { y: 0, opacity: 1 } : {}}
                 transition={{ duration: 0.8, delay: 1 }}
-                className="flex flex-col sm:flex-row gap-6 justify-center items-center"
+                className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center px-4"
               >
                 <Button
                   onClick={onGetStarted}
                   size="lg"
-                  className="bg-gi-gold hover:bg-gi-gold/90 text-gi-primary font-bold px-12 py-6 text-xl rounded-2xl shadow-2xl hover:shadow-gi-gold/30 transition-all duration-300 hover:scale-105 group"
+                  className="w-full sm:w-auto bg-gi-gold hover:bg-gi-gold/90 text-gi-primary font-bold px-8 sm:px-12 py-4 sm:py-6 text-lg sm:text-xl rounded-2xl shadow-2xl hover:shadow-gi-gold/30 transition-all duration-300 hover:scale-105 group"
                 >
                   Start Your Journey
-                  <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="ml-3 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
                 </Button>
 
                 <Button

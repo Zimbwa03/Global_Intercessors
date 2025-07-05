@@ -15,4 +15,10 @@ export type AuthUser = {
   user_metadata?: {
     full_name?: string;
   };
+  profileData?: {
+    fullName?: string;
+    profilePicture?: string;
+    city?: string;
+    [key: string]: any;
+  };
 };

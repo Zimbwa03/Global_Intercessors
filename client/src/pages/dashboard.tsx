@@ -4,6 +4,8 @@ import { supabase, type AuthUser } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sidebar } from "@/components/dashboard/sidebar";
+import { MobileSidebar } from "@/components/dashboard/mobile-sidebar";
+import { MobileHeader } from "@/components/dashboard/mobile-header";
 import { DashboardOverview } from "@/components/dashboard/dashboard-overview";
 import { PrayerSlotManagement } from "@/components/dashboard/prayer-slot-management";
 import { UpdatesAnnouncements } from "@/components/dashboard/updates-announcements";
@@ -163,69 +165,61 @@ export default function Dashboard() {
 
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-gi-white">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Mobile Header */}
-        <header className="bg-gi-primary text-white p-4 flex items-center justify-between shadow-lg">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gi-gold rounded-full flex items-center justify-center">
-              <i className="fas fa-praying-hands text-gi-primary text-sm"></i>
-            </div>
-            <h1 className="font-bold text-lg font-poppins">Global Intercessors</h1>
+        <MobileHeader 
+          onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+          userProfile={user.profileData || user.user_metadata}
+          activeTab={activeTab}
+          unreadCount={3}
+        />
+
+        {/* Mobile Sidebar */}
+        <MobileSidebar 
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            setMobileMenuOpen(false);
+          }}
+          onSignOut={handleSignOut}
+          userEmail={user.email}
+          userProfile={user.profileData || user.user_metadata}
+          isOpen={mobileMenuOpen}
+          onToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+        />
+
+        {/* Mobile Main Content */}
+        <main className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
+          <div className="p-4 pb-20">
+            {renderContent()}
           </div>
+        </main>
 
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-white hover:bg-gi-primary/80">
-                <i className="fas fa-bars"></i>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-80 p-0">
-              <Sidebar 
-                activeTab={activeTab}
-                onTabChange={(tab) => {
-                  setActiveTab(tab);
-                  setMobileMenuOpen(false);
-                }}
-                onSignOut={handleSignOut}
-                userEmail={user.email}
-                isMobile={true}
-              />
-            </SheetContent>
-          </Sheet>
-        </header>
-
-        {/* Mobile Navigation Pills */}
-        <div className="bg-white border-b p-3 overflow-x-auto">
-          <div className="flex space-x-2 min-w-max">
+        {/* Mobile Bottom Navigation */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 lg:hidden z-20">
+          <div className="flex items-center justify-around p-2">
             {[
-              { id: "dashboard", label: "Dashboard", icon: "fas fa-home" },
-              { id: "prayer-slot", label: "Prayer", icon: "fas fa-clock" },
-              { id: "prayer-journey", label: "Journey", icon: "fas fa-route" },
-              { id: "audio-bible", label: "Audio", icon: "fas fa-volume-up" },
-              { id: "bible-chatbook", label: "Bible Chat", icon: "fas fa-book" },
-              { id: "bible-search", label: "Search", icon: "fas fa-search" },
-              { id: "prayer-planner", label: "Planner", icon: "fas fa-calendar-check" },
+              { id: "dashboard", label: "Home", icon: "fas fa-home" },
+              { id: "prayer-slots", label: "Prayer", icon: "fas fa-clock" },
+              { id: "bible-chatbook", label: "Bible", icon: "fas fa-book" },
+              { id: "prayer-planner", label: "Plan", icon: "fas fa-calendar-check" },
+              { id: "profile", label: "Profile", icon: "fas fa-user" },
             ].map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex flex-col items-center px-3 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                className={`flex flex-col items-center px-3 py-2 rounded-lg transition-colors min-w-0 ${
                   activeTab === item.id
-                    ? "bg-gi-primary text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "text-gi-primary bg-gi-primary/10"
+                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                 }`}
               >
-                <i className={`${item.icon} text-sm mb-1`}></i>
-                <span className="text-xs font-medium">{item.label}</span>
+                <i className={`${item.icon} text-lg mb-1`}></i>
+                <span className="text-xs font-medium truncate">{item.label}</span>
               </button>
             ))}
           </div>
         </div>
-
-        {/* Mobile Content */}
-        <main className="p-4 pb-20">
-          {renderContent()}
-        </main>
       </div>
     );
   }
