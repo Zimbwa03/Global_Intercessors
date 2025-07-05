@@ -212,7 +212,7 @@ export default function PrayerSlotManagement() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
         <Card className="w-96 shadow-brand-lg">
           <CardContent className="p-6 text-center">
-            <AlertCircle className="w-12 h-12 text-gi-primary mx-auto mb-4" />
+            
             <h2 className="text-xl font-poppins font-semibold text-brand-text mb-2">Authentication Required</h2>
             <p className="text-gray-600">Please log in to access your prayer slot management.</p>
           </CardContent>
@@ -351,7 +351,7 @@ export default function PrayerSlotManagement() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  
                   <h3 className="text-xl font-semibold text-gray-700 mb-2 font-poppins">No Prayer Slot Assigned</h3>
                   <p className="text-gray-600 mb-4">You don't have a prayer slot assigned yet.</p>
                   <Dialog open={isChangeSlotModalOpen} onOpenChange={setIsChangeSlotModalOpen}>

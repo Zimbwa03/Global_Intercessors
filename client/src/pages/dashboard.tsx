@@ -232,12 +232,22 @@ export default function Dashboard() {
         onTabChange={setActiveTab}
         onSignOut={handleSignOut}
         userEmail={user.email}
+        
       />
 
       {/* Desktop Main Content */}
       <main className="flex-1 p-6 overflow-auto">
         {renderContent()}
       </main>
+      <img 
+            src="/src/assets/GI_Global_Logo.png" 
+            alt="Global Intercessors" 
+            className="h-8 w-auto object-contain"
+            onError={(e) => {
+              console.error('Dashboard page logo failed to load');
+              e.currentTarget.style.display = 'none';
+            }}
+          />
     </div>
   );
 }

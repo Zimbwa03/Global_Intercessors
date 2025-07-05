@@ -31,7 +31,7 @@ export function FeaturesSection() {
             Experience the power of unified prayer with tools designed to enhance your spiritual journey and connect you with believers worldwide.
           </p>
         </div>
-        
+
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {features.map((feature, index) => (
             <Card key={index} className="bg-white rounded-2xl shadow-brand-lg hover:shadow-xl transition-brand border border-gi-primary/100 group hover:-translate-y-2">

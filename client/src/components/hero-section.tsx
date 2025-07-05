@@ -14,7 +14,7 @@ export function HeroSection({ onGetStarted, onLearnMore }: HeroSectionProps) {
           <div className="mb-8">
             <div className="flex justify-center mb-6">
               <img 
-                src="/client/src/assets/GI_Global_Logo.png" 
+                src="/src/assets/GI_Global_Logo.png" 
                 alt="Global Intercessors Logo" 
                 className="h-24 w-auto object-contain transform hover:scale-110 transition-all duration-300 drop-shadow-lg"
                 onError={(e) => {
