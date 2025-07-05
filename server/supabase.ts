@@ -21,3 +21,6 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
     persistSession: false
   }
 });
+
+// Export regular supabase client for general use  
+export { supabaseAdmin as supabase };

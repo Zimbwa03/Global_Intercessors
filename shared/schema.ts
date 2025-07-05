@@ -234,9 +234,34 @@ export const insertPrayerGoalsSchema = createInsertSchema(prayerGoals).omit({
   updatedAt: true,
 });
 
+// User profiles table for enhanced user information
+export const userProfiles = pgTable("user_profiles", {
+  id: text("id").primaryKey(), // Supabase auth user ID
+  email: text("email").notNull(),
+  fullName: text("full_name"),
+  profilePicture: text("profile_picture"), // URL to profile image
+  gender: text("gender"), // "male", "female", "other"
+  dateOfBirth: text("date_of_birth"), // YYYY-MM-DD format
+  phoneNumber: text("phone_number"),
+  country: text("country"),
+  city: text("city"),
+  timezone: text("timezone").default("UTC"),
+  bio: text("bio"),
+  spiritualGifts: text("spiritual_gifts").array(), // ["intercession", "prophecy", "healing", etc.]
+  prayerPreferences: text("prayer_preferences"), // JSON string for flexible preferences
+  isActive: boolean("is_active").default(true),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertSpiritualInsightsSchema = createInsertSchema(spiritualInsights).omit({
   id: true,
   createdAt: true,
+});
+
+export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
+  joinedAt: true,
+  updatedAt: true,
 });
 
 export type PrayerSlot = typeof prayerSlots.$inferSelect;
@@ -263,3 +288,5 @@ export type PrayerGoals = typeof prayerGoals.$inferSelect;
 export type InsertPrayerGoals = z.infer<typeof insertPrayerGoalsSchema>;
 export type SpiritualInsights = typeof spiritualInsights.$inferSelect;
 export type InsertSpiritualInsights = z.infer<typeof insertSpiritualInsightsSchema>;
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;

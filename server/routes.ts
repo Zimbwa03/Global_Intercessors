@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { supabaseAdmin } from "./supabase";
+import { supabaseAdmin, supabase } from "./supabase";
 import axios from "axios";
 import * as htmlPdf from 'html-pdf-node';
 
@@ -2962,6 +2962,112 @@ Make it personal, biblical, and actionable for intercession.`;
     } catch (error) {
       console.error('Error generating weekly report data:', error);
       res.status(500).json({ error: 'Failed to generate weekly report data' });
+    }
+  });
+
+  // User Profile Management Routes
+  app.get("/api/users/profile/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching user profile:', error);
+        return res.status(500).json({ error: 'Failed to fetch user profile' });
+      }
+      
+      // If no profile exists, return a default structure
+      if (!profile) {
+        const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+        return res.json({
+          id: userId,
+          email: authUser.user?.email || '',
+          fullName: null,
+          profilePicture: null,
+          gender: null,
+          dateOfBirth: null,
+          phoneNumber: null,
+          country: null,
+          city: null,
+          timezone: 'UTC+0',
+          bio: null,
+          spiritualGifts: [],
+          prayerPreferences: null,
+          isActive: true,
+          joinedAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      console.error('Error in get user profile:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+  
+  app.put("/api/users/profile/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const profileData = req.body;
+      
+      // First check if profile exists
+      const { data: existingProfile } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+      
+      let result;
+      
+      if (existingProfile) {
+        // Update existing profile
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .update({
+            ...profileData,
+            updatedAt: new Date()
+          })
+          .eq('id', userId)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error updating user profile:', error);
+          return res.status(500).json({ error: 'Failed to update user profile' });
+        }
+        
+        result = data;
+      } else {
+        // Create new profile
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .insert({
+            id: userId,
+            ...profileData,
+            joinedAt: new Date(),
+            updatedAt: new Date()
+          })
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error creating user profile:', error);
+          return res.status(500).json({ error: 'Failed to create user profile' });
+        }
+        
+        result = data;
+      }
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error in update user profile:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 

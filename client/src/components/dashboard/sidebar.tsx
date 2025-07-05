@@ -7,10 +7,11 @@ interface SidebarProps {
   onTabChange: (tab: string) => void;
   onSignOut: () => void;
   userEmail?: string;
+  userProfile?: any;
   isMobile?: boolean;
 }
 
-export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, isMobile = false }: SidebarProps) {
+export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProfile, isMobile = false }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const menuItems = [
@@ -146,14 +147,24 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, isMobile
             className="flex items-center space-x-3 cursor-pointer hover:bg-gi-primary/700/30 rounded-lg p-2 transition-colors"
             onClick={() => onTabChange('profile')}
           >
-            <div className="w-10 h-10 bg-gi-gold rounded-full flex items-center justify-center shadow-brand">
-              <i className="fas fa-user text-gi-primary"></i>
+            <div className="w-10 h-10 bg-gi-gold rounded-full flex items-center justify-center shadow-brand overflow-hidden">
+              {userProfile?.profilePicture ? (
+                <img 
+                  src={userProfile.profilePicture} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <i className="fas fa-user text-gi-primary"></i>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate font-poppins">
-                {userEmail || "User"}
+                {userProfile?.fullName || userEmail || "User"}
               </p>
-              <p className="text-xs text-gi-primary/200">Intercessor</p>
+              <p className="text-xs text-gi-primary/200">
+                {userProfile?.city ? `${userProfile.city} • ` : ''}Intercessor
+              </p>
             </div>
             <i className="fas fa-chevron-right text-gi-primary/200 text-xs"></i>
           </div>
