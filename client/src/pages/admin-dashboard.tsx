@@ -125,14 +125,14 @@ const MobileNavButton = ({ icon: Icon, label, isActive, onClick }: {
 }) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center justify-center p-3 rounded-lg transition-all duration-200 ${
+    className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 min-h-[60px] ${
       isActive 
         ? 'bg-gi-primary text-white shadow-lg' 
         : 'text-gray-600 hover:bg-gray-100'
     }`}
   >
-    <Icon size={20} className="mb-1" />
-    <span className="text-xs font-medium">{label}</span>
+    <Icon size={18} className="mb-1 flex-shrink-0" />
+    <span className="text-xs font-medium text-center leading-tight">{label}</span>
   </button>
 );
 
@@ -1499,7 +1499,7 @@ export default function AdminDashboard() {
         {/* Mobile Navigation */}
         {isMobile ? (
           <div className="mb-6">
-            <div className="grid grid-cols-5 gap-2 bg-white rounded-lg p-3 shadow-sm">
+            <div className="grid grid-cols-3 gap-2 bg-white rounded-lg p-3 shadow-sm">
               <MobileNavButton
                 icon={BarChart3}
                 label="Overview"
@@ -1518,6 +1518,8 @@ export default function AdminDashboard() {
                 isActive={activeTab === "activity"}
                 onClick={() => setActiveTab("activity")}
               />
+            </div>
+            <div className="grid grid-cols-3 gap-2 mt-2 bg-white rounded-lg p-3 shadow-sm">
               <MobileNavButton
                 icon={Calendar}
                 label="Fasting"
@@ -1530,13 +1532,25 @@ export default function AdminDashboard() {
                 isActive={activeTab === "management"}
                 onClick={() => setActiveTab("management")}
               />
-            </div>
-            <div className="grid grid-cols-1 gap-2 mt-2 bg-white rounded-lg p-3 shadow-sm">
               <MobileNavButton
                 icon={TrendingUp}
                 label="Analytics"
                 isActive={activeTab === "analytics"}
                 onClick={() => setActiveTab("analytics")}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-2 bg-white rounded-lg p-3 shadow-sm">
+              <MobileNavButton
+                icon={RotateCcw}
+                label="Skip Requests"
+                isActive={activeTab === "skip-requests"}
+                onClick={() => setActiveTab("skip-requests")}
+              />
+              <MobileNavButton
+                icon={Download}
+                label="Data Export"
+                isActive={activeTab === "data-allocation"}
+                onClick={() => setActiveTab("data-allocation")}
               />
             </div>
           </div>
