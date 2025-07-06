@@ -30,12 +30,7 @@ export function MobileSidebar({
     { id: "bible-verse-search", label: "Bible Verse Search", icon: Search, description: "Find Scripture" },
     { id: "prayer-journey", label: "Prayer Journey", icon: TrendingUp, description: "Track Your Growth" },
     { id: "audio-bible", label: "Audio Bible", icon: Heart, description: "Listen to Scripture" },
-    { id: "notifications", label: "Notifications", icon: Bell, description: "Prayer Reminders" },
-    { id: "fasting-program", label: "Fasting Program", icon: Star, description: "Join Fasting Events" },
     { id: "analytics", label: "Analytics", icon: BarChart, description: "Prayer Statistics" },
-    { id: "updates", label: "Updates", icon: FileText, description: "Latest Announcements" },
-    { id: "profile", label: "Profile", icon: User, description: "Personal Information" },
-    { id: "settings", label: "Settings", icon: Settings, description: "App Preferences" },
   ];
 
   const handleItemClick = (tabId: string) => {
