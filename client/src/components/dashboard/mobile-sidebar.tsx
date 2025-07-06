@@ -55,7 +55,7 @@ export function MobileSidebar({
 
       {/* Mobile Sidebar */}
       <div className={cn(
-        "fixed top-0 left-0 h-full w-80 bg-gradient-to-b from-gi-primary to-gi-primary/90 transform transition-transform duration-300 ease-in-out z-50 lg:hidden",
+        "fixed top-0 left-0 h-full w-80 bg-gradient-to-b from-gi-primary to-gi-primary/90 transform transition-transform duration-300 ease-in-out z-50 lg:hidden flex flex-col",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Header */}
@@ -117,7 +117,7 @@ export function MobileSidebar({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 overflow-y-auto">
+        <nav className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gi-primary/30 scrollbar-track-transparent">
           <ul className="space-y-2">
             {menuItems.map((item) => {
               const Icon = item.icon;
