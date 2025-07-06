@@ -134,14 +134,14 @@ export default function Dashboard() {
         return isMobile 
           ? <MobileDashboardOverview userEmail={user.email || ""} onTabChange={setActiveTab} />
           : <DashboardOverview userEmail={user.email} />;
-      case "prayer-slots":
+      case "prayer-slot":
         console.log('Rendering PrayerSlotManagement for user:', user.email); // Debug log
         return <PrayerSlotManagement userEmail={user.email} />;
-      case "bible-chat":
+      case "bible-chatbook":
         return <AIBibleChatbook />;
       case "prayer-planner":
         return <PrayerPlanner />;
-      case "bible-verse-search":
+      case "bible-search":
         return <BibleVerseSearch />;
       case "prayer-journey":
         return <PrayerJourneyVisualizer userId={user.id} />;
