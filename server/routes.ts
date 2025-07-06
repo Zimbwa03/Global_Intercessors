@@ -3360,5 +3360,83 @@ Make it personal, biblical, and actionable for intercession.`;
     }
   });
 
+  // Fix attendance - create attendance record for completed prayer session
+  app.post("/api/fix-attendance", async (req: Request, res: Response) => {
+    try {
+      console.log('🔧 Creating attendance record for completed prayer session...');
+      
+      const { userId, userEmail, duration, slotTime } = req.body;
+      
+      if (!userId || !userEmail || !duration || !slotTime) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+      
+      const now = new Date();
+      const attendanceData = {
+        user_id: userId,
+        user_email: userEmail,
+        slot_time: slotTime,
+        attended_at: now.toISOString(),
+        duration_minutes: duration,
+        session_type: 'zoom',
+        meeting_id: 'completed_session_' + Date.now(),
+        attendance_percentage: 100,
+        prayer_slot_id: 3,
+        date: now.toISOString().split('T')[0],
+        status: 'attended'
+      };
+
+      // Insert attendance record using supabase admin
+      const { data: attendanceResult, error: attendanceError } = await supabase
+        .from('attendance_log')
+        .insert([attendanceData])
+        .select();
+      
+      if (attendanceError) {
+        console.error('❌ Attendance error:', attendanceError);
+        return res.status(500).json({ error: 'Failed to create attendance record', details: attendanceError });
+      }
+      
+      console.log('✅ Attendance record created:', attendanceResult);
+      
+      // Also create prayer session record
+      const sessionData = {
+        user_id: userId,
+        user_email: userEmail,
+        slot_time: slotTime,
+        date: now.toISOString().split('T')[0],
+        duration_minutes: duration,
+        session_type: 'zoom',
+        completed: true
+      };
+      
+      const { data: sessionResult, error: sessionError } = await supabase
+        .from('prayer_sessions')
+        .insert([sessionData])
+        .select();
+      
+      if (sessionError) {
+        console.error('❌ Session error:', sessionError);
+        return res.status(500).json({ error: 'Failed to create prayer session', details: sessionError });
+      }
+      
+      console.log('✅ Prayer session created:', sessionResult);
+      
+      res.json({ 
+        success: true, 
+        message: 'Attendance and prayer session recorded successfully',
+        attendance: attendanceResult,
+        session: sessionResult
+      });
+      
+    } catch (error) {
+      console.error('❌ Error fixing attendance:', error);
+      res.status(500).json({ 
+        error: 'Failed to fix attendance',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   return httpServer;
 }
