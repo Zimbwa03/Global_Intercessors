@@ -155,7 +155,7 @@ export function UpdatesAnnouncements() {
               {announcement.registrationRequired && announcement.id === "fasting-program" && (
                 <Button 
                   onClick={() => setShowFastingRegistration(true)}
-                  className="bg-gi-primary/600 text-white hover:bg-gi-primary/700 font-semibold"
+                  className="hover:bg-gi-primary/700 font-semibold bg-[#004921] text-[#d8a86c]"
                 >
                   <i className="fas fa-user-plus mr-2"></i>
                   Register for Fasting Program
