@@ -37,30 +37,65 @@ class ZoomAttendanceTracker {
     this.accountId = process.env.ZOOM_ACCOUNT_ID || '';
     this.zoomToken = '';
     
+    console.log('🔧 Zoom Credentials Check:');
+    console.log('Client ID:', this.clientId ? `${this.clientId.substring(0, 8)}...` : 'MISSING');
+    console.log('Client Secret:', this.clientSecret ? `${this.clientSecret.substring(0, 8)}...` : 'MISSING');
+    console.log('Account ID:', this.accountId ? `${this.accountId.substring(0, 8)}...` : 'MISSING');
+    
     if (!this.clientId || !this.clientSecret || !this.accountId) {
-      console.warn('Zoom credentials not found in environment variables');
+      console.error('❌ ZOOM CREDENTIALS MISSING! Please set:');
+      console.error('- ZOOM_CLIENT_ID');
+      console.error('- ZOOM_API_SECRET (this should be Client Secret)');
+      console.error('- ZOOM_ACCOUNT_ID');
     }
   }
 
   // Get OAuth token using Server-to-Server OAuth
   private async getAccessToken(): Promise<string> {
+    if (!this.clientId || !this.clientSecret || !this.accountId) {
+      throw new Error('Zoom credentials not configured. Please set ZOOM_CLIENT_ID, ZOOM_API_SECRET, and ZOOM_ACCOUNT_ID in Secrets');
+    }
+
     try {
-      const response = await axios.post('https://zoom.us/oauth/token', 
-        `grant_type=account_credentials&account_id=${this.accountId}`,
-        {
-          headers: {
-            'Authorization': `Basic ${Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')}`,
-            'Content-Type': 'application/x-www-form-urlencoded'
-          }
+      console.log('🔄 Requesting Zoom access token...');
+      console.log('Using Account ID:', this.accountId);
+      
+      const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
+      const payload = `grant_type=account_credentials&account_id=${this.accountId}`;
+      
+      console.log('Request payload:', payload);
+      console.log('Authorization header (first 20 chars):', credentials.substring(0, 20) + '...');
+
+      const response = await axios.post('https://zoom.us/oauth/token', payload, {
+        headers: {
+          'Authorization': `Basic ${credentials}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
         }
-      );
+      });
 
       this.zoomToken = response.data.access_token;
-      console.log('Zoom access token obtained successfully');
+      console.log('✅ Zoom access token obtained successfully');
+      console.log('Token type:', response.data.token_type);
+      console.log('Expires in:', response.data.expires_in, 'seconds');
       return this.zoomToken;
-    } catch (error) {
-      console.error('Error getting Zoom access token:', error);
-      throw error;
+    } catch (error: any) {
+      console.error('❌ Error getting Zoom access token:');
+      console.error('Status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      console.error('Request config:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: error.config?.headers
+      });
+      
+      if (error.response?.data?.error === 'invalid_client') {
+        console.error('💡 This usually means:');
+        console.error('1. Client ID or Client Secret is incorrect');
+        console.error('2. The app is not published/activated in Zoom');
+        console.error('3. Wrong app type (should be Server-to-Server OAuth)');
+      }
+      
+      throw new Error(`Zoom authentication failed: ${error.response?.data?.error || error.message}`);
     }
   }
 

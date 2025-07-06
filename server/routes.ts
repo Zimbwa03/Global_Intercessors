@@ -1859,11 +1859,10 @@ Respond in JSON format as an array:
       const clientSecret = process.env.ZOOM_API_SECRET;
       const accountId = process.env.ZOOM_ACCOUNT_ID;
 
-      console.log('Testing Zoom credentials:', {
-        clientId: clientId ? `${clientId.substring(0, 8)}...` : 'missing',
-        clientSecret: clientSecret ? `${clientSecret.substring(0, 8)}...` : 'missing',
-        accountId: accountId ? `${accountId.substring(0, 8)}...` : 'missing'
-      });
+      console.log('🧪 Testing Zoom credentials:');
+      console.log('Client ID:', clientId ? `${clientId.substring(0, 8)}...` : 'MISSING');
+      console.log('Client Secret:', clientSecret ? `${clientSecret.substring(0, 8)}...` : 'MISSING');
+      console.log('Account ID:', accountId ? `${accountId.substring(0, 8)}...` : 'MISSING');
 
       if (!clientId || !clientSecret || !accountId) {
         return res.status(400).json({ 
@@ -1872,7 +1871,15 @@ Respond in JSON format as an array:
             hasClientId: !!clientId,
             hasClientSecret: !!clientSecret,
             hasAccountId: !!accountId
-          }
+          },
+          instructions: [
+            "1. Go to https://marketplace.zoom.us/",
+            "2. Create a Server-to-Server OAuth app",
+            "3. Add these secrets in Replit:",
+            "   - ZOOM_CLIENT_ID (from app credentials)",
+            "   - ZOOM_API_SECRET (this should be Client Secret)",
+            "   - ZOOM_ACCOUNT_ID (from app credentials)"
+          ]
         });
       }
 
@@ -2146,6 +2153,11 @@ Respond in JSON format as an array:
       console.log('🔄 Admin forcing Zoom meeting processing...');
       
       const { zoomAttendanceTracker } = await import('./services/zoomAttendanceTracker.js');
+      
+      // First test the connection
+      console.log('Testing Zoom connection first...');
+      await zoomAttendanceTracker.getAccessToken();
+      
       const result = await zoomAttendanceTracker.forceProcessRecentMeetings();
       
       res.json({
@@ -2157,7 +2169,8 @@ Respond in JSON format as an array:
       console.error('Error force processing Zoom meetings:', error);
       res.status(500).json({ 
         error: "Failed to process Zoom meetings",
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
+        suggestion: "Check your Zoom credentials in Secrets tab"
       });
     }
   });
