@@ -1431,6 +1431,14 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-center space-x-2">
               <Button
+                onClick={() => setActiveTab("management")}
+                size="sm"
+                variant={activeTab === "management" ? "default" : "ghost"}
+                className={`p-2 ${activeTab === "management" ? "bg-gi-primary text-white" : ""}`}
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+              <Button
                 onClick={refreshAllData}
                 size="sm"
                 variant="ghost"
@@ -1495,64 +1503,55 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto p-4">
+      <div className={`max-w-7xl mx-auto p-4 ${isMobile ? 'pb-40' : ''}`}>
         {/* Mobile Navigation */}
         {isMobile ? (
           <div className="mb-6">
-            <div className="grid grid-cols-3 gap-2 bg-white rounded-lg p-3 shadow-sm">
-              <MobileNavButton
-                icon={BarChart3}
-                label="Overview"
-                isActive={activeTab === "overview"}
-                onClick={() => setActiveTab("overview")}
-              />
-              <MobileNavButton
-                icon={Clock}
-                label="Slots"
-                isActive={activeTab === "slots"}
-                onClick={() => setActiveTab("slots")}
-              />
-              <MobileNavButton
-                icon={UserCheck}
-                label="Activity"
-                isActive={activeTab === "activity"}
-                onClick={() => setActiveTab("activity")}
-              />
+            {/* Mobile Footer Navigation */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gi-primary/20 z-20 shadow-lg">
+              <div className="grid grid-cols-3 gap-1 p-2">
+                <MobileNavButton
+                  icon={BarChart3}
+                  label="Overview"
+                  isActive={activeTab === "overview"}
+                  onClick={() => setActiveTab("overview")}
+                />
+                <MobileNavButton
+                  icon={Clock}
+                  label="Slots"
+                  isActive={activeTab === "slots"}
+                  onClick={() => setActiveTab("slots")}
+                />
+                <MobileNavButton
+                  icon={Calendar}
+                  label="Fasting"
+                  isActive={activeTab === "fasting"}
+                  onClick={() => setActiveTab("fasting")}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-1 p-2 pt-0">
+                <MobileNavButton
+                  icon={TrendingUp}
+                  label="Analytics"
+                  isActive={activeTab === "analytics"}
+                  onClick={() => setActiveTab("analytics")}
+                />
+                <MobileNavButton
+                  icon={RotateCcw}
+                  label="Skip Requests"
+                  isActive={activeTab === "skip-requests"}
+                  onClick={() => setActiveTab("skip-requests")}
+                />
+                <MobileNavButton
+                  icon={Download}
+                  label="Data Export"
+                  isActive={activeTab === "data-allocation"}
+                  onClick={() => setActiveTab("data-allocation")}
+                />
+              </div>
             </div>
-            <div className="grid grid-cols-3 gap-2 mt-2 bg-white rounded-lg p-3 shadow-sm">
-              <MobileNavButton
-                icon={Calendar}
-                label="Fasting"
-                isActive={activeTab === "fasting"}
-                onClick={() => setActiveTab("fasting")}
-              />
-              <MobileNavButton
-                icon={Settings}
-                label="Manage"
-                isActive={activeTab === "management"}
-                onClick={() => setActiveTab("management")}
-              />
-              <MobileNavButton
-                icon={TrendingUp}
-                label="Analytics"
-                isActive={activeTab === "analytics"}
-                onClick={() => setActiveTab("analytics")}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2 mt-2 bg-white rounded-lg p-3 shadow-sm">
-              <MobileNavButton
-                icon={RotateCcw}
-                label="Skip Requests"
-                isActive={activeTab === "skip-requests"}
-                onClick={() => setActiveTab("skip-requests")}
-              />
-              <MobileNavButton
-                icon={Download}
-                label="Data Export"
-                isActive={activeTab === "data-allocation"}
-                onClick={() => setActiveTab("data-allocation")}
-              />
-            </div>
+            {/* Add bottom padding to prevent content from being hidden by footer */}
+            <div className="pb-32"></div>
           </div>
         ) : (
           /* Desktop Navigation */
@@ -2514,7 +2513,7 @@ export default function AdminDashboard() {
                                     });
                                   }
                                 }}
-                                className="bg-green-600 hover:bg-green-700 text-white font-poppins"
+                                className="bg-gi-primary hover:bg-gi-primary/90 text-white font-poppins"
                               >
                                 Approve
                               </Button>
@@ -2547,8 +2546,7 @@ export default function AdminDashboard() {
                                     });
                                   }
                                 }}
-                                variant="destructive"
-                                className="font-poppins"
+                                className="bg-gi-gold hover:bg-gi-gold/90 text-gi-primary font-poppins"
                               >
                                 Reject
                               </Button>
