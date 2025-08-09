@@ -215,13 +215,19 @@ export function BibleVerseSearch() {
 
   const getVerseText = (verse: BibleVerse) => {
     // Try to get clean text from various possible fields
-    if (verse.text && verse.text !== 'Verse content not available') {
-      return verse.text;
+    if (verse.text && verse.text !== 'Verse content not available' && verse.text.trim() !== '') {
+      return verse.text.trim();
     }
-    if (verse.content) {
-      return verse.content.replace(/<[^>]*>/g, '').trim();
+    if (verse.content && verse.content.trim() !== '') {
+      const cleanedContent = verse.content.replace(/<[^>]*>/g, '').trim();
+      if (cleanedContent && cleanedContent !== 'Verse content not available') {
+        return cleanedContent;
+      }
     }
-    return 'Verse content not available';
+    
+    // Log the issue for debugging
+    console.log('No verse content available for:', verse);
+    return 'Verse content not available - please try browsing to this verse directly';
   };
 
   // Function to highlight search terms in verse text
@@ -571,7 +577,19 @@ export function BibleVerseSearch() {
       )}
 
       {/* Search Results */}
-      {searchMode === 'search' && searchResults && (
+      {searchMode === 'search' && searchLoading && debouncedSearchQuery && (
+        <Card className="shadow-lg border border-gi-primary/100">
+          <CardContent className="text-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-gi-primary" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Searching Verses...</h3>
+            <p className="text-gray-600">
+              Looking for verses containing "{debouncedSearchQuery}"
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {searchMode === 'search' && searchResults && !searchLoading && (
         <Card className="shadow-lg border border-gi-primary/100">
           <CardHeader>
             <CardTitle className="text-lg font-poppins">
@@ -584,45 +602,68 @@ export function BibleVerseSearch() {
           <CardContent>
             <ScrollArea className="h-96">
               <div className="space-y-4">
-                {searchResults.verses.map((verse, index) => (
-                  <motion.div
-                    key={verse.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="p-4 bg-gradient-to-r from-blue-50 to-white rounded-lg border border-gi-primary/100 hover:shadow-md transition-all"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h4 className="font-semibold text-brand-text">
-                          {verse.reference || `Verse ${verse.verseNumber}`}
-                        </h4>
-                        <Badge variant="outline" className="mt-1">
-                          {selectedBible}
-                        </Badge>
+                {searchResults.verses.map((verse, index) => {
+                  const verseText = getVerseText(verse);
+                  const isContentAvailable = verseText !== 'Verse content not available - please try browsing to this verse directly';
+                  
+                  return (
+                    <motion.div
+                      key={verse.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className={`p-4 rounded-lg border hover:shadow-md transition-all ${
+                        isContentAvailable 
+                          ? 'bg-gradient-to-r from-blue-50 to-white border-gi-primary/100' 
+                          : 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h4 className="font-semibold text-brand-text">
+                            {verse.reference || `${verse.bookId} ${verse.chapterId?.split('.')[1] || ''}:${verse.verseNumber}`}
+                          </h4>
+                          <Badge variant="outline" className="mt-1">
+                            {selectedBible}
+                          </Badge>
+                          {!isContentAvailable && (
+                            <Badge variant="secondary" className="mt-1 ml-2 bg-yellow-100 text-yellow-800">
+                              Content Loading Issue
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex space-x-1">
+                          {isContentAvailable && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleCopyVerse(verse)}
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleShareVerse(verse)}
+                              >
+                                <Share className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopyVerse(verse)}
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleShareVerse(verse)}
-                        >
-                          <Share className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    <p className="text-gray-700 leading-relaxed">
-                      "{highlightSearchTerms(getVerseText(verse), searchQuery)}"
-                    </p>
-                  </motion.div>
-                ))}
+                      <p className={`leading-relaxed ${isContentAvailable ? 'text-gray-700' : 'text-yellow-700 italic'}`}>
+                        "{isContentAvailable ? highlightSearchTerms(verseText, searchQuery) : verseText}"
+                      </p>
+                      {!isContentAvailable && (
+                        <div className="mt-3 p-2 bg-yellow-100 rounded text-sm text-yellow-800">
+                          💡 Tip: Try browsing to this verse using the Browse mode above for full content.
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </div>
             </ScrollArea>
           </CardContent>

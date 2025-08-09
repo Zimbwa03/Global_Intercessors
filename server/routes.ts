@@ -1491,23 +1491,40 @@ Guidelines:
             verses: await Promise.all(searchResults.map(async (item: any) => {
               // Clean HTML tags from content and extract meaningful text
               let cleanContent = '';
+              
+              // First try to get content from the search result
               if (item.content) {
                 cleanContent = item.content.replace(/<[^>]*>/g, '').trim();
               } else if (item.text) {
                 cleanContent = item.text.replace(/<[^>]*>/g, '').trim();
               }
               
-              // If content is still empty or unavailable, fetch the full verse content
+              // If content is still empty, try fetching the individual verse
               if (!cleanContent || cleanContent === 'Verse content not available') {
                 try {
+                  console.log(`Fetching individual verse content for: ${item.id}`);
                   const verseResponse = await fetch(`${baseUrl}/bibles/${bibleId}/verses/${item.id}`, { headers });
+                  
                   if (verseResponse.ok) {
                     const verseData = await verseResponse.json();
-                    cleanContent = verseData.data.content ? verseData.data.content.replace(/<[^>]*>/g, '').trim() : cleanContent;
+                    console.log(`Individual verse response for ${item.id}:`, JSON.stringify(verseData, null, 2));
+                    
+                    if (verseData.data && verseData.data.content) {
+                      cleanContent = verseData.data.content.replace(/<[^>]*>/g, '').trim();
+                    } else if (verseData.data && verseData.data.text) {
+                      cleanContent = verseData.data.text.replace(/<[^>]*>/g, '').trim();
+                    }
+                  } else {
+                    console.error(`Failed to fetch verse ${item.id}: ${verseResponse.status}`);
                   }
                 } catch (error) {
                   console.error('Failed to fetch individual verse content:', error);
                 }
+              }
+              
+              // If still no content, provide a fallback message
+              if (!cleanContent) {
+                cleanContent = 'Unable to load verse content. Please try selecting the verse directly.';
               }
               
               return {
@@ -1517,10 +1534,10 @@ Guidelines:
                 bookId: item.bookId,
                 chapterId: item.chapterId,
                 reference: item.reference,
-                content: item.content,
+                content: item.content || cleanContent,
                 verseCount: item.verseCount,
-                verseNumber: item.verseNumber,
-                text: cleanContent || 'Verse content not available'
+                verseNumber: item.verseNumber || (item.id ? item.id.split('.').pop() : ''),
+                text: cleanContent
               };
             })),
             query: query,
