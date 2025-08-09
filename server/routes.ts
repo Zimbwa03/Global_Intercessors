@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { supabaseAdmin, supabase } from "./supabase";
+import { whatsAppBot } from "./services/whatsapp-bot.js";
 import axios from "axios";
 import * as htmlPdf from 'html-pdf-node';
 
@@ -3788,6 +3789,158 @@ Make it personal, biblical, and actionable for intercession.`;
         error: 'Failed to fix attendance',
         details: error instanceof Error ? error.message : 'Unknown error'
       });
+    }
+  });
+
+  // WhatsApp Bot API Endpoints
+  
+  // Register user for WhatsApp notifications
+  app.post('/api/whatsapp/register', async (req: Request, res: Response) => {
+    try {
+      const { userId, whatsAppNumber } = req.body;
+      
+      if (!userId || !whatsAppNumber) {
+        return res.status(400).json({ error: 'userId and whatsAppNumber are required' });
+      }
+
+      const success = await whatsAppBot.registerWhatsAppUser(userId, whatsAppNumber);
+      
+      if (success) {
+        res.json({ success: true, message: 'WhatsApp user registered successfully' });
+      } else {
+        res.status(500).json({ error: 'Failed to register WhatsApp user' });
+      }
+    } catch (error) {
+      console.error('Error registering WhatsApp user:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Update WhatsApp user preferences
+  app.post('/api/whatsapp/preferences', async (req: Request, res: Response) => {
+    try {
+      const { userId, preferences } = req.body;
+      
+      if (!userId || !preferences) {
+        return res.status(400).json({ error: 'userId and preferences are required' });
+      }
+
+      const success = await whatsAppBot.updateUserPreferences(userId, preferences);
+      
+      if (success) {
+        res.json({ success: true, message: 'Preferences updated successfully' });
+      } else {
+        res.status(500).json({ error: 'Failed to update preferences' });
+      }
+    } catch (error) {
+      console.error('Error updating WhatsApp preferences:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Deactivate WhatsApp user
+  app.post('/api/whatsapp/deactivate', async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
+      }
+
+      const success = await whatsAppBot.deactivateWhatsAppUser(userId);
+      
+      if (success) {
+        res.json({ success: true, message: 'WhatsApp user deactivated successfully' });
+      } else {
+        res.status(500).json({ error: 'Failed to deactivate WhatsApp user' });
+      }
+    } catch (error) {
+      console.error('Error deactivating WhatsApp user:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Broadcast admin update via WhatsApp
+  app.post('/api/whatsapp/broadcast', async (req: Request, res: Response) => {
+    try {
+      const { title, content, adminKey } = req.body;
+      
+      // Simple admin authentication
+      if (adminKey !== process.env.ADMIN_SECRET_KEY) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      
+      if (!title || !content) {
+        return res.status(400).json({ error: 'title and content are required' });
+      }
+
+      await whatsAppBot.broadcastAdminUpdate(title, content);
+      res.json({ success: true, message: 'Admin update broadcast successfully' });
+    } catch (error) {
+      console.error('Error broadcasting admin update:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Get WhatsApp bot statistics
+  app.get('/api/whatsapp/stats', async (req: Request, res: Response) => {
+    try {
+      const stats = await whatsAppBot.getMessageStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('Error getting WhatsApp stats:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Manual trigger for daily devotionals (for testing)
+  app.post('/api/whatsapp/test-devotional', async (req: Request, res: Response) => {
+    try {
+      const { adminKey } = req.body;
+      
+      if (adminKey !== process.env.ADMIN_SECRET_KEY) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      // Trigger devotional manually for testing
+      await whatsAppBot.sendDailyDevotionals();
+      res.json({ success: true, message: 'Test devotional sent' });
+    } catch (error) {
+      console.error('Error sending test devotional:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // WhatsApp webhook for incoming messages (for future interactive features)
+  app.get('/api/whatsapp/webhook', (req: Request, res: Response) => {
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+
+    if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+      console.log('WhatsApp webhook verified');
+      res.status(200).send(challenge);
+    } else {
+      res.sendStatus(403);
+    }
+  });
+
+  app.post('/api/whatsapp/webhook', async (req: Request, res: Response) => {
+    try {
+      const body = req.body;
+      
+      if (body.object === 'whatsapp_business_account') {
+        // Process incoming WhatsApp messages
+        console.log('Incoming WhatsApp message:', JSON.stringify(body, null, 2));
+        
+        // TODO: Implement interactive message handling
+        // This would handle user commands like "customize reminders", "stop notifications", etc.
+      }
+      
+      res.sendStatus(200);
+    } catch (error) {
+      console.error('Error processing WhatsApp webhook:', error);
+      res.sendStatus(500);
     }
   });
 

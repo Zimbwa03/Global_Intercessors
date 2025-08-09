@@ -1,0 +1,247 @@
+WhatsApp Prayer Reminder Bot Design Document
+
+1. Introduction
+
+This document outlines the design and architecture for a sophisticated WhatsApp bot, integrated with a web application, to support the Global Intercessors Prayer Management Platform. The bot aims to enhance intercessor engagement through personalized reminders, daily spiritual content, and real-time administrative updates, leveraging AI for content generation and summarization.
+
+2. Core Bot Functionalities
+
+2.1. Personalized Prayer Slot Reminders
+
+Objective: To ensure intercessors are timely reminded of their selected prayer slots, reducing missed sessions and enhancing prayer coverage.
+
+Details:
+
+•
+Slot Selection: Intercessors will select their preferred 30-minute prayer slots (e.g., 20:30-21:00) via the web application.
+
+•
+Reminder Enablement: Reminders will be enabled through the web application.
+
+•
+Personalized Messaging: The bot will send messages directly to the intercessor's WhatsApp number, retrieved from the Supabase database. Messages will be personalized using the intercessor's name.
+
+•
+Pre-Slot Reminders:
+
+•
+1-Hour Reminder: Approximately one hour before the slot begins (e.g., for a 20:30 slot, a reminder at 19:30). Message example: "Hello [Intercessor Name], you are left with 1 hour to your slot starting at [Slot Start Time]."
+
+•
+30-Minute Reminder: Approximately 30 minutes before the slot begins (e.g., for a 20:30 slot, a reminder at 20:00). Message example: "Hello [Intercessor Name], you are left with 30 minutes to your slot at [Slot Start Time]."
+
+
+
+•
+Customization: Intercessors will have the ability to customize their reminder preferences (e.g., reminder timings, days for specific reminders) through the bot interface, acting like a personal alarm.
+
+2.2. AI-Powered Daily Devotionals and Bible Verses
+
+Objective: To provide daily spiritual encouragement and motivation to intercessors.
+
+Details:
+
+•
+Scheduled Delivery: Every morning at 06:00 (user's local time, if possible, otherwise platform default), the bot will send a morning devotion and a relevant Bible verse.
+
+•
+Content Generation: The devotionals and verses will be generated using Deep Seek AI, ensuring fresh and inspiring content daily.
+
+•
+Personalization: Messages will address the intercessor by name, fostering a personal connection.
+
+2.3. Administrative Updates and Summarization
+
+Objective: To efficiently disseminate important announcements and updates from the platform administrators to all intercessors.
+
+Details:
+
+•
+Admin Input: Administrators will post updates via the web application.
+
+•
+AI Summarization: Before sending, these updates will be processed by Deep Seek AI to summarize the content, ensuring conciseness and clarity for WhatsApp delivery.
+
+•
+Broadcast Messaging: The summarized updates will be broadcast to all intercessors in the database.
+
+2.4. User Customization and Alarm-like Functionality
+
+Objective: To empower intercessors with control over their notification experience.
+
+Details:
+
+•
+Reminder Customization: Users can interact with the bot to set specific reminder times for their prayer slots or other personal prayer needs.
+
+•
+Day Selection: Users can choose specific days of the week for these customized reminders, similar to setting an alarm.
+
+•
+Interactive Interface: The bot will guide users through a conversational flow to configure these settings.
+
+3. Integration Points
+
+3.1. Web Application Integration
+
+Details:
+
+•
+User Interface: The web application will serve as the primary interface for intercessors to select prayer slots, enable reminders, and manage their general preferences.
+
+•
+Admin Interface: Administrators will use the web application to post updates and manage intercessor data.
+
+•
+Data Synchronization: Real-time synchronization of prayer slot selections, reminder preferences, and administrative updates between the web app and the bot's backend.
+
+3.2. Supabase Database Integration
+
+Details:
+
+•
+User Data Storage: Supabase will store intercessor details, including their names, WhatsApp numbers, selected prayer slots, and customized reminder preferences.
+
+•
+Data Retrieval: The bot will query Supabase to retrieve intercessor names and WhatsApp numbers for personalized messaging.
+
+•
+Data Updates: The bot will update Supabase with user customization preferences.
+
+3.3. Deep Seek AI Integration
+
+Details:
+
+•
+Content Generation: Deep Seek AI will be used to generate daily devotionals and Bible verses.
+
+•
+Content Summarization: Deep Seek AI will summarize administrative updates before they are sent to intercessors.
+
+3.4. WhatsApp Business API
+
+Details:
+
+•
+Messaging Gateway: The bot will utilize the WhatsApp Business API for sending and receiving messages, ensuring reliable and scalable communication.
+
+•
+Interactive Messaging: Leveraging WhatsApp's interactive message features (e.g., quick replies, list messages) for user customization flows.
+
+4. Interaction Flow Examples
+
+4.1. Prayer Slot Reminder Flow
+
+1.
+Web App Action: Intercessor [Intercessor Name] selects prayer slot 20:30-21:00 on the web app and enables reminders.
+
+2.
+Backend Trigger: The web app's backend (Node.js/Express.js) records this in Supabase and schedules the reminders.
+
+3.
+Bot Action (1-Hour): At 19:30, the bot queries Supabase for [Intercessor Name]'s WhatsApp number.
+
+4.
+Bot Message: Bot sends: "Hello [Intercessor Name], you are left with 1 hour to your slot starting at 20:30."
+
+5.
+Bot Action (30-Minute): At 20:00, the bot sends another reminder.
+
+6.
+Bot Message: Bot sends: "Hello [Intercessor Name], you are left with 30 minutes to your slot at 20:30."
+
+4.2. Daily Devotional Flow
+
+1.
+Scheduled Trigger: Every day at 06:00, a scheduled job triggers the devotional generation process.
+
+2.
+AI Generation: Deep Seek AI generates a morning devotion and a relevant Bible verse.
+
+3.
+Bot Action: The bot retrieves all intercessor WhatsApp numbers and names from Supabase.
+
+4.
+Bot Message: For each intercessor, bot sends: "Good morning, [Intercessor Name]! Here is your daily devotion: [Devotion Text]. Today's verse: [Bible Verse]."
+
+4.3. Admin Update Flow
+
+1.
+Admin Action: Administrator posts a new update on the web app.
+
+2.
+Backend Processing: The update is sent to Deep Seek AI for summarization.
+
+3.
+Bot Action: The summarized update is retrieved, and the bot retrieves all intercessor WhatsApp numbers from Supabase.
+
+4.
+Bot Message: Bot broadcasts: "Important Update: [Summarized Update Text]."
+
+4.4. Reminder Customization Flow
+
+1.
+User Initiates: Intercessor sends a message like "Customize reminders" to the bot.
+
+2.
+Bot Prompts: Bot replies with options: "What would you like to customize? 1. Prayer Slot Reminders 2. Personal Reminders."
+
+3.
+User Selects: Intercessor replies with "2" for Personal Reminders.
+
+4.
+Bot Prompts: Bot asks: "What time would you like your personal reminder? (e.g., 07:00)"
+
+5.
+User Inputs: Intercessor replies with "07:00".
+
+6.
+Bot Prompts: Bot asks: "Which days of the week? (e.g., Mon, Wed, Fri or Everyday)"
+
+7.
+User Inputs: Intercessor replies with "Everyday".
+
+8.
+Bot Confirms: Bot confirms: "Got it, [Intercessor Name]! I'll remind you everyday at 07:00. Is that correct?"
+
+9.
+User Confirms: Intercessor replies "Yes".
+
+10.
+Supabase Update: Bot updates Supabase with the new reminder preference.
+
+5. Technical Considerations
+
+•
+Scalability: The architecture should support a growing number of intercessors and prayer slots.
+
+•
+Reliability: Ensure high uptime and message delivery rates for critical reminders.
+
+•
+Security: Protect user data and ensure secure communication channels.
+
+•
+Time Zones: Implement robust handling of time zones for accurate reminder delivery across global intercessors.
+
+•
+Error Handling: Graceful error handling for API failures, network issues, and invalid user inputs.
+
+6. Future Enhancements
+
+•
+Multi-language Support: Allow intercessors to receive messages in their preferred language.
+
+•
+Feedback Mechanism: Enable intercessors to provide feedback on devotionals or bot interactions.
+
+•
+Integration with Calendar: Option to add prayer slots directly to personal calendars.
+
+•
+Voice Interaction: Explore voice message input and output for bot interactions.
+
+7. Conclusion
+
+This design provides a robust framework for the WhatsApp Prayer Reminder Bot, integrating seamlessly with the existing web application and leveraging AI to deliver a highly personalized and engaging experience for Global Intercessors. The focus on timely reminders, spiritual nourishment, and efficient communication will significantly enhance the platform's missio
+

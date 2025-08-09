@@ -71,6 +71,43 @@ export const zoomMeetings = pgTable("zoom_meetings", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// WhatsApp bot users table for managing bot interactions
+export const whatsAppBotUsers = pgTable("whatsapp_bot_users", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  whatsAppNumber: text("whatsapp_number").notNull().unique(),
+  isActive: boolean("is_active").notNull().default(true),
+  reminderPreferences: text("reminder_preferences"), // JSON string for custom preferences
+  personalReminderTime: text("personal_reminder_time"), // e.g., "07:00"
+  personalReminderDays: text("personal_reminder_days"), // e.g., "Mon,Wed,Fri" or "Everyday"
+  timezone: text("timezone").default("UTC"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// WhatsApp bot messages table for tracking sent messages
+export const whatsAppMessages = pgTable("whatsapp_messages", {
+  id: serial("id").primaryKey(),
+  recipientNumber: text("recipient_number").notNull(),
+  messageType: text("message_type").notNull(), // "reminder", "devotional", "admin_update", "custom"
+  messageContent: text("message_content").notNull(),
+  status: text("status").notNull().default("pending"), // "pending", "sent", "delivered", "failed"
+  scheduledFor: timestamp("scheduled_for"),
+  sentAt: timestamp("sent_at"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Daily devotionals table for storing AI-generated content
+export const dailyDevotionals = pgTable("daily_devotionals", {
+  id: serial("id").primaryKey(),
+  date: text("date").notNull().unique(), // YYYY-MM-DD format
+  devotionText: text("devotion_text").notNull(),
+  bibleVerse: text("bible_verse").notNull(),
+  verseReference: text("verse_reference").notNull(),
+  generatedAt: timestamp("generated_at").defaultNow().notNull(),
+});
+
 // Audio Bible progress table for tracking playback state
 export const audioBibleProgress = pgTable("audio_bible_progress", {
   id: serial("id").primaryKey(),
@@ -264,6 +301,22 @@ export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
   updatedAt: true,
 });
 
+export const insertWhatsAppBotUserSchema = createInsertSchema(whatsAppBotUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWhatsAppMessageSchema = createInsertSchema(whatsAppMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDailyDevotionalSchema = createInsertSchema(dailyDevotionals).omit({
+  id: true,
+  generatedAt: true,
+});
+
 export type PrayerSlot = typeof prayerSlots.$inferSelect;
 export type InsertPrayerSlot = z.infer<typeof insertPrayerSlotSchema>;
 export type AvailableSlot = typeof availableSlots.$inferSelect;
@@ -290,3 +343,9 @@ export type SpiritualInsights = typeof spiritualInsights.$inferSelect;
 export type InsertSpiritualInsights = z.infer<typeof insertSpiritualInsightsSchema>;
 export type UserProfile = typeof userProfiles.$inferSelect;
 export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
+export type WhatsAppBotUser = typeof whatsAppBotUsers.$inferSelect;
+export type InsertWhatsAppBotUser = z.infer<typeof insertWhatsAppBotUserSchema>;
+export type WhatsAppMessage = typeof whatsAppMessages.$inferSelect;
+export type InsertWhatsAppMessage = z.infer<typeof insertWhatsAppMessageSchema>;
+export type DailyDevotional = typeof dailyDevotionals.$inferSelect;
+export type InsertDailyDevotional = z.infer<typeof insertDailyDevotionalSchema>;

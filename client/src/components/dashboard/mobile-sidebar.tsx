@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { X, Menu, User, Home, Calendar, Book, MessageCircle, BarChart, Settings, LogOut, Clock, Bell, TrendingUp, FileText, Heart, Shield, Search, Users, Star, Zap } from "lucide-react";
+import { X, Menu, User, Home, Calendar, Book, MessageCircle, BarChart, Settings, LogOut, Clock, Bell, TrendingUp, FileText, Heart, Shield, Search, Users, Star, Zap, Smartphone } from "lucide-react";
 
 interface MobileSidebarProps {
   activeTab: string;
@@ -29,6 +29,7 @@ export function MobileSidebar({
     { id: "prayer-planner", label: "Prayer Planner", icon: MessageCircle, description: "Plan Your Prayers" },
     { id: "bible-search", label: "Bible Verse Search", icon: Search, description: "Find Scripture" },
     { id: "prayer-journey", label: "Prayer Journey", icon: TrendingUp, description: "Track Your Growth" },
+    { id: "whatsapp-settings", label: "WhatsApp Bot", icon: Smartphone, description: "Prayer Reminders via WhatsApp" },
   ];
 
   const handleItemClick = (tabId: string) => {

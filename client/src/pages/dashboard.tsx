@@ -19,6 +19,7 @@ import { NotificationSetup } from "@/components/dashboard/notification-setup";
 import { UserProfile } from "@/components/dashboard/user-profile";
 import { PrayerJourneyVisualizer } from "@/components/dashboard/prayer-journey-visualizer";
 import { BibleVerseSearch } from "@/components/dashboard/bible-verse-search";
+import { WhatsAppSettings } from "@/components/dashboard/whatsapp-settings";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { notificationService } from "@/lib/notificationService";
@@ -175,6 +176,8 @@ export default function Dashboard() {
         return <UpdatesAnnouncements />;
       case "profile":
         return <UserProfile userEmail={user.email} />;
+      case "whatsapp-settings":
+        return <WhatsAppSettings />;
       case "settings":
         return <div className="p-6 bg-white rounded-lg shadow-md">
           <h2 className="text-2xl font-bold text-gi-primary mb-4">Settings</h2>
@@ -192,7 +195,7 @@ export default function Dashboard() {
         {/* Mobile Header */}
         <MobileHeader 
           onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-          userProfile={user.profileData || user.user_metadata}
+          userProfile={user.profile || user.user_metadata}
           activeTab={activeTab}
           unreadCount={unreadUpdates}
           onTabChange={setActiveTab}
@@ -207,7 +210,7 @@ export default function Dashboard() {
           }}
           onSignOut={handleSignOut}
           userEmail={user.email}
-          userProfile={user.profileData || user.user_metadata}
+          userProfile={user.profile || user.user_metadata}
           isOpen={mobileMenuOpen}
           onToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
         />
@@ -265,15 +268,6 @@ export default function Dashboard() {
       <main className="flex-1 p-6 overflow-auto">
         {renderContent()}
       </main>
-      <img 
-            src="/src/assets/GI_Global_Logo.png" 
-            alt="Global Intercessors" 
-            className="h-8 w-auto object-contain"
-            onError={(e) => {
-              console.error('Dashboard page logo failed to load');
-              e.currentTarget.style.display = 'none';
-            }}
-          />
     </div>
   );
 }
