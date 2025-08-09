@@ -1223,9 +1223,16 @@ IMPORTANT FORMATTING RULES:
 - Write in clean, plain text only
 - Keep response length proportional to input: ${inputLength < 20 ? 'very brief' : inputLength < 50 ? 'concise' : 'moderate'}
 - Use professional, warm tone without being overly emotional
-- Include relevant Bible verse reference and text
-- Provide practical spiritual guidance
-- End with a brief prayer point
+- Start with a relevant Bible verse in this exact format: "[Book Chapter:Verse] [Full verse text]"
+- Follow with practical spiritual guidance
+- End with "Prayer Point: [brief prayer]"
+
+Example format:
+"Philippians 4:13 I can do all this through him who gives me strength.
+
+[Your spiritual guidance here]
+
+Prayer Point: Father God, strengthen me through Christ in all circumstances. Amen."
 
 Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
 
@@ -1283,36 +1290,69 @@ Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
       }
 
       console.log('Gemini API response received successfully');
-      // Extract and return the cleaned response
-      try {
-        const parsedResponse = JSON.parse(aiResponse);
-        res.json({
-          response: parsedResponse.response,
-          scripture: parsedResponse.scripture,
-          insights: parsedResponse.insights
-        });
-      } catch (parseError) {
-        console.error('Failed to parse Gemini response as JSON:', parseError);
-        console.error('Raw response:', aiResponse);
+      
+      // Clean the response from markdown formatting
+      const cleanResponse = aiResponse
+        .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
+        .replace(/\*(.*?)\*/g, '$1')     // Remove italic formatting
+        .replace(/^\d+\.\s*/gm, '')     // Remove numbered lists
+        .replace(/^[-•]\s*/gm, '')      // Remove bullet points
+        .trim();
 
-        // Clean the response from markdown formatting
-        const cleanResponse = aiResponse
-          .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
-          .replace(/\*(.*?)\*/g, '$1')     // Remove italic formatting
-          .replace(/^\d+\.\s*/gm, '')     // Remove numbered lists
-          .replace(/^[-•]\s*/gm, '')      // Remove bullet points
-          .trim();
-
-        // Fallback response with proper formatting
-        res.json({
-          response: cleanResponse,
-          scripture: {
-            reference: "Isaiah 55:11",
-            text: "So is my word that goes out from my mouth: It will not return to me empty, but will accomplish what I desire and achieve the purpose for which I sent it."
-          },
-          insights: ["God's Word is powerful", "Scripture accomplishes God's purposes", "Trust in divine guidance"]
-        });
+      // Try to extract scripture reference and text from the response
+      let extractedScripture = null;
+      
+      // Enhanced Bible verse patterns to catch more formats
+      const versePatterns = [
+        /(\d?\s*[A-Za-z]+\s+\d+:\d+(?:-\d+)?)\s+(.+?)(?=\n\n|\. [A-Z]|Prayer Point:|$)/,
+        /([A-Za-z]+\s+\d+:\d+)\s+states?,?\s*["'""]?(.+?)["'""]?(?=\n|\. [A-Z]|Prayer Point:|$)/,
+        /([A-Za-z]+\s+\d+:\d+)\s+(.+?)(?=\n|\. [A-Z]|Prayer Point:|$)/
+      ];
+      
+      for (const pattern of versePatterns) {
+        const match = cleanResponse.match(pattern);
+        if (match) {
+          const reference = match[1].trim();
+          let text = match[2].trim()
+            .replace(/^["'""]|["'""]$/g, '') // Remove quotes
+            .replace(/states?,?\s*$/, '') // Remove trailing "states"
+            .replace(/\s+/g, ' ') // Normalize whitespace
+            .trim();
+          
+          // Clean up common artifacts
+          text = text.replace(/^(says?|states?):?\s*/i, '');
+          
+          if (text.length > 10) { // Ensure we have meaningful text
+            extractedScripture = {
+              reference: reference,
+              text: text
+            };
+            break;
+          }
+        }
       }
+
+      // Generate insights from the response
+      const insights = [];
+      if (cleanResponse.includes('persever')) insights.push("Perseverance in faith");
+      if (cleanResponse.includes('prayer') || cleanResponse.includes('intercession')) insights.push("Power of prayer");
+      if (cleanResponse.includes('strength') || cleanResponse.includes('power')) insights.push("God's strength sustains us");
+      if (cleanResponse.includes('hope') || cleanResponse.includes('faith')) insights.push("Hope through faith");
+      if (cleanResponse.includes('love') || cleanResponse.includes('compassion')) insights.push("God's love endures");
+      
+      // Default insights if none found
+      if (insights.length === 0) {
+        insights.push("Trust in God's plan", "Scripture guides our path", "Prayer connects us to divine wisdom");
+      }
+
+      res.json({
+        response: cleanResponse,
+        scripture: extractedScripture || {
+          reference: "Psalm 119:105",
+          text: "Your word is a lamp for my feet, a light on my path."
+        },
+        insights: insights
+      });
     } catch (error) {
       console.error('Bible chat error:', error);
 
