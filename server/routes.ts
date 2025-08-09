@@ -3911,6 +3911,36 @@ Make it personal, biblical, and actionable for intercession.`;
     }
   });
 
+  // Send test WhatsApp message
+  app.post('/api/whatsapp/test-message', async (req: Request, res: Response) => {
+    try {
+      const { phoneNumber, message, adminKey } = req.body;
+      
+      if (adminKey !== process.env.ADMIN_SECRET_KEY) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      
+      if (!phoneNumber || !message) {
+        return res.status(400).json({ error: 'phoneNumber and message are required' });
+      }
+
+      console.log(`Testing WhatsApp message to ${phoneNumber}: ${message}`);
+      
+      const result = await whatsAppBot.sendMessage(phoneNumber, message);
+      res.json({ 
+        success: true, 
+        messageId: result?.messages?.[0]?.id,
+        message: 'Test message sent successfully'
+      });
+    } catch (error) {
+      console.error('WhatsApp test message error:', error);
+      res.status(500).json({ 
+        error: 'Failed to send test message',
+        details: error.message 
+      });
+    }
+  });
+
   // WhatsApp webhook for incoming messages (for future interactive features)
   app.get('/api/whatsapp/webhook', (req: Request, res: Response) => {
     const mode = req.query['hub.mode'];

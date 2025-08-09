@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { MessageSquare, Clock, Calendar, Settings, Bell, CheckCircle, AlertCircle } from 'lucide-react';
+import { MessageSquare, Clock, Calendar, Settings, Bell, CheckCircle, AlertCircle, Send, TestTube } from 'lucide-react';
 
 interface WhatsAppSettings {
   isRegistered: boolean;
@@ -44,6 +45,11 @@ export function WhatsAppSettings() {
   const [personalReminderDays, setPersonalReminderDays] = useState('Everyday');
   const [timezone, setTimezone] = useState('UTC');
   const [isRegistered, setIsRegistered] = useState(false);
+  
+  // Test message functionality
+  const [testPhoneNumber, setTestPhoneNumber] = useState('');
+  const [testMessage, setTestMessage] = useState('');
+  const [adminKey, setAdminKey] = useState('');
 
   // Fetch WhatsApp bot statistics
   const { data: stats } = useQuery({
@@ -116,6 +122,39 @@ export function WhatsAppSettings() {
     onError: (error: Error) => {
       toast({
         title: "Update Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Test message mutation
+  const testMessageMutation = useMutation({
+    mutationFn: async (data: { phoneNumber: string; message: string; adminKey: string }) => {
+      const response = await fetch('/api/whatsapp/test-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to send test message');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Test Message Sent",
+        description: `Message sent successfully. ID: ${data.messageId?.substring(0, 20)}...`,
+      });
+      setTestMessage('');
+      setTestPhoneNumber('');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Test Message Failed",
         description: error.message,
         variant: "destructive",
       });

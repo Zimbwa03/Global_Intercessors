@@ -57,11 +57,17 @@ DATABASE_URL=your_supabase_connection_string
 ### Step 4: Configure Webhook
 
 1. Set webhook URL to: `https://your-replit-domain.replit.app/api/whatsapp/webhook`
-2. Set verify token to a secure string (save as `WHATSAPP_VERIFY_TOKEN`)
+2. Set verify token to: `nerdx_verify_token_123` (already configured as `WHATSAPP_VERIFY_TOKEN`)
 3. Subscribe to these webhook fields:
    - `messages`
    - `message_deliveries`
    - `message_reads`
+
+**Webhook Verification Test:**
+```bash
+curl "https://your-replit-domain.replit.app/api/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=nerdx_verify_token_123&hub.challenge=test"
+# Should return: test
+```
 
 ## Database Setup
 
