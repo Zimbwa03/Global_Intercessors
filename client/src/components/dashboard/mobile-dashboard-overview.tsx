@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Heart, BookOpen, Users, TrendingUp, Target, Timer, Play, Pause } from "lucide-react";
+import { Clock, Heart, BookOpen, Users, TrendingUp, Target, Timer, Play, Pause, Activity } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { PrayerPlanner } from "@/components/dashboard/prayer-planner";
 
 interface MobileDashboardOverviewProps {
   userEmail: string;
@@ -17,7 +18,7 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
   const [currentTime, setCurrentTime] = useState("");
   const [prayerTimer, setPrayerTimer] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [timeUntilSlot, setTimeUntilSlot] = useState("");
+  const [timeUntilSlot, setTimeUntilSlot] = useState("--:--:--");
 
   // Prayer slot data
   const { data: prayerSlot } = useQuery({
@@ -35,9 +36,9 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
       const now = new Date();
       const hour = now.getHours();
       const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      
+
       setCurrentTime(timeString);
-      
+
       if (hour < 12) setTimeOfDay("morning");
       else if (hour < 17) setTimeOfDay("afternoon");
       else setTimeOfDay("evening");
@@ -47,18 +48,18 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
         const slotTime = (prayerSlot as any).prayerSlot.slotTime;
         const [startTime] = slotTime.split('–');
         const [slotHours, slotMinutes] = startTime.split(':').map(Number);
-        
+
         const slotDateTime = new Date();
         slotDateTime.setHours(slotHours, slotMinutes, 0, 0);
-        
+
         if (slotDateTime < now) {
           slotDateTime.setDate(slotDateTime.getDate() + 1);
         }
-        
+
         const diff = slotDateTime.getTime() - now.getTime();
         const hoursLeft = Math.floor(diff / (1000 * 60 * 60));
         const minutesLeft = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        
+
         setTimeUntilSlot(`${hoursLeft}h ${minutesLeft}m`);
       }
     };
@@ -238,20 +239,20 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
                   {(prayerSlot as any).prayerSlot.status}
                 </Badge>
               </div>
-              
+
               {timeUntilSlot && (
                 <div className="flex items-center justify-between p-3 bg-gi-primary/5 rounded-lg">
                   <span className="text-sm text-gray-600">Time until prayer:</span>
                   <span className="font-semibold text-gi-primary">{timeUntilSlot}</span>
                 </div>
               )}
-              
+
               <div className="mt-4">
                 <div className="text-sm text-gray-600 mb-2">Prayer consistency this week</div>
                 <Progress value={85} className="h-2" />
                 <div className="text-xs text-gray-500 mt-1">6 of 7 days completed</div>
               </div>
-              
+
               <Button 
                 onClick={() => onTabChange?.("prayer-slots")}
                 className="w-full bg-gi-primary hover:bg-gi-primary/80"
@@ -291,6 +292,19 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
           ))}
         </div>
       </div>
+
+      {/* Prayer Planner Section */}
+      <Card className="mobile-card border-gi-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-gi-primary">
+            <Heart className="w-5 h-5" />
+            Prayer Planner
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PrayerPlanner />
+        </CardContent>
+      </Card>
 
       {/* Stats Overview */}
       <div>
