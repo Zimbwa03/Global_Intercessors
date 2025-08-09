@@ -295,520 +295,441 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
     );
   }
 
-  const render3DJourney = () => (
+  const renderInteractivePrayerMap = () => (
     <div className="relative">
-      {/* Immersive 3D Canvas Container */}
-      <div className="relative bg-gradient-to-b from-sky-100 via-blue-50 to-green-50 rounded-3xl p-8 min-h-[700px] overflow-hidden shadow-2xl border-2 border-gi-gold/20" 
-           style={{ 
-             background: `linear-gradient(135deg, 
-               #e0f2fe 0%, 
-               #e8f5e8 25%, 
-               #f0f9ff 50%, 
-               #ecfdf5 75%, 
-               #f9fafb 100%)`,
-             boxShadow: 'inset 0 0 100px rgba(16, 66, 32, 0.1), 0 20px 40px rgba(0,0,0,0.1)'
-           }}>
+      {/* Clean Interactive Prayer Map Container */}
+      <div className="relative bg-gradient-to-br from-white to-gi-primary/5 rounded-2xl p-6 min-h-[600px] border border-gi-primary/10 shadow-lg">
         
-        {/* Mystical Heavenly Background Effects */}
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Floating Golden Light Particles */}
-          {[...Array(30)].map((_, i) => (
+        {/* Subtle Background Elements */}
+        <div className="absolute inset-0 overflow-hidden rounded-2xl">
+          {[...Array(12)].map((_, i) => (
             <motion.div
-              key={`light-${i}`}
-              className="absolute rounded-full"
+              key={i}
+              className="absolute w-1 h-1 bg-gi-gold/20 rounded-full"
               style={{
-                width: `${4 + Math.random() * 8}px`,
-                height: `${4 + Math.random() * 8}px`,
-                background: `radial-gradient(circle, #D2AA68 0%, #FFFFFF 70%, transparent 100%)`,
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                filter: 'blur(1px)',
               }}
               animate={{
-                y: [0, -30, 0],
-                x: [0, Math.sin(i) * 20, 0],
-                opacity: [0.2, 0.8, 0.2],
-                scale: [0.5, 1.2, 0.5],
+                scale: [1, 1.5, 1],
+                opacity: [0.3, 0.7, 0.3],
               }}
               transition={{
-                duration: 4 + Math.random() * 3,
+                duration: 3 + Math.random() * 2,
                 repeat: Infinity,
                 delay: Math.random() * 3,
-                ease: "easeInOut"
-              }}
-            />
-          ))}
-          
-          {/* Divine Light Rays */}
-          {[...Array(5)].map((_, i) => (
-            <motion.div
-              key={`ray-${i}`}
-              className="absolute opacity-10"
-              style={{
-                width: '2px',
-                height: '100%',
-                background: `linear-gradient(to bottom, transparent 0%, #D2AA68 50%, transparent 100%)`,
-                left: `${20 + i * 20}%`,
-                transformOrigin: 'top center',
-              }}
-              animate={{
-                rotateZ: [0, 2, -2, 0],
-                opacity: [0.05, 0.15, 0.05],
-              }}
-              transition={{
-                duration: 6 + i,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
-          ))}
-          
-          {/* Floating Clouds */}
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={`cloud-${i}`}
-              className="absolute rounded-full opacity-20"
-              style={{
-                width: `${60 + Math.random() * 80}px`,
-                height: `${30 + Math.random() * 40}px`,
-                background: `radial-gradient(ellipse, #FFFFFF 0%, rgba(255,255,255,0.3) 70%, transparent 100%)`,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 60}%`,
-                filter: 'blur(2px)',
-              }}
-              animate={{
-                x: [0, 50, 0],
-                scale: [1, 1.1, 1],
-                opacity: [0.1, 0.3, 0.1],
-              }}
-              transition={{
-                duration: 15 + Math.random() * 10,
-                repeat: Infinity,
-                delay: Math.random() * 5,
               }}
             />
           ))}
         </div>
 
-        {/* 3D Prayer Journey Landscape */}
-        <div className="relative z-10">
+        {/* Prayer Map Header */}
+        <div className="relative z-10 text-center mb-8">
           <motion.h3 
-            className="text-3xl font-bold text-center mb-8"
-            style={{ 
-              background: `linear-gradient(135deg, #104220 0%, #D2AA68 50%, #104220 100%)`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
-            }}
-            initial={{ opacity: 0, y: -20 }}
+            className="text-2xl font-bold text-gi-primary mb-2"
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
           >
-            Sacred Prayer Journey
+            Interactive Prayer Map
           </motion.h3>
+          <p className="text-gray-600 text-sm">Explore your spiritual journey through prayer clusters</p>
+        </div>
+
+        {/* Prayer Category Clusters */}
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-8 h-[400px]">
           
-          {/* Advanced 3D Journey Path */}
-          <div className="relative h-[500px]">
-            <svg width="100%" height="100%" className="absolute inset-0" style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}>
-              <defs>
-                {/* Advanced Path Gradients */}
-                <linearGradient id="pathGradient3D" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#D2AA68" stopOpacity="0.8" />
-                  <stop offset="25%" stopColor="#FFFFFF" stopOpacity="0.6" />
-                  <stop offset="50%" stopColor="#104220" stopOpacity="0.7" />
-                  <stop offset="75%" stopColor="#D2AA68" stopOpacity="0.9" />
-                  <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.5" />
-                </linearGradient>
-                
-                {/* Radial Gradient for Node Glows */}
-                <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#D2AA68" stopOpacity="0.8" />
-                  <stop offset="70%" stopColor="#D2AA68" stopOpacity="0.3" />
-                  <stop offset="100%" stopColor="transparent" stopOpacity="0" />
-                </radialGradient>
-                
-                {/* Divine Light Filter */}
-                <filter id="divineGlow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                  <feMerge> 
-                    <feMergeNode in="coloredBlur"/>
-                    <feMergeNode in="SourceGraphic"/>
-                  </feMerge>
-                </filter>
-              </defs>
+          {/* Family Prayer Cluster */}
+          <motion.div 
+            className="relative"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl opacity-60"></div>
+            <div className="relative p-6 h-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg">
+                  <Heart className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-gi-primary">Family Prayers</h4>
+                  <p className="text-sm text-gray-600">12 completed • 3 active</p>
+                </div>
+              </div>
               
-              {/* Main Winding Sacred Path with 3D Effect */}
-              <path
-                d="M 80 450 Q 180 380 280 350 Q 400 320 500 280 Q 620 240 720 200 Q 600 160 480 140 Q 360 120 240 100 Q 120 80 200 60 Q 350 40 500 30 Q 650 20 750 15"
-                fill="none"
-                stroke="url(#pathGradient3D)"
-                strokeWidth="12"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                filter="url(#divineGlow)"
-                className="opacity-90"
-              />
-              
-              {/* Path Shadow for 3D Depth */}
-              <path
-                d="M 85 455 Q 185 385 285 355 Q 405 325 505 285 Q 625 245 725 205 Q 605 165 485 145 Q 365 125 245 105 Q 125 85 205 65 Q 355 45 505 35 Q 655 25 755 20"
-                fill="none"
-                stroke="#231F20"
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeOpacity="0.2"
-                className="blur-sm"
-              />
-              
-              {/* Landscape Elements */}
-              {/* Valley of Peace - Lush Green Hills */}
-              <ellipse cx="150" cy="400" rx="80" ry="40" fill="#104220" opacity="0.3" />
-              <ellipse cx="200" cy="420" rx="60" ry="30" fill="#104220" opacity="0.2" />
-              
-              {/* Mountain of Faith - Majestic Peaks */}
-              <polygon points="400,300 450,200 500,300" fill="#104220" opacity="0.4" />
-              <polygon points="450,320 500,220 550,320" fill="#104220" opacity="0.3" />
-              
-              {/* Celestial Garden - Floating Platforms */}
-              <ellipse cx="600" cy="150" rx="70" ry="25" fill="#D2AA68" opacity="0.2" />
-              <ellipse cx="650" cy="130" rx="50" ry="20" fill="#D2AA68" opacity="0.15" />
-              
-              {/* Interactive Prayer Nodes with Advanced 3D Effects */}
-              {nodes.slice(0, 25).map((node, index) => {
-                const pathProgress = index / 24;
-                
-                // Complex winding path calculation for true 3D feel
-                const baseX = 80 + pathProgress * 670;
-                const waveX = Math.sin(pathProgress * Math.PI * 6) * 80;
-                const spiralX = Math.cos(pathProgress * Math.PI * 4) * 40;
-                const x = baseX + waveX + spiralX;
-                
-                const baseY = 450 - pathProgress * 400;
-                const waveY = Math.sin(pathProgress * Math.PI * 8) * 60;
-                const elevationY = Math.sin(pathProgress * Math.PI * 2) * 100;
-                const y = baseY + waveY + elevationY;
-                
-                // Z-depth simulation for 3D layering
-                const z = Math.sin(pathProgress * Math.PI * 3) * 20;
-                const nodeScale = 1 + (z / 100);
-                const nodeOpacity = 0.8 + (z / 100);
-                
-                const IconComponent = getNodeTypeIcon(node.type);
-                const CategoryIcon = getCategoryIcon(node.category);
-                
-                return (
-                  <g key={node.id} style={{ transformOrigin: `${x}px ${y}px` }}>
-                    {/* 3D Node Base Shadow */}
-                    <circle
-                      cx={x + 3}
-                      cy={y + 3}
-                      r={18 * nodeScale}
-                      fill="#231F20"
-                      opacity="0.2"
-                      className="blur-sm"
-                    />
-                    
-                    {/* Node Aura/Glow Ring */}
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r={35 * nodeScale}
-                      fill="url(#nodeGlow)"
-                      opacity={node.completed ? "0.6" : "0.3"}
-                      className={node.completed ? "animate-pulse" : ""}
-                    />
-                    
-                    {/* Main Prayer Node with 3D Appearance */}
-                    <motion.g
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ 
-                        scale: nodeScale,
-                        opacity: nodeOpacity,
-                        y: [0, -8, 0],
-                      }}
-                      transition={{
-                        y: {
-                          duration: 3 + Math.random() * 2,
-                          repeat: Infinity,
-                          delay: Math.random() * 3,
-                          ease: "easeInOut"
-                        },
-                        scale: { duration: 0.5, delay: index * 0.1 },
-                        opacity: { duration: 0.5, delay: index * 0.1 }
-                      }}
-                      whileHover={{ scale: nodeScale * 1.3 }}
-                      onClick={() => setSelectedNode(node)}
-                      className="cursor-pointer"
-                      onMouseEnter={() => setHoveredNode(node.id)}
-                      onMouseLeave={() => setHoveredNode(null)}
-                    >
-                      {/* Node Inner Gradient Circle */}
-                      <circle
-                        cx={x}
-                        cy={y}
-                        r="18"
-                        fill={node.completed ? 
-                          `url(#nodeGradient-${node.category})` : 
-                          "#104220"
-                        }
-                        filter="url(#divineGlow)"
-                        opacity="0.9"
-                      />
-                      
-                      {/* Node Highlight Ring */}
-                      <circle
-                        cx={x}
-                        cy={y}
-                        r="16"
-                        fill="none"
-                        stroke="#FFFFFF"
-                        strokeWidth="2"
-                        opacity={node.completed ? "0.8" : "0.4"}
-                      />
-                      
-                      {/* Node Core */}
-                      <circle
-                        cx={x}
-                        cy={y}
-                        r="12"
-                        fill={node.completed ? "#D2AA68" : "#104220"}
-                        opacity="1"
-                      />
-                    </motion.g>
-                    
-                    {/* Divine Completion Effects */}
-                    {node.completed && (
-                      <>
-                        {/* Ascending Golden Sparkles */}
-                        {[...Array(5)].map((_, sparkleIndex) => (
-                          <motion.circle
-                            key={`sparkle-${sparkleIndex}`}
-                            cx={x + (sparkleIndex - 2) * 8}
-                            cy={y - 35}
-                            r="1.5"
-                            fill="#FFFFFF"
-                            animate={{
-                              y: [0, -40, -80],
-                              opacity: [0, 1, 0],
-                              scale: [0.5, 1, 0.5],
-                            }}
-                            transition={{
-                              duration: 3,
-                              repeat: Infinity,
-                              delay: sparkleIndex * 0.6,
-                              ease: "easeOut"
-                            }}
-                          />
-                        ))}
-                        
-                        {/* Divine Crown Effect for Major Milestones */}
-                        {(node.type === 'milestone' || node.type === 'breakthrough') && (
-                          <motion.g
-                            animate={{
-                              rotateZ: [0, 360],
-                              scale: [1, 1.1, 1],
-                            }}
-                            transition={{
-                              rotateZ: { duration: 20, repeat: Infinity, ease: "linear" },
-                              scale: { duration: 2, repeat: Infinity }
-                            }}
-                          >
-                            <circle
-                              cx={x}
-                              cy={y - 30}
-                              r="8"
-                              fill="#D2AA68"
-                              opacity="0.8"
-                              filter="url(#divineGlow)"
-                            />
-                            <circle
-                              cx={x}
-                              cy={y - 30}
-                              r="6"
-                              fill="#FFFFFF"
-                              opacity="0.9"
-                            />
-                          </motion.g>
-                        )}
-                      </>
-                    )}
-                    
-                    {/* Hover Information Preview */}
-                    {hoveredNode === node.id && (
-                      <motion.g
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <rect
-                          x={x - 60}
-                          y={y - 80}
-                          width="120"
-                          height="40"
-                          rx="8"
-                          fill="rgba(255, 255, 255, 0.95)"
-                          stroke="#D2AA68"
-                          strokeWidth="1"
-                          filter="url(#divineGlow)"
-                        />
-                        <text
-                          x={x}
-                          y={y - 68}
-                          textAnchor="middle"
-                          fontSize="10"
-                          fill="#104220"
-                          fontWeight="bold"
-                        >
-                          {node.title.slice(0, 20)}
-                        </text>
-                        <text
-                          x={x}
-                          y={y - 56}
-                          textAnchor="middle"
-                          fontSize="8"
-                          fill="#231F20"
-                          opacity="0.8"
-                        >
-                          {node.category} • {node.type}
-                        </text>
-                      </motion.g>
-                    )}
-                  </g>
-                );
-              })}
-              
-              {/* Dynamic Gradient Definitions for Different Categories */}
-              <defs>
-                <radialGradient id="nodeGradient-family">
-                  <stop offset="0%" stopColor="#FF6B9D" />
-                  <stop offset="100%" stopColor="#D2AA68" />
-                </radialGradient>
-                <radialGradient id="nodeGradient-community">
-                  <stop offset="0%" stopColor="#4ECDC4" />
-                  <stop offset="100%" stopColor="#104220" />
-                </radialGradient>
-                <radialGradient id="nodeGradient-world">
-                  <stop offset="0%" stopColor="#FFE66D" />
-                  <stop offset="100%" stopColor="#D2AA68" />
-                </radialGradient>
-                <radialGradient id="nodeGradient-personal">
-                  <stop offset="0%" stopColor="#A8E6CF" />
-                  <stop offset="100%" stopColor="#104220" />
-                </radialGradient>
-              </defs>
-            </svg>
-          </div>
-          
-          {/* Enhanced Floating Node Details Panel */}
-          <AnimatePresence>
-            {selectedNode && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8, y: 30 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.8, y: 30 }}
-                className="absolute bottom-6 left-6 right-6 bg-white/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border-2 border-gi-gold/30"
-                style={{
-                  background: `linear-gradient(135deg, 
-                    rgba(255,255,255,0.95) 0%, 
-                    rgba(240,249,255,0.95) 50%, 
-                    rgba(255,255,255,0.95) 100%)`,
-                  boxShadow: '0 25px 50px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)'
-                }}
-              >
-                {/* Divine Background Effects in Panel */}
-                <div className="absolute inset-0 overflow-hidden rounded-3xl">
-                  {[...Array(8)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute w-1 h-1 bg-gi-gold/20 rounded-full"
-                      style={{
-                        left: `${10 + Math.random() * 80}%`,
-                        top: `${10 + Math.random() * 80}%`,
-                      }}
-                      animate={{
-                        scale: [1, 1.5, 1],
-                        opacity: [0.2, 0.6, 0.2],
-                      }}
-                      transition={{
+              {/* Family Prayer Nodes */}
+              <div className="grid grid-cols-4 gap-3">
+                {nodes.filter(n => n.category === 'family').slice(0, 8).map((node, index) => (
+                  <motion.div
+                    key={node.id}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer shadow-md ${
+                      node.completed 
+                        ? 'bg-gradient-to-br from-pink-500 to-rose-500 text-white' 
+                        : 'bg-white border-2 border-pink-200 text-pink-500'
+                    }`}
+                    whileHover={{ scale: 1.2 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedNode(node)}
+                    animate={{
+                      y: [0, -2, 0],
+                    }}
+                    transition={{
+                      y: {
                         duration: 2 + Math.random(),
                         repeat: Infinity,
-                        delay: Math.random() * 2,
-                      }}
-                    />
-                  ))}
+                        delay: index * 0.3,
+                      }
+                    }}
+                  >
+                    {node.completed ? (
+                      <Award className="w-4 h-4" />
+                    ) : (
+                      <Heart className="w-4 h-4" />
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+              
+              {/* Progress Path */}
+              <div className="mt-4">
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>Progress</span>
+                  <span>80%</span>
                 </div>
-                
-                <div className="relative z-10 flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-4">
-                      <motion.div 
-                        className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg ${
-                          selectedNode.completed ? 'bg-gradient-to-br from-gi-gold to-yellow-400' : 'bg-gradient-to-br from-gi-primary to-green-600'
-                        }`}
-                        animate={{ 
-                          rotateY: [0, 180, 360],
-                          scale: [1, 1.05, 1] 
-                        }}
-                        transition={{ 
-                          rotateY: { duration: 4, repeat: Infinity },
-                          scale: { duration: 2, repeat: Infinity }
-                        }}
-                      >
-                        {selectedNode.completed ? (
-                          <Crown className="w-8 h-8 text-white" />
-                        ) : (
-                          <Sparkles className="w-8 h-8 text-white" />
-                        )}
-                      </motion.div>
-                      
-                      <div>
-                        <h4 className="text-2xl font-bold text-gi-primary mb-1">{selectedNode.title}</h4>
-                        <p className="text-gray-600 mb-2">{selectedNode.description}</p>
-                        <div className="flex items-center gap-3">
-                          <Badge className="bg-gi-primary/10 text-gi-primary border-gi-primary/20 px-3 py-1">
-                            {selectedNode.type}
-                          </Badge>
-                          <Badge className="bg-gi-gold/10 text-gi-gold border-gi-gold/20 px-3 py-1">
-                            {selectedNode.category}
-                          </Badge>
-                          <span className="text-sm text-gray-500">
-                            {new Date(selectedNode.date).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                <div className="w-full bg-pink-100 rounded-full h-2">
+                  <motion.div 
+                    className="bg-gradient-to-r from-pink-500 to-rose-500 rounded-full h-2"
+                    initial={{ width: 0 }}
+                    animate={{ width: "80%" }}
+                    transition={{ duration: 1.5, delay: 0.5 }}
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Community Prayer Cluster */}
+          <motion.div 
+            className="relative"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl opacity-60"></div>
+            <div className="relative p-6 h-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-gi-primary to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <TreePine className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-gi-primary">Community Prayers</h4>
+                  <p className="text-sm text-gray-600">8 completed • 4 active</p>
+                </div>
+              </div>
+              
+              {/* Community Prayer Nodes */}
+              <div className="grid grid-cols-4 gap-3">
+                {nodes.filter(n => n.category === 'community').slice(0, 8).map((node, index) => (
+                  <motion.div
+                    key={node.id}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer shadow-md ${
+                      node.completed 
+                        ? 'bg-gradient-to-br from-gi-primary to-green-600 text-white' 
+                        : 'bg-white border-2 border-green-200 text-gi-primary'
+                    }`}
+                    whileHover={{ scale: 1.2 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedNode(node)}
+                    animate={{
+                      y: [0, -2, 0],
+                    }}
+                    transition={{
+                      y: {
+                        duration: 2 + Math.random(),
+                        repeat: Infinity,
+                        delay: index * 0.3,
+                      }
+                    }}
+                  >
+                    {node.completed ? (
+                      <Award className="w-4 h-4" />
+                    ) : (
+                      <TreePine className="w-4 h-4" />
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+              
+              {/* Progress Path */}
+              <div className="mt-4">
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>Progress</span>
+                  <span>67%</span>
+                </div>
+                <div className="w-full bg-green-100 rounded-full h-2">
+                  <motion.div 
+                    className="bg-gradient-to-r from-gi-primary to-green-600 rounded-full h-2"
+                    initial={{ width: 0 }}
+                    animate={{ width: "67%" }}
+                    transition={{ duration: 1.5, delay: 0.7 }}
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* World Prayer Cluster */}
+          <motion.div 
+            className="relative"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl opacity-60"></div>
+            <div className="relative p-6 h-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-gi-gold to-yellow-500 rounded-xl flex items-center justify-center shadow-lg">
+                  <Sun className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-gi-primary">Global Prayers</h4>
+                  <p className="text-sm text-gray-600">15 completed • 2 active</p>
+                </div>
+              </div>
+              
+              {/* World Prayer Nodes */}
+              <div className="grid grid-cols-4 gap-3">
+                {nodes.filter(n => n.category === 'world').slice(0, 8).map((node, index) => (
+                  <motion.div
+                    key={node.id}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer shadow-md ${
+                      node.completed 
+                        ? 'bg-gradient-to-br from-gi-gold to-yellow-500 text-white' 
+                        : 'bg-white border-2 border-yellow-200 text-gi-gold'
+                    }`}
+                    whileHover={{ scale: 1.2 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedNode(node)}
+                    animate={{
+                      y: [0, -2, 0],
+                    }}
+                    transition={{
+                      y: {
+                        duration: 2 + Math.random(),
+                        repeat: Infinity,
+                        delay: index * 0.3,
+                      }
+                    }}
+                  >
+                    {node.completed ? (
+                      <Award className="w-4 h-4" />
+                    ) : (
+                      <Sun className="w-4 h-4" />
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+              
+              {/* Progress Path */}
+              <div className="mt-4">
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>Progress</span>
+                  <span>88%</span>
+                </div>
+                <div className="w-full bg-yellow-100 rounded-full h-2">
+                  <motion.div 
+                    className="bg-gradient-to-r from-gi-gold to-yellow-500 rounded-full h-2"
+                    initial={{ width: 0 }}
+                    animate={{ width: "88%" }}
+                    transition={{ duration: 1.5, delay: 0.9 }}
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Personal Prayer Cluster */}
+          <motion.div 
+            className="relative"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl opacity-60"></div>
+            <div className="relative p-6 h-full">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
+                  <Star className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-gi-primary">Personal Prayers</h4>
+                  <p className="text-sm text-gray-600">10 completed • 5 active</p>
+                </div>
+              </div>
+              
+              {/* Personal Prayer Nodes */}
+              <div className="grid grid-cols-4 gap-3">
+                {nodes.filter(n => n.category === 'personal').slice(0, 8).map((node, index) => (
+                  <motion.div
+                    key={node.id}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer shadow-md ${
+                      node.completed 
+                        ? 'bg-gradient-to-br from-purple-500 to-indigo-500 text-white' 
+                        : 'bg-white border-2 border-purple-200 text-purple-500'
+                    }`}
+                    whileHover={{ scale: 1.2 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedNode(node)}
+                    animate={{
+                      y: [0, -2, 0],
+                    }}
+                    transition={{
+                      y: {
+                        duration: 2 + Math.random(),
+                        repeat: Infinity,
+                        delay: index * 0.3,
+                      }
+                    }}
+                  >
+                    {node.completed ? (
+                      <Award className="w-4 h-4" />
+                    ) : (
+                      <Star className="w-4 h-4" />
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+              
+              {/* Progress Path */}
+              <div className="mt-4">
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>Progress</span>
+                  <span>67%</span>
+                </div>
+                <div className="w-full bg-purple-100 rounded-full h-2">
+                  <motion.div 
+                    className="bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full h-2"
+                    initial={{ width: 0 }}
+                    animate={{ width: "67%" }}
+                    transition={{ duration: 1.5, delay: 1.1 }}
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Overall Progress Summary */}
+        <motion.div 
+          className="relative z-10 mt-6 bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-gi-primary/10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-gi-primary to-gi-gold rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-gi-primary">Overall Prayer Journey</h4>
+                <p className="text-sm text-gray-600">45 prayers completed • 14 active goals</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-gi-primary">76%</div>
+              <div className="text-xs text-gray-500">Complete</div>
+            </div>
+          </div>
+          
+          <div className="mt-3">
+            <div className="w-full bg-gray-100 rounded-full h-3">
+              <motion.div 
+                className="bg-gradient-to-r from-gi-primary to-gi-gold rounded-full h-3"
+                initial={{ width: 0 }}
+                animate={{ width: "76%" }}
+                transition={{ duration: 2, delay: 1.2 }}
+              />
+            </div>
+          </div>
+        </motion.div>
+        
+        {/* Interactive Node Details Panel */}
+        <AnimatePresence>
+          {selectedNode && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="absolute inset-x-4 bottom-4 bg-white/95 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-gi-gold/20 z-20"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <motion.div 
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${
+                        selectedNode.category === 'family' ? 'bg-gradient-to-br from-pink-500 to-rose-500' :
+                        selectedNode.category === 'community' ? 'bg-gradient-to-br from-gi-primary to-green-600' :
+                        selectedNode.category === 'world' ? 'bg-gradient-to-br from-gi-gold to-yellow-500' :
+                        'bg-gradient-to-br from-purple-500 to-indigo-500'
+                      }`}
+                      animate={{ rotateY: [0, 360] }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                    >
+                      {selectedNode.completed ? (
+                        <Crown className="w-6 h-6 text-white" />
+                      ) : (
+                        <Sparkles className="w-6 h-6 text-white" />
+                      )}
+                    </motion.div>
                     
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center gap-2 p-3 bg-gi-primary/5 rounded-xl">
-                        <TrendingUp className="w-5 h-5 text-gi-primary" />
-                        <div>
-                          <div className="font-medium text-gi-primary">Spiritual Growth</div>
-                          <div className="text-gray-600">{selectedNode.spiritualGrowth}/10 points</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 p-3 bg-gi-gold/5 rounded-xl">
-                        <Clock className="w-5 h-5 text-gi-gold" />
-                        <div>
-                          <div className="font-medium text-gi-gold">Prayer Duration</div>
-                          <div className="text-gray-600">{selectedNode.prayerDuration} minutes</div>
-                        </div>
-                      </div>
+                    <div>
+                      <h4 className="text-lg font-bold text-gi-primary">{selectedNode.title}</h4>
+                      <p className="text-gray-600 text-sm">{selectedNode.description}</p>
                     </div>
                   </div>
                   
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedNode(null)}
-                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full"
-                  >
-                    <span className="text-xl">×</span>
-                  </Button>
+                  <div className="flex items-center gap-3 mb-3">
+                    <Badge className="bg-gi-primary/10 text-gi-primary">
+                      {selectedNode.type}
+                    </Badge>
+                    <Badge className={`${
+                      selectedNode.category === 'family' ? 'bg-pink-100 text-pink-700' :
+                      selectedNode.category === 'community' ? 'bg-green-100 text-green-700' :
+                      selectedNode.category === 'world' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-purple-100 text-purple-700'
+                    }`}>
+                      {selectedNode.category}
+                    </Badge>
+                    <span className="text-sm text-gray-500">
+                      {new Date(selectedNode.date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center gap-2 p-2 bg-gi-primary/5 rounded-lg">
+                      <TrendingUp className="w-4 h-4 text-gi-primary" />
+                      <span className="text-gi-primary font-medium">Growth: {selectedNode.spiritualGrowth}/10</span>
+                    </div>
+                    <div className="flex items-center gap-2 p-2 bg-gi-gold/5 rounded-lg">
+                      <Clock className="w-4 h-4 text-gi-gold" />
+                      <span className="text-gi-gold font-medium">{selectedNode.prayerDuration} minutes</span>
+                    </div>
+                  </div>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedNode(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -1164,7 +1085,7 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
       {/* Divine Navigation */}
       <div className="flex space-x-2 bg-white/80 backdrop-blur-sm rounded-xl p-2 shadow-lg border border-gi-gold/20">
         {[
-          { id: '3d-journey', label: '3D Journey', icon: Mountain },
+          { id: '3d-journey', label: 'Prayer Map', icon: Mountain },
           { id: 'landscape', label: 'Sacred Lands', icon: TreePine },
           { id: 'achievements', label: 'Divine Awards', icon: Crown },
           { id: 'spiritual-growth', label: 'Soul Growth', icon: TrendingUp }
@@ -1193,7 +1114,7 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
-          {activeView === '3d-journey' && render3DJourney()}
+          {activeView === '3d-journey' && renderInteractivePrayerMap()}
           {activeView === 'landscape' && renderLandscapes()}
           {activeView === 'achievements' && renderAchievements()}
           {activeView === 'spiritual-growth' && renderSpiritualGrowth()}
