@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Heart, BookOpen, Users, TrendingUp, Target, Activity } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { PrayerPlanner } from "@/components/dashboard/prayer-planner";
+
 
 interface MobileDashboardOverviewProps {
   userEmail: string;
@@ -340,18 +340,7 @@ export function MobileDashboardOverview({ userEmail, userId, onTabChange }: Mobi
         </div>
       </div>
 
-      {/* Prayer Planner Section */}
-      <Card className="mobile-card border-gi-primary/20">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-gi-primary">
-            <Heart className="w-5 h-5" />
-            Prayer Planner
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PrayerPlanner />
-        </CardContent>
-      </Card>
+      
 
       {/* Stats Overview */}
       <div>
