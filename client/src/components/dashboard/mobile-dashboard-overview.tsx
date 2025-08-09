@@ -65,10 +65,25 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
 
     const calculateNextSession = () => {
       const now = new Date();
-      const [startTime] = prayerSlot.prayerSlot.slotTime.split('–');
+      const slotTime = prayerSlot.prayerSlot.slotTime;
+      
+      if (!slotTime || !slotTime.includes('–')) {
+        console.log('Invalid slot time format:', slotTime);
+        setTimeUntilSlot({ hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      const [startTime] = slotTime.split('–');
       const [hours, minutes] = startTime.split(':').map(Number);
 
-      // Create next session time
+      // Validate parsed values
+      if (isNaN(hours) || isNaN(minutes)) {
+        console.log('Invalid time values:', { hours, minutes, startTime });
+        setTimeUntilSlot({ hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      // Create next session time for today
       const nextSlot = new Date();
       nextSlot.setHours(hours, minutes, 0, 0);
 
@@ -87,6 +102,16 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
       const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60));
       const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
       const secondsLeft = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+      console.log('Countdown calculation:', {
+        now: now.toLocaleString(),
+        nextSlot: nextSlot.toLocaleString(),
+        timeDiff,
+        hoursLeft,
+        minutesLeft,
+        secondsLeft,
+        slotTime
+      });
 
       setTimeUntilSlot({
         hours: Math.max(0, hoursLeft),
@@ -186,24 +211,34 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
       </div>
 
       {/* Time remaining to Next slot */}
-      <Card className="mobile-interactive-card mobile-card border-gi-primary/20">
+      <Card className="mobile-interactive-card mobile-card border-gi-primary/20 bg-gradient-to-br from-gi-primary/5 to-gi-gold/10">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-gi-primary">
             <Clock className="w-5 h-5" />
-            Time remaining to your Next slot:
+            Next Prayer Session Countdown
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center space-y-4">
             {prayerSlot?.prayerSlot && prayerSlot.prayerSlot.status === 'active' ? (
               <>
-                <div className="text-4xl font-bold text-gi-primary font-mono">
-                  {String(timeUntilSlot.hours).padStart(2, '0')}:
-                  {String(timeUntilSlot.minutes).padStart(2, '0')}:
-                  {String(timeUntilSlot.seconds).padStart(2, '0')}
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gi-primary/10">
+                  <div className="text-5xl font-bold text-gi-primary font-mono tracking-wider mb-2">
+                    {String(timeUntilSlot.hours).padStart(2, '0')}:
+                    {String(timeUntilSlot.minutes).padStart(2, '0')}:
+                    {String(timeUntilSlot.seconds).padStart(2, '0')}
+                  </div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wide">
+                    HOURS : MINUTES : SECONDS
+                  </div>
                 </div>
                 <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
-                  <span>Next prayer session at {prayerSlot.prayerSlot.slotTime}</span>
+                  <Clock className="w-4 h-4" />
+                  <span>Your prayer time: <strong className="text-gi-primary">{prayerSlot.prayerSlot.slotTime}</strong></span>
+                </div>
+                <div className="text-xs text-gray-500">
+                  {timeUntilSlot.hours < 24 ? 'Today' : 'Tomorrow'} • 
+                  {timeUntilSlot.hours >= 24 ? ' Next day session' : ' Today\'s session'}
                 </div>
               </>
             ) : (
@@ -211,6 +246,12 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
                 <Clock className="w-12 h-12 text-gray-400 mx-auto mb-2" />
                 <p className="text-gray-600">No active prayer slot</p>
                 <p className="text-sm text-gray-500">Please select a slot to see countdown</p>
+                <Button 
+                  onClick={() => onTabChange?.("prayer-slots")}
+                  className="mt-3 bg-gi-primary hover:bg-gi-primary/80"
+                >
+                  Choose Prayer Slot
+                </Button>
               </div>
             )}
           </div>
