@@ -24,10 +24,10 @@ export function MobileSidebar({
 }: MobileSidebarProps) {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: Home, description: "Overview & Quick Stats" },
-    { id: "prayer-slots", label: "Prayer Slots", icon: Calendar, description: "Manage Your Prayer Time" },
-    { id: "bible-chat", label: "Bible Chat", icon: Book, description: "AI-Powered Bible Study" },
+    { id: "prayer-slot", label: "Prayer Slots", icon: Calendar, description: "Manage Your Prayer Time" },
+    { id: "bible-chatbook", label: "Bible Chat", icon: Book, description: "AI-Powered Bible Study" },
     { id: "prayer-planner", label: "Prayer Planner", icon: MessageCircle, description: "Plan Your Prayers" },
-    { id: "bible-verse-search", label: "Bible Verse Search", icon: Search, description: "Find Scripture" },
+    { id: "bible-search", label: "Bible Verse Search", icon: Search, description: "Find Scripture" },
     { id: "prayer-journey", label: "Prayer Journey", icon: TrendingUp, description: "Track Your Growth" },
     { id: "audio-bible", label: "Audio Bible", icon: Heart, description: "Listen to Scripture" },
     { id: "analytics", label: "Analytics", icon: BarChart, description: "Prayer Statistics" },

@@ -135,6 +135,7 @@ export default function Dashboard() {
           ? <MobileDashboardOverview userEmail={user.email || ""} onTabChange={setActiveTab} />
           : <DashboardOverview userEmail={user.email} />;
       case "prayer-slot":
+      case "prayer-slots":
         console.log('Rendering PrayerSlotManagement for user:', user.email); // Debug log
         return <PrayerSlotManagement userEmail={user.email} />;
       case "bible-chatbook":
@@ -224,10 +225,10 @@ export default function Dashboard() {
             <div className="flex items-center justify-around py-2 px-1">
               {[
                 { id: "dashboard", label: "Home", icon: "🏠" },
-                { id: "prayer-slots", label: "Prayer Slot", icon: "🕒" },
-                { id: "bible-chat", label: "Bible Chat", icon: "📖" },
+                { id: "prayer-slot", label: "Prayer Slot", icon: "🕒" },
+                { id: "bible-chatbook", label: "Bible Chat", icon: "📖" },
                 { id: "prayer-planner", label: "Plan", icon: "📋" },
-                { id: "bible-verse-search", label: "Bible Search", icon: "🔍" },
+                { id: "bible-search", label: "Bible Search", icon: "🔍" },
               ].map((item) => (
                 <button
                   key={item.id}
