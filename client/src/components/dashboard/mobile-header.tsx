@@ -176,26 +176,7 @@ export function MobileHeader({
           </Button>
         </div>
       </div>
-      {/* This section would conditionally render the Planner component or the Prayer Timer panel */}
-      {activeTab === 'dashboard' && (
-        <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
-          {/* Replace "Analytics" section with Planner component */}
-          {/* Placeholder for Planner Component */}
-          <div className="text-center py-4 text-gray-500">
-            Planner Component Placeholder
-          </div>
-          {/* Original Prayer Timer Panel */}
-          <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg shadow">
-            <h2 className="text-lg font-semibold text-gi-primary mb-2">Time remaining to your Next slot:</h2>
-            <div className="flex justify-center items-center text-2xl font-bold text-gi-primary">
-              {/* Countdown Timer Display - Placeholder */}
-              <span className="animate-pulse">--:--:--</span>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* This part would handle the actual display of notifications if showNotifications is true */}
-      {/* For simplicity, this example focuses on the header's badge logic */}
+      
     </header>
   );
 }
