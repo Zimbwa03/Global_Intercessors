@@ -40,44 +40,57 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
       if (hour < 12) setTimeOfDay("morning");
       else if (hour < 17) setTimeOfDay("afternoon");
       else setTimeOfDay("evening");
-
-      // Calculate time until next prayer slot
-      if ((prayerSlot as any)?.prayerSlot && (prayerSlot as any).prayerSlot.status === 'active') {
-        const slotTime = (prayerSlot as any).prayerSlot.slotTime;
-        const [startTime] = slotTime.split('–');
-        const [slotHours, slotMinutes] = startTime.split(':').map(Number);
-
-        const slotDateTime = new Date();
-        slotDateTime.setHours(slotHours, slotMinutes, 0, 0);
-
-        if (slotDateTime <= now) {
-          slotDateTime.setDate(slotDateTime.getDate() + 1);
-        }
-
-        const diff = slotDateTime.getTime() - now.getTime();
-        
-        if (diff > 0) {
-          const hoursLeft = Math.floor(diff / (1000 * 60 * 60));
-          const minutesLeft = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-          const secondsLeft = Math.floor((diff % (1000 * 60)) / 1000);
-
-          setTimeUntilSlot({
-            hours: Math.max(0, hoursLeft),
-            minutes: Math.max(0, minutesLeft),
-            seconds: Math.max(0, secondsLeft)
-          });
-        } else {
-          setTimeUntilSlot({ hours: 0, minutes: 0, seconds: 0 });
-        }
-      } else {
-        setTimeUntilSlot({ hours: 0, minutes: 0, seconds: 0 });
-      }
     };
 
     updateTime();
-    const interval = setInterval(updateTime, 1000);
+    const timeInterval = setInterval(updateTime, 1000);
+    return () => clearInterval(timeInterval);
+  }, []);
+
+  // Calculate countdown to next prayer session based on actual slot time (same logic as Prayer Slot Management)
+  useEffect(() => {
+    if (!(prayerSlot as any)?.prayerSlot || (prayerSlot as any).prayerSlot.status !== 'active') {
+      setTimeUntilSlot({ hours: 0, minutes: 0, seconds: 0 });
+      return;
+    }
+
+    const calculateNextSession = () => {
+      const now = new Date();
+      const [startTime] = (prayerSlot as any).prayerSlot.slotTime.split('–');
+      const [hours, minutes] = startTime.split(':').map(Number);
+
+      // Create next session time
+      const nextSlot = new Date();
+      nextSlot.setHours(hours, minutes, 0, 0);
+
+      // If the time has passed today, set for tomorrow
+      if (nextSlot <= now) {
+        nextSlot.setDate(nextSlot.getDate() + 1);
+      }
+
+      const timeDiff = nextSlot.getTime() - now.getTime();
+
+      if (timeDiff <= 0) {
+        setTimeUntilSlot({ hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60));
+      const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+      const secondsLeft = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+      setTimeUntilSlot({
+        hours: Math.max(0, hoursLeft),
+        minutes: Math.max(0, minutesLeft),
+        seconds: Math.max(0, secondsLeft)
+      });
+    };
+
+    calculateNextSession();
+    const interval = setInterval(calculateNextSession, 1000);
+
     return () => clearInterval(interval);
-  }, [prayerSlot]);
+  }, [(prayerSlot as any)?.prayerSlot?.slotTime, (prayerSlot as any)?.prayerSlot?.status]);
 
   
 
