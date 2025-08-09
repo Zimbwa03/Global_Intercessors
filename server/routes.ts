@@ -1419,34 +1419,94 @@ Guidelines:
           return res.json({ verses: versesWithReferences });
 
         case 'verse':
-          // Get individual verse content
+          // Get individual verse content with retry mechanism
           if (!bibleId || !query) {
             return res.status(400).json({ error: "bibleId and verse ID (query) parameters are required" });
           }
           
-          console.log('Fetching verse:', `${baseUrl}/bibles/${bibleId}/verses/${query}`);
+          console.log('🔍 Fetching verse:', `${baseUrl}/bibles/${bibleId}/verses/${query}`);
           
-          const verseResponse = await fetch(`${baseUrl}/bibles/${bibleId}/verses/${query}`, { headers });
-          if (!verseResponse.ok) {
-            console.error(`API.Bible verse error: ${verseResponse.status}`);
-            throw new Error(`API.Bible error: ${verseResponse.status}`);
+          let verseData = null;
+          let retryCount = 0;
+          const maxRetries = 2;
+          
+          // Retry mechanism for better reliability
+          while (retryCount <= maxRetries && !verseData) {
+            try {
+              const verseResponse = await fetch(`${baseUrl}/bibles/${bibleId}/verses/${query}`, { 
+                headers: {
+                  ...headers,
+                  'Accept': 'application/json'
+                }
+              });
+              
+              if (!verseResponse.ok) {
+                console.error(`❌ API.Bible verse error: ${verseResponse.status} ${verseResponse.statusText}`);
+                if (retryCount < maxRetries) {
+                  retryCount++;
+                  console.log(`🔄 Retrying verse fetch (attempt ${retryCount + 1}/${maxRetries + 1})...`);
+                  await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+                  continue;
+                } else {
+                  throw new Error(`API.Bible error: ${verseResponse.status}`);
+                }
+              }
+              
+              verseData = await verseResponse.json();
+              break;
+            } catch (error) {
+              console.error(`❌ Verse fetch attempt ${retryCount + 1} failed:`, error);
+              if (retryCount >= maxRetries) {
+                throw error;
+              }
+              retryCount++;
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
           }
-          const verseData = await verseResponse.json();
           
-          console.log('Individual verse API response:', JSON.stringify(verseData, null, 2));
+          console.log('✅ Individual verse API response:', JSON.stringify(verseData, null, 2));
           
           const verse = verseData.data;
-          const cleanContent = verse.content ? verse.content.replace(/<[^>]*>/g, '').trim() : '';
+          let cleanContent = '';
+          let hasValidContent = false;
+          
+          // Multiple attempts to extract meaningful content
+          if (verse.content) {
+            cleanContent = verse.content.replace(/<[^>]*>/g, '').trim();
+            if (cleanContent && cleanContent.length > 5) {
+              hasValidContent = true;
+            }
+          }
+          
+          if (!hasValidContent && verse.text) {
+            cleanContent = verse.text.replace(/<[^>]*>/g, '').trim();
+            if (cleanContent && cleanContent.length > 5) {
+              hasValidContent = true;
+            }
+          }
+          
+          // Fallback content with helpful message
+          if (!hasValidContent) {
+            console.log(`⚠️ No valid content found for verse ${query}`);
+            cleanContent = `This verse reference (${verse.reference || query}) exists but the content is not available from the API at this time.`;
+          }
           
           const formattedVerse = {
             ...verse,
-            text: cleanContent || 'Verse content not available',
-            content: verse.content,
+            text: cleanContent,
+            content: verse.content || cleanContent,
             reference: verse.reference,
-            verseNumber: verse.id ? verse.id.split('.').pop() : verse.verseNumber
+            verseNumber: verse.id ? verse.id.split('.').pop() : verse.verseNumber,
+            contentLoaded: hasValidContent
           };
           
-          console.log('Formatted verse response:', formattedVerse);
+          console.log('📝 Formatted verse response:', {
+            id: formattedVerse.id,
+            reference: formattedVerse.reference,
+            hasContent: hasValidContent,
+            textLength: cleanContent.length,
+            preview: cleanContent.substring(0, 50) + '...'
+          });
           
           return res.json({ verse: formattedVerse });
 
@@ -1489,43 +1549,102 @@ Guidelines:
           
           const formattedResults = {
             verses: await Promise.all(searchResults.map(async (item: any) => {
-              // Clean HTML tags from content and extract meaningful text
               let cleanContent = '';
+              let hasContentLoaded = false;
+              
+              console.log(`Processing search result for ${item.id}:`, {
+                hasContent: !!item.content,
+                hasText: !!item.text,
+                reference: item.reference
+              });
               
               // First try to get content from the search result
-              if (item.content) {
+              if (item.content && item.content.trim()) {
                 cleanContent = item.content.replace(/<[^>]*>/g, '').trim();
-              } else if (item.text) {
-                cleanContent = item.text.replace(/<[^>]*>/g, '').trim();
-              }
-              
-              // If content is still empty, try fetching the individual verse
-              if (!cleanContent || cleanContent === 'Verse content not available') {
-                try {
-                  console.log(`Fetching individual verse content for: ${item.id}`);
-                  const verseResponse = await fetch(`${baseUrl}/bibles/${bibleId}/verses/${item.id}`, { headers });
-                  
-                  if (verseResponse.ok) {
-                    const verseData = await verseResponse.json();
-                    console.log(`Individual verse response for ${item.id}:`, JSON.stringify(verseData, null, 2));
-                    
-                    if (verseData.data && verseData.data.content) {
-                      cleanContent = verseData.data.content.replace(/<[^>]*>/g, '').trim();
-                    } else if (verseData.data && verseData.data.text) {
-                      cleanContent = verseData.data.text.replace(/<[^>]*>/g, '').trim();
-                    }
-                  } else {
-                    console.error(`Failed to fetch verse ${item.id}: ${verseResponse.status}`);
-                  }
-                } catch (error) {
-                  console.error('Failed to fetch individual verse content:', error);
+                if (cleanContent && cleanContent.length > 10) { // Ensure meaningful content
+                  hasContentLoaded = true;
                 }
               }
               
-              // If still no content, provide a fallback message
-              if (!cleanContent) {
-                cleanContent = 'Unable to load verse content. Please try selecting the verse directly.';
+              if (!hasContentLoaded && item.text && item.text.trim()) {
+                cleanContent = item.text.replace(/<[^>]*>/g, '').trim();
+                if (cleanContent && cleanContent.length > 10) {
+                  hasContentLoaded = true;
+                }
               }
+              
+              // If content is still empty or very short, try fetching the individual verse
+              if (!hasContentLoaded) {
+                try {
+                  console.log(`🔄 Fetching individual verse content for: ${item.id}`);
+                  const verseResponse = await fetch(`${baseUrl}/bibles/${bibleId}/verses/${item.id}`, { 
+                    headers: {
+                      ...headers,
+                      'Accept': 'application/json'
+                    }
+                  });
+                  
+                  if (verseResponse.ok) {
+                    const verseData = await verseResponse.json();
+                    console.log(`✅ Individual verse response for ${item.id}:`, {
+                      hasData: !!verseData.data,
+                      hasContent: !!verseData.data?.content,
+                      hasText: !!verseData.data?.text,
+                      contentPreview: verseData.data?.content?.substring(0, 50) + '...'
+                    });
+                    
+                    if (verseData.data?.content) {
+                      const individualContent = verseData.data.content.replace(/<[^>]*>/g, '').trim();
+                      if (individualContent && individualContent.length > 10) {
+                        cleanContent = individualContent;
+                        hasContentLoaded = true;
+                      }
+                    } else if (verseData.data?.text) {
+                      const individualText = verseData.data.text.replace(/<[^>]*>/g, '').trim();
+                      if (individualText && individualText.length > 10) {
+                        cleanContent = individualText;
+                        hasContentLoaded = true;
+                      }
+                    }
+                  } else {
+                    console.error(`❌ Failed to fetch verse ${item.id}: ${verseResponse.status} ${verseResponse.statusText}`);
+                  }
+                } catch (error) {
+                  console.error(`❌ Error fetching individual verse ${item.id}:`, error);
+                }
+              }
+              
+              // Alternative approach: try chapter-based fetching if individual verse fails
+              if (!hasContentLoaded && item.chapterId) {
+                try {
+                  console.log(`🔄 Trying chapter-based fetch for ${item.id} from chapter ${item.chapterId}`);
+                  const chapterResponse = await fetch(`${baseUrl}/bibles/${bibleId}/chapters/${item.chapterId}/verses`, { headers });
+                  
+                  if (chapterResponse.ok) {
+                    const chapterData = await chapterResponse.json();
+                    const targetVerse = chapterData.data?.find((v: any) => v.id === item.id);
+                    
+                    if (targetVerse?.content) {
+                      const chapterContent = targetVerse.content.replace(/<[^>]*>/g, '').trim();
+                      if (chapterContent && chapterContent.length > 10) {
+                        cleanContent = chapterContent;
+                        hasContentLoaded = true;
+                        console.log(`✅ Found content via chapter fetch for ${item.id}`);
+                      }
+                    }
+                  }
+                } catch (error) {
+                  console.error(`❌ Chapter-based fetch failed for ${item.id}:`, error);
+                }
+              }
+              
+              // Final fallback - provide a more helpful message
+              if (!hasContentLoaded || !cleanContent) {
+                cleanContent = `Content temporarily unavailable for ${item.reference || item.id}. This verse exists but the content couldn't be loaded from the API.`;
+                console.log(`⚠️ Using fallback content for ${item.id}`);
+              }
+              
+              console.log(`📝 Final content for ${item.id}: ${cleanContent.substring(0, 100)}...`);
               
               return {
                 id: item.id || item.verseId,
@@ -1534,10 +1653,11 @@ Guidelines:
                 bookId: item.bookId,
                 chapterId: item.chapterId,
                 reference: item.reference,
-                content: item.content || cleanContent,
+                content: hasContentLoaded ? cleanContent : item.content,
                 verseCount: item.verseCount,
                 verseNumber: item.verseNumber || (item.id ? item.id.split('.').pop() : ''),
-                text: cleanContent
+                text: cleanContent,
+                contentLoaded: hasContentLoaded
               };
             })),
             query: query,

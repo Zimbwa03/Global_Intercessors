@@ -215,19 +215,28 @@ export function BibleVerseSearch() {
 
   const getVerseText = (verse: BibleVerse) => {
     // Try to get clean text from various possible fields
-    if (verse.text && verse.text !== 'Verse content not available' && verse.text.trim() !== '') {
-      return verse.text.trim();
+    if (verse.text && verse.text.trim() !== '' && !verse.text.includes('Content temporarily unavailable')) {
+      const cleanText = verse.text.trim();
+      if (cleanText.length > 5 && cleanText !== 'Verse content not available') {
+        return cleanText;
+      }
     }
+    
     if (verse.content && verse.content.trim() !== '') {
       const cleanedContent = verse.content.replace(/<[^>]*>/g, '').trim();
-      if (cleanedContent && cleanedContent !== 'Verse content not available') {
+      if (cleanedContent && cleanedContent.length > 5 && cleanedContent !== 'Verse content not available') {
         return cleanedContent;
       }
     }
     
+    // Check if this is a temporary API issue
+    if (verse.text && verse.text.includes('Content temporarily unavailable')) {
+      return verse.text;
+    }
+    
     // Log the issue for debugging
     console.log('No verse content available for:', verse);
-    return 'Verse content not available - please try browsing to this verse directly';
+    return 'Content temporarily unavailable. The verse reference is valid, but the text could not be loaded from the Bible API.';
   };
 
   // Function to highlight search terms in verse text
@@ -604,7 +613,10 @@ export function BibleVerseSearch() {
               <div className="space-y-4">
                 {searchResults.verses.map((verse, index) => {
                   const verseText = getVerseText(verse);
-                  const isContentAvailable = verseText !== 'Verse content not available - please try browsing to this verse directly';
+                  const isContentAvailable = !verseText.includes('Content temporarily unavailable') && 
+                                           !verseText.includes('Verse content not available') &&
+                                           verseText.length > 10;
+                  const isTemporaryIssue = verseText.includes('Content temporarily unavailable');
                   
                   return (
                     <motion.div
@@ -615,6 +627,8 @@ export function BibleVerseSearch() {
                       className={`p-4 rounded-lg border hover:shadow-md transition-all ${
                         isContentAvailable 
                           ? 'bg-gradient-to-r from-blue-50 to-white border-gi-primary/100' 
+                          : isTemporaryIssue
+                          ? 'bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-300'
                           : 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300'
                       }`}
                     >
@@ -627,8 +641,15 @@ export function BibleVerseSearch() {
                             {selectedBible}
                           </Badge>
                           {!isContentAvailable && (
-                            <Badge variant="secondary" className="mt-1 ml-2 bg-yellow-100 text-yellow-800">
-                              Content Loading Issue
+                            <Badge 
+                              variant="secondary" 
+                              className={`mt-1 ml-2 ${
+                                isTemporaryIssue 
+                                  ? 'bg-orange-100 text-orange-800' 
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}
+                            >
+                              {isTemporaryIssue ? 'API Loading Issue' : 'Content Loading Issue'}
                             </Badge>
                           )}
                         </div>
@@ -653,12 +674,33 @@ export function BibleVerseSearch() {
                           )}
                         </div>
                       </div>
-                      <p className={`leading-relaxed ${isContentAvailable ? 'text-gray-700' : 'text-yellow-700 italic'}`}>
+                      <p className={`leading-relaxed ${
+                        isContentAvailable 
+                          ? 'text-gray-700' 
+                          : isTemporaryIssue 
+                          ? 'text-orange-700 italic' 
+                          : 'text-yellow-700 italic'
+                      }`}>
                         "{isContentAvailable ? highlightSearchTerms(verseText, searchQuery) : verseText}"
                       </p>
                       {!isContentAvailable && (
-                        <div className="mt-3 p-2 bg-yellow-100 rounded text-sm text-yellow-800">
-                          💡 Tip: Try browsing to this verse using the Browse mode above for full content.
+                        <div className={`mt-3 p-3 rounded text-sm ${
+                          isTemporaryIssue 
+                            ? 'bg-orange-100 text-orange-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {isTemporaryIssue ? (
+                            <div>
+                              <p className="font-medium mb-1">🔄 API Loading Issue</p>
+                              <p>The Bible API is having trouble loading this verse content. This is usually temporary.</p>
+                              <p className="mt-1">✨ Try searching again in a moment, or browse to this verse directly.</p>
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="font-medium mb-1">💡 Browse Mode Recommended</p>
+                              <p>Try browsing to this verse using the Browse mode above for full content.</p>
+                            </div>
+                          )}
                         </div>
                       )}
                     </motion.div>
