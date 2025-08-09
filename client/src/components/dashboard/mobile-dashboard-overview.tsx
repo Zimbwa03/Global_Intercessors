@@ -20,7 +20,16 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
 
   // Prayer slot data
   const { data: prayerSlot } = useQuery({
-    queryKey: ['/api/prayer-slot', userEmail],
+    queryKey: ['prayer-slot', userEmail],
+    queryFn: async () => {
+      if (!userEmail) return null;
+      
+      const response = await fetch(`/api/prayer-slot?userEmail=${encodeURIComponent(userEmail)}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch prayer slot');
+      }
+      return response.json();
+    },
     enabled: !!userEmail,
   });
 
@@ -49,14 +58,14 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
 
   // Calculate countdown to next prayer session based on actual slot time (same logic as Prayer Slot Management)
   useEffect(() => {
-    if (!(prayerSlot as any)?.prayerSlot || (prayerSlot as any).prayerSlot.status !== 'active') {
+    if (!prayerSlot?.prayerSlot || prayerSlot.prayerSlot.status !== 'active') {
       setTimeUntilSlot({ hours: 0, minutes: 0, seconds: 0 });
       return;
     }
 
     const calculateNextSession = () => {
       const now = new Date();
-      const [startTime] = (prayerSlot as any).prayerSlot.slotTime.split('–');
+      const [startTime] = prayerSlot.prayerSlot.slotTime.split('–');
       const [hours, minutes] = startTime.split(':').map(Number);
 
       // Create next session time
@@ -90,7 +99,7 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
     const interval = setInterval(calculateNextSession, 1000);
 
     return () => clearInterval(interval);
-  }, [(prayerSlot as any)?.prayerSlot?.slotTime, (prayerSlot as any)?.prayerSlot?.status]);
+  }, [prayerSlot?.prayerSlot?.slotTime, prayerSlot?.prayerSlot?.status]);
 
   
 
@@ -186,7 +195,7 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
         </CardHeader>
         <CardContent>
           <div className="text-center space-y-4">
-            {(prayerSlot as any)?.prayerSlot && (prayerSlot as any).prayerSlot.status === 'active' ? (
+            {prayerSlot?.prayerSlot && prayerSlot.prayerSlot.status === 'active' ? (
               <>
                 <div className="text-4xl font-bold text-gi-primary font-mono">
                   {String(timeUntilSlot.hours).padStart(2, '0')}:
@@ -194,7 +203,7 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
                   {String(timeUntilSlot.seconds).padStart(2, '0')}
                 </div>
                 <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
-                  <span>Next prayer session at {(prayerSlot as any).prayerSlot.slotTime}</span>
+                  <span>Next prayer session at {prayerSlot.prayerSlot.slotTime}</span>
                 </div>
               </>
             ) : (
@@ -209,7 +218,7 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
       </Card>
 
       {/* Prayer Slot Status */}
-      {(prayerSlot as any)?.prayerSlot && (
+      {prayerSlot?.prayerSlot && (
         <Card className="mobile-interactive-card mobile-card border-gi-primary/20">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-gi-primary">
@@ -222,7 +231,7 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-2xl font-bold text-gi-primary">
-                    {(prayerSlot as any).prayerSlot.slotTime}
+                    {prayerSlot.prayerSlot.slotTime}
                   </div>
                   <p className="text-sm text-gray-600">Today's intercession time</p>
                 </div>
@@ -230,7 +239,7 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
                   variant="secondary" 
                   className="bg-gi-gold/20 text-gi-primary border-gi-gold/30"
                 >
-                  {(prayerSlot as any).prayerSlot.status}
+                  {prayerSlot.prayerSlot.status}
                 </Badge>
               </div>
 
