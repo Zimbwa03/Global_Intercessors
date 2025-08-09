@@ -1489,8 +1489,18 @@ Guidelines:
           
           const formattedResults = {
             verses: searchResults.map((item: any) => {
-              // Clean HTML tags from content
-              const cleanContent = item.content ? item.content.replace(/<[^>]*>/g, '').trim() : '';
+              // Clean HTML tags from content and extract meaningful text
+              let cleanContent = '';
+              if (item.content) {
+                cleanContent = item.content.replace(/<[^>]*>/g, '').trim();
+              } else if (item.text) {
+                cleanContent = item.text.replace(/<[^>]*>/g, '').trim();
+              }
+              
+              // If still empty, try to extract from other possible fields
+              if (!cleanContent && item.verse) {
+                cleanContent = item.verse.replace(/<[^>]*>/g, '').trim();
+              }
               
               return {
                 id: item.id || item.verseId,
@@ -1502,7 +1512,7 @@ Guidelines:
                 content: item.content,
                 verseCount: item.verseCount,
                 verseNumber: item.verseNumber,
-                text: cleanContent
+                text: cleanContent || 'Verse content not available'
               };
             }),
             query: query,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,11 +64,25 @@ export function BibleVerseSearch() {
   const [selectedChapter, setSelectedChapter] = useState<string>("");
   const [selectedVerse, setSelectedVerse] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [searchMode, setSearchMode] = useState<'browse' | 'search'>('browse');
   const [currentVerse, setCurrentVerse] = useState<BibleVerse | null>(null);
+  const [shouldSearch, setShouldSearch] = useState(false);
   
   const { toast } = useToast();
   const isMobile = useIsMobile();
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      if (searchQuery.trim() && selectedBible && searchMode === 'search') {
+        setShouldSearch(true);
+      }
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, selectedBible, searchMode]);
 
   // Fetch available Bibles
   const { data: bibles, isLoading: biblesLoading } = useQuery({
@@ -117,17 +131,18 @@ export function BibleVerseSearch() {
     enabled: !!(selectedBible && selectedChapter)
   });
 
-  // Search verses
-  const { data: searchResults, isLoading: searchLoading, refetch: performSearch } = useQuery({
-    queryKey: ['bible-search', selectedBible, searchQuery],
+  // Search verses with auto-search
+  const { data: searchResults, isLoading: searchLoading } = useQuery({
+    queryKey: ['bible-search', selectedBible, debouncedSearchQuery],
     queryFn: async () => {
-      if (!searchQuery.trim()) return null;
-      const response = await fetch(`/api/bible-verse?action=search&bibleId=${selectedBible}&query=${encodeURIComponent(searchQuery)}`);
+      if (!debouncedSearchQuery.trim()) return null;
+      const response = await fetch(`/api/bible-verse?action=search&bibleId=${selectedBible}&query=${encodeURIComponent(debouncedSearchQuery)}`);
       if (!response.ok) throw new Error('Failed to search verses');
       const data = await response.json();
       return data.results as SearchResult;
     },
-    enabled: false // Only run when explicitly called
+    enabled: !!(selectedBible && debouncedSearchQuery.trim() && searchMode === 'search'),
+    staleTime: 30000, // Cache results for 30 seconds
   });
 
   // Set default Bible when loaded
@@ -174,7 +189,7 @@ export function BibleVerseSearch() {
     }
   }, [verses, selectedVerse, verseContent]);
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     if (!searchQuery.trim()) {
       toast({
         title: "Search Required",
@@ -194,11 +209,23 @@ export function BibleVerseSearch() {
     }
 
     setSearchMode('search');
-    performSearch();
+    setDebouncedSearchQuery(searchQuery);
+    setShouldSearch(true);
+  }, [searchQuery, selectedBible, toast]);
+
+  const getVerseText = (verse: BibleVerse) => {
+    // Try to get clean text from various possible fields
+    if (verse.text && verse.text !== 'Verse content not available') {
+      return verse.text;
+    }
+    if (verse.content) {
+      return verse.content.replace(/<[^>]*>/g, '').trim();
+    }
+    return 'Verse content not available';
   };
 
   const handleCopyVerse = (verse: BibleVerse) => {
-    const text = `${verse.content} - ${verse.reference || 'Bible'}`;
+    const text = `${getVerseText(verse)} - ${verse.reference || 'Bible'}`;
     navigator.clipboard.writeText(text);
     toast({
       title: "Copied!",
@@ -207,10 +234,11 @@ export function BibleVerseSearch() {
   };
 
   const handleShareVerse = (verse: BibleVerse) => {
+    const text = `${getVerseText(verse)} - ${verse.reference || 'Bible'}`;
     if (navigator.share) {
       navigator.share({
         title: verse.reference || 'Bible Verse',
-        text: `${verse.content} - ${verse.reference || 'Bible'}`
+        text: text
       });
     } else {
       handleCopyVerse(verse);
@@ -310,24 +338,36 @@ export function BibleVerseSearch() {
                   Search for Word or Phrase
                 </label>
                 <div className="flex space-x-2">
-                  <Input
-                    placeholder="Enter word or phrase to search..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    className="flex-1"
-                  />
+                  <div className="flex-1 relative">
+                    <Input
+                      placeholder="Start typing to search verses..."
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        if (!searchMode === 'search') {
+                          setSearchMode('search');
+                        }
+                      }}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                      className="flex-1"
+                    />
+                    {searchLoading && (
+                      <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    )}
+                  </div>
                   <Button 
                     onClick={handleSearch}
-                    disabled={searchLoading || !selectedBible}
+                    disabled={!selectedBible}
+                    variant="outline"
                   >
-                    {searchLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Search className="w-4 h-4" />
-                    )}
+                    <Search className="w-4 h-4" />
                   </Button>
                 </div>
+                {searchQuery && searchMode === 'search' && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {searchLoading ? 'Searching...' : `Search results will appear as you type`}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -503,7 +543,7 @@ export function BibleVerseSearch() {
               </div>
             ) : (
               <blockquote className="text-lg leading-relaxed text-gray-800 italic border-l-4 border-gi-primary/primary pl-4">
-                "{currentVerse.text || (currentVerse.content ? currentVerse.content.replace(/<[^>]*>/g, '').trim() : 'Verse content not available')}"
+                "{getVerseText(currentVerse)}"
               </blockquote>
             )}
           </CardContent>
@@ -559,7 +599,7 @@ export function BibleVerseSearch() {
                       </div>
                     </div>
                     <p className="text-gray-700 leading-relaxed">
-                      "{verse.text || verse.content || 'Verse content not available'}"
+                      "{getVerseText(verse)}"
                     </p>
                   </motion.div>
                 ))}
@@ -570,17 +610,29 @@ export function BibleVerseSearch() {
       )}
 
       {/* Empty States */}
-      {searchMode === 'search' && !searchResults && !searchLoading && searchQuery && (
+      {searchMode === 'search' && !searchResults && !searchLoading && debouncedSearchQuery && (
         <Card className="shadow-lg border border-gray-200">
           <CardContent className="text-center py-12">
             <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No Results Found</h3>
             <p className="text-gray-600 mb-4">
-              No verses found containing "{searchQuery}". Try different keywords.
+              No verses found containing "{debouncedSearchQuery}". Try different keywords.
             </p>
             <Button onClick={() => setSearchQuery("")} variant="outline">
               Clear Search
             </Button>
+          </CardContent>
+        </Card>
+      )}
+      
+      {searchMode === 'search' && !searchQuery && (
+        <Card className="shadow-lg border border-gray-200">
+          <CardContent className="text-center py-12">
+            <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Start Searching</h3>
+            <p className="text-gray-600">
+              Type a word or phrase to search through the Bible
+            </p>
           </CardContent>
         </Card>
       )}
