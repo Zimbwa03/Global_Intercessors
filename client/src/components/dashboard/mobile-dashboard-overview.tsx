@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Heart, BookOpen, Users, TrendingUp, Target, Timer, Play, Pause, Activity } from "lucide-react";
+import { Clock, Heart, BookOpen, Users, TrendingUp, Target, Activity } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { PrayerPlanner } from "@/components/dashboard/prayer-planner";
@@ -16,9 +16,7 @@ interface MobileDashboardOverviewProps {
 export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashboardOverviewProps) {
   const [timeOfDay, setTimeOfDay] = useState("");
   const [currentTime, setCurrentTime] = useState("");
-  const [prayerTimer, setPrayerTimer] = useState(0);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [timeUntilSlot, setTimeUntilSlot] = useState("--:--:--");
+  const [timeUntilSlot, setTimeUntilSlot] = useState({ hours: 0, minutes: 0, seconds: 0 });
 
   // Prayer slot data
   const { data: prayerSlot } = useQuery({
@@ -44,7 +42,7 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
       else setTimeOfDay("evening");
 
       // Calculate time until next prayer slot
-      if ((prayerSlot as any)?.prayerSlot) {
+      if ((prayerSlot as any)?.prayerSlot && (prayerSlot as any).prayerSlot.status === 'active') {
         const slotTime = (prayerSlot as any).prayerSlot.slotTime;
         const [startTime] = slotTime.split('–');
         const [slotHours, slotMinutes] = startTime.split(':').map(Number);
@@ -52,15 +50,27 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
         const slotDateTime = new Date();
         slotDateTime.setHours(slotHours, slotMinutes, 0, 0);
 
-        if (slotDateTime < now) {
+        if (slotDateTime <= now) {
           slotDateTime.setDate(slotDateTime.getDate() + 1);
         }
 
         const diff = slotDateTime.getTime() - now.getTime();
-        const hoursLeft = Math.floor(diff / (1000 * 60 * 60));
-        const minutesLeft = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        if (diff > 0) {
+          const hoursLeft = Math.floor(diff / (1000 * 60 * 60));
+          const minutesLeft = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const secondsLeft = Math.floor((diff % (1000 * 60)) / 1000);
 
-        setTimeUntilSlot(`${hoursLeft}h ${minutesLeft}m`);
+          setTimeUntilSlot({
+            hours: Math.max(0, hoursLeft),
+            minutes: Math.max(0, minutesLeft),
+            seconds: Math.max(0, secondsLeft)
+          });
+        } else {
+          setTimeUntilSlot({ hours: 0, minutes: 0, seconds: 0 });
+        }
+      } else {
+        setTimeUntilSlot({ hours: 0, minutes: 0, seconds: 0 });
       }
     };
 
@@ -69,35 +79,7 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
     return () => clearInterval(interval);
   }, [prayerSlot]);
 
-  // Prayer timer effect
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isTimerRunning) {
-      interval = setInterval(() => {
-        setPrayerTimer(prev => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isTimerRunning]);
-
-  const toggleTimer = () => {
-    setIsTimerRunning(!isTimerRunning);
-  };
-
-  const resetTimer = () => {
-    setPrayerTimer(0);
-    setIsTimerRunning(false);
-  };
-
-  const formatTime = (seconds: number) => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    if (hrs > 0) {
-      return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  
 
   const getGreeting = () => {
     const name = userEmail?.split('@')[0] || 'Intercessor';
@@ -181,35 +163,34 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
         </div>
       </div>
 
-      {/* Prayer Timer Section */}
+      {/* Time remaining to Next slot */}
       <Card className="mobile-interactive-card mobile-card border-gi-primary/20">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-gi-primary">
-            <Timer className="w-5 h-5" />
-            Prayer Timer
+            <Clock className="w-5 h-5" />
+            Time remaining to your Next slot:
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center space-y-4">
-            <div className="text-4xl font-bold text-gi-primary font-mono">
-              {formatTime(prayerTimer)}
-            </div>
-            <div className="flex justify-center gap-2">
-              <Button
-                onClick={toggleTimer}
-                className="flex items-center gap-2 bg-gi-primary hover:bg-gi-primary/80"
-              >
-                {isTimerRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                {isTimerRunning ? 'Pause' : 'Start'}
-              </Button>
-              <Button
-                onClick={resetTimer}
-                variant="outline"
-                className="border-gi-primary text-gi-primary hover:bg-gi-primary/10"
-              >
-                Reset
-              </Button>
-            </div>
+            {(prayerSlot as any)?.prayerSlot && (prayerSlot as any).prayerSlot.status === 'active' ? (
+              <>
+                <div className="text-4xl font-bold text-gi-primary font-mono">
+                  {String(timeUntilSlot.hours).padStart(2, '0')}:
+                  {String(timeUntilSlot.minutes).padStart(2, '0')}:
+                  {String(timeUntilSlot.seconds).padStart(2, '0')}
+                </div>
+                <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                  <span>Next prayer session at {(prayerSlot as any).prayerSlot.slotTime}</span>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <Clock className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-600">No active prayer slot</p>
+                <p className="text-sm text-gray-500">Please select a slot to see countdown</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -240,12 +221,7 @@ export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashbo
                 </Badge>
               </div>
 
-              {timeUntilSlot && (
-                <div className="flex items-center justify-between p-3 bg-gi-primary/5 rounded-lg">
-                  <span className="text-sm text-gray-600">Time until prayer:</span>
-                  <span className="font-semibold text-gi-primary">{timeUntilSlot}</span>
-                </div>
-              )}
+              
 
               <div className="mt-4">
                 <div className="text-sm text-gray-600 mb-2">Prayer consistency this week</div>
