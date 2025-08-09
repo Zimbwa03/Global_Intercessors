@@ -1201,20 +1201,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Gemini API key not configured. Please add GEMINI_API_KEY to your secrets." });
       }
 
+      // Determine response length based on input message length
+      const inputLength = message.trim().length;
+      let maxTokens = 200; // Default for short inputs
+      
+      if (inputLength > 100) {
+        maxTokens = 400;
+      } else if (inputLength > 50) {
+        maxTokens = 300;
+      }
+
       // Create a focused prompt for biblical guidance
-      const prompt = `You are "The Intercessor," a biblical AI assistant providing spiritual guidance and biblical wisdom to Global Intercessors. 
+      const prompt = `You are "The Intercessor," a biblical AI assistant providing spiritual guidance to Global Intercessors. 
 
-User's question/request: "${message}"
-Bible Version preference: ${bibleVersion}
+User's message: "${message}"
+Bible Version: ${bibleVersion}
 
-Please provide:
-1. A relevant Bible verse that addresses their question/need
-2. Spiritual insight and practical guidance
-3. A prayer point they can use
+IMPORTANT FORMATTING RULES:
+- DO NOT use ** for bold text or any markdown formatting
+- DO NOT use numbered lists or bullet points  
+- Write in clean, plain text only
+- Keep response length proportional to input: ${inputLength < 20 ? 'very brief' : inputLength < 50 ? 'concise' : 'moderate'}
+- Use professional, warm tone without being overly emotional
+- Include relevant Bible verse reference and text
+- Provide practical spiritual guidance
+- End with a brief prayer point
 
-Respond in a warm, encouraging tone with biblical wisdom. Use emojis appropriately (📖🙏✨💝🌟) to make it engaging. Be practical and spiritually uplifting.
-
-Focus on being a compassionate spiritual advisor`;
+Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
 
       console.log('Calling Gemini API for Bible chat with key:', geminiApiKey ? `${geminiApiKey.substring(0, 8)}...` : 'undefined');
 
@@ -1230,10 +1243,10 @@ Focus on being a compassionate spiritual advisor`;
             }]
           }],
           generationConfig: {
-            temperature: 0.8,
+            temperature: 0.7,
             topK: 1,
             topP: 1,
-            maxOutputTokens: 1200,
+            maxOutputTokens: maxTokens,
           },
           safetySettings: [
             {
@@ -1282,9 +1295,17 @@ Focus on being a compassionate spiritual advisor`;
         console.error('Failed to parse Gemini response as JSON:', parseError);
         console.error('Raw response:', aiResponse);
 
+        // Clean the response from markdown formatting
+        const cleanResponse = aiResponse
+          .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
+          .replace(/\*(.*?)\*/g, '$1')     // Remove italic formatting
+          .replace(/^\d+\.\s*/gm, '')     // Remove numbered lists
+          .replace(/^[-•]\s*/gm, '')      // Remove bullet points
+          .trim();
+
         // Fallback response with proper formatting
         res.json({
-          response: aiResponse.includes('📖') ? aiResponse : `📖 ${aiResponse}`,
+          response: cleanResponse,
           scripture: {
             reference: "Isaiah 55:11",
             text: "So is my word that goes out from my mouth: It will not return to me empty, but will accomplish what I desire and achieve the purpose for which I sent it."
@@ -1297,7 +1318,7 @@ Focus on being a compassionate spiritual advisor`;
 
       // Provide a fallback response
       res.json({
-        response: "📖 I'm having trouble connecting to provide you with personalized guidance right now, but remember that God's Word is always available to you! ✨\n\n🙏 Take a moment to seek Him in prayer, and He will guide your heart.",
+        response: "I'm having trouble connecting right now, but remember that God's Word is always available to you. Take a moment to seek Him in prayer, and He will guide your heart.",
         scripture: {
           reference: "Psalm 119:105",
           text: "Your word is a lamp for my feet, a light on my path."
