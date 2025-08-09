@@ -305,7 +305,9 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
           {[...Array(12)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-1 h-1 bg-gi-gold/20 rounded-full"
+              className={`absolute w-1 h-1 rounded-full ${
+                i % 2 === 0 ? 'bg-gi-gold/20' : 'bg-gi-primary/15'
+              }`}
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
@@ -345,15 +347,15 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl opacity-60"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-gi-primary/5 to-gi-primary/10 rounded-xl opacity-80"></div>
             <div className="relative p-6 h-full">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 bg-gradient-to-br from-gi-primary to-gi-primary/80 rounded-xl flex items-center justify-center shadow-lg">
                   <Heart className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h4 className="font-bold text-gi-primary">Family Prayers</h4>
-                  <p className="text-sm text-gray-600">12 completed • 3 active</p>
+                  <p className="text-sm text-gi-primary/70">12 completed • 3 active</p>
                 </div>
               </div>
               
@@ -364,8 +366,8 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
                     key={node.id}
                     className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer shadow-md ${
                       node.completed 
-                        ? 'bg-gradient-to-br from-pink-500 to-rose-500 text-white' 
-                        : 'bg-white border-2 border-pink-200 text-pink-500'
+                        ? 'bg-gradient-to-br from-gi-gold to-gi-gold/80 text-white' 
+                        : 'bg-white border-2 border-gi-primary/30 text-gi-primary'
                     }`}
                     whileHover={{ scale: 1.2 }}
                     whileTap={{ scale: 0.95 }}
@@ -392,13 +394,13 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
               
               {/* Progress Path */}
               <div className="mt-4">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <div className="flex justify-between text-xs text-gi-primary/60 mb-1">
                   <span>Progress</span>
                   <span>80%</span>
                 </div>
-                <div className="w-full bg-pink-100 rounded-full h-2">
+                <div className="w-full bg-gi-primary/10 rounded-full h-2">
                   <motion.div 
-                    className="bg-gradient-to-r from-pink-500 to-rose-500 rounded-full h-2"
+                    className="bg-gradient-to-r from-gi-gold to-gi-gold/80 rounded-full h-2"
                     initial={{ width: 0 }}
                     animate={{ width: "80%" }}
                     transition={{ duration: 1.5, delay: 0.5 }}
@@ -415,15 +417,15 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl opacity-60"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-gi-gold/5 to-gi-gold/10 rounded-xl opacity-80"></div>
             <div className="relative p-6 h-full">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-gi-primary to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 bg-gradient-to-br from-gi-gold to-gi-gold/80 rounded-xl flex items-center justify-center shadow-lg">
                   <TreePine className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h4 className="font-bold text-gi-primary">Community Prayers</h4>
-                  <p className="text-sm text-gray-600">8 completed • 4 active</p>
+                  <p className="text-sm text-gi-primary/70">8 completed • 4 active</p>
                 </div>
               </div>
               
@@ -434,8 +436,8 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
                     key={node.id}
                     className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer shadow-md ${
                       node.completed 
-                        ? 'bg-gradient-to-br from-gi-primary to-green-600 text-white' 
-                        : 'bg-white border-2 border-green-200 text-gi-primary'
+                        ? 'bg-gradient-to-br from-gi-primary to-gi-primary/80 text-white' 
+                        : 'bg-white border-2 border-gi-gold/30 text-gi-gold'
                     }`}
                     whileHover={{ scale: 1.2 }}
                     whileTap={{ scale: 0.95 }}
@@ -462,13 +464,13 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
               
               {/* Progress Path */}
               <div className="mt-4">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <div className="flex justify-between text-xs text-gi-primary/60 mb-1">
                   <span>Progress</span>
                   <span>67%</span>
                 </div>
-                <div className="w-full bg-green-100 rounded-full h-2">
+                <div className="w-full bg-gi-gold/10 rounded-full h-2">
                   <motion.div 
-                    className="bg-gradient-to-r from-gi-primary to-green-600 rounded-full h-2"
+                    className="bg-gradient-to-r from-gi-primary to-gi-primary/80 rounded-full h-2"
                     initial={{ width: 0 }}
                     animate={{ width: "67%" }}
                     transition={{ duration: 1.5, delay: 0.7 }}
@@ -485,15 +487,15 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl opacity-60"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-gi-primary/8 to-gi-gold/8 rounded-xl opacity-80"></div>
             <div className="relative p-6 h-full">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-gi-gold to-yellow-500 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 bg-gradient-to-br from-gi-primary to-gi-gold rounded-xl flex items-center justify-center shadow-lg">
                   <Sun className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h4 className="font-bold text-gi-primary">Global Prayers</h4>
-                  <p className="text-sm text-gray-600">15 completed • 2 active</p>
+                  <p className="text-sm text-gi-primary/70">15 completed • 2 active</p>
                 </div>
               </div>
               
@@ -504,8 +506,8 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
                     key={node.id}
                     className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer shadow-md ${
                       node.completed 
-                        ? 'bg-gradient-to-br from-gi-gold to-yellow-500 text-white' 
-                        : 'bg-white border-2 border-yellow-200 text-gi-gold'
+                        ? 'bg-gradient-to-br from-gi-gold to-gi-gold/80 text-white' 
+                        : 'bg-white border-2 border-gi-primary/30 text-gi-primary'
                     }`}
                     whileHover={{ scale: 1.2 }}
                     whileTap={{ scale: 0.95 }}
@@ -532,13 +534,13 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
               
               {/* Progress Path */}
               <div className="mt-4">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <div className="flex justify-between text-xs text-gi-primary/60 mb-1">
                   <span>Progress</span>
                   <span>88%</span>
                 </div>
-                <div className="w-full bg-yellow-100 rounded-full h-2">
+                <div className="w-full bg-gi-primary/10 rounded-full h-2">
                   <motion.div 
-                    className="bg-gradient-to-r from-gi-gold to-yellow-500 rounded-full h-2"
+                    className="bg-gradient-to-r from-gi-gold to-gi-primary rounded-full h-2"
                     initial={{ width: 0 }}
                     animate={{ width: "88%" }}
                     transition={{ duration: 1.5, delay: 0.9 }}
@@ -555,15 +557,15 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl opacity-60"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-gi-gold/5 to-gi-primary/5 rounded-xl opacity-80"></div>
             <div className="relative p-6 h-full">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 bg-gradient-to-br from-gi-gold to-gi-primary rounded-xl flex items-center justify-center shadow-lg">
                   <Star className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h4 className="font-bold text-gi-primary">Personal Prayers</h4>
-                  <p className="text-sm text-gray-600">10 completed • 5 active</p>
+                  <p className="text-sm text-gi-primary/70">10 completed • 5 active</p>
                 </div>
               </div>
               
@@ -574,8 +576,8 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
                     key={node.id}
                     className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer shadow-md ${
                       node.completed 
-                        ? 'bg-gradient-to-br from-purple-500 to-indigo-500 text-white' 
-                        : 'bg-white border-2 border-purple-200 text-purple-500'
+                        ? 'bg-gradient-to-br from-gi-primary to-gi-gold text-white' 
+                        : 'bg-white border-2 border-gi-gold/30 text-gi-gold'
                     }`}
                     whileHover={{ scale: 1.2 }}
                     whileTap={{ scale: 0.95 }}
@@ -602,13 +604,13 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
               
               {/* Progress Path */}
               <div className="mt-4">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <div className="flex justify-between text-xs text-gi-primary/60 mb-1">
                   <span>Progress</span>
                   <span>67%</span>
                 </div>
-                <div className="w-full bg-purple-100 rounded-full h-2">
+                <div className="w-full bg-gi-gold/10 rounded-full h-2">
                   <motion.div 
-                    className="bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full h-2"
+                    className="bg-gradient-to-r from-gi-primary to-gi-gold rounded-full h-2"
                     initial={{ width: 0 }}
                     animate={{ width: "67%" }}
                     transition={{ duration: 1.5, delay: 1.1 }}
@@ -621,31 +623,31 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
 
         {/* Overall Progress Summary */}
         <motion.div 
-          className="relative z-10 mt-6 bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-gi-primary/10"
+          className="relative z-10 mt-6 bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gi-gold/20 shadow-lg"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-gi-primary to-gi-gold rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-gi-primary to-gi-gold rounded-lg flex items-center justify-center shadow-md">
                 <TrendingUp className="w-5 h-5 text-white" />
               </div>
               <div>
                 <h4 className="font-semibold text-gi-primary">Overall Prayer Journey</h4>
-                <p className="text-sm text-gray-600">45 prayers completed • 14 active goals</p>
+                <p className="text-sm text-gi-primary/70">45 prayers completed • 14 active goals</p>
               </div>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-gi-primary">76%</div>
-              <div className="text-xs text-gray-500">Complete</div>
+              <div className="text-xs text-gi-primary/60">Complete</div>
             </div>
           </div>
           
           <div className="mt-3">
-            <div className="w-full bg-gray-100 rounded-full h-3">
+            <div className="w-full bg-gi-primary/10 rounded-full h-3">
               <motion.div 
-                className="bg-gradient-to-r from-gi-primary to-gi-gold rounded-full h-3"
+                className="bg-gradient-to-r from-gi-primary to-gi-gold rounded-full h-3 shadow-sm"
                 initial={{ width: 0 }}
                 animate={{ width: "76%" }}
                 transition={{ duration: 2, delay: 1.2 }}
@@ -667,12 +669,7 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
                     <motion.div 
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${
-                        selectedNode.category === 'family' ? 'bg-gradient-to-br from-pink-500 to-rose-500' :
-                        selectedNode.category === 'community' ? 'bg-gradient-to-br from-gi-primary to-green-600' :
-                        selectedNode.category === 'world' ? 'bg-gradient-to-br from-gi-gold to-yellow-500' :
-                        'bg-gradient-to-br from-purple-500 to-indigo-500'
-                      }`}
+                      className="w-12 h-12 bg-gradient-to-br from-gi-primary to-gi-gold rounded-xl flex items-center justify-center shadow-lg"
                       animate={{ rotateY: [0, 360] }}
                       transition={{ duration: 3, repeat: Infinity }}
                     >
@@ -685,23 +682,18 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
                     
                     <div>
                       <h4 className="text-lg font-bold text-gi-primary">{selectedNode.title}</h4>
-                      <p className="text-gray-600 text-sm">{selectedNode.description}</p>
+                      <p className="text-gi-primary/70 text-sm">{selectedNode.description}</p>
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-3 mb-3">
-                    <Badge className="bg-gi-primary/10 text-gi-primary">
+                    <Badge className="bg-gi-primary/10 text-gi-primary border-gi-primary/20">
                       {selectedNode.type}
                     </Badge>
-                    <Badge className={`${
-                      selectedNode.category === 'family' ? 'bg-pink-100 text-pink-700' :
-                      selectedNode.category === 'community' ? 'bg-green-100 text-green-700' :
-                      selectedNode.category === 'world' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-purple-100 text-purple-700'
-                    }`}>
+                    <Badge className="bg-gi-gold/10 text-gi-gold border-gi-gold/20">
                       {selectedNode.category}
                     </Badge>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gi-primary/60">
                       {new Date(selectedNode.date).toLocaleDateString()}
                     </span>
                   </div>
