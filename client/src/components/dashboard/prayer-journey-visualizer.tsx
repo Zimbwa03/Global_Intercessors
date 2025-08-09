@@ -297,179 +297,501 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
 
   const render3DJourney = () => (
     <div className="relative">
-      {/* 3D Canvas Container */}
-      <div className="relative bg-gradient-to-b from-blue-50 via-green-50 to-gi-primary/10 rounded-2xl p-6 min-h-[600px] overflow-hidden">
-        {/* Floating Sacred Elements Background */}
+      {/* Immersive 3D Canvas Container */}
+      <div className="relative bg-gradient-to-b from-sky-100 via-blue-50 to-green-50 rounded-3xl p-8 min-h-[700px] overflow-hidden shadow-2xl border-2 border-gi-gold/20" 
+           style={{ 
+             background: `linear-gradient(135deg, 
+               #e0f2fe 0%, 
+               #e8f5e8 25%, 
+               #f0f9ff 50%, 
+               #ecfdf5 75%, 
+               #f9fafb 100%)`,
+             boxShadow: 'inset 0 0 100px rgba(16, 66, 32, 0.1), 0 20px 40px rgba(0,0,0,0.1)'
+           }}>
+        
+        {/* Mystical Heavenly Background Effects */}
         <div className="absolute inset-0 overflow-hidden">
-          {[...Array(20)].map((_, i) => (
+          {/* Floating Golden Light Particles */}
+          {[...Array(30)].map((_, i) => (
             <motion.div
-              key={i}
-              className="absolute w-2 h-2 bg-gi-gold/30 rounded-full"
+              key={`light-${i}`}
+              className="absolute rounded-full"
               style={{
+                width: `${4 + Math.random() * 8}px`,
+                height: `${4 + Math.random() * 8}px`,
+                background: `radial-gradient(circle, #D2AA68 0%, #FFFFFF 70%, transparent 100%)`,
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
+                filter: 'blur(1px)',
               }}
               animate={{
-                y: [0, -20, 0],
-                opacity: [0.3, 0.8, 0.3],
-                scale: [1, 1.2, 1],
+                y: [0, -30, 0],
+                x: [0, Math.sin(i) * 20, 0],
+                opacity: [0.2, 0.8, 0.2],
+                scale: [0.5, 1.2, 0.5],
               }}
               transition={{
-                duration: 3 + Math.random() * 2,
+                duration: 4 + Math.random() * 3,
                 repeat: Infinity,
-                delay: Math.random() * 2,
+                delay: Math.random() * 3,
+                ease: "easeInOut"
+              }}
+            />
+          ))}
+          
+          {/* Divine Light Rays */}
+          {[...Array(5)].map((_, i) => (
+            <motion.div
+              key={`ray-${i}`}
+              className="absolute opacity-10"
+              style={{
+                width: '2px',
+                height: '100%',
+                background: `linear-gradient(to bottom, transparent 0%, #D2AA68 50%, transparent 100%)`,
+                left: `${20 + i * 20}%`,
+                transformOrigin: 'top center',
+              }}
+              animate={{
+                rotateZ: [0, 2, -2, 0],
+                opacity: [0.05, 0.15, 0.05],
+              }}
+              transition={{
+                duration: 6 + i,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+          ))}
+          
+          {/* Floating Clouds */}
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={`cloud-${i}`}
+              className="absolute rounded-full opacity-20"
+              style={{
+                width: `${60 + Math.random() * 80}px`,
+                height: `${30 + Math.random() * 40}px`,
+                background: `radial-gradient(ellipse, #FFFFFF 0%, rgba(255,255,255,0.3) 70%, transparent 100%)`,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 60}%`,
+                filter: 'blur(2px)',
+              }}
+              animate={{
+                x: [0, 50, 0],
+                scale: [1, 1.1, 1],
+                opacity: [0.1, 0.3, 0.1],
+              }}
+              transition={{
+                duration: 15 + Math.random() * 10,
+                repeat: Infinity,
+                delay: Math.random() * 5,
               }}
             />
           ))}
         </div>
 
-        {/* 3D Prayer Journey Path */}
+        {/* 3D Prayer Journey Landscape */}
         <div className="relative z-10">
-          <h3 className="text-2xl font-bold text-gi-primary mb-6 text-center">
+          <motion.h3 
+            className="text-3xl font-bold text-center mb-8"
+            style={{ 
+              background: `linear-gradient(135deg, #104220 0%, #D2AA68 50%, #104220 100%)`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+            }}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1 }}
+          >
             Sacred Prayer Journey
-          </h3>
+          </motion.h3>
           
-          {/* Journey Path SVG */}
-          <svg width="100%" height="500" className="absolute inset-0">
-            {/* Winding Prayer Path */}
-            <defs>
-              <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#D2AA68" stopOpacity="0.3" />
-                <stop offset="50%" stopColor="#104220" stopOpacity="0.5" />
-                <stop offset="100%" stopColor="#D2AA68" stopOpacity="0.3" />
-              </linearGradient>
-            </defs>
-            
-            {/* Main Path */}
-            <path
-              d={`M 50 450 Q 200 350 400 300 Q 600 250 750 200 Q 500 150 300 100 Q 150 50 450 20`}
-              fill="none"
-              stroke="url(#pathGradient)"
-              strokeWidth="8"
-              strokeLinecap="round"
-              className="drop-shadow-lg"
-            />
-            
-            {/* Floating Prayer Nodes */}
-            {nodes.slice(0, 20).map((node, index) => {
-              const pathProgress = index / 19;
-              const x = 50 + pathProgress * 700 + Math.sin(pathProgress * Math.PI * 4) * 100;
-              const y = 450 - pathProgress * 400 + Math.sin(pathProgress * Math.PI * 6) * 50;
+          {/* Advanced 3D Journey Path */}
+          <div className="relative h-[500px]">
+            <svg width="100%" height="100%" className="absolute inset-0" style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}>
+              <defs>
+                {/* Advanced Path Gradients */}
+                <linearGradient id="pathGradient3D" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#D2AA68" stopOpacity="0.8" />
+                  <stop offset="25%" stopColor="#FFFFFF" stopOpacity="0.6" />
+                  <stop offset="50%" stopColor="#104220" stopOpacity="0.7" />
+                  <stop offset="75%" stopColor="#D2AA68" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.5" />
+                </linearGradient>
+                
+                {/* Radial Gradient for Node Glows */}
+                <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#D2AA68" stopOpacity="0.8" />
+                  <stop offset="70%" stopColor="#D2AA68" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="transparent" stopOpacity="0" />
+                </radialGradient>
+                
+                {/* Divine Light Filter */}
+                <filter id="divineGlow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                  <feMerge> 
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
               
-              const IconComponent = getNodeTypeIcon(node.type);
-              const CategoryIcon = getCategoryIcon(node.category);
+              {/* Main Winding Sacred Path with 3D Effect */}
+              <path
+                d="M 80 450 Q 180 380 280 350 Q 400 320 500 280 Q 620 240 720 200 Q 600 160 480 140 Q 360 120 240 100 Q 120 80 200 60 Q 350 40 500 30 Q 650 20 750 15"
+                fill="none"
+                stroke="url(#pathGradient3D)"
+                strokeWidth="12"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                filter="url(#divineGlow)"
+                className="opacity-90"
+              />
               
-              return (
-                <g key={node.id}>
-                  {/* Node Glow Effect */}
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r="25"
-                    fill={node.completed ? "#D2AA68" : "#104220"}
-                    opacity="0.2"
-                    className="animate-pulse"
-                  />
-                  
-                  {/* Main Node Circle */}
-                  <motion.circle
-                    cx={x}
-                    cy={y}
-                    r="15"
-                    fill={node.completed ? "#D2AA68" : "#104220"}
-                    className="cursor-pointer drop-shadow-lg"
-                    onMouseEnter={() => setHoveredNode(node.id)}
-                    onMouseLeave={() => setHoveredNode(null)}
-                    onClick={() => setSelectedNode(node)}
-                    whileHover={{ scale: 1.3 }}
-                    animate={{
-                      scale: hoveredNode === node.id ? 1.3 : 1,
-                      y: [0, -5, 0],
-                    }}
-                    transition={{
-                      y: {
-                        duration: 2 + Math.random(),
-                        repeat: Infinity,
-                        delay: Math.random() * 2,
-                      }
-                    }}
-                  />
-                  
-                  {/* Floating Sparkles for Completed Nodes */}
-                  {node.completed && (
-                    <>
-                      {[...Array(3)].map((_, sparkleIndex) => (
-                        <motion.circle
-                          key={sparkleIndex}
-                          cx={x + (sparkleIndex - 1) * 10}
-                          cy={y - 25}
-                          r="2"
-                          fill="#FFFFFF"
-                          animate={{
-                            y: [0, -10, 0],
-                            opacity: [0, 1, 0],
-                          }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            delay: sparkleIndex * 0.5,
-                          }}
+              {/* Path Shadow for 3D Depth */}
+              <path
+                d="M 85 455 Q 185 385 285 355 Q 405 325 505 285 Q 625 245 725 205 Q 605 165 485 145 Q 365 125 245 105 Q 125 85 205 65 Q 355 45 505 35 Q 655 25 755 20"
+                fill="none"
+                stroke="#231F20"
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeOpacity="0.2"
+                className="blur-sm"
+              />
+              
+              {/* Landscape Elements */}
+              {/* Valley of Peace - Lush Green Hills */}
+              <ellipse cx="150" cy="400" rx="80" ry="40" fill="#104220" opacity="0.3" />
+              <ellipse cx="200" cy="420" rx="60" ry="30" fill="#104220" opacity="0.2" />
+              
+              {/* Mountain of Faith - Majestic Peaks */}
+              <polygon points="400,300 450,200 500,300" fill="#104220" opacity="0.4" />
+              <polygon points="450,320 500,220 550,320" fill="#104220" opacity="0.3" />
+              
+              {/* Celestial Garden - Floating Platforms */}
+              <ellipse cx="600" cy="150" rx="70" ry="25" fill="#D2AA68" opacity="0.2" />
+              <ellipse cx="650" cy="130" rx="50" ry="20" fill="#D2AA68" opacity="0.15" />
+              
+              {/* Interactive Prayer Nodes with Advanced 3D Effects */}
+              {nodes.slice(0, 25).map((node, index) => {
+                const pathProgress = index / 24;
+                
+                // Complex winding path calculation for true 3D feel
+                const baseX = 80 + pathProgress * 670;
+                const waveX = Math.sin(pathProgress * Math.PI * 6) * 80;
+                const spiralX = Math.cos(pathProgress * Math.PI * 4) * 40;
+                const x = baseX + waveX + spiralX;
+                
+                const baseY = 450 - pathProgress * 400;
+                const waveY = Math.sin(pathProgress * Math.PI * 8) * 60;
+                const elevationY = Math.sin(pathProgress * Math.PI * 2) * 100;
+                const y = baseY + waveY + elevationY;
+                
+                // Z-depth simulation for 3D layering
+                const z = Math.sin(pathProgress * Math.PI * 3) * 20;
+                const nodeScale = 1 + (z / 100);
+                const nodeOpacity = 0.8 + (z / 100);
+                
+                const IconComponent = getNodeTypeIcon(node.type);
+                const CategoryIcon = getCategoryIcon(node.category);
+                
+                return (
+                  <g key={node.id} style={{ transformOrigin: `${x}px ${y}px` }}>
+                    {/* 3D Node Base Shadow */}
+                    <circle
+                      cx={x + 3}
+                      cy={y + 3}
+                      r={18 * nodeScale}
+                      fill="#231F20"
+                      opacity="0.2"
+                      className="blur-sm"
+                    />
+                    
+                    {/* Node Aura/Glow Ring */}
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={35 * nodeScale}
+                      fill="url(#nodeGlow)"
+                      opacity={node.completed ? "0.6" : "0.3"}
+                      className={node.completed ? "animate-pulse" : ""}
+                    />
+                    
+                    {/* Main Prayer Node with 3D Appearance */}
+                    <motion.g
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ 
+                        scale: nodeScale,
+                        opacity: nodeOpacity,
+                        y: [0, -8, 0],
+                      }}
+                      transition={{
+                        y: {
+                          duration: 3 + Math.random() * 2,
+                          repeat: Infinity,
+                          delay: Math.random() * 3,
+                          ease: "easeInOut"
+                        },
+                        scale: { duration: 0.5, delay: index * 0.1 },
+                        opacity: { duration: 0.5, delay: index * 0.1 }
+                      }}
+                      whileHover={{ scale: nodeScale * 1.3 }}
+                      onClick={() => setSelectedNode(node)}
+                      className="cursor-pointer"
+                      onMouseEnter={() => setHoveredNode(node.id)}
+                      onMouseLeave={() => setHoveredNode(null)}
+                    >
+                      {/* Node Inner Gradient Circle */}
+                      <circle
+                        cx={x}
+                        cy={y}
+                        r="18"
+                        fill={node.completed ? 
+                          `url(#nodeGradient-${node.category})` : 
+                          "#104220"
+                        }
+                        filter="url(#divineGlow)"
+                        opacity="0.9"
+                      />
+                      
+                      {/* Node Highlight Ring */}
+                      <circle
+                        cx={x}
+                        cy={y}
+                        r="16"
+                        fill="none"
+                        stroke="#FFFFFF"
+                        strokeWidth="2"
+                        opacity={node.completed ? "0.8" : "0.4"}
+                      />
+                      
+                      {/* Node Core */}
+                      <circle
+                        cx={x}
+                        cy={y}
+                        r="12"
+                        fill={node.completed ? "#D2AA68" : "#104220"}
+                        opacity="1"
+                      />
+                    </motion.g>
+                    
+                    {/* Divine Completion Effects */}
+                    {node.completed && (
+                      <>
+                        {/* Ascending Golden Sparkles */}
+                        {[...Array(5)].map((_, sparkleIndex) => (
+                          <motion.circle
+                            key={`sparkle-${sparkleIndex}`}
+                            cx={x + (sparkleIndex - 2) * 8}
+                            cy={y - 35}
+                            r="1.5"
+                            fill="#FFFFFF"
+                            animate={{
+                              y: [0, -40, -80],
+                              opacity: [0, 1, 0],
+                              scale: [0.5, 1, 0.5],
+                            }}
+                            transition={{
+                              duration: 3,
+                              repeat: Infinity,
+                              delay: sparkleIndex * 0.6,
+                              ease: "easeOut"
+                            }}
+                          />
+                        ))}
+                        
+                        {/* Divine Crown Effect for Major Milestones */}
+                        {(node.type === 'milestone' || node.type === 'breakthrough') && (
+                          <motion.g
+                            animate={{
+                              rotateZ: [0, 360],
+                              scale: [1, 1.1, 1],
+                            }}
+                            transition={{
+                              rotateZ: { duration: 20, repeat: Infinity, ease: "linear" },
+                              scale: { duration: 2, repeat: Infinity }
+                            }}
+                          >
+                            <circle
+                              cx={x}
+                              cy={y - 30}
+                              r="8"
+                              fill="#D2AA68"
+                              opacity="0.8"
+                              filter="url(#divineGlow)"
+                            />
+                            <circle
+                              cx={x}
+                              cy={y - 30}
+                              r="6"
+                              fill="#FFFFFF"
+                              opacity="0.9"
+                            />
+                          </motion.g>
+                        )}
+                      </>
+                    )}
+                    
+                    {/* Hover Information Preview */}
+                    {hoveredNode === node.id && (
+                      <motion.g
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <rect
+                          x={x - 60}
+                          y={y - 80}
+                          width="120"
+                          height="40"
+                          rx="8"
+                          fill="rgba(255, 255, 255, 0.95)"
+                          stroke="#D2AA68"
+                          strokeWidth="1"
+                          filter="url(#divineGlow)"
                         />
-                      ))}
-                    </>
-                  )}
-                </g>
-              );
-            })}
-          </svg>
+                        <text
+                          x={x}
+                          y={y - 68}
+                          textAnchor="middle"
+                          fontSize="10"
+                          fill="#104220"
+                          fontWeight="bold"
+                        >
+                          {node.title.slice(0, 20)}
+                        </text>
+                        <text
+                          x={x}
+                          y={y - 56}
+                          textAnchor="middle"
+                          fontSize="8"
+                          fill="#231F20"
+                          opacity="0.8"
+                        >
+                          {node.category} • {node.type}
+                        </text>
+                      </motion.g>
+                    )}
+                  </g>
+                );
+              })}
+              
+              {/* Dynamic Gradient Definitions for Different Categories */}
+              <defs>
+                <radialGradient id="nodeGradient-family">
+                  <stop offset="0%" stopColor="#FF6B9D" />
+                  <stop offset="100%" stopColor="#D2AA68" />
+                </radialGradient>
+                <radialGradient id="nodeGradient-community">
+                  <stop offset="0%" stopColor="#4ECDC4" />
+                  <stop offset="100%" stopColor="#104220" />
+                </radialGradient>
+                <radialGradient id="nodeGradient-world">
+                  <stop offset="0%" stopColor="#FFE66D" />
+                  <stop offset="100%" stopColor="#D2AA68" />
+                </radialGradient>
+                <radialGradient id="nodeGradient-personal">
+                  <stop offset="0%" stopColor="#A8E6CF" />
+                  <stop offset="100%" stopColor="#104220" />
+                </radialGradient>
+              </defs>
+            </svg>
+          </div>
           
-          {/* Floating Node Details */}
+          {/* Enhanced Floating Node Details Panel */}
           <AnimatePresence>
             {selectedNode && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                initial={{ opacity: 0, scale: 0.8, y: 30 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.8, y: 20 }}
-                className="absolute bottom-6 left-6 right-6 bg-white/90 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-gi-gold/20"
+                exit={{ opacity: 0, scale: 0.8, y: 30 }}
+                className="absolute bottom-6 left-6 right-6 bg-white/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border-2 border-gi-gold/30"
+                style={{
+                  background: `linear-gradient(135deg, 
+                    rgba(255,255,255,0.95) 0%, 
+                    rgba(240,249,255,0.95) 50%, 
+                    rgba(255,255,255,0.95) 100%)`,
+                  boxShadow: '0 25px 50px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)'
+                }}
               >
-                <div className="flex items-start justify-between">
+                {/* Divine Background Effects in Panel */}
+                <div className="absolute inset-0 overflow-hidden rounded-3xl">
+                  {[...Array(8)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute w-1 h-1 bg-gi-gold/20 rounded-full"
+                      style={{
+                        left: `${10 + Math.random() * 80}%`,
+                        top: `${10 + Math.random() * 80}%`,
+                      }}
+                      animate={{
+                        scale: [1, 1.5, 1],
+                        opacity: [0.2, 0.6, 0.2],
+                      }}
+                      transition={{
+                        duration: 2 + Math.random(),
+                        repeat: Infinity,
+                        delay: Math.random() * 2,
+                      }}
+                    />
+                  ))}
+                </div>
+                
+                <div className="relative z-10 flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        selectedNode.completed ? 'bg-gi-gold' : 'bg-gi-primary'
-                      }`}>
+                    <div className="flex items-center gap-4 mb-4">
+                      <motion.div 
+                        className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg ${
+                          selectedNode.completed ? 'bg-gradient-to-br from-gi-gold to-yellow-400' : 'bg-gradient-to-br from-gi-primary to-green-600'
+                        }`}
+                        animate={{ 
+                          rotateY: [0, 180, 360],
+                          scale: [1, 1.05, 1] 
+                        }}
+                        transition={{ 
+                          rotateY: { duration: 4, repeat: Infinity },
+                          scale: { duration: 2, repeat: Infinity }
+                        }}
+                      >
                         {selectedNode.completed ? (
-                          <Crown className="w-6 h-6 text-white" />
+                          <Crown className="w-8 h-8 text-white" />
                         ) : (
-                          <Sparkles className="w-6 h-6 text-white" />
+                          <Sparkles className="w-8 h-8 text-white" />
                         )}
-                      </div>
+                      </motion.div>
+                      
                       <div>
-                        <h4 className="text-lg font-bold text-gi-primary">{selectedNode.title}</h4>
-                        <p className="text-sm text-gray-600">{selectedNode.description}</p>
+                        <h4 className="text-2xl font-bold text-gi-primary mb-1">{selectedNode.title}</h4>
+                        <p className="text-gray-600 mb-2">{selectedNode.description}</p>
+                        <div className="flex items-center gap-3">
+                          <Badge className="bg-gi-primary/10 text-gi-primary border-gi-primary/20 px-3 py-1">
+                            {selectedNode.type}
+                          </Badge>
+                          <Badge className="bg-gi-gold/10 text-gi-gold border-gi-gold/20 px-3 py-1">
+                            {selectedNode.category}
+                          </Badge>
+                          <span className="text-sm text-gray-500">
+                            {new Date(selectedNode.date).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-4 text-sm">
-                      <Badge className="bg-gi-primary/10 text-gi-primary">
-                        {selectedNode.type}
-                      </Badge>
-                      <Badge className="bg-gi-gold/10 text-gi-gold">
-                        {selectedNode.category}
-                      </Badge>
-                      <span className="text-gray-500">
-                        {new Date(selectedNode.date).toLocaleDateString()}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 mt-3 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <TrendingUp className="w-4 h-4" />
-                        Growth: {selectedNode.spiritualGrowth}/10
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="flex items-center gap-2 p-3 bg-gi-primary/5 rounded-xl">
+                        <TrendingUp className="w-5 h-5 text-gi-primary" />
+                        <div>
+                          <div className="font-medium text-gi-primary">Spiritual Growth</div>
+                          <div className="text-gray-600">{selectedNode.spiritualGrowth}/10 points</div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {selectedNode.prayerDuration} minutes
+                      <div className="flex items-center gap-2 p-3 bg-gi-gold/5 rounded-xl">
+                        <Clock className="w-5 h-5 text-gi-gold" />
+                        <div>
+                          <div className="font-medium text-gi-gold">Prayer Duration</div>
+                          <div className="text-gray-600">{selectedNode.prayerDuration} minutes</div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -478,9 +800,9 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
                     variant="ghost"
                     size="sm"
                     onClick={() => setSelectedNode(null)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full"
                   >
-                    ×
+                    <span className="text-xl">×</span>
                   </Button>
                 </div>
               </motion.div>
