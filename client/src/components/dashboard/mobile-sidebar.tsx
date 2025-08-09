@@ -29,8 +29,6 @@ export function MobileSidebar({
     { id: "prayer-planner", label: "Prayer Planner", icon: MessageCircle, description: "Plan Your Prayers" },
     { id: "bible-search", label: "Bible Verse Search", icon: Search, description: "Find Scripture" },
     { id: "prayer-journey", label: "Prayer Journey", icon: TrendingUp, description: "Track Your Growth" },
-    { id: "audio-bible", label: "Audio Bible", icon: Heart, description: "Listen to Scripture" },
-    { id: "analytics", label: "Analytics", icon: BarChart, description: "Prayer Statistics" },
   ];
 
   const handleItemClick = (tabId: string) => {
