@@ -10,27 +10,35 @@ import { PrayerPlanner } from "@/components/dashboard/prayer-planner";
 
 interface MobileDashboardOverviewProps {
   userEmail: string;
+  userId?: string;
   onTabChange?: (tab: string) => void;
 }
 
-export function MobileDashboardOverview({ userEmail, onTabChange }: MobileDashboardOverviewProps) {
+export function MobileDashboardOverview({ userEmail, userId, onTabChange }: MobileDashboardOverviewProps) {
   const [timeOfDay, setTimeOfDay] = useState("");
   const [currentTime, setCurrentTime] = useState("");
   const [timeUntilSlot, setTimeUntilSlot] = useState({ hours: 0, minutes: 0, seconds: 0 });
 
-  // Prayer slot data
-  const { data: prayerSlot } = useQuery({
-    queryKey: ['prayer-slot', userEmail],
+  // Prayer slot data - use userId if available, fallback to userEmail
+  const { data: prayerSlot, isLoading: prayerSlotLoading } = useQuery({
+    queryKey: ['prayer-slot', userId || userEmail],
     queryFn: async () => {
-      if (!userEmail) return null;
+      if (!userId && !userEmail) return null;
       
-      const response = await fetch(`/api/prayer-slot?userEmail=${encodeURIComponent(userEmail)}`);
+      // Use the correct API endpoint that works
+      const endpoint = userId ? `/api/prayer-slot/${userId}` : `/api/prayer-slot?userEmail=${encodeURIComponent(userEmail)}`;
+      
+      console.log('Fetching prayer slot from:', endpoint);
+      const response = await fetch(endpoint);
       if (!response.ok) {
+        console.error('Failed to fetch prayer slot:', response.status, response.statusText);
         throw new Error('Failed to fetch prayer slot');
       }
-      return response.json();
+      const data = await response.json();
+      console.log('Prayer slot data received:', data);
+      return data;
     },
-    enabled: !!userEmail,
+    enabled: !!(userId || userEmail),
   });
 
   // Analytics data

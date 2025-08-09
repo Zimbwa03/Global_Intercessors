@@ -132,7 +132,7 @@ export default function Dashboard() {
     switch (activeTab) {
       case "dashboard":
         return isMobile 
-          ? <MobileDashboardOverview userEmail={user.email || ""} onTabChange={setActiveTab} />
+          ? <MobileDashboardOverview userEmail={user.email || ""} userId={user.id} onTabChange={setActiveTab} />
           : <DashboardOverview userEmail={user.email} />;
       case "prayer-slot":
       case "prayer-slots":
