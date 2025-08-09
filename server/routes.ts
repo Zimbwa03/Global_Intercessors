@@ -108,11 +108,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       })) || [];
 
       console.log('Found attendance records:', formattedAttendance.length);
-      
+
       // If no attendance records exist, suggest generating test data
       if (formattedAttendance.length === 0) {
         console.log('No attendance records found for user:', userId);
-        
+
         // Return empty array with suggestion to generate test data
         return res.json({
           attendance: [],
@@ -120,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           suggestion: "POST /api/admin/generate-test-attendance with userId to create test data"
         });
       }
-      
+
       res.json(formattedAttendance);
     } catch (error) {
       console.error('Error fetching attendance:', error);
@@ -348,18 +348,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/skip-requests", async (req: Request, res: Response) => {
     try {
       console.log('Admin fetching all skip requests...');
-      
+
       // Try using the service function first
       const { data: requests, error } = await supabaseAdmin
         .rpc('get_all_skip_requests_admin');
 
       if (error) {
         console.error("Service function error:", error);
-        
+
         // If service function doesn't exist, try direct query with service role
         if (error.message?.includes('function') && error.message?.includes('does not exist')) {
           console.log('Service function missing, trying direct query with service role...');
-          
+
           // Direct query using service role (should bypass RLS)
           const { data: directRequests, error: directError } = await supabaseAdmin
             .from('skip_requests')
@@ -368,7 +368,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           if (directError) {
             console.error("Direct query also failed:", directError);
-            
             // Use the SQL function we created to bypass RLS
             console.log('Trying query with service function...');
             const { data: rlsRequests, error: rlsError } = await supabaseAdmin
@@ -389,7 +388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Found ${directRequests?.length || 0} skip requests via direct query`);
           return res.json(directRequests || []);
         }
-        
+
         return res.status(500).json({ 
           error: "Failed to fetch skip requests",
           details: error.message || 'Unknown error'
@@ -397,13 +396,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`Found ${requests?.length || 0} skip requests for admin via service function`);
-      
+
       if (requests && requests.length > 0) {
         console.log('Sample skip request data:', JSON.stringify(requests[0], null, 2));
       } else {
         console.log('No skip requests found in database');
       }
-      
+
       res.json(requests || []);
     } catch (error: any) {
       console.error("Error in skip requests endpoint:", error);
@@ -429,7 +428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the skip request using service function to bypass RLS
       const { data: skipRequestArray, error: fetchError } = await supabaseAdmin
         .rpc('get_all_skip_requests_admin');
-      
+
       if (fetchError) {
         console.error("Error fetching skip requests:", fetchError);
         return res.status(500).json({ error: "Failed to fetch skip requests" });
@@ -516,23 +515,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If no prayer sessions exist, return mock data for demonstration
       if (!sessions || sessions.length === 0) {
         console.log('No prayer sessions found, returning mock data for user:', userId);
-        
+
         const mockSessions = [];
         const now = new Date();
-        
+
         // Get user's slot time for realistic session scheduling
         const { data: userSlot } = await supabaseAdmin
           .from('prayer_slots')
           .select('slot_time')
           .eq('user_id', userId)
           .single();
-          
+
         const slotTime = userSlot?.slot_time || '12:00–12:30';
-        
+
         for (let i = 0; i < 15; i++) {
           const sessionDate = new Date(now);
           sessionDate.setDate(sessionDate.getDate() - Math.floor(Math.random() * 30));
-          
+
           mockSessions.push({
             id: `mock_session_${i}`,
             user_id: userId,
@@ -544,7 +543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             updated_at: sessionDate.toISOString()
           });
         }
-        
+
         console.log('Returning', mockSessions.length, 'mock prayer sessions');
         return res.json(mockSessions);
       }
@@ -1081,140 +1080,211 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Enhanced Bible Chat with DeepSeek AI integration
+  // // Bible chat endpoint (Replaced with Gemini integration below)
+  // app.post("/api/bible-chat", async (req: Request, res: Response) => {
+  //   try {
+  //     const { message, bibleVersion = 'NIV' } = req.body;
+
+  //     if (!message || typeof message !== 'string' || message.trim().length === 0) {
+  //       return res.status(400).json({ error: 'Message is required and must be a non-empty string' });
+  //     }
+
+  //     const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
+  //     if (!deepSeekApiKey) {
+  //       console.error("DeepSeek API key not found in environment variables");
+  //       return res.status(500).json({ error: "DeepSeek API key not configured. Please add DEEPSEEK_API_KEY to your secrets." });
+  //     }
+
+  //     // Create a focused prompt for biblical guidance
+  //     const prompt = `You are "The Intercessor," a biblical AI assistant providing spiritual guidance and biblical wisdom to Global Intercessors. 
+
+  //     User's question/request: "${message}"
+  //     Bible Version preference: ${bibleVersion}
+
+  //     Please provide:
+  //     1. A relevant Bible verse that addresses their question/need
+  //     2. Spiritual insight and practical guidance
+  //     3. A prayer point they can use
+
+  //     Respond in a warm, encouraging tone with biblical wisdom. Use emojis appropriately (📖🙏✨💝🌟) to make it engaging. Be practical and spiritually uplifting.
+
+  //     Focus on being a compassionate spiritual advisor`;
+
+  //     console.log('Calling DeepSeek API for Bible chat with key:', deepSeekApiKey ? `${deepSeekApiKey.substring(0, 8)}...` : 'undefined');
+
+  //     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Authorization': `Bearer ${deepSeekApiKey}`,
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         model: 'deepseek-chat',
+  //         messages: [
+  //           {
+  //             role: 'system',
+  //             content: 'You are "The Intercessor," a biblical AI assistant providing spiritual guidance and biblical wisdom to Global Intercessors. Always respond with love, biblical truth, and practical spiritual insights.'
+  //           },
+  //           {
+  //             role: 'user',
+  //             content: prompt
+  //           }
+  //         ],
+  //         max_tokens: 1200,
+  //         temperature: 0.8
+  //       })
+  //     });
+
+  //     if (!response.ok) {
+  //       const errorText = await response.text();
+  //       console.error(`DeepSeek API error: ${response.status} ${response.statusText}`, errorText);
+  //       throw new Error(`DeepSeek API error: ${response.status} - ${errorText}`);
+  //     }
+
+  //     const data = await response.json();
+  //     const aiResponse = data.choices[0]?.message?.content;
+
+  //     if (!aiResponse) {
+  //       throw new Error('No response from DeepSeek API');
+  //     }
+
+  //     console.log('DeepSeek API response received successfully');
+  //     // Extract and return the cleaned response
+  //     try {
+  //       const parsedResponse = JSON.parse(aiResponse);
+  //       res.json({
+  //         response: parsedResponse.response,
+  //         scripture: parsedResponse.scripture,
+  //         insights: parsedResponse.insights
+  //       });
+  //     } catch (parseError) {
+  //       console.error('Failed to parse DeepSeek response as JSON:', parseError);
+  //       console.error('Raw response:', aiResponse);
+
+  //       // Fallback response with proper formatting
+  //       res.json({
+  //         response: aiResponse.includes('📖') ? aiResponse : `📖 ${aiResponse}`,
+  //         scripture: {
+  //           reference: "Isaiah 55:11",
+  //           text: "So is my word that goes out from my mouth: It will not return to me empty, but will accomplish what I desire and achieve the purpose for which I sent it."
+  //         },
+  //         insights: ["God's Word is powerful", "Scripture accomplishes God's purposes", "Trust in divine guidance"]
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error('Bible chat error:', error);
+
+  //     // Provide a fallback response
+  //     res.json({
+  //       response: "📖 I'm having trouble connecting to provide you with personalized guidance right now, but remember that God's Word is always available to you! ✨\n\n🙏 Take a moment to seek Him in prayer, and He will guide your heart.",
+  //       scripture: {
+  //         reference: "Psalm 119:105",
+  //         text: "Your word is a lamp for my feet, a light on my path."
+  //       },
+  //       insights: ["Scripture illuminates our path", "God's guidance is constant", "Prayer connects us to divine wisdom"]
+  //     });
+  //   }
+  // });
+
+  // Bible chat endpoint with Gemini Integration
   app.post("/api/bible-chat", async (req: Request, res: Response) => {
     try {
-      const { message, context } = req.body;
+      const { message, bibleVersion = 'NIV' } = req.body;
 
-      if (!message) {
-        return res.status(400).json({ error: "Message is required" });
+      if (!message || typeof message !== 'string' || message.trim().length === 0) {
+        return res.status(400).json({ error: 'Message is required and must be a non-empty string' });
       }
 
-      const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
-      if (!deepSeekApiKey) {
-        console.error("DeepSeek API key not found in environment variables");
-        return res.status(500).json({ error: "DeepSeek API key not configured. Please add DEEPSEEK_API_KEY to your secrets." });
+      const geminiApiKey = process.env.GEMINI_API_KEY;
+      if (!geminiApiKey) {
+        console.error("Gemini API key not found in environment variables");
+        return res.status(500).json({ error: "Gemini API key not configured. Please add GEMINI_API_KEY to your secrets." });
       }
 
-      const cleanedMessage = cleanAIResponse(message);
-      
-      // Build context from previous messages
-      let conversationContext = "";
-      if (context && context.length > 0) {
-        conversationContext = context.slice(-3).map((msg: any) => 
-          `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
-        ).join('\n');
-      }
+      // Create a focused prompt for biblical guidance
+      const prompt = `You are "The Intercessor," a biblical AI assistant providing spiritual guidance and biblical wisdom to Global Intercessors. 
 
-      // Create a comprehensive prompt for biblical chat
-      const prompt = `You are "The Intercessor," an AI Bible chat assistant for Global Intercessors. Your role is to provide biblical guidance, spiritual insights, and prayer support based on Scripture.
+User's question/request: "${message}"
+Bible Version preference: ${bibleVersion}
 
-User's message: "${cleanedMessage}"
+Please provide:
+1. A relevant Bible verse that addresses their question/need
+2. Spiritual insight and practical guidance
+3. A prayer point they can use
 
-${conversationContext ? `Previous conversation:\n${conversationContext}\n` : ''}
+Respond in a warm, encouraging tone with biblical wisdom. Use emojis appropriately (📖🙏✨💝🌟) to make it engaging. Be practical and spiritually uplifting.
 
-Please respond with biblical wisdom, relevant Scripture, and practical spiritual guidance. Format your response as JSON with these exact fields:
+Focus on being a compassionate spiritual advisor`;
 
-{
-  "response": "Your encouraging, biblical response with proper spacing and relevant emojis (📖🙏✨💝🌟)",
-  "scripture": {
-    "reference": "Book Chapter:Verse",
-    "text": "The complete Bible verse text"
-  },
-  "insights": ["Spiritual insight 1", "Spiritual insight 2", "Spiritual insight 3"]
-}
+      console.log('Calling Gemini API for Bible chat with key:', geminiApiKey ? `${geminiApiKey.substring(0, 8)}...` : 'undefined');
 
-Guidelines:
-- Be encouraging and biblically grounded
-- Use appropriate emojis for warmth and engagement
-- Include proper spacing and line breaks for readability
-- Provide practical spiritual applications
-- Keep insights concise but meaningful
-- Always include a relevant Bible verse
-- Respond as a caring spiritual advisor`;
-
-      console.log('Calling DeepSeek API for Bible chat with key:', deepSeekApiKey ? `${deepSeekApiKey.substring(0, 8)}...` : 'undefined');
-
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${deepSeekApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.8,
+            topK: 1,
+            topP: 1,
+            maxOutputTokens: 1200,
+          },
+          safetySettings: [
             {
-              role: 'system',
-              content: 'You are "The Intercessor," a biblical AI assistant providing spiritual guidance and biblical wisdom to Global Intercessors. Always respond with love, biblical truth, and practical spiritual insights.'
+              category: "HARM_CATEGORY_HARASSMENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
             },
             {
-              role: 'user',
-              content: prompt
+              category: "HARM_CATEGORY_HATE_SPEECH",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
             }
-          ],
-          max_tokens: 1200,
-          temperature: 0.8
+          ]
         })
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`DeepSeek API error: ${response.status} ${response.statusText}`, errorText);
-        throw new Error(`DeepSeek API error: ${response.status} - ${errorText}`);
+        console.error(`Gemini API error: ${response.status} ${response.statusText}`, errorText);
+        throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
-      const aiResponse = data.choices[0]?.message?.content;
+      const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (!aiResponse) {
-        throw new Error('No response from DeepSeek API');
+        throw new Error('No response from Gemini API');
       }
 
-      console.log('DeepSeek API response received successfully');
-
+      console.log('Gemini API response received successfully');
+      // Extract and return the cleaned response
       try {
-        // Clean the response from markdown formatting
-        let cleanedResponse = aiResponse.trim();
-        
-        // Remove markdown code blocks if present
-        if (cleanedResponse.startsWith('```json')) {
-          cleanedResponse = cleanedResponse.replace(/^```json\s*/, '').replace(/```\s*$/, '');
-        } else if (cleanedResponse.startsWith('```')) {
-          cleanedResponse = cleanedResponse.replace(/^```\s*/, '').replace(/```\s*$/, '');
-        }
-        
-        const parsedResponse = JSON.parse(cleanedResponse);
+        const parsedResponse = JSON.parse(aiResponse);
         res.json({
           response: parsedResponse.response,
           scripture: parsedResponse.scripture,
           insights: parsedResponse.insights
         });
       } catch (parseError) {
-        console.error('Failed to parse DeepSeek response as JSON:', parseError);
+        console.error('Failed to parse Gemini response as JSON:', parseError);
         console.error('Raw response:', aiResponse);
-        
-        // Extract response content manually if JSON parsing fails
-        let extractedResponse = aiResponse;
-        
-        // Try to extract the response field value
-        const responseMatch = aiResponse.match(/"response"\s*:\s*"([^"]+(?:\\.[^"]*)*)"/) || 
-                             aiResponse.match(/'response'\s*:\s*'([^']+(?:\\.[^']*)*)'/) ||
-                             aiResponse.match(/"response"\s*:\s*`([^`]+)`/);
-        
-        if (responseMatch) {
-          extractedResponse = responseMatch[1]
-            .replace(/\\n/g, '\n')
-            .replace(/\\"/g, '"')
-            .replace(/\\'/g, "'")
-            .replace(/\\t/g, '\t');
-        } else {
-          // Clean the entire response
-          extractedResponse = cleanAIResponse(aiResponse);
-        }
-        
+
+        // Fallback response with proper formatting
         res.json({
-          response: extractedResponse.includes('📖') ? extractedResponse : `📖 ${extractedResponse}`,
+          response: aiResponse.includes('📖') ? aiResponse : `📖 ${aiResponse}`,
           scripture: {
             reference: "Isaiah 55:11",
             text: "So is my word that goes out from my mouth: It will not return to me empty, but will accomplish what I desire and achieve the purpose for which I sent it."
@@ -1224,7 +1294,7 @@ Guidelines:
       }
     } catch (error) {
       console.error('Bible chat error:', error);
-      
+
       // Provide a fallback response
       res.json({
         response: "📖 I'm having trouble connecting to provide you with personalized guidance right now, but remember that God's Word is always available to you! ✨\n\n🙏 Take a moment to seek Him in prayer, and He will guide your heart.",
@@ -1240,13 +1310,13 @@ Guidelines:
   // Bible Verse Search Handler Function
   async function handleBibleVerseSearch(req: Request, res: Response, phrase: string, version: string, chapter?: string, verse?: string) {
     try {
-      const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
-      if (!deepSeekApiKey) {
-        console.error("DeepSeek API key not found in environment variables");
-        return res.status(500).json({ error: "DeepSeek API key not configured. Please add DEEPSEEK_API_KEY to your secrets." });
+      const geminiApiKey = process.env.GEMINI_API_KEY;
+      if (!geminiApiKey) {
+        console.error("Gemini API key not found in environment variables");
+        return res.status(500).json({ error: "Gemini API key not configured. Please add GEMINI_API_KEY to your secrets." });
       }
 
-      console.log('Bible verse search using DeepSeek API with key:', `${deepSeekApiKey.substring(0, 8)}...`);
+      console.log('Bible verse search using Gemini API with key:', `${geminiApiKey.substring(0, 8)}...`);
 
       let prompt = `I need you to provide a Bible verse search response for: "${phrase}"\n`;
       prompt += `Bible Version: ${version}\n`;
@@ -1276,29 +1346,53 @@ Guidelines:
 - Make it user-friendly and spiritually uplifting
 - Ensure the verse is accurate for the specified version`;
 
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${deepSeekApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 800,
-          temperature: 0.7
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 1,
+            topP: 1,
+            maxOutputTokens: 800
+          },
+          safetySettings: [
+            {
+              category: "HARM_CATEGORY_HARASSMENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_HATE_SPEECH",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            }
+          ]
         })
       });
 
       if (!response.ok) {
-        throw new Error(`DeepSeek API error: ${response.status}`);
+        throw new Error(`Gemini API error: ${response.status}`);
       }
 
       const data = await response.json();
-      const aiResponse = data.choices[0]?.message?.content;
+      const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (!aiResponse) {
-        throw new Error('No response from DeepSeek API');
+        throw new Error('No response from Gemini API');
       }
 
       try {
@@ -1353,7 +1447,7 @@ Guidelines:
             throw new Error(`API.Bible error: ${biblesResponse.status}`);
           }
           const biblesData = await biblesResponse.json();
-          
+
           // Filter for English Bibles and popular versions
           const filteredBibles = biblesData.data.filter((bible: any) => 
             bible.language.id === 'eng' && 
@@ -1372,7 +1466,7 @@ Guidelines:
           if (!bibleId) {
             return res.status(400).json({ error: "bibleId parameter is required" });
           }
-          
+
           const booksResponse = await fetch(`${baseUrl}/bibles/${bibleId}/books`, { headers });
           if (!booksResponse.ok) {
             throw new Error(`API.Bible error: ${booksResponse.status}`);
@@ -1385,7 +1479,7 @@ Guidelines:
           if (!bibleId || !bookId) {
             return res.status(400).json({ error: "bibleId and bookId parameters are required" });
           }
-          
+
           const chaptersResponse = await fetch(`${baseUrl}/bibles/${bibleId}/books/${bookId}/chapters`, { headers });
           if (!chaptersResponse.ok) {
             throw new Error(`API.Bible error: ${chaptersResponse.status}`);
@@ -1398,13 +1492,13 @@ Guidelines:
           if (!bibleId || !chapterId) {
             return res.status(400).json({ error: "bibleId and chapterId parameters are required" });
           }
-          
+
           const versesResponse = await fetch(`${baseUrl}/bibles/${bibleId}/chapters/${chapterId}/verses`, { headers });
           if (!versesResponse.ok) {
             throw new Error(`API.Bible error: ${versesResponse.status}`);
           }
           const versesData = await versesResponse.json();
-          
+
           // Add reference information to each verse
           const versesWithReferences = versesData.data.map((verse: any) => {
             // Extract verse number from verse ID (e.g., "JHN.14.28" -> "28")
@@ -1415,7 +1509,7 @@ Guidelines:
               reference: `${verse.chapterId.replace('.', ' ')}:${verseNumber}`
             };
           });
-          
+
           return res.json({ verses: versesWithReferences });
 
         case 'verse':
@@ -1423,13 +1517,13 @@ Guidelines:
           if (!bibleId || !query) {
             return res.status(400).json({ error: "bibleId and verse ID (query) parameters are required" });
           }
-          
+
           console.log('🔍 Fetching verse:', `${baseUrl}/bibles/${bibleId}/verses/${query}`);
-          
+
           let verseData = null;
           let retryCount = 0;
           const maxRetries = 2;
-          
+
           // Retry mechanism for better reliability
           while (retryCount <= maxRetries && !verseData) {
             try {
@@ -1439,7 +1533,7 @@ Guidelines:
                   'Accept': 'application/json'
                 }
               });
-              
+
               if (!verseResponse.ok) {
                 console.error(`❌ API.Bible verse error: ${verseResponse.status} ${verseResponse.statusText}`);
                 if (retryCount < maxRetries) {
@@ -1451,7 +1545,7 @@ Guidelines:
                   throw new Error(`API.Bible error: ${verseResponse.status}`);
                 }
               }
-              
+
               verseData = await verseResponse.json();
               break;
             } catch (error) {
@@ -1463,13 +1557,13 @@ Guidelines:
               await new Promise(resolve => setTimeout(resolve, 1000));
             }
           }
-          
+
           console.log('✅ Individual verse API response:', JSON.stringify(verseData, null, 2));
-          
+
           const verse = verseData.data;
           let cleanContent = '';
           let hasValidContent = false;
-          
+
           // Multiple attempts to extract meaningful content
           if (verse.content) {
             cleanContent = verse.content.replace(/<[^>]*>/g, '').trim();
@@ -1477,20 +1571,20 @@ Guidelines:
               hasValidContent = true;
             }
           }
-          
+
           if (!hasValidContent && verse.text) {
             cleanContent = verse.text.replace(/<[^>]*>/g, '').trim();
             if (cleanContent && cleanContent.length > 5) {
               hasValidContent = true;
             }
           }
-          
+
           // Fallback content with helpful message
           if (!hasValidContent) {
             console.log(`⚠️ No valid content found for verse ${query}`);
             cleanContent = `This verse reference (${verse.reference || query}) exists but the content is not available from the API at this time.`;
           }
-          
+
           const formattedVerse = {
             ...verse,
             text: cleanContent,
@@ -1499,7 +1593,7 @@ Guidelines:
             verseNumber: verse.id ? verse.id.split('.').pop() : verse.verseNumber,
             contentLoaded: hasValidContent
           };
-          
+
           console.log('📝 Formatted verse response:', {
             id: formattedVerse.id,
             reference: formattedVerse.reference,
@@ -1507,7 +1601,7 @@ Guidelines:
             textLength: cleanContent.length,
             preview: cleanContent.substring(0, 50) + '...'
           });
-          
+
           return res.json({ verse: formattedVerse });
 
         case 'search':
@@ -1515,7 +1609,7 @@ Guidelines:
           if (!bibleId || !query) {
             return res.status(400).json({ error: "bibleId and query parameters are required" });
           }
-          
+
           const searchResponse = await fetch(
             `${baseUrl}/bibles/${bibleId}/search?query=${encodeURIComponent(query as string)}&limit=50`, 
             { headers }
@@ -1524,12 +1618,12 @@ Guidelines:
             throw new Error(`API.Bible error: ${searchResponse.status}`);
           }
           const searchData = await searchResponse.json();
-          
+
           console.log('Search API response:', JSON.stringify(searchData, null, 2));
-          
+
           // API.Bible returns different structures - check for both 'verses' and 'passages'
           let searchResults = [];
-          
+
           if (searchData.data) {
             // Try verses first (newer API format)
             if (searchData.data.verses && Array.isArray(searchData.data.verses)) {
@@ -1544,20 +1638,20 @@ Guidelines:
               searchResults = searchData.data;
             }
           }
-          
+
           console.log('Found search results:', searchResults.length);
-          
+
           const formattedResults = {
             verses: await Promise.all(searchResults.map(async (item: any) => {
               let cleanContent = '';
               let hasContentLoaded = false;
-              
+
               console.log(`Processing search result for ${item.id}:`, {
                 hasContent: !!item.content,
                 hasText: !!item.text,
                 reference: item.reference
               });
-              
+
               // First try to get content from the search result
               if (item.content && item.content.trim()) {
                 cleanContent = item.content.replace(/<[^>]*>/g, '').trim();
@@ -1565,14 +1659,14 @@ Guidelines:
                   hasContentLoaded = true;
                 }
               }
-              
+
               if (!hasContentLoaded && item.text && item.text.trim()) {
                 cleanContent = item.text.replace(/<[^>]*>/g, '').trim();
                 if (cleanContent && cleanContent.length > 10) {
                   hasContentLoaded = true;
                 }
               }
-              
+
               // If content is still empty or very short, try fetching the individual verse
               if (!hasContentLoaded) {
                 try {
@@ -1583,7 +1677,7 @@ Guidelines:
                       'Accept': 'application/json'
                     }
                   });
-                  
+
                   if (verseResponse.ok) {
                     const verseData = await verseResponse.json();
                     console.log(`✅ Individual verse response for ${item.id}:`, {
@@ -1592,7 +1686,7 @@ Guidelines:
                       hasText: !!verseData.data?.text,
                       contentPreview: verseData.data?.content?.substring(0, 50) + '...'
                     });
-                    
+
                     if (verseData.data?.content) {
                       const individualContent = verseData.data.content.replace(/<[^>]*>/g, '').trim();
                       if (individualContent && individualContent.length > 10) {
@@ -1613,17 +1707,17 @@ Guidelines:
                   console.error(`❌ Error fetching individual verse ${item.id}:`, error);
                 }
               }
-              
+
               // Alternative approach: try chapter-based fetching if individual verse fails
               if (!hasContentLoaded && item.chapterId) {
                 try {
                   console.log(`🔄 Trying chapter-based fetch for ${item.id} from chapter ${item.chapterId}`);
                   const chapterResponse = await fetch(`${baseUrl}/bibles/${bibleId}/chapters/${item.chapterId}/verses`, { headers });
-                  
+
                   if (chapterResponse.ok) {
                     const chapterData = await chapterResponse.json();
                     const targetVerse = chapterData.data?.find((v: any) => v.id === item.id);
-                    
+
                     if (targetVerse?.content) {
                       const chapterContent = targetVerse.content.replace(/<[^>]*>/g, '').trim();
                       if (chapterContent && chapterContent.length > 10) {
@@ -1637,15 +1731,15 @@ Guidelines:
                   console.error(`❌ Chapter-based fetch failed for ${item.id}:`, error);
                 }
               }
-              
+
               // Final fallback - provide a more helpful message
               if (!hasContentLoaded || !cleanContent) {
                 cleanContent = `Content temporarily unavailable for ${item.reference || item.id}. This verse exists but the content couldn't be loaded from the API.`;
                 console.log(`⚠️ Using fallback content for ${item.id}`);
               }
-              
+
               console.log(`📝 Final content for ${item.id}: ${cleanContent.substring(0, 100)}...`);
-              
+
               return {
                 id: item.id || item.verseId,
                 orgId: item.orgId,
@@ -1663,7 +1757,7 @@ Guidelines:
             query: query,
             total: searchResults.length
           };
-          
+
           return res.json({ results: formattedResults });
 
         default:
@@ -1685,10 +1779,10 @@ Guidelines:
   // Prayer suggestions endpoint
   app.get("/api/prayer-suggestions", async (req: Request, res: Response) => {
     try {
-      const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
-      if (!deepSeekApiKey) {
+      const geminiApiKey = process.env.GEMINI_API_KEY;
+      if (!geminiApiKey) {
         return res.status(500).json({ 
-          error: "DeepSeek API key not configured"
+          error: "Gemini API key not configured. Please add GEMINI_API_KEY to your secrets."
         });
       }
 
@@ -1706,35 +1800,50 @@ Respond in JSON format as an array:
   }
 ]`;
 
-      const deepSeekResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${deepSeekApiKey}`
         },
         body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [
+          contents: [{
+            parts: [{
+              text: `${systemPrompt}\n\nGenerate 4 meaningful prayer plan suggestions covering personal growth, family blessing, community healing, and global peace.`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.9,
+            topK: 1,
+            topP: 1,
+            maxOutputTokens: 1200
+          },
+          safetySettings: [
             {
-              role: 'system',
-              content: systemPrompt
+              category: "HARM_CATEGORY_HARASSMENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
             },
             {
-              role: 'user',
-              content: 'Generate 4 meaningful prayer plan suggestions covering personal growth, family blessing, community healing, and global peace.'
+              category: "HARM_CATEGORY_HATE_SPEECH",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
             }
-          ],
-          max_tokens: 1200,
-          temperature: 0.9
+          ]
         })
       });
 
-      if (!deepSeekResponse.ok) {
-        throw new Error('DeepSeek API request failed');
+      if (!geminiResponse.ok) {
+        throw new Error('Gemini API request failed');
       }
 
-      const data = await deepSeekResponse.json();
-      const aiResponse = data.choices[0]?.message?.content || "";
+      const data = await geminiResponse.json();
+      const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
       let suggestions;
       try {
@@ -1774,7 +1883,7 @@ Respond in JSON format as an array:
   app.get("/api/admin/analytics", async (req: Request, res: Response) => {
     try {
       console.log('Fetching analytics data...');
-      
+
       // Get user activities for the last 7 days
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -1816,15 +1925,15 @@ Respond in JSON format as an array:
       // Process data for charts
       const userActivities = [];
       const today = new Date();
-      
+
       for (let i = 6; i >= 0; i--) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
-        
+
         const dayAttendance = attendanceData?.filter(a => a.date === dateStr) || [];
         const daySessions = sessionsData?.filter(s => s.session_date === dateStr) || [];
-        
+
         userActivities.push({
           date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
           activities: dayAttendance.length + daySessions.length,
@@ -1837,11 +1946,11 @@ Respond in JSON format as an array:
       const prayerStats: Array<{timeSlot: string; coverage: number; attendance: number}> = [];
       const timeSlots = ['00:00-02:59', '03:00-05:59', '06:00-08:59', '09:00-11:59', 
                         '12:00-14:59', '15:00-17:59', '18:00-20:59', '21:00-23:59'];
-      
+
       timeSlots.forEach(slot => {
         const rangeStart = parseInt(slot.split('-')[0].split(':')[0]);
         const rangeEnd = parseInt(slot.split('-')[1].split(':')[0]);
-        
+
         const slotsInRange = slotsData?.filter(s => {
           if (!s.slot_time) return false;
           const slotHour = parseInt(s.slot_time.split(':')[0]);
@@ -1850,12 +1959,12 @@ Respond in JSON format as an array:
 
         const totalSlots = slotsInRange.length;
         const activeSlots = slotsInRange.filter(s => s.status === 'active').length;
-        
+
         const attendedSlots = attendanceData?.filter(a => {
           const slot = slotsInRange.find(s => s.user_id === a.user_id);
           return slot && (a.status === 'present' || a.status === 'attended');
         }).length || 0;
-        
+
         prayerStats.push({
           timeSlot: slot,
           coverage: totalSlots > 0 ? Math.round((activeSlots / totalSlots) * 100) : 0,
@@ -1876,7 +1985,7 @@ Respond in JSON format as an array:
         const weekStart = new Date(today);
         weekStart.setDate(weekStart.getDate() - (i * 7));
         const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekEnd.getDate() + 6);
+        weekEnd.setDate(weekStart.getDate() + 6);
 
         const weekSessions = sessionsData?.filter(s => {
           const sessionDate = new Date(s.session_date || s.created_at);
@@ -1887,7 +1996,7 @@ Respond in JSON format as an array:
           const createdDate = new Date(s.created_at);
           return createdDate >= weekStart && createdDate <= weekEnd;
         }) || [];
-        
+
         weeklyTrends.push({
           week: `Week ${4-i}`,
           newRegistrations: weekSlots.length,
@@ -2123,7 +2232,7 @@ Respond in JSON format as an array:
   app.post("/api/attendance/manual-log", async (req: Request, res: Response) => {
     try {
       const { userId, userEmail, duration } = req.body;
-      
+
       if (!userId || !userEmail) {
         return res.status(400).json({ error: "User ID and email are required" });
       }
@@ -2189,7 +2298,7 @@ Respond in JSON format as an array:
       }
 
       console.log(`✅ Manual attendance logged for ${userEmail} - ${sessionDuration} minutes`);
-      
+
       res.json({ 
         success: true, 
         message: "Manual attendance logged successfully",
@@ -2251,7 +2360,7 @@ Respond in JSON format as an array:
   app.post("/api/users/fcm-token", async (req: Request, res: Response) => {
     try {
       const { fcm_token } = req.body;
-      
+
       if (!fcm_token) {
         return res.status(400).json({ error: "FCM token is required" });
       }
@@ -2306,15 +2415,15 @@ Respond in JSON format as an array:
   app.post("/api/admin/force-process-zoom", async (req: Request, res: Response) => {
     try {
       console.log('🔄 Admin forcing Zoom meeting processing...');
-      
+
       const { zoomAttendanceTracker } = await import('./services/zoomAttendanceTracker.js');
-      
+
       // First test the connection
       console.log('Testing Zoom connection first...');
       await zoomAttendanceTracker.getAccessToken();
-      
+
       const result = await zoomAttendanceTracker.forceProcessRecentMeetings();
-      
+
       res.json({
         success: true,
         message: `Processed ${result.processed} meetings`,
@@ -2325,7 +2434,7 @@ Respond in JSON format as an array:
       res.status(500).json({ 
         error: "Failed to process Zoom meetings",
         details: error instanceof Error ? error.message : 'Unknown error',
-        suggestion: "Check your Zoom credentials in Secrets tab"
+        suggestion: "Check your Zoom credentials in the Secrets tab"
       });
     }
   });
@@ -2343,7 +2452,7 @@ Respond in JSON format as an array:
 
       const { zoomAttendanceTracker } = await import('./services/zoomAttendanceTracker.js');
       const result = await zoomAttendanceTracker.logManualAttendance(userId, userEmail || '', duration);
-      
+
       res.json({
         success: true,
         message: `Manual attendance logged successfully`,
@@ -2424,7 +2533,7 @@ Respond in JSON format as an array:
   app.post("/api/admin/generate-test-attendance", async (req: Request, res: Response) => {
     try {
       const { userId, days = 30 } = req.body;
-      
+
       console.log('🔄 Generating test attendance data...', { userId, days });
 
       // Get user's prayer slot
@@ -2500,7 +2609,7 @@ Respond in JSON format as an array:
   app.get("/api/admin/data-allocation", async (req: Request, res: Response) => {
     try {
       const { minAttendance = 0, maxAttendance = 100 } = req.query;
-      
+
       console.log('Fetching data allocation with attendance filter:', { minAttendance, maxAttendance });
 
       // Get all prayer slots with user information
@@ -2527,7 +2636,7 @@ Respond in JSON format as an array:
 
       // Process data for each intercessor
       const intercessorData = [];
-      
+
       for (const slot of prayerSlots || []) {
         // Get user profile for additional information (phone, full name)
         const { data: userProfile } = await supabaseAdmin
@@ -2545,7 +2654,7 @@ Respond in JSON format as an array:
         // Apply attendance filter
         if (attendancePercentage >= parseInt(minAttendance as string) && 
             attendancePercentage <= parseInt(maxAttendance as string)) {
-          
+
           intercessorData.push({
             user_id: slot.user_id,
             email: slot.user_email,
@@ -2629,9 +2738,9 @@ Respond in JSON format as an array:
     try {
       const { userId } = req.params;
       const { timeframe = '30' } = req.query; // days
-      
+
       console.log('Fetching prayer journey for user:', userId, 'timeframe:', timeframe);
-      
+
       // For now, always provide sample data since tables don't exist yet
       // In production, this would check for real data first
       console.log('Generating sample prayer journey data for visualization');
@@ -2750,17 +2859,17 @@ Respond in JSON format as an array:
     const sampleJourney = [];
     const sampleGoals = [];
     const sampleInsights = [];
-    
+
     const journeyTypes = ['milestone', 'reflection', 'insight', 'breakthrough'];
     const emotionalStates = ['joyful', 'peaceful', 'grateful', 'seeking', 'hopeful'];
     const prayerFocuses = ['thanksgiving', 'petition', 'intercession', 'praise'];
     const growthAreas = ['faith', 'patience', 'love', 'wisdom', 'forgiveness'];
-    
+
     // Generate journey entries over the timeframe
     for (let i = 0; i < Math.min(timeframeDays / 3, 10); i++) {
       const entryDate = new Date();
       entryDate.setDate(entryDate.getDate() - (i * 3));
-      
+
       sampleJourney.push({
         id: `sample_journey_${i}`,
         userId,
@@ -2776,7 +2885,7 @@ Respond in JSON format as an array:
         createdAt: entryDate.toISOString()
       });
     }
-    
+
     // Generate prayer goals
     sampleGoals.push({
       id: 'sample_goal_1',
@@ -2790,12 +2899,12 @@ Respond in JSON format as an array:
       isCompleted: false,
       createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
     });
-    
+
     // Generate spiritual insights
     for (let i = 0; i < Math.min(timeframeDays / 7, 4); i++) {
       const insightDate = new Date();
       insightDate.setDate(insightDate.getDate() - (i * 7));
-      
+
       sampleInsights.push({
         id: `sample_insight_${i}`,
         userId,
@@ -2810,7 +2919,7 @@ Respond in JSON format as an array:
         createdAt: insightDate.toISOString()
       });
     }
-    
+
     return {
       journey: sampleJourney,
       goals: sampleGoals,
@@ -2821,12 +2930,12 @@ Respond in JSON format as an array:
   }
 
   // Enhanced Prayer Planner API Endpoints
-  
+
   // Get daily prayer plan
   app.get("/api/prayer-planner/daily", async (req: Request, res: Response) => {
     try {
       const { date } = req.query;
-      
+
       if (!date) {
         return res.status(400).json({ error: "Date parameter is required" });
       }
@@ -2924,65 +3033,80 @@ Respond in JSON format as an array:
         return res.status(400).json({ error: "Prompt is required" });
       }
 
-      const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
-      if (!deepSeekApiKey) {
+      const geminiApiKey = process.env.GEMINI_API_KEY;
+      if (!geminiApiKey) {
         return res.status(500).json({ 
-          error: "DeepSeek API key not configured. Please add DEEPSEEK_API_KEY to your secrets."
+          error: "Gemini API key not configured. Please add GEMINI_API_KEY to your secrets."
         });
       }
 
       console.log('AI Prayer Assistant request:', { prompt, category });
 
-      const systemPrompt = `You are DeepSeek Assistant, a helpful AI companion for Christian intercessors. 
-      
-Your task is to help generate meaningful prayer points based on the user's request. 
+      const systemPrompt = `You are "The Intercessor," an AI prayer assistant for Global Intercessors. Generate a personalized prayer for the given category/topic.
 
-Create a structured prayer point that includes:
-1. A clear, specific title
-2. Detailed prayer content with guidance on how to pray
-3. A relevant Bible verse to support the prayer
-4. An explanation of the spiritual significance
+Guidelines:
+- Be biblically sound and theologically accurate
+- Use encouraging, faith-building language
+- Include specific prayer points
+- Provide relevant scripture reference
+- Keep it heartfelt and personal
 
-Category context: ${category || 'general prayer'}
-User request: ${prompt}
-
-Please respond in JSON format:
+Format your response as JSON:
 {
-  "title": "Clear, specific prayer point title",
-  "content": "Detailed prayer content with specific guidance on how to pray about this topic",
-  "bibleVerse": "Relevant Bible verse text",
-  "reference": "Bible verse reference (Book Chapter:Verse)",
+  "prayer": "The complete prayer text with proper formatting",
+  "scripture": "Bible verse reference (Book Chapter:Verse)",
   "explanation": "Brief explanation of the spiritual significance and why this prayer matters"
 }
 
 Make it personal, biblical, and actionable for intercession.`;
 
-      const response = await fetch('https://api.deepseek.com/chat/completions', {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${deepSeekApiKey}`
         },
         body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.7,
-          max_tokens: 1000
+          contents: [{
+            parts: [{
+              text: `${systemPrompt}\n\nUser request: ${prompt}`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 1,
+            topP: 1,
+            maxOutputTokens: 1000,
+          },
+          safetySettings: [
+            {
+              category: "HARM_CATEGORY_HARASSMENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_HATE_SPEECH",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            }
+          ]
         })
       });
 
       if (!response.ok) {
-        throw new Error(`DeepSeek API error: ${response.status}`);
+        throw new Error(`Gemini API error: ${response.status}`);
       }
 
       const data = await response.json();
-      const aiResponse = data.choices[0]?.message?.content;
+      const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (!aiResponse) {
-        throw new Error('No response from DeepSeek API');
+        throw new Error('No response from Gemini API');
       }
 
       try {
@@ -2991,11 +3115,9 @@ Make it personal, biblical, and actionable for intercession.`;
       } catch (parseError) {
         // Fallback response if JSON parsing fails
         res.json({
-          title: "AI-Generated Prayer Point",
-          content: aiResponse,
-          bibleVerse: "The Lord is near to all who call on him, to all who call on him in truth.",
-          reference: "Psalm 145:18",
-          explanation: "This prayer point was generated to help guide your intercession time with specific focus and biblical foundation."
+          prayer: aiResponse,
+          scripture: "The Lord is near to all who call on him, to all who call on him in truth.",
+          explanation: "This prayer was generated to help guide your intercession time with specific focus and biblical foundation."
         });
       }
     } catch (error) {
@@ -3016,7 +3138,7 @@ Make it personal, biblical, and actionable for intercession.`;
       startOfWeek.setDate(today.getDate() - today.getDay());
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(startOfWeek.getDate() + 6);
-      
+
       // Get previous week dates
       const startOfPrevWeek = new Date(startOfWeek);
       startOfPrevWeek.setDate(startOfWeek.getDate() - 7);
@@ -3078,7 +3200,7 @@ Make it personal, biblical, and actionable for intercession.`;
       const currentTotal = Object.values(sampleCurrentWeek).reduce((a, b) => a + b, 0);
       const previousTotal = Object.values(samplePreviousWeek).reduce((a, b) => a + b, 0);
       const totalSlotsAvailable = 336; // 48 slots per day × 7 days
-      
+
       // Find highest and lowest coverage days
       const currentEntries = Object.entries(sampleCurrentWeek);
       const highestDay = currentEntries.reduce((a, b) => b[1] > a[1] ? b : a)[0];
@@ -3137,18 +3259,18 @@ Make it personal, biblical, and actionable for intercession.`;
   app.get("/api/users/profile/:userId", async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
-      
+
       const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .single();
-      
+
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching user profile:', error);
         return res.status(500).json({ error: 'Failed to fetch user profile' });
       }
-      
+
       // If no profile exists, return a default structure
       if (!profile) {
         const { data: authUser } = await supabase.auth.admin.getUserById(userId);
@@ -3171,28 +3293,28 @@ Make it personal, biblical, and actionable for intercession.`;
           updatedAt: new Date()
         });
       }
-      
+
       res.json(profile);
     } catch (error) {
       console.error('Error in get user profile:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   });
-  
+
   app.put("/api/users/profile/:userId", async (req: Request, res: Response) => {
     try {
       const { userId } = req.params;
       const profileData = req.body;
-      
+
       // First check if profile exists
       const { data: existingProfile } = await supabase
         .from('user_profiles')
         .select('id')
         .eq('id', userId)
         .single();
-      
+
       let result;
-      
+
       if (existingProfile) {
         // Update existing profile
         const { data, error } = await supabase
@@ -3204,12 +3326,12 @@ Make it personal, biblical, and actionable for intercession.`;
           .eq('id', userId)
           .select()
           .single();
-        
+
         if (error) {
           console.error('Error updating user profile:', error);
           return res.status(500).json({ error: 'Failed to update user profile' });
         }
-        
+
         result = data;
       } else {
         // Create new profile
@@ -3223,15 +3345,15 @@ Make it personal, biblical, and actionable for intercession.`;
           })
           .select()
           .single();
-        
+
         if (error) {
           console.error('Error creating user profile:', error);
           return res.status(500).json({ error: 'Failed to create user profile' });
         }
-        
+
         result = data;
       }
-      
+
       res.json(result);
     } catch (error) {
       console.error('Error in update user profile:', error);
@@ -3242,65 +3364,80 @@ Make it personal, biblical, and actionable for intercession.`;
   app.post("/api/admin/generate-weekly-report", async (req: Request, res: Response) => {
     try {
       const reportData = req.body;
-      
+
       // Generate AI-powered narrative for the report
       const prompt = `Generate a comprehensive weekly prayer report narrative based on this data:
-      
+
       Current Week Coverage: ${reportData.current_week.total_slots_covered} slots (${reportData.coverage_analysis.coverage_rate}%)
       Previous Week Coverage: ${reportData.previous_week.total_slots_covered} slots
       Total Available Slots: ${reportData.total_slots_available}
-      
+
       Daily Coverage Current Week: ${JSON.stringify(reportData.current_week.daily_coverage)}
       Daily Coverage Previous Week: ${JSON.stringify(reportData.previous_week.daily_coverage)}
-      
+
       Highest Coverage Day: ${reportData.coverage_analysis.highest_coverage_day}
       Lowest Coverage Day: ${reportData.coverage_analysis.lowest_coverage_day}
-      
+
       EFZ Prayer Program Week ${reportData.efz_prayer_program.week_number}:
       - Wednesday: ${reportData.efz_prayer_program.wednesday_session.participants} participants, ${reportData.efz_prayer_program.wednesday_session.gi_participants} GI participants (${reportData.efz_prayer_program.wednesday_session.participation_rate})
       - Sunday: ${reportData.efz_prayer_program.sunday_session.participants} participants, ${reportData.efz_prayer_program.sunday_session.gi_participants} GI participants (${reportData.efz_prayer_program.sunday_session.participation_rate})
-      
+
       Please provide a comprehensive analysis including:
       1. Overall participation summary
       2. Week-over-week comparison
       3. Daily coverage insights
       4. EFZ program analysis
       5. Recommendations for improvement
-      
+
       Format as structured text suitable for a professional report.`;
 
       let narrative = "Report narrative generated successfully.";
-      
+
       // Try to get AI narrative, but continue if it fails
       try {
-        const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
-        if (deepSeekApiKey) {
-          const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        const geminiApiKey = process.env.GEMINI_API_KEY;
+        if (geminiApiKey) {
+          const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${deepSeekApiKey}`
             },
             body: JSON.stringify({
-              model: "deepseek-chat",
-              messages: [
+              contents: [{
+                parts: [{
+                  text: prompt
+                }]
+              }],
+              generationConfig: {
+                temperature: 0.7,
+                topK: 1,
+                topP: 1,
+                maxOutputTokens: 2000
+              },
+              safetySettings: [
                 {
-                  role: "system",
-                  content: "You are a professional report writer specializing in prayer ministry analytics. Provide comprehensive, encouraging, and actionable insights."
+                  category: "HARM_CATEGORY_HARASSMENT",
+                  threshold: "BLOCK_MEDIUM_AND_ABOVE"
                 },
                 {
-                  role: "user",
-                  content: prompt
+                  category: "HARM_CATEGORY_HATE_SPEECH",
+                  threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                },
+                {
+                  category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                  threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                },
+                {
+                  category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                  threshold: "BLOCK_MEDIUM_AND_ABOVE"
                 }
-              ],
-              max_tokens: 2000,
-              temperature: 0.7
+              ]
             })
           });
 
           if (response.ok) {
             const aiResponse = await response.json();
-            narrative = aiResponse.choices[0]?.message?.content || "Report narrative generated successfully.";
+            narrative = aiResponse.candidates?.[0]?.content?.parts?.[0]?.text || "Report narrative generated successfully.";
           }
         }
       } catch (aiError) {
@@ -3488,27 +3625,27 @@ Make it personal, biblical, and actionable for intercession.`;
           right: '15mm'
         }
       };
-      
+
       const file = { content: htmlContent };
-      
+
       try {
         const pdfBuffer = await htmlPdf.generatePdf(file, options);
-        
+
         // Set proper PDF headers
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="Global_Intercessors_Weekly_Report_${reportData.report_date.replace(/\s+/g, '_')}.pdf"`);
-        
+
         // Send the actual PDF buffer
         res.send(pdfBuffer);
       } catch (pdfError) {
         console.error('PDF generation failed:', pdfError);
-        
+
         // Fallback to HTML download if PDF generation fails
         res.setHeader('Content-Type', 'text/html');
         res.setHeader('Content-Disposition', `attachment; filename="Global_Intercessors_Weekly_Report_${reportData.report_date.replace(/\s+/g, '_')}.html"`);
         res.send(htmlContent);
       }
-      
+
     } catch (error) {
       console.error('Error generating weekly report:', error);
       res.status(500).json({ error: 'Failed to generate weekly report' });
@@ -3519,13 +3656,13 @@ Make it personal, biblical, and actionable for intercession.`;
   app.post("/api/fix-attendance", async (req: Request, res: Response) => {
     try {
       console.log('🔧 Creating attendance record for completed prayer session...');
-      
+
       const { userId, userEmail, duration, slotTime } = req.body;
-      
+
       if (!userId || !userEmail || !duration || !slotTime) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
-      
+
       const now = new Date();
       const attendanceData = {
         user_id: userId,
@@ -3546,14 +3683,14 @@ Make it personal, biblical, and actionable for intercession.`;
         .from('attendance_log')
         .insert([attendanceData])
         .select();
-      
+
       if (attendanceError) {
         console.error('❌ Attendance error:', attendanceError);
         return res.status(500).json({ error: 'Failed to create attendance record', details: attendanceError });
       }
-      
+
       console.log('✅ Attendance record created:', attendanceResult);
-      
+
       // Also create prayer session record
       const sessionData = {
         user_id: userId,
@@ -3564,26 +3701,26 @@ Make it personal, biblical, and actionable for intercession.`;
         session_type: 'zoom',
         completed: true
       };
-      
+
       const { data: sessionResult, error: sessionError } = await supabase
         .from('prayer_sessions')
         .insert([sessionData])
         .select();
-      
+
       if (sessionError) {
         console.error('❌ Session error:', sessionError);
         return res.status(500).json({ error: 'Failed to create prayer session', details: sessionError });
       }
-      
+
       console.log('✅ Prayer session created:', sessionResult);
-      
+
       res.json({ 
         success: true, 
         message: 'Attendance and prayer session recorded successfully',
         attendance: attendanceResult,
         session: sessionResult
       });
-      
+
     } catch (error) {
       console.error('❌ Error fixing attendance:', error);
       res.status(500).json({ 
