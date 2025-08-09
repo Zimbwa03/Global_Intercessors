@@ -1488,7 +1488,7 @@ Guidelines:
           console.log('Found search results:', searchResults.length);
           
           const formattedResults = {
-            verses: searchResults.map((item: any) => {
+            verses: await Promise.all(searchResults.map(async (item: any) => {
               // Clean HTML tags from content and extract meaningful text
               let cleanContent = '';
               if (item.content) {
@@ -1497,9 +1497,17 @@ Guidelines:
                 cleanContent = item.text.replace(/<[^>]*>/g, '').trim();
               }
               
-              // If still empty, try to extract from other possible fields
-              if (!cleanContent && item.verse) {
-                cleanContent = item.verse.replace(/<[^>]*>/g, '').trim();
+              // If content is still empty or unavailable, fetch the full verse content
+              if (!cleanContent || cleanContent === 'Verse content not available') {
+                try {
+                  const verseResponse = await fetch(`${baseUrl}/bibles/${bibleId}/verses/${item.id}`, { headers });
+                  if (verseResponse.ok) {
+                    const verseData = await verseResponse.json();
+                    cleanContent = verseData.data.content ? verseData.data.content.replace(/<[^>]*>/g, '').trim() : cleanContent;
+                  }
+                } catch (error) {
+                  console.error('Failed to fetch individual verse content:', error);
+                }
               }
               
               return {
@@ -1514,7 +1522,7 @@ Guidelines:
                 verseNumber: item.verseNumber,
                 text: cleanContent || 'Verse content not available'
               };
-            }),
+            })),
             query: query,
             total: searchResults.length
           };

@@ -224,6 +224,26 @@ export function BibleVerseSearch() {
     return 'Verse content not available';
   };
 
+  // Function to highlight search terms in verse text
+  const highlightSearchTerms = (text: string, searchTerm: string) => {
+    if (!searchTerm || !text) return text;
+    
+    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    return text.split(regex).map((part, index) => {
+      if (regex.test(part)) {
+        return (
+          <span 
+            key={index} 
+            className="bg-gradient-to-r from-yellow-400 to-amber-500 text-black px-1 py-0.5 rounded font-semibold shadow-sm"
+          >
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   const handleCopyVerse = (verse: BibleVerse) => {
     const text = `${getVerseText(verse)} - ${verse.reference || 'Bible'}`;
     navigator.clipboard.writeText(text);
@@ -599,7 +619,7 @@ export function BibleVerseSearch() {
                       </div>
                     </div>
                     <p className="text-gray-700 leading-relaxed">
-                      "{getVerseText(verse)}"
+                      "{highlightSearchTerms(getVerseText(verse), searchQuery)}"
                     </p>
                   </motion.div>
                 ))}
