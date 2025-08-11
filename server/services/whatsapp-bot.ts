@@ -706,8 +706,14 @@ Provide only the summarized content without any formatting.`;
         case 'hi':
         case 'hello':
           console.log(`🚀 Executing START command for ${phoneNumber}`);
-          await this.handleStartCommand(phoneNumber);
-          console.log(`✅ START command completed for ${phoneNumber}`);
+          try {
+            await this.handleStartCommand(phoneNumber);
+            console.log(`✅ START command completed for ${phoneNumber}`);
+          } catch (startError) {
+            console.error(`❌ START command failed for ${phoneNumber}:`, startError.message);
+            // Fallback response
+            await this.sendMessage(phoneNumber, "🙏 Welcome to Global Intercessors Prayer Bot!\n\nI'm here to support your spiritual journey. Type 'menu' for options.\n\nGod bless your intercession! 🌟");
+          }
           break;
 
         case '/help':
@@ -812,8 +818,12 @@ Provide only the summarized content without any formatting.`;
   private async handleStartCommand(phoneNumber: string): Promise<void> {
     console.log(`🚀 Processing start command for ${phoneNumber}`);
 
-    // Register user
-    await this.registerUser(phoneNumber);
+    // Try to register user, but continue even if it fails
+    try {
+      await this.registerUser(phoneNumber);
+    } catch (error) {
+      console.warn('⚠️ User registration failed, continuing with welcome message:', error.message);
+    }
 
     const welcomeMessage = `🙏 Welcome to Global Intercessors Prayer Bot!
 
@@ -826,12 +836,17 @@ I'm here to support your spiritual journey with:
 
 God bless your intercession! 🌟`;
 
-    // Send welcome message with interactive buttons
-    await this.sendInteractiveMessage(phoneNumber, welcomeMessage, [
-      { id: 'devotional', title: '📖 Today\'s Devotional' },
-      { id: 'remind', title: '⏰ Enable Reminders' },
-      { id: 'help', title: '📋 Show Menu' }
-    ]);
+    // Always try to send welcome message, fallback to simple message if interactive fails
+    try {
+      await this.sendInteractiveMessage(phoneNumber, welcomeMessage, [
+        { id: 'devotional', title: '📖 Today\'s Devotional' },
+        { id: 'remind', title: '⏰ Enable Reminders' },
+        { id: 'help', title: '📋 Show Menu' }
+      ]);
+    } catch (error) {
+      console.warn('⚠️ Interactive message failed, sending simple welcome:', error.message);
+      await this.sendMessage(phoneNumber, `${welcomeMessage}\n\nType 'menu' to see available options.`);
+    }
   }
 
   // Send help menu with available commands
@@ -946,41 +961,55 @@ Select your preferred option:`;
 
   // Database operations for user management
   private async registerUser(phoneNumber: string): Promise<void> {
-    if (!this.db) return;
+    if (!this.db) {
+      console.log(`📝 No database connection - skipping user registration for ${phoneNumber}`);
+      return;
+    }
 
     try {
-      // Check if user exists
-      const existingUser = await this.db
-        .select()
-        .from(whatsAppBotUsers)
-        .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber))
-        .limit(1);
+      // Set a timeout for database operations
+      const dbTimeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database operation timeout')), 5000)
+      );
 
-      if (existingUser.length === 0) {
-        // Register new user
-        await this.db.insert(whatsAppBotUsers).values({
-          userId: `whatsapp_user_${phoneNumber.replace('+', '')}`,
-          whatsAppNumber: phoneNumber,
-          isActive: true,
-          reminderPreferences: JSON.stringify({
-            dailyDevotionals: true,
-            prayerSlotReminders: true,
-            customReminderTime: null,
-            timezone: 'UTC'
-          }),
-          personalReminderTime: null,
-          timezone: 'UTC',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
+      const dbOperation = async () => {
+        // Check if user exists
+        const existingUser = await this.db
+          .select()
+          .from(whatsAppBotUsers)
+          .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber))
+          .limit(1);
 
-        console.log(`✅ New user registered: ${phoneNumber}`);
+        if (existingUser.length === 0) {
+          // Register new user
+          await this.db.insert(whatsAppBotUsers).values({
+            userId: `whatsapp_user_${phoneNumber.replace('+', '')}`,
+            whatsAppNumber: phoneNumber,
+            isActive: true,
+            reminderPreferences: JSON.stringify({
+              dailyDevotionals: true,
+              prayerSlotReminders: true,
+              customReminderTime: null,
+              timezone: 'UTC'
+            }),
+            personalReminderTime: null,
+            timezone: 'UTC',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
 
-        // Send welcome message
-        await this.sendWelcomeMessage(phoneNumber);
-      }
+          console.log(`✅ New user registered: ${phoneNumber}`);
+        } else {
+          console.log(`👤 User already exists: ${phoneNumber}`);
+        }
+      };
+
+      // Race between database operation and timeout
+      await Promise.race([dbOperation(), dbTimeout]);
+
     } catch (error) {
-      console.error('Error registering user:', error);
+      console.error(`❌ Error registering user ${phoneNumber}:`, error.message);
+      // Don't throw error - continue with bot functionality even if registration fails
     }
   }
 
@@ -1874,8 +1903,16 @@ Type 'menu' to see all available options!`);
     }
   }
 
-  private async sendMessage(to: string, message: string, options: any = {}): Promise<void> {
+  private async sendMessage(to: string, message: string, options: any = {}): Promise<boolean> {
     try {
+      console.log(`📤 Sending message to ${to}: ${message.substring(0, 50)}...`);
+
+      if (!this.config.phoneNumberId || !this.config.accessToken) {
+        console.log(`❌ WhatsApp credentials missing - SIMULATION MODE`);
+        console.log(`🤖 Would send to ${to}: ${message}`);
+        return false;
+      }
+
       const url = `https://graph.facebook.com/v18.0/${this.phoneNumberId}/messages`;
 
       const payload = {
@@ -1887,7 +1924,7 @@ Type 'menu' to see all available options!`);
 
       // Use AbortController for timeout control
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
       const response = await fetch(url, {
         method: 'POST',
@@ -1903,19 +1940,20 @@ Type 'menu' to see all available options!`);
 
       if (!response.ok) {
         const error = await response.text();
-        console.error('WhatsApp API Error:', error);
-        throw new Error(`WhatsApp API error: ${response.status} ${error}`);
+        console.error(`❌ WhatsApp API Error (${response.status}):`, error);
+        return false;
       }
 
       const result = await response.json();
-      console.log(`Message sent successfully to ${to}:`, result);
+      console.log(`✅ Message sent successfully to ${to}`);
+      return true;
     } catch (error) {
       if (error.name === 'AbortError') {
-        console.error('WhatsApp API request timed out');
+        console.error('❌ WhatsApp API request timed out');
       } else {
-        console.error('Error sending WhatsApp message:', error);
+        console.error('❌ Error sending WhatsApp message:', error.message);
       }
-      throw error;
+      return false;
     }
   }
 
