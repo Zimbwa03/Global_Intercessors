@@ -2,23 +2,6 @@ import cron from 'node-cron';
 import { supabase } from '../supabase.js';
 import fetch from 'node-fetch';
 
-import { 
-  whatsAppBotUsers, 
-  whatsAppMessages, 
-  whatsAppInteractions,
-  dailyDevotionals,
-  prayerSlots,
-  userProfiles,
-  updates,
-  type WhatsAppBotUser,
-  type InsertWhatsAppBotUser,
-  type InsertWhatsAppMessage,
-  type InsertWhatsAppInteraction,
-  type InsertDailyDevotional,
-  type PrayerSlot,
-  type UserProfile
-} from '../../shared/schema.js';
-
 interface WhatsAppAPIConfig {
   phoneNumberId: string;
   accessToken: string;
@@ -240,40 +223,46 @@ Format as plain text without formatting.`;
       const today = new Date().toISOString().split('T')[0];
 
       // Check if devotional already exists for today
-      const existingDevotional = await this.db
-        .select()
-        .from(dailyDevotionals)
-        .where(eq(dailyDevotionals.date, today))
-        .limit(1);
+      const { data: existingDevotional, error: devotionalError } = await supabase
+        .from('daily_devotionals')
+        .select('*')
+        .eq('date', today)
+        .single();
 
       let devotional: DevotionalContent;
 
-      if (existingDevotional.length > 0) {
+      if (!devotionalError && existingDevotional) {
         devotional = {
-          devotionText: existingDevotional[0].devotionText,
-          bibleVerse: existingDevotional[0].bibleVerse,
-          verseReference: existingDevotional[0].verseReference
+          devotionText: existingDevotional.devotion_text,
+          bibleVerse: existingDevotional.bible_verse,
+          verseReference: existingDevotional.verse_reference
         };
       } else {
         // Generate new devotional
         devotional = await this.generateDailyDevotional();
 
         // Save to database
-        await this.db.insert(dailyDevotionals).values({
-          date: today,
-          devotionText: devotional.devotionText,
-          bibleVerse: devotional.bibleVerse,
-          verseReference: devotional.verseReference
-        });
+        const { error: insertError } = await supabase
+          .from('daily_devotionals')
+          .insert({
+            date: today,
+            devotion_text: devotional.devotionText,
+            bible_verse: devotional.bibleVerse,
+            verse_reference: devotional.verseReference
+          });
+
+        if (insertError) {
+          console.error('Error saving devotional:', insertError);
+        }
       }
 
-      // Get all active WhatsApp bot users
+      // Get all active WhatsApp bot users with their profiles
       const { data: botUsers, error } = await supabase
         .from('whatsapp_bot_users')
         .select(`
           whatsapp_number,
           user_id,
-          user_profiles!inner(full_name)
+          user_profiles(full_name)
         `)
         .eq('is_active', true);
 
@@ -283,15 +272,8 @@ Format as plain text without formatting.`;
       }
 
       // Send devotional to each user
-      for (const user of botUsers) {
-        // Get user's name from profile
-        const userProfile = await this.db
-          .select()
-          .from(userProfiles)
-          .where(eq(userProfiles.id, user.userId))
-          .limit(1);
-
-        const userName = userProfile[0]?.fullName?.split(' ')[0] || userProfile[0]?.full_name?.split(' ')[0] || 'Dear Intercessor';
+      for (const user of botUsers || []) {
+        const userName = user.user_profiles?.full_name?.split(' ')[0] || 'Dear Intercessor';
 
         const message = `Good morning, ${userName}! 🌅
 
@@ -303,22 +285,28 @@ Scripture for Today:
 
 May God bless your day and strengthen your prayers! 🙏`;
 
-        const success = await this.sendWhatsAppMessage(user.whatsAppNumber, message);
+        const success = await this.sendWhatsAppMessage(user.whatsapp_number, message);
 
         // Log the message
-        await this.db.insert(whatsAppMessages).values({
-          recipientNumber: user.whatsAppNumber,
-          messageType: 'devotional',
-          messageContent: message,
-          status: success ? 'sent' : 'failed',
-          sentAt: success ? new Date() : null
-        });
+        const { error: logError } = await supabase
+          .from('whatsapp_messages')
+          .insert({
+            recipient_number: user.whatsapp_number,
+            message_type: 'devotional',
+            message_content: message,
+            status: success ? 'sent' : 'failed',
+            sent_at: success ? new Date().toISOString() : null
+          });
+
+        if (logError) {
+          console.warn('Error logging message:', logError);
+        }
 
         // Small delay between messages
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
-      console.log(`Daily devotionals sent to ${botUsers.length} users`);
+      console.log(`Daily devotionals sent to ${botUsers?.length || 0} users`);
     } catch (error) {
       console.error('Error sending daily devotionals:', error);
     }
@@ -332,25 +320,32 @@ May God bless your day and strengthen your prayers! 🙏`;
       const currentHour = parseInt(currentTime.split(':')[0]);
       const currentMinute = parseInt(currentTime.split(':')[1]);
 
-      // Get active prayer slots
-      const activeSlots = await this.db
-        .select({
-          slotTime: prayerSlots.slotTime,
-          userId: prayerSlots.userId,
-          reminderPreferences: whatsAppBotUsers.reminderPreferences,
-          whatsAppNumber: whatsAppBotUsers.whatsAppNumber,
-          fullName: userProfiles.fullName
-        })
-        .from(prayerSlots)
-        .leftJoin(whatsAppBotUsers, eq(prayerSlots.userId, whatsAppBotUsers.userId))
-        .leftJoin(userProfiles, eq(prayerSlots.userId, userProfiles.id))
-        .where(eq(prayerSlots.status, 'active'));
+      // Get active prayer slots with user information
+      const { data: activeSlots, error } = await supabase
+        .from('prayer_slots')
+        .select(`
+          slot_time,
+          user_id,
+          whatsapp_bot_users!inner(
+            whatsapp_number,
+            reminder_preferences
+          ),
+          user_profiles(full_name)
+        `)
+        .eq('status', 'active')
+        .not('whatsapp_bot_users.whatsapp_number', 'is', null);
 
-      for (const slot of activeSlots) {
-        if (!slot.whatsAppNumber) continue;
+      if (error) {
+        console.error('Error fetching prayer slots:', error);
+        return;
+      }
 
-        const slotParts = slot.slotTime.split('–'); // Expecting "HH:MM–HH:MM"
-        if (slotParts.length !== 2) continue;
+      for (const slot of activeSlots || []) {
+        const whatsAppNumber = slot.whatsapp_bot_users?.whatsapp_number;
+        if (!whatsAppNumber) continue;
+
+        const slotParts = slot.slot_time?.split('–'); // Expecting "HH:MM–HH:MM"
+        if (!slotParts || slotParts.length !== 2) continue;
 
         const slotStartTimeStr = slotParts[0];
         const slotStartHour = parseInt(slotStartTimeStr.split(':')[0]);
@@ -362,9 +357,9 @@ May God bless your day and strengthen your prayers! 🙏`;
         const timeDifferenceMinutes = slotTotalMinutes - currentTotalMinutes;
 
         let preferences: any = {};
-        if (slot.reminderPreferences) {
+        if (slot.whatsapp_bot_users?.reminder_preferences) {
           try {
-            preferences = JSON.parse(slot.reminderPreferences);
+            preferences = JSON.parse(slot.whatsapp_bot_users.reminder_preferences);
           } catch (e) {
             console.error('Error parsing reminder preferences:', e);
           }
@@ -374,17 +369,17 @@ May God bless your day and strengthen your prayers! 🙏`;
 
         // Check for 1-hour reminder
         if (reminderTiming === '1hour' && timeDifferenceMinutes === 60) {
-          await this.sendPrayerSlotReminder(slot.whatsAppNumber, slot.fullName, slot.slotTime, '1 hour');
+          await this.sendPrayerSlotReminder(whatsAppNumber, slot.user_profiles?.full_name, slot.slot_time, '1 hour');
         }
 
         // Check for 30-minute reminder
         if (reminderTiming === '30min' && timeDifferenceMinutes === 30) {
-          await this.sendPrayerSlotReminder(slot.whatsAppNumber, slot.fullName, slot.slotTime, '30 minutes');
+          await this.sendPrayerSlotReminder(whatsAppNumber, slot.user_profiles?.full_name, slot.slot_time, '30 minutes');
         }
 
         // Check for 15-minute reminder
         if (reminderTiming === '15min' && timeDifferenceMinutes === 15) {
-          await this.sendPrayerSlotReminder(slot.whatsAppNumber, slot.fullName, slot.slotTime, '15 minutes');
+          await this.sendPrayerSlotReminder(whatsAppNumber, slot.user_profiles?.full_name, slot.slot_time, '15 minutes');
         }
       }
     } catch (error) {
@@ -406,13 +401,19 @@ Psalm 55:17 - "Evening, morning and noon I cry out in distress, and he hears my 
       const success = await this.sendWhatsAppMessage(whatsAppNumber, message);
 
       // Log the message
-      await this.db.insert(whatsAppMessages).values({
-        recipientNumber: whatsAppNumber,
-        messageType: 'reminder',
-        messageContent: message,
-        status: success ? 'sent' : 'failed',
-        sentAt: success ? new Date() : null
-      });
+      const { error } = await supabase
+        .from('whatsapp_messages')
+        .insert({
+          recipient_number: whatsAppNumber,
+          message_type: 'reminder',
+          message_content: message,
+          status: success ? 'sent' : 'failed',
+          sent_at: success ? new Date().toISOString() : null
+        });
+
+      if (error) {
+        console.warn('Error logging prayer reminder:', error);
+      }
 
       console.log(`Prayer slot reminder sent to ${userName} for ${slotTime} (${timeRemaining} before)`);
     } catch (error) {
@@ -1040,25 +1041,21 @@ ${devotional.devotionText}
 
   // Get today's devotional content
   private async getTodaysDevotional(): Promise<DevotionalContent> {
-    if (!this.db) {
-      return this.getFallbackDevotional();
-    }
-
     try {
       const today = new Date().toISOString().split('T')[0];
 
       // Check if we have today's devotional in database
-      const existingDevotional = await this.db
-        .select()
-        .from(dailyDevotionals)
-        .where(eq(dailyDevotionals.date, today))
-        .limit(1);
+      const { data: existingDevotional, error } = await supabase
+        .from('daily_devotionals')
+        .select('*')
+        .eq('date', today)
+        .single();
 
-      if (existingDevotional.length > 0) {
+      if (!error && existingDevotional) {
         return {
-          devotionText: existingDevotional[0].devotionText,
-          bibleVerse: existingDevotional[0].bibleVerse,
-          verseReference: existingDevotional[0].verseReference
+          devotionText: existingDevotional.devotion_text,
+          bibleVerse: existingDevotional.bible_verse,
+          verseReference: existingDevotional.verse_reference
         };
       }
 
@@ -1066,12 +1063,18 @@ ${devotional.devotionText}
       const newDevotional = await this.generateDevotionalWithAI();
 
       // Save to database
-      await this.db.insert(dailyDevotionals).values({
-        date: today,
-        devotionText: newDevotional.devotionText,
-        bibleVerse: newDevotional.bibleVerse,
-        verseReference: newDevotional.verseReference
-      });
+      const { error: insertError } = await supabase
+        .from('daily_devotionals')
+        .insert({
+          date: today,
+          devotion_text: newDevotional.devotionText,
+          bible_verse: newDevotional.bibleVerse,
+          verse_reference: newDevotional.verseReference
+        });
+
+      if (insertError) {
+        console.warn('Error saving devotional to database:', insertError);
+      }
 
       return newDevotional;
     } catch (error) {
@@ -1291,43 +1294,41 @@ DECLARATION: [a short declaration prayer based on the devotional]`;
 
   // Get user name from user profiles table for personalization
   private async getUserName(phoneNumber: string): Promise<string> {
-    if (!this.db) {
-      return 'Beloved Intercessor';
-    }
-
     try {
-      // First, try to get from WhatsApp bot users table to get userId
-      const whatsAppUser = await this.db
-        .select()
-        .from(whatsAppBotUsers)
-        .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber))
-        .limit(1);
+      // Get user info from WhatsApp bot users table with joined profile
+      const { data: user, error } = await supabase
+        .from('whatsapp_bot_users')
+        .select(`
+          user_id,
+          user_profiles(full_name)
+        `)
+        .eq('whatsapp_number', phoneNumber)
+        .single();
 
-      if (whatsAppUser.length > 0) {
-        const userId = whatsAppUser[0].userId;
-        
-        // Now get the user profile by userId
-        const userProfile = await this.db
-          .select()
-          .from(userProfiles)
-          .where(eq(userProfiles.userId, userId))
-          .limit(1);
-
-        if (userProfile.length > 0) {
-          const fullName = userProfile[0].fullName;
-          if (fullName) {
-            // Return first name only for personalization
-            const firstName = fullName.split(' ')[0];
-            return firstName || 'Beloved Intercessor';
-          }
-        }
+      if (error) {
+        console.warn('Error getting user name:', error.message);
+        return 'Dear Intercessor';
       }
 
-      // If no profile found, try to extract name from phone contacts (fallback)
-      return 'Beloved Intercessor';
+      if (user?.user_profiles?.full_name) {
+        return user.user_profiles.full_name.split(' ')[0]; // First name
+      }
+
+      // Fallback: try to get from user profiles table directly using phone number
+      const { data: directProfile, error: directError } = await supabase
+        .from('user_profiles')
+        .select('full_name')
+        .eq('phone_number', phoneNumber)
+        .single();
+
+      if (!directError && directProfile?.full_name) {
+        return directProfile.full_name.split(' ')[0];
+      }
+
+      return 'Dear Intercessor';
     } catch (error) {
-      console.warn(`Warning: Could not get user name for ${phoneNumber}:`, error.message);
-      return 'Beloved Intercessor';
+      console.error('Error getting user name:', error);
+      return 'Dear Intercessor';
     }
   }
 
@@ -1354,8 +1355,6 @@ Select when you'd like to be reminded before your prayer slot:`;
 
   // Set reminder preference
   private async setReminderPreference(phoneNumber: string, preference: string): Promise<void> {
-    if (!this.db) return;
-
     try {
       const userName = await this.getUserName(phoneNumber);
       let reminderTime = '30min'; // default
@@ -1376,21 +1375,22 @@ Select when you'd like to be reminded before your prayer slot:`;
           break;
       }
 
-      const currentPrefs = await this.db
-        .select({ reminderPreferences: whatsAppBotUsers.reminderPreferences })
-        .from(whatsAppBotUsers)
-        .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber))
-        .limit(1);
+      // Get current preferences
+      const { data: currentUser, error: getUserError } = await supabase
+        .from('whatsapp_bot_users')
+        .select('reminder_preferences')
+        .eq('whatsapp_number', phoneNumber)
+        .single();
 
       let preferences = { 
         prayerSlotReminders: true,
         reminderTiming: reminderTime
       };
 
-      if (currentPrefs[0]?.reminderPreferences) {
+      if (!getUserError && currentUser?.reminder_preferences) {
         try {
           preferences = { 
-            ...JSON.parse(currentPrefs[0].reminderPreferences), 
+            ...JSON.parse(currentUser.reminder_preferences), 
             prayerSlotReminders: true,
             reminderTiming: reminderTime
           };
@@ -1399,12 +1399,18 @@ Select when you'd like to be reminded before your prayer slot:`;
         }
       }
 
-      await this.db
-        .update(whatsAppBotUsers)
-        .set({
-          reminderPreferences: JSON.stringify(preferences)
+      // Update preferences
+      const { error: updateError } = await supabase
+        .from('whatsapp_bot_users')
+        .update({
+          reminder_preferences: JSON.stringify(preferences)
         })
-        .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber));
+        .eq('whatsapp_number', phoneNumber);
+
+      if (updateError) {
+        console.error('Error updating reminder preferences:', updateError);
+        return;
+      }
 
       const userSlot = await this.getUserPrayerSlot(phoneNumber);
       const slotInfo = userSlot ? `\n\n🎯 Your Prayer Slot: ${userSlot}\nYou will be reminded ${displayTime} before your slot begins.` : '';
@@ -1456,27 +1462,27 @@ Select when you'd like to be reminded before your prayer slot:`;
 
   // Get user's prayer slot
   private async getUserPrayerSlot(phoneNumber: string): Promise<string | null> {
-    if (!this.db) return null;
-
     try {
-      const user = await this.db
-        .select({ userId: whatsAppBotUsers.userId })
-        .from(whatsAppBotUsers)
-        .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber))
-        .limit(1);
+      // Get user ID from WhatsApp bot users table
+      const { data: user, error: userError } = await supabase
+        .from('whatsapp_bot_users')
+        .select('user_id')
+        .eq('whatsapp_number', phoneNumber)
+        .single();
 
-      if (!user[0]?.userId) return null;
+      if (userError || !user?.user_id) return null;
 
-      const slot = await this.db
-        .select({ slotTime: prayerSlots.slotTime })
-        .from(prayerSlots)
-        .where(and(
-          eq(prayerSlots.userId, user[0].userId),
-          eq(prayerSlots.status, 'active')
-        ))
-        .limit(1);
+      // Get prayer slot for the user
+      const { data: slot, error: slotError } = await supabase
+        .from('prayer_slots')
+        .select('slot_time')
+        .eq('user_id', user.user_id)
+        .eq('status', 'active')
+        .single();
 
-      return slot[0]?.slotTime || null;
+      if (slotError || !slot) return null;
+
+      return slot.slot_time;
     } catch (error) {
       console.error('Error getting user prayer slot:', error);
       return null;
@@ -1631,15 +1637,19 @@ Format as plain text without formatting.`;
 
   // Set daily reminder for user
   private async setDailyReminder(phoneNumber: string, time: string): Promise<void> {
-    if (!this.db) return;
-
     try {
-      await this.db
-        .update(whatsAppBotUsers)
-        .set({
-          personalReminderTime: time
+      const { error } = await supabase
+        .from('whatsapp_bot_users')
+        .update({
+          personal_reminder_time: time
         })
-        .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber));
+        .eq('whatsapp_number', phoneNumber);
+
+      if (error) {
+        console.error('Error setting daily reminder:', error);
+        await this.sendMessage(phoneNumber, "Sorry, I couldn't set your reminder right now. Please try again later.");
+        return;
+      }
 
       await this.sendMessage(phoneNumber, `✅ Daily reminder set for ${time}!\n\nYou'll receive your devotional and prayer points every day at this time.\n\nType 'menu' for more options.`);
     } catch (error) {
@@ -1706,13 +1716,16 @@ Format as plain text without formatting.`;
 
   // Handle unsubscribe
   private async handleUnsubscribe(phoneNumber: string): Promise<void> {
-    if (!this.db) return;
-
     try {
-      await this.db
-        .update(whatsAppBotUsers)
-        .set({ isActive: false })
-        .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber));
+      const { error } = await supabase
+        .from('whatsapp_bot_users')
+        .update({ is_active: false })
+        .eq('whatsapp_number', phoneNumber);
+
+      if (error) {
+        console.error('Error unsubscribing user:', error);
+        return;
+      }
 
       await this.sendMessage(phoneNumber, `✅ You've been unsubscribed from all reminders.\n\nWe'll miss you in our prayer community! 🙏\n\nTo reactivate, simply type 'menu' anytime.`);
     } catch (error) {
@@ -1739,39 +1752,37 @@ Format as plain text without formatting.`;
   }
 
   private async sendUserSettings(phoneNumber: string): Promise<void> {
-    if (!this.db) {
-      await this.sendMessage(phoneNumber, "Settings temporarily unavailable. Please try again later.");
-      return;
-    }
-
     try {
-      const user = await this.db
-        .select()
-        .from(whatsAppBotUsers)
-        .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber))
-        .limit(1);
+      const { data: user, error } = await supabase
+        .from('whatsapp_bot_users')
+        .select('*')
+        .eq('whatsapp_number', phoneNumber)
+        .single();
 
-      if (user.length > 0) {
-        let preferences: any = {};
-        try {
-          preferences = user[0].reminderPreferences ? JSON.parse(user[0].reminderPreferences) : {};
-        } catch (e) {
-          console.error('Error parsing preferences:', e);
-        }
+      if (error || !user) {
+        await this.sendMessage(phoneNumber, "Settings temporarily unavailable. Please try again later.");
+        return;
+      }
 
-        const settingsText = `⚙️ Your Current Settings:
+      let preferences: any = {};
+      try {
+        preferences = user.reminder_preferences ? JSON.parse(user.reminder_preferences) : {};
+      } catch (e) {
+        console.error('Error parsing preferences:', e);
+      }
+
+      const settingsText = `⚙️ Your Current Settings:
 
 📱 Phone: ${phoneNumber}
-✅ Status: ${user[0].isActive ? 'Active' : 'Inactive'}
+✅ Status: ${user.is_active ? 'Active' : 'Inactive'}
 📖 Daily Devotionals: ${preferences?.dailyDevotionals ? 'Enabled' : 'Disabled'}
 ⏰ Prayer Slot Reminders: ${preferences?.prayerSlotReminders ? 'Enabled' : 'Disabled'}
-🕐 Custom Reminder: ${user[0].personalReminderTime || 'Not set'}
-📅 Registered: ${new Date(user[0].createdAt).toLocaleDateString()}
+🕐 Custom Reminder: ${user.personal_reminder_time || 'Not set'}
+📅 Registered: ${new Date(user.created_at).toLocaleDateString()}
 
 Type 'menu' for more options.`;
 
-        await this.sendMessage(phoneNumber, settingsText);
-      }
+      await this.sendMessage(phoneNumber, settingsText);
     } catch (error) {
       console.error('Error fetching user settings:', error);
       await this.sendMessage(phoneNumber, "Sorry, I couldn't fetch your settings right now. Please try again later.");
@@ -1779,8 +1790,6 @@ Type 'menu' for more options.`;
   }
 
   private async pauseUserReminders(phoneNumber: string): Promise<void> {
-    if (!this.db) return;
-
     try {
       const pausedPreferences = JSON.stringify({
         dailyDevotionals: false,
@@ -1789,12 +1798,17 @@ Type 'menu' for more options.`;
         timezone: 'UTC'
       });
 
-      await this.db
-        .update(whatsAppBotUsers)
-        .set({
-          reminderPreferences: pausedPreferences
+      const { error } = await supabase
+        .from('whatsapp_bot_users')
+        .update({
+          reminder_preferences: pausedPreferences
         })
-        .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber));
+        .eq('whatsapp_number', phoneNumber);
+
+      if (error) {
+        console.error('Error pausing reminders:', error);
+        return;
+      }
 
       await this.sendMessage(phoneNumber, `⏸️ All reminders paused!\n\nYour reminders have been temporarily disabled. You can reactivate them anytime from the menu.\n\nType 'menu' for options.`);
     } catch (error) {
