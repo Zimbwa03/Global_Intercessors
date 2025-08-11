@@ -3993,10 +3993,23 @@ Make it personal, biblical, and actionable for intercession.`;
             console.log(`📝 Processing message: ${messageType} from ${phoneNumber}: "${messageText}"`);
 
             if (messageType === 'text' && messageText) {
-              // Handle the command using the WhatsApp bot service
+              // Handle text command using the WhatsApp bot service
               await whatsAppBot.handleIncomingMessage(phoneNumber, messageText);
+            } else if (messageType === 'interactive') {
+              // Handle interactive button clicks
+              const buttonReply = message.interactive?.button_reply;
+              if (buttonReply) {
+                const buttonId = buttonReply.id;
+                const buttonTitle = buttonReply.title;
+                console.log(`🔘 Button clicked: ${buttonId} (${buttonTitle}) from ${phoneNumber}`);
+                
+                // Process button click as command
+                await whatsAppBot.handleIncomingMessage(phoneNumber, buttonId);
+              } else {
+                console.log(`⚠️ Interactive message without button reply`);
+              }
             } else {
-              console.log(`⚠️ Skipping non-text message or message without body`);
+              console.log(`⚠️ Skipping non-text/non-interactive message or message without body`);
             }
           }
         } else {

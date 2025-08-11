@@ -1286,13 +1286,23 @@ Type 'menu' to see all available options!`);
         case '/devotional':
         case 'devotional':
           await this.sendTodaysDevotional(phoneNumber);
+          // Send follow-up buttons after devotional
+          await this.sendInteractiveMessage(phoneNumber, "🙏 How else can I assist your spiritual journey today?", [
+            { id: 'remind', title: '⏰ Set Reminders' },
+            { id: 'status', title: '📊 My Status' },
+            { id: 'help', title: '📋 Main Menu' }
+          ]);
           break;
           
         case '/remind':
         case 'remind':
         case 'reminders':
           await this.enableSlotReminders(phoneNumber);
-          await this.sendWhatsAppMessage(phoneNumber, "✅ Prayer slot reminders enabled! You'll receive notifications before your prayer sessions.");
+          await this.sendInteractiveMessage(phoneNumber, "✅ Prayer slot reminders enabled! You'll receive notifications before your prayer sessions.", [
+            { id: 'devotional', title: '📖 Get Devotional' },
+            { id: 'status', title: '📊 Check Status' },
+            { id: 'help', title: '📋 Main Menu' }
+          ]);
           break;
           
         case '/stop':
@@ -1350,35 +1360,101 @@ I'm here to support your spiritual journey with:
 🌍 Global prayer updates
 ⚙️ Personalized settings
 
-Type 'menu' for all available commands.
-
 God bless your intercession! 🌟`;
 
-    await this.sendWhatsAppMessage(phoneNumber, welcomeMessage);
+    // Send welcome message with interactive buttons
+    await this.sendInteractiveMessage(phoneNumber, welcomeMessage, [
+      { id: 'devotional', title: '📖 Today\'s Devotional' },
+      { id: 'remind', title: '⏰ Enable Reminders' },
+      { id: 'help', title: '📋 Show Menu' }
+    ]);
   }
 
   // Send help menu with available commands
   private async sendHelpMenu(phoneNumber: string): Promise<void> {
-    const helpMessage = `📋 Available Commands:
+    const helpMessage = `📋 Global Intercessors Prayer Bot Menu
 
-🟢 Essential Commands:
-• 'start' - Welcome & registration
-• 'help' or 'menu' - This help menu
-• 'devotional' - Today's devotion
-• 'remind' - Enable prayer reminders
-• 'status' - Check your connection
+Choose an option below or type any command:`;
 
-⚙️ Settings Commands:
-• 'settings' - View your preferences
-• 'pause' - Pause all reminders
-• 'stop' - Unsubscribe completely
+    // Send interactive menu with essential buttons
+    await this.sendInteractiveMessage(phoneNumber, helpMessage, [
+      { id: 'devotional', title: '📖 Daily Devotional' },
+      { id: 'remind', title: '⏰ Prayer Reminders' },
+      { id: 'status', title: '📊 My Status' },
+      { id: 'settings', title: '⚙️ Settings' },
+      { id: 'pause', title: '⏸️ Pause Notifications' },
+      { id: 'stop', title: '🛑 Unsubscribe' }
+    ]);
+  }
 
-⏰ Custom Reminders:
-• Send time like "7:00" to set personal reminder
+  // Send interactive message with buttons
+  private async sendInteractiveMessage(phoneNumber: string, message: string, buttons: Array<{id: string, title: string}>): Promise<boolean> {
+    if (!this.config.phoneNumberId || !this.config.accessToken) {
+      console.log(`❌ WhatsApp credentials missing. Would send interactive message to ${phoneNumber}`);
+      console.log(`Message: ${message}`);
+      console.log(`Buttons: ${buttons.map(b => b.title).join(', ')}`);
+      return false;
+    }
 
-🙏 Ready to serve your prayer journey!`;
+    console.log(`📤 Sending WhatsApp interactive message to ${phoneNumber}`);
+    console.log(`Message: ${message.substring(0, 100)}...`);
+    
+    // For testing - show full message in console
+    console.log(`\n🤖 BOT INTERACTIVE RESPONSE TO ${phoneNumber}:\n${message}`);
+    console.log(`🔘 BUTTONS: ${buttons.map(b => `[${b.title}]`).join(' ')}\n`);
 
-    await this.sendWhatsAppMessage(phoneNumber, helpMessage);
+    const url = `https://graph.facebook.com/v18.0/${this.config.phoneNumberId}/messages`;
+    
+    const data = {
+      messaging_product: 'whatsapp',
+      to: phoneNumber,
+      type: 'interactive',
+      interactive: {
+        type: 'button',
+        body: {
+          text: message
+        },
+        action: {
+          buttons: buttons.slice(0, 3).map((button, index) => ({
+            type: 'reply',
+            reply: {
+              id: button.id,
+              title: button.title.substring(0, 20) // WhatsApp button title limit
+            }
+          }))
+        }
+      }
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.config.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('WhatsApp Interactive API error:', errorData);
+        
+        // Fallback to regular message if interactive fails
+        await this.sendWhatsAppMessage(phoneNumber, `${message}\n\n${buttons.map(b => `• ${b.title}`).join('\n')}`);
+        return false;
+      }
+
+      const result = await response.json();
+      console.log('✅ Interactive message sent successfully:', result);
+      return true;
+    } catch (error) {
+      console.error('Error sending interactive message:', error);
+      
+      // Fallback to regular message
+      await this.sendWhatsAppMessage(phoneNumber, `${message}\n\n${buttons.map(b => `• ${b.title}`).join('\n')}`);
+      return false;
+    }
   }
 }
 
