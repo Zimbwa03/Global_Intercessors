@@ -346,25 +346,53 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
             </Card>
           </div>
           
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <Card className="bg-white/90 backdrop-blur-sm shadow-brand border border-gi-primary/20 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer">
-              <CardContent className="p-6 text-center">
-                <div className="h-16 w-16 bg-gi-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <i className="fas fa-praying-hands text-gi-primary text-2xl"></i>
-                </div>
-                <h3 className="text-lg font-semibold text-gi-primary mb-2">Join Prayer Session</h3>
-                <p className="text-gray-600 text-sm">Connect with intercessors worldwide</p>
-              </CardContent>
-            </Card>
+          {/* Attendance & Performance Panel */}
+          <div className="mb-8">
+            <Card className="bg-white/90 backdrop-blur-sm shadow-brand border border-gi-primary/20">
+              <CardHeader className="bg-gradient-to-r from-gi-primary/5 to-gi-gold/5 border-b border-gi-primary/10">
+                <CardTitle className="flex items-center">
+                  <div className="w-10 h-10 bg-gi-primary rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                    <i className="fas fa-chart-line text-gi-gold"></i>
+                  </div>
+                  <span className="font-poppins text-xl text-gi-primary">Attendance & Performance</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                  {/* Attendance Rate */}
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-red-500 mb-2">
+                      {attendanceStats?.sessionsThisMonth && attendanceStats?.sessionsThisMonth > 0 
+                        ? Math.round((attendanceStats.sessionsThisMonth / new Date().getDate()) * 100)
+                        : 0}%
+                    </div>
+                    <p className="text-gi-primary/70 text-sm font-medium">Attendance Rate</p>
+                  </div>
 
-            <Card className="bg-white/90 backdrop-blur-sm shadow-brand border border-gi-primary/20 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer">
-              <CardContent className="p-6 text-center">
-                <div className="h-16 w-16 bg-gi-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <i className="fas fa-book-open text-gi-primary text-2xl"></i>
+                  {/* Current Streak */}
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-green-600 mb-2">
+                      {attendanceStats?.dayStreak || 0}
+                    </div>
+                    <p className="text-gi-primary/70 text-sm font-medium">Current Streak</p>
+                  </div>
+
+                  {/* Sessions Attended */}
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-green-600 mb-2">
+                      {attendanceStats?.sessionsThisMonth || 0}
+                    </div>
+                    <p className="text-gi-primary/70 text-sm font-medium">Sessions Attended</p>
+                  </div>
+
+                  {/* Total Sessions */}
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-gi-primary mb-2">
+                      {new Date().getDate()}
+                    </div>
+                    <p className="text-gi-primary/70 text-sm font-medium">Total Sessions</p>
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-gi-primary mb-2">Bible Study</h3>
-                <p className="text-gray-600 text-sm">Access spiritual resources</p>
               </CardContent>
             </Card>
           </div>
