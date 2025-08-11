@@ -302,49 +302,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="bg-white/90 backdrop-blur-sm shadow-brand border-2 border-gi-gold/30 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gi-primary/70 text-sm font-medium mb-1">Sessions This Month</p>
-                    <p className="text-3xl font-bold text-gi-primary">{attendanceStats?.sessionsThisMonth || 0}</p>
-                  </div>
-                  <div className="h-12 w-12 bg-gi-gold/20 rounded-full flex items-center justify-center">
-                    <i className="fas fa-calendar-check text-gi-primary text-xl"></i>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/90 backdrop-blur-sm shadow-brand border-2 border-gi-gold/30 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gi-primary/70 text-sm font-medium mb-1">Prayer Streak</p>
-                    <p className="text-3xl font-bold text-gi-primary">{attendanceStats?.dayStreak || 0} days</p>
-                  </div>
-                  <div className="h-12 w-12 bg-gi-gold/20 rounded-full flex items-center justify-center">
-                    <i className="fas fa-fire text-gi-primary text-xl"></i>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/90 backdrop-blur-sm shadow-brand border-2 border-gi-gold/30 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gi-primary/70 text-sm font-medium mb-1">Global Intercessors</p>
-                    <p className="text-3xl font-bold text-gi-primary">{globalStats?.totalIntercessors || 0}</p>
-                  </div>
-                  <div className="h-12 w-12 bg-gi-gold/20 rounded-full flex items-center justify-center">
-                    <i className="fas fa-globe text-gi-primary text-xl"></i>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          
           
           {/* Attendance & Performance Panel */}
           <div className="mb-8">
@@ -361,7 +319,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                   {/* Attendance Rate */}
                   <div className="text-center">
-                    <div className="text-4xl font-bold text-red-500 mb-2">
+                    <div className="text-4xl font-bold text-gi-gold mb-2">
                       {attendanceStats?.sessionsThisMonth && attendanceStats?.sessionsThisMonth > 0 
                         ? Math.round((attendanceStats.sessionsThisMonth / new Date().getDate()) * 100)
                         : 0}%
@@ -371,7 +329,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
 
                   {/* Current Streak */}
                   <div className="text-center">
-                    <div className="text-4xl font-bold text-green-600 mb-2">
+                    <div className="text-4xl font-bold text-gi-primary mb-2">
                       {attendanceStats?.dayStreak || 0}
                     </div>
                     <p className="text-gi-primary/70 text-sm font-medium">Current Streak</p>
@@ -379,7 +337,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
 
                   {/* Sessions Attended */}
                   <div className="text-center">
-                    <div className="text-4xl font-bold text-green-600 mb-2">
+                    <div className="text-4xl font-bold text-gi-gold mb-2">
                       {attendanceStats?.sessionsThisMonth || 0}
                     </div>
                     <p className="text-gi-primary/70 text-sm font-medium">Sessions Attended</p>

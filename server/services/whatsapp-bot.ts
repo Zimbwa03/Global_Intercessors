@@ -33,6 +33,21 @@ interface DevotionalContent {
   verseReference: string;
 }
 
+// Placeholder interfaces for the bot service (assuming they exist elsewhere or are defined here)
+interface BotResponse {
+  messageId: string;
+  from: string;
+  response: string;
+  timestamp: Date;
+}
+
+interface UserSession {
+  userId: string;
+  state: string;
+  lastActivity: Date;
+  context: Record<string, any>;
+}
+
 export class WhatsAppPrayerBot {
   private db!: ReturnType<typeof drizzle>;
   private config!: WhatsAppAPIConfig;
@@ -40,12 +55,25 @@ export class WhatsAppPrayerBot {
   private processedMessages: Set<string> = new Set(); // Prevent duplicate message processing
   private rateLimitMap: Map<string, number> = new Map(); // Rate limiting per user
 
+  // Bot service properties (added for integration)
+  private accessToken: string;
+  private phoneNumberId: string;
+  private webhookVerifyToken: string;
+  private responses: Map<string, BotResponse> = new Map();
+  private userSessions: Map<string, UserSession> = new Map();
+  private messageQueue: Map<string, NodeJS.Timeout> = new Map();
+  private pendingResponses: Map<string, boolean> = new Map(); // Tracks if a user has a pending response
+
   constructor() {
     console.log('🤖 Initializing WhatsApp Prayer Bot...');
 
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) {
       console.warn('⚠️ DATABASE_URL environment variable is not set. WhatsApp bot will run with limited functionality.');
+      // Initialize bot service properties even if DB is not available
+      this.accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '';
+      this.phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID || '';
+      this.webhookVerifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || '';
       return;
     }
 
@@ -61,7 +89,7 @@ export class WhatsAppPrayerBot {
       });
       this.db = drizzle(client);
       console.log('✅ Database connection established for WhatsApp bot');
-      
+
       // Test connection
       setTimeout(async () => {
         try {
@@ -74,6 +102,10 @@ export class WhatsAppPrayerBot {
     } catch (error) {
       console.warn('❌ Failed to connect to database for WhatsApp bot:', error);
       console.log('WhatsApp bot will run without database functionality');
+      // Initialize bot service properties even if DB connection fails
+      this.accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '';
+      this.phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID || '';
+      this.webhookVerifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || '';
       return;
     }
 
@@ -82,6 +114,11 @@ export class WhatsAppPrayerBot {
       accessToken: process.env.WHATSAPP_ACCESS_TOKEN || '',
       apiVersion: 'v18.0'
     };
+
+    // Initialize bot service properties
+    this.accessToken = this.config.accessToken;
+    this.phoneNumberId = this.config.phoneNumberId;
+    this.webhookVerifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || ''; // Assuming this is defined
 
     this.deepSeekApiKey = process.env.DEEPSEEK_API_KEY || process.env.GEMINI_API_KEY || '';
 
@@ -626,18 +663,23 @@ Provide only the summarized content without any formatting.`;
     console.log(`🆔 Message ID: ${messageId || 'N/A'}`);
 
     // Check for duplicate messages
-    if (messageId && this.processedMessages.has(messageId)) {
+    if (messageId && this.responses.has(messageId)) {
       console.log(`⚠️ Duplicate message detected: ${messageId} - SKIPPING`);
       return;
     }
 
     // Add to processed messages
     if (messageId) {
-      this.processedMessages.add(messageId);
+      this.responses.set(messageId, {
+        messageId,
+        from: phoneNumber,
+        response: 'Processing...',
+        timestamp: new Date()
+      });
       // Clean up old messages (keep last 100)
-      if (this.processedMessages.size > 100) {
-        const first = this.processedMessages.values().next().value;
-        this.processedMessages.delete(first);
+      if (this.responses.size > 100) {
+        const first = this.responses.values().next().value;
+        this.responses.delete(first.messageId);
       }
     }
 
@@ -652,7 +694,7 @@ Provide only the summarized content without any formatting.`;
     try {
       // Log user interaction (with error handling)
       try {
-        await this.logUserInteraction(phoneNumber, messageText, 'command');
+        await this.logUserInteraction(phoneNumber, messageText, 'command'); // Log original message text
         console.log(`✅ Interaction logged for ${phoneNumber}`);
       } catch (dbError) {
         console.warn(`⚠️ Failed to log interaction - continuing without logging:`, dbError.message);
@@ -722,7 +764,7 @@ Provide only the summarized content without any formatting.`;
         case 'stop':
         case 'unsubscribe':
           await this.handleUnsubscribe(phoneNumber);
-          await this.sendWhatsAppMessage(phoneNumber, "😢 You've been unsubscribed from all notifications. Type '/start' anytime to rejoin our prayer community!");
+          await this.sendMessage(phoneNumber, "😢 You've been unsubscribed from all notifications. Type '/start' anytime to rejoin our prayer community!");
           break;
 
         case '/status':
@@ -744,10 +786,10 @@ Provide only the summarized content without any formatting.`;
           // Handle time setting (e.g., "7:00" or "19:30")
           if (/^\d{1,2}:\d{2}$/.test(command)) {
             await this.setDailyReminder(phoneNumber, command);
-            await this.sendWhatsAppMessage(phoneNumber, `⏰ Personal reminder set for ${command}! You'll receive daily devotionals at this time.`);
+            await this.sendMessage(phoneNumber, `⏰ Personal reminder set for ${command}! You'll receive daily devotionals at this time.`);
           } else {
             // Unknown command - show help
-            await this.sendWhatsAppMessage(phoneNumber, `I didn't understand "${messageText}". Type 'menu' to see available commands!`);
+            await this.sendMessage(phoneNumber, `I didn't understand "${messageText}". Type 'menu' to see available commands!`);
           }
           break;
       }
@@ -756,7 +798,7 @@ Provide only the summarized content without any formatting.`;
 
       // Try to send error message, but don't fail if this also errors
       try {
-        await this.sendWhatsAppMessage(phoneNumber, "Sorry, I encountered an error. Please try again later or type 'help' for assistance.");
+        await this.sendMessage(phoneNumber, "Sorry, I encountered an error. Please try again later or type 'help' for assistance.");
       } catch (sendError) {
         console.error(`❌ Failed to send error message to ${phoneNumber}:`, sendError);
       }
@@ -837,7 +879,7 @@ Select your preferred option:`;
     console.log(`\n🤖 BOT INTERACTIVE RESPONSE TO ${phoneNumber}:\n${message}`);
     console.log(`🔘 BUTTONS: ${buttons.map(b => `[${b.title}]`).join(' ')}\n`);
 
-    const url = `https://graph.facebook.com/v18.0/${this.config.phoneNumberId}/messages`;
+    const url = `https://graph.facebook.com/v18.0/${this.phoneNumberId}/messages`;
 
     const data = {
       messaging_product: 'whatsapp',
@@ -861,21 +903,28 @@ Select your preferred option:`;
     };
 
     try {
+      // Use AbortController for timeout control
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.config.accessToken}`,
+          'Authorization': `Bearer ${this.accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json();
         console.error('WhatsApp Interactive API error:', errorData);
 
         // Fallback to regular message if interactive fails
-        await this.sendWhatsAppMessage(phoneNumber, `${message}\n\n${buttons.map(b => `• ${b.title}`).join('\n')}`);
+        await this.sendMessage(phoneNumber, `${message}\n\n${buttons.map(b => `• ${b.title}`).join('\n')}`);
         return false;
       }
 
@@ -884,9 +933,12 @@ Select your preferred option:`;
       return true;
     } catch (error) {
       console.error('Error sending interactive message:', error);
+      if (error.name === 'AbortError') {
+        console.error('WhatsApp Interactive API request timed out');
+      }
 
       // Fallback to regular message
-      await this.sendWhatsAppMessage(phoneNumber, `${message}\n\n${buttons.map(b => `• ${b.title}`).join('\n')}`);
+      await this.sendMessage(phoneNumber, `${message}\n\n${buttons.map(b => `• ${b.title}`).join('\n')}`);
       return false;
     }
   }
@@ -947,7 +999,7 @@ Type 'menu' anytime to see all available options.
 
 May God bless your prayer journey! 🙌`;
 
-    await this.sendWhatsAppMessage(phoneNumber, welcomeText);
+    await this.sendMessage(phoneNumber, welcomeText);
   }
 
   // Send today's devotional
@@ -966,13 +1018,13 @@ ${devotional.devotionText}
 
 Type 'menu' for more options.`;
 
-      await this.sendWhatsAppMessage(phoneNumber, devotionalText);
+      await this.sendMessage(phoneNumber, devotionalText);
 
       // Log devotional delivery
       await this.logUserInteraction(phoneNumber, 'devotional_requested', 'feature_use');
     } catch (error) {
       console.error('Error sending devotional:', error);
-      await this.sendWhatsAppMessage(phoneNumber, "Sorry, I couldn't fetch today's devotional right now. Please try again later. 🙏");
+      await this.sendMessage(phoneNumber, "Sorry, I couldn't fetch today's devotional right now. Please try again later. 🙏");
     }
   }
 
@@ -1110,17 +1162,17 @@ ${freshDevotional.devotionText}
 📜 Scripture: "${freshDevotional.bibleVerse}"
 - ${freshDevotional.verseReference}
 
-🙏 Prayer Point: Let this fresh word from God guide your prayers today.
+🙏 Prayer Point: Let this fresh word of God guide your prayers today.
 
 Type 'menu' for more options.`;
 
-      await this.sendWhatsAppMessage(phoneNumber, devotionalText);
+      await this.sendMessage(phoneNumber, devotionalText);
 
       // Log devotional delivery
       await this.logUserInteraction(phoneNumber, 'fresh_devotional_requested', 'feature_use');
     } catch (error) {
       console.error('Error sending fresh devotional:', error);
-      await this.sendWhatsAppMessage(phoneNumber, "Sorry, I couldn't generate a fresh devotional right now. Please try again later. 🙏");
+      await this.sendMessage(phoneNumber, "Sorry, I couldn't generate a fresh devotional right now. Please try again later. 🙏");
     }
   }
 
@@ -1281,7 +1333,7 @@ Select when you'd like to be reminded before your prayer slot:`;
       const userSlot = await this.getUserPrayerSlot(phoneNumber);
       const slotInfo = userSlot ? `\n\n🎯 Your Prayer Slot: ${userSlot}\nYou will be reminded ${displayTime} before your slot begins.` : '';
 
-      await this.sendWhatsAppMessage(phoneNumber, `✅ Perfect, ${userName}! Reminder preference set to ${displayTime} before your prayer slot.${slotInfo}\n\nType 'menu' for more options.`);
+      await this.sendMessage(phoneNumber, `✅ Perfect, ${userName}! Reminder preference set to ${displayTime} before your prayer slot.${slotInfo}\n\nType 'menu' for more options.`);
     } catch (error) {
       console.error('Error setting reminder preference:', error);
     }
@@ -1394,7 +1446,7 @@ ${morningDeclaration.declaration}
 
 God bless your day! ✨`;
 
-        const success = await this.sendWhatsAppMessage(user.whatsAppNumber, message);
+        const success = await this.sendMessage(user.whatsAppNumber, message);
 
         if (success) {
           sentCount++;
@@ -1515,10 +1567,10 @@ Format as plain text without formatting.`;
         })
         .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber));
 
-      await this.sendWhatsAppMessage(phoneNumber, `✅ Daily reminder set for ${time}!\n\nYou'll receive your devotional and prayer points every day at this time.\n\nType 'menu' for more options.`);
+      await this.sendMessage(phoneNumber, `✅ Daily reminder set for ${time}!\n\nYou'll receive your devotional and prayer points every day at this time.\n\nType 'menu' for more options.`);
     } catch (error) {
       console.error('Error setting daily reminder:', error);
-      await this.sendWhatsAppMessage(phoneNumber, "Sorry, I couldn't set your reminder right now. Please try again later.");
+      await this.sendMessage(phoneNumber, "Sorry, I couldn't set your reminder right now. Please try again later.");
     }
   }
 
@@ -1549,7 +1601,7 @@ Format as plain text without formatting.`;
         })
         .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber));
 
-      await this.sendWhatsAppMessage(phoneNumber, `✅ Prayer slot reminders enabled!\n\nI'll remind you 1 hour and 30 minutes before your assigned prayer sessions.\n\nType 'menu' for more options.`);
+      await this.sendMessage(phoneNumber, `✅ Prayer slot reminders enabled!\n\nI'll remind you 1 hour and 30 minutes before your assigned prayer sessions.\n\nType 'menu' for more options.`);
     } catch (error) {
       console.error('Error enabling slot reminders:', error);
     }
@@ -1586,7 +1638,7 @@ Format as plain text without formatting.`;
         .set({ isActive: false })
         .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber));
 
-      await this.sendWhatsAppMessage(phoneNumber, `✅ You've been unsubscribed from all reminders.\n\nWe'll miss you in our prayer community! 🙏\n\nTo reactivate, simply type 'menu' anytime.`);
+      await this.sendMessage(phoneNumber, `✅ You've been unsubscribed from all reminders.\n\nWe'll miss you in our prayer community! 🙏\n\nTo reactivate, simply type 'menu' anytime.`);
     } catch (error) {
       console.error('Error unsubscribing user:', error);
     }
@@ -1595,24 +1647,24 @@ Format as plain text without formatting.`;
   // Placeholder methods for additional features
   private async sendUserPrayerSchedule(phoneNumber: string): Promise<void> {
     // Implementation would fetch user's actual prayer schedule from database
-    await this.sendWhatsAppMessage(phoneNumber, "📋 Your Prayer Schedule:\n\nCurrently, you don't have any assigned prayer slots.\n\nWould you like to request a prayer time slot? Reply with 'request slot' to get started!\n\nType 'menu' for more options.");
+    await this.sendMessage(phoneNumber, "📋 Your Prayer Schedule:\n\nCurrently, you don't have any assigned prayer slots.\n\nWould you like to request a prayer time slot? Reply with 'request slot' to get started!\n\nType 'menu' for more options.");
   }
 
   private async sendSlotRequestForm(phoneNumber: string): Promise<void> {
-    await this.sendWhatsAppMessage(phoneNumber, "🙋 Prayer Slot Request:\n\nTo request a prayer time slot, please visit our dashboard at:\nhttps://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev\n\nOr contact our admin team directly.\n\nType 'menu' for more options.");
+    await this.sendMessage(phoneNumber, "🙋 Prayer Slot Request:\n\nTo request a prayer time slot, please visit our dashboard at:\nhttps://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev\n\nOr contact our admin team directly.\n\nType 'menu' for more options.");
   }
 
   private async sendSkipRequestForm(phoneNumber: string): Promise<void> {
-    await this.sendWhatsAppMessage(phoneNumber, "⏭️ Skip Prayer Session:\n\nTo request to skip a prayer session, please use our dashboard or contact the admin team.\n\nWe understand that life happens! 🙏\n\nType 'menu' for more options.");
+    await this.sendMessage(phoneNumber, "⏭️ Skip Prayer Session:\n\nTo request to skip a prayer session, please use our dashboard or contact the admin team.\n\nWe understand that life happens! 🙏\n\nType 'menu' for more options.");
   }
 
   private async requestCustomTime(phoneNumber: string): Promise<void> {
-    await this.sendWhatsAppMessage(phoneNumber, "⏰ Custom Reminder Time:\n\nPlease reply with your preferred time in 24-hour format (e.g., '14:30' for 2:30 PM).\n\nI'll set up your daily devotional reminder for that time!\n\nType 'menu' to go back.");
+    await this.sendMessage(phoneNumber, "⏰ Custom Reminder Time:\n\nPlease reply with your preferred time in 24-hour format (e.g., '14:30' for 2:30 PM).\n\nI'll set up your daily devotional reminder for that time!\n\nType 'menu' to go back.");
   }
 
   private async sendUserSettings(phoneNumber: string): Promise<void> {
     if (!this.db) {
-      await this.sendWhatsAppMessage(phoneNumber, "Settings temporarily unavailable. Please try again later.");
+      await this.sendMessage(phoneNumber, "Settings temporarily unavailable. Please try again later.");
       return;
     }
 
@@ -1642,11 +1694,11 @@ Format as plain text without formatting.`;
 
 Type 'menu' for more options.`;
 
-        await this.sendWhatsAppMessage(phoneNumber, settingsText);
+        await this.sendMessage(phoneNumber, settingsText);
       }
     } catch (error) {
       console.error('Error fetching user settings:', error);
-      await this.sendWhatsAppMessage(phoneNumber, "Sorry, I couldn't fetch your settings right now. Please try again later.");
+      await this.sendMessage(phoneNumber, "Sorry, I couldn't fetch your settings right now. Please try again later.");
     }
   }
 
@@ -1668,14 +1720,14 @@ Type 'menu' for more options.`;
         })
         .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber));
 
-      await this.sendWhatsAppMessage(phoneNumber, `⏸️ All reminders paused!\n\nYour reminders have been temporarily disabled. You can reactivate them anytime from the menu.\n\nType 'menu' for options.`);
+      await this.sendMessage(phoneNumber, `⏸️ All reminders paused!\n\nYour reminders have been temporarily disabled. You can reactivate them anytime from the menu.\n\nType 'menu' for options.`);
     } catch (error) {
       console.error('Error pausing reminders:', error);
     }
   }
 
   private async sendUserStatus(phoneNumber: string): Promise<void> {
-    await this.sendWhatsAppMessage(phoneNumber, `📊 Your Status:
+    await this.sendMessage(phoneNumber, `📊 Your Status:
 
 ✅ Connected to Global Intercessors Prayer Bot
 🙏 Part of our worldwide prayer community
@@ -1697,6 +1749,215 @@ Type 'menu' to see all available options!`);
 
     this.rateLimitMap.set(phoneNumber, now);
     return false;
+  }
+
+  // --- Bot Service Methods (Optimized for Speed) ---
+
+  async processMessage(messageData: any) {
+    try {
+      console.log('Processing WhatsApp message:', JSON.stringify(messageData, null, 2));
+
+      const entry = messageData.entry?.[0];
+      if (!entry?.changes?.[0]?.value?.messages) {
+        console.log('No messages found in webhook data');
+        return;
+      }
+
+      const message = entry.changes[0].value.messages[0];
+      const from = message.from;
+      const messageText = message.text?.body?.toLowerCase() || '';
+      const messageId = message.id;
+
+      console.log(`Processing message "${messageText}" from ${from}`);
+
+      // Prevent duplicate processing or handle pending responses
+      if (this.responses.has(messageId) || this.pendingResponses.get(from)) {
+        console.log('Message already processed or response pending, skipping');
+        return;
+      }
+
+      // Mark user as having a pending response
+      this.pendingResponses.set(from, true);
+
+      // Mark message as processed
+      this.responses.set(messageId, {
+        messageId,
+        from,
+        response: 'Processing...',
+        timestamp: new Date()
+      });
+
+      // Clear any existing timeout for this user
+      const existingTimeout = this.messageQueue.get(from);
+      if (existingTimeout) {
+        clearTimeout(existingTimeout);
+      }
+
+      // Process immediately for faster response
+      try {
+        await this.handleMessage(from, messageText, messageId);
+      } catch (error) {
+        console.error('Error handling immediate message:', error);
+        await this.sendMessage(from, "I'm having trouble processing your message right now. Please try again.");
+      } finally {
+        this.pendingResponses.delete(from); // Remove pending flag after handling
+      }
+
+    } catch (error) {
+      console.error('Error processing WhatsApp message:', error);
+    }
+  }
+
+  private async handleMessage(from: string, messageText: string, messageId: string) {
+    try {
+      console.log(`Handling WhatsApp command: "${messageText}" from ${from}`);
+
+      // Send immediate typing indicator or acknowledgment for fast feedback
+      await this.sendTypingIndicator(from);
+
+      let session = this.userSessions.get(from);
+      if (!session) {
+        session = {
+          userId: from,
+          state: 'initial',
+          lastActivity: new Date(),
+          context: {}
+        };
+        this.userSessions.set(from, session);
+      }
+
+      // Update last activity
+      session.lastActivity = new Date();
+
+      // --- Main command handling logic ---
+      // This part should be replaced with your actual bot logic
+      // For now, a simple echo or a help response is used as a placeholder
+      let responseMessage = '';
+      switch (messageText.toLowerCase()) {
+        case '/start':
+          responseMessage = "Welcome! How can I help you today? Type 'menu' for options.";
+          break;
+        case '/help':
+          responseMessage = "Available commands: /start, /help, /status. Type 'menu' for more.";
+          break;
+        case 'menu':
+          responseMessage = "Here are the main options:\n- Daily Devotional\n- Prayer Reminders\n- Settings\n- Menu";
+          break;
+        default:
+          // If it's not a known command, echo it back or provide a default response
+          if (messageText) {
+            responseMessage = `You said: "${messageText}"`;
+          } else {
+            responseMessage = "I received your message. How can I assist you?";
+          }
+          break;
+      }
+      // --- End of main command handling logic ---
+
+      // Send the response
+      if (responseMessage) {
+        await this.sendMessage(from, responseMessage);
+      }
+
+      // Log the interaction after processing
+      await this.logUserInteraction(from, messageText, 'received');
+
+    } catch (error) {
+      console.error(`Error in handleMessage for ${from}:`, error);
+      // Attempt to inform the user about the error
+      try {
+        await this.sendMessage(from, "Sorry, I encountered an internal error. Please try again later.");
+      } catch (sendError) {
+        console.error(`Failed to send error message to ${from}:`, sendError);
+      }
+    }
+  }
+
+  private async sendMessage(to: string, message: string, options: any = {}): Promise<void> {
+    try {
+      const url = `https://graph.facebook.com/v18.0/${this.phoneNumberId}/messages`;
+
+      const payload = {
+        messaging_product: 'whatsapp',
+        to: to,
+        text: { body: message },
+        ...options
+      };
+
+      // Use AbortController for timeout control
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('WhatsApp API Error:', error);
+        throw new Error(`WhatsApp API error: ${response.status} ${error}`);
+      }
+
+      const result = await response.json();
+      console.log(`Message sent successfully to ${to}:`, result);
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.error('WhatsApp API request timed out');
+      } else {
+        console.error('Error sending WhatsApp message:', error);
+      }
+      throw error;
+    }
+  }
+
+  private async sendTypingIndicator(to: string): Promise<void> {
+    try {
+      const url = `https://graph.facebook.com/v18.0/${this.phoneNumberId}/messages`;
+
+      const payload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: to,
+        type: 'text', // Sending a 'text' type with an empty body or a placeholder like '...' often triggers the typing indicator
+        text: { body: '...' } // Sending a placeholder message to indicate activity
+      };
+
+      // Fetch doesn't directly support a "typing indicator" type, so we send a minimal valid message
+      await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      // We don't necessarily need to log success here, as it's a background action.
+      // Errors are logged below.
+    } catch (error) {
+      // Don't throw error for typing indicator failures, as it shouldn't block message processing
+      console.log('Could not send typing indicator:', error.message);
+    }
+  }
+
+  // This is a placeholder method, as the original code had a similar method.
+  // You would integrate your actual bot command handling here.
+  private async sendPrayerReminder(phoneNumber: string, userName: string, slotTime: string): Promise<void> {
+    const message = `🙏 *Prayer Reminder* 🙏\n\nHello ${userName}!\n\nThis is your gentle reminder that your prayer slot (${slotTime}) is coming up in 15 minutes.\n\nMay the Lord bless your time of intercession! 🌟\n\n_"Devote yourselves to prayer, being watchful and thankful." - Colossians 4:2_`;
+
+    try {
+      await this.sendMessage(phoneNumber, message);
+      console.log(`Prayer reminder sent to ${phoneNumber}`);
+    } catch (error) {
+      console.error(`Failed to send prayer reminder to ${phoneNumber}:`, error);
+    }
   }
 }
 
