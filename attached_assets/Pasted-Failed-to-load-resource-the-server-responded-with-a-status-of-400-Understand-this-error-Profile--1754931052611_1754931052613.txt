@@ -1,0 +1,30 @@
+Failed to load resource: the server responded with a status of 400 ()Understand this error
+ Profile update error: Object
+mutationFn @ src/components/dashb…ser-profile.tsx:155Understand this error
+ Profile mutation error: Error: Failed to update profile: invalid input syntax for type date: ""
+    at Object.mutationFn (src/components/dashboard/user-profile.tsx:156:17)
+mutationFn @ src/components/dashb…ser-profile.tsx:160Understand this error
+ Profile update error: Error: Failed to update profile: invalid input syntax for type date: ""
+    at Object.mutationFn (src/components/dashboard/user-profile.tsx:156:17)
+onError @ src/components/dashb…ser-profile.tsx:212Understand this error
+2dashboard.tsx:132 Current activeTab: profile
+lmhbvdxainxcjuveisfe.supabase.co/rest/v1/user_profiles?on_conflict=id&select=*:1  Failed to load resource: the server responded with a status of 400 ()Understand this error
+ Profile update error: Object
+mutationFn @ src/components/dashb…ser-profile.tsx:155Understand this error
+ Profile mutation error: Error: Failed to update profile: invalid input syntax for type date: ""
+    at Object.mutationFn (src/components/dashboard/user-profile.tsx:156:17)
+mutationFn @ src/components/dashb…ser-profile.tsx:160Understand this error
+ Profile update error: Error: Failed to update profile: invalid input syntax for type date: ""
+    at Object.mutationFn (src/components/dashboard/user-profile.tsx:156:17)
+onError @ src/components/dashb…ser-profile.tsx:212Understand this error
+2dashboard.tsx:132 Current activeTab: profile
+lmhbvdxainxcjuveisfe.supabase.co/rest/v1/user_profiles?on_conflict=id&select=*:1  Failed to load resource: the server responded with a status of 400 ()Understand this error
+ Profile update error: Object
+mutationFn @ src/components/dashb…ser-profile.tsx:155Understand this error
+ Profile mutation error: Error: Failed to update profile: invalid input syntax for type date: ""
+    at Object.mutationFn (src/components/dashboard/user-profile.tsx:156:17)
+mutationFn @ src/components/dashb…ser-profile.tsx:160Understand this error
+ Profile update error: Error: Failed to update profile: invalid input syntax for type date: ""
+    at Object.mutationFn (src/components/dashboard/user-profile.tsx:156:17)
+onError @ src/components/dashb…ser-profile.tsx:212Understand this error
+dashboard.tsx:132 Current activeTab: profile
