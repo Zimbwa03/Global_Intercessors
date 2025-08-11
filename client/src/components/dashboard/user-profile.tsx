@@ -13,6 +13,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 interface UserProfileProps {
   userEmail?: string;
+  onTabChange?: (tab: string) => void; // Added for the button's onClick handler
+  userProfile?: { // Added for the button's usage
+    profilePicture?: string;
+    fullName?: string;
+    full_name?: string; // Include this in case the data structure varies
+    email?: string;
+  };
 }
 
 interface UserProfile {
@@ -45,7 +52,7 @@ const userProfileSchema = z.object({
 type UserProfileFormData = z.infer<typeof userProfileSchema>;
 
 // Re-using the original component structure, but adapting the form handling
-export function UserProfile({ userEmail }: UserProfileProps) {
+export function UserProfile({ userEmail, onTabChange, userProfile }: UserProfileProps) {
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();

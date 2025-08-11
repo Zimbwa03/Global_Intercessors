@@ -291,7 +291,7 @@ Format as plain text without formatting.`;
           .where(eq(userProfiles.id, user.userId))
           .limit(1);
 
-        const userName = userProfile[0]?.fullName?.split(' ')[0] || 'Dear Intercessor';
+        const userName = userProfile[0]?.fullName?.split(' ')[0] || userProfile[0]?.full_name?.split(' ')[0] || 'Dear Intercessor';
 
         const message = `Good morning, ${userName}! 🌅
 
@@ -1306,6 +1306,21 @@ Select when you'd like to be reminded before your prayer slot:`;
         return user[0].userName.split(' ')[0]; // First name
       }
 
+      // Fallback: try to get from user profiles table directly using phone number
+      try {
+        const directProfile = await this.db
+          .select({ fullName: userProfiles.fullName })
+          .from(userProfiles)
+          .where(eq(userProfiles.phoneNumber, phoneNumber))
+          .limit(1);
+
+        if (directProfile[0]?.fullName) {
+          return directProfile[0].fullName.split(' ')[0];
+        }
+      } catch (fallbackError) {
+        console.error('Fallback profile lookup failed:', fallbackError);
+      }
+
       return 'Dear Intercessor';
     } catch (error) {
       console.error('Error getting user name:', error);
@@ -1364,7 +1379,7 @@ Select when you'd like to be reminded before your prayer slot:`;
       let sentCount = 0;
 
       for (const user of activeUsers) {
-        const userName = user.fullName ? user.fullName.split(' ')[0] : 'Dear Intercessor';
+        const userName = (user.fullName || user.full_name) ? (user.fullName || user.full_name).split(' ')[0] : 'Dear Intercessor';
 
         const message = `🌅 Good Morning, ${userName}!
 

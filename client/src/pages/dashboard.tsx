@@ -24,6 +24,14 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { notificationService } from "@/lib/notificationService";
 
+// Helper function to get the current time of day for greeting
+const getTimeOfDay = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "morning";
+  if (hour < 18) return "afternoon";
+  return "evening";
+};
+
 export default function Dashboard() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -189,13 +197,16 @@ export default function Dashboard() {
     }
   };
 
+  // Extract userProfile for easier access in the JSX
+  const userProfile = user.profile;
+
   if (isMobile) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Mobile Header */}
         <MobileHeader 
           onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-          userProfile={user.profile || user.user_metadata}
+          userProfile={userProfile || user.user_metadata}
           activeTab={activeTab}
           unreadCount={unreadUpdates}
           onTabChange={setActiveTab}
@@ -210,7 +221,7 @@ export default function Dashboard() {
           }}
           onSignOut={handleSignOut}
           userEmail={user.email}
-          userProfile={user.profile || user.user_metadata}
+          userProfile={userProfile || user.user_metadata}
           isOpen={mobileMenuOpen}
           onToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
         />
@@ -218,6 +229,18 @@ export default function Dashboard() {
         {/* Mobile Main Content */}
         <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
           <div className="p-6 pb-24 space-y-6">
+            {/* Render the greeting section */}
+            <div className="flex items-center space-x-4 mb-6">
+              <img 
+                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                alt="GI Logo" 
+                className="w-12 h-12" 
+              />
+              <div>
+                <h1 className="text-2xl font-bold text-gi-primary">Welcome back!</h1>
+                <p className="text-gray-600">Good {getTimeOfDay()}, {userProfile?.fullName || userProfile?.full_name || userProfile?.name || user?.email?.split('@')[0] || 'User'}!</p>
+              </div>
+            </div>
             {renderContent()}
           </div>
         </main>
@@ -261,11 +284,23 @@ export default function Dashboard() {
         onTabChange={setActiveTab}
         onSignOut={handleSignOut}
         userEmail={user.email}
-
+        userProfile={userProfile || user.user_metadata}
       />
 
       {/* Desktop Main Content */}
       <main className="flex-1 p-6 overflow-auto">
+        {/* Render the greeting section */}
+        <div className="flex items-center space-x-4 mb-6">
+          <img 
+            src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+            alt="GI Logo" 
+            className="w-12 h-12" 
+          />
+          <div>
+            <h1 className="text-2xl font-bold text-gi-primary">Welcome back!</h1>
+            <p className="text-gray-600">Good {getTimeOfDay()}, {userProfile?.fullName || userProfile?.full_name || userProfile?.name || user?.email?.split('@')[0] || 'User'}!</p>
+          </div>
+        </div>
         {renderContent()}
       </main>
     </div>

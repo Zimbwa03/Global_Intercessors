@@ -17,6 +17,9 @@ interface AuthUser {
   id: string;
   username: string;
   profilePicture?: string;
+  fullName?: string; // Added for full name
+  full_name?: string; // Added for alternative full name key
+  name?: string; // Added for another alternative name key
   // other user properties
 }
 
@@ -176,7 +179,7 @@ export function MobileHeader({
           </Button>
         </div>
       </div>
-      
+
     </header>
   );
 }

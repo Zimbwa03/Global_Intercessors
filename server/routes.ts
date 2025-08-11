@@ -3830,7 +3830,7 @@ Make it personal, biblical, and actionable for intercession.`;
           .insert({
             id: userId,
             email: user?.email || '',
-            full_name: '',
+            full_name: user?.user_metadata?.full_name || user?.user_metadata?.name || '',
             whatsapp_number: whatsAppNumber,
             whatsapp_active: true,
             role: 'intercessor',

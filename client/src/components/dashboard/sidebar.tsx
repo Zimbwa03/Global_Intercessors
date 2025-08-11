@@ -57,7 +57,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-white font-poppins">
-                {userEmail || "User"}
+                {userProfile?.fullName || userProfile?.full_name || userProfile?.name || "User"}
               </p>
               <p className="text-xs text-gi-gold/80">Intercessor</p>
             </div>
@@ -160,7 +160,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate font-poppins">
-                {userProfile?.fullName || userEmail || "User"}
+                {userProfile?.fullName || userProfile?.full_name || userProfile?.name || "User"}
               </p>
               <p className="text-xs text-gi-primary/200">
                 {userProfile?.city ? `${userProfile.city} • ` : ''}Intercessor
