@@ -1,0 +1,58 @@
+Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+lmhbvdxainxcjuveisfe.supabase.co/auth/v1/token?grant_type=refresh_token:1  Failed to load resource: the server responded with a status of 400 ()Understand this error
+@supabase_supabase-js.js?v=17ae7988:6382 AuthApiError: Invalid Refresh Token: Refresh Token Not Found
+    at handleError2 (@supabase_supabase-js.js?v=17ae7988:4567:9)
+    at async _handleRequest2 (@supabase_supabase-js.js?v=17ae7988:4608:5)
+    at async _request (@supabase_supabase-js.js?v=17ae7988:4592:16)
+    at async @supabase_supabase-js.js?v=17ae7988:6322:16
+    at async @supabase_supabase-js.js?v=17ae7988:4419:26
+_recoverAndRefresh @ @supabase_supabase-js.js?v=17ae7988:6382Understand this error
+lmhbvdxainxcjuveisfe.supabase.co/rest/v1/user_profiles?select=*&id=eq.eb399bac-8ae0-42fb-9ee8-ffb46f63a97f:1  Failed to load resource: the server responded with a status of 406 ()Understand this error
+firebase.ts:37 FCM Token: cB-4iEgyuhbM82YHT8PZ7Q:APA91bH3tYjQaYF-ACcspjOJEhds0LHB9PGB-dELZKjniUGBgvZRpXau95cScRAVfiHYaPZwZeB7Sjan_IWL1e4g2tUaTrdY6T9N6AzcafbktgRiuHktjkI
+dashboard.tsx:63 Notification service initialized: true
+notificationService.ts:91 Scheduled reminders for prayer slot 03:00–03:30
+dashboard.tsx:72 Prayer slot reminders scheduled for: 03:00–03:30
+dashboard.tsx:132 Current activeTab: dashboard
+dashboard-overview.tsx:119 Dashboard prayer slot response: Object
+dashboard.tsx:132 Current activeTab: dashboard
+dashboard-overview.tsx:119 Dashboard prayer slot response: Object
+dashboard.tsx:132 Current activeTab: whatsapp-settings
+api/whatsapp/register:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+2dashboard.tsx:132 Current activeTab: whatsapp-settings
+api/whatsapp/register:1  Failed to load resource: the server responded with a status of 500 (Internal Server Error)Understand this error
+2dashboard.tsx:132 Current activeTab: whatsapp-settings
+dashboard.tsx:132 Current activeTab: profile
+lmhbvdxainxcjuveisfe.supabase.co/rest/v1/user_profiles?select=*&id=eq.eb399bac-8ae0-42fb-9ee8-ffb46f63a97f:1  Failed to load resource: the server responded with a status of 406 ()Understand this error
+chunk-276SZO74.js?v=17ae7988:521 Warning: A component is changing an uncontrolled input to be controlled. This is likely caused by the value changing from undefined to a defined value, which should not happen. Decide between using a controlled or uncontrolled input element for the lifetime of the component. More info: https://reactjs.org/link/controlled-components
+    at input
+    at _c (https://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev/src/components/ui/input.tsx:20:11)
+    at div
+    at FormControl (https://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev/src/components/dashboard/user-profile.tsx?t=1754929562722:212:26)
+    at div
+    at FormItem (https://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev/src/components/dashboard/user-profile.tsx?t=1754929562722:202:23)
+    at Controller (https://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YGCRICWC.js?v=17ae7988:298:35)
+    at FormField (https://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev/src/components/dashboard/user-profile.tsx?t=1754929562722:184:24)
+    at div
+    at form
+    at FormProvider (https://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YGCRICWC.js?v=17ae7988:102:11)
+    at div
+    at _c9 (https://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev/src/components/ui/card.tsx:114:12)
+    at div
+    at _c (https://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev/src/components/ui/card.tsx:20:11)
+    at div
+    at UserProfile (https://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev/src/components/dashboard/user-profile.tsx?t=1754929562722:43:31)
+    at main
+    at div
+    at Dashboard (https://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev/src/pages/dashboard.tsx?t=1754929563237:41:27)
+    at Route (https://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=17ae7988:323:16)
+    at Switch (https://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=17ae7988:379:17)
+    at Router
+    at Provider (https://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-3RXG37ZK.js?v=17ae7988:38:15)
+    at TooltipProvider (https://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=17ae7988:63:5)
+    at QueryClientProvider (https://b4cc0390-c3bd-450d-aa4c-0c324c9e9fbb-00-1u7acu7fuh03u.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=17ae7988:2805:3)
+    at App
+printWarning @ chunk-276SZO74.js?v=17ae7988:521Understand this error
+lmhbvdxainxcjuveisfe.supabase.co/rest/v1/user_profiles?select=*:1  Failed to load resource: the server responded with a status of 400 ()Understand this error
+user-profile.tsx:193 Profile update error: Object
+onError @ user-profile.tsx:193Understand this error
+2dashboard.tsx:132 Current activeTab: profile
