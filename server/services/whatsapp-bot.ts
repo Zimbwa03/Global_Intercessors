@@ -37,19 +37,28 @@ export class WhatsAppPrayerBot {
   private db!: ReturnType<typeof drizzle>;
   private config!: WhatsAppAPIConfig;
   private deepSeekApiKey!: string;
+  private processedMessages: Set<string> = new Set(); // Prevent duplicate message processing
+  private rateLimitMap: Map<string, number> = new Map(); // Rate limiting per user
 
   constructor() {
+    console.log('🤖 Initializing WhatsApp Prayer Bot...');
+    
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) {
-      console.warn('DATABASE_URL environment variable is not set. WhatsApp bot will run with limited functionality.');
+      console.warn('⚠️ DATABASE_URL environment variable is not set. WhatsApp bot will run with limited functionality.');
       return;
     }
 
     try {
-      const client = postgres(connectionString);
+      const client = postgres(connectionString, {
+        connect_timeout: 10,
+        idle_timeout: 20,
+        max_lifetime: 60 * 30
+      });
       this.db = drizzle(client);
+      console.log('✅ Database connection established for WhatsApp bot');
     } catch (error) {
-      console.warn('Failed to connect to database for WhatsApp bot:', error);
+      console.warn('❌ Failed to connect to database for WhatsApp bot:', error);
       console.log('WhatsApp bot will run without database functionality');
       return;
     }
@@ -90,16 +99,17 @@ export class WhatsAppPrayerBot {
 
   // Core messaging functionality
   private async sendWhatsAppMessage(phoneNumber: string, message: string): Promise<boolean> {
+    console.log(`\n📤 SENDING MESSAGE:`);
+    console.log(`📱 To: ${phoneNumber}`);
+    console.log(`📝 Length: ${message.length} characters`);
+    
     if (!this.config.phoneNumberId || !this.config.accessToken) {
-      console.log(`❌ WhatsApp credentials missing. Would send message to ${phoneNumber}: ${message}`);
+      console.log(`❌ WhatsApp credentials missing - SIMULATION MODE`);
+      console.log(`📄 Message Preview: ${message.substring(0, 100)}...`);
       return false;
     }
     
-    console.log(`📤 Sending WhatsApp message to ${phoneNumber}`);
-    console.log(`Message: ${message.substring(0, 100)}...`);
-    
-    // For testing - show full message in console
-    console.log(`\n🤖 BOT RESPONSE TO ${phoneNumber}:\n${message}\n`);
+    console.log(`📄 Message Preview: ${message.substring(0, 100)}...`);
 
     try {
       const response = await fetch(`https://graph.facebook.com/${this.config.apiVersion}/${this.config.phoneNumberId}/messages`, {
@@ -1136,9 +1146,12 @@ Format as plain text without formatting.`;
     }
   }
 
-  // Log user interactions
+  // Log user interactions with better error handling
   private async logUserInteraction(phoneNumber: string, content: string, interactionType: string): Promise<void> {
-    if (!this.db) return;
+    if (!this.db) {
+      console.log(`📝 No database connection - skipping interaction log for ${phoneNumber}`);
+      return;
+    }
     
     try {
       await this.db.insert(whatsAppInteractions).values({
@@ -1146,8 +1159,10 @@ Format as plain text without formatting.`;
         interactionType,
         content
       });
+      console.log(`📊 Interaction logged: ${interactionType} from ${phoneNumber}`);
     } catch (error) {
-      console.error('Error logging interaction:', error);
+      console.warn(`⚠️ Failed to log interaction for ${phoneNumber}:`, error.message);
+      // Don't throw error - logging failure shouldn't stop bot operation
     }
   }
 
@@ -1259,50 +1274,97 @@ Type 'menu' for more options.`;
 Type 'menu' to see all available options!`);
   }
 
-  // Handle incoming WhatsApp messages
-  async handleIncomingMessage(phoneNumber: string, messageText: string): Promise<void> {
-    console.log(`🎯 Handling WhatsApp command: "${messageText}" from ${phoneNumber}`);
+  // Check if user is rate limited
+  private isRateLimited(phoneNumber: string): boolean {
+    const now = Date.now();
+    const lastMessage = this.rateLimitMap.get(phoneNumber) || 0;
+    const timeDiff = now - lastMessage;
+    
+    if (timeDiff < 2000) { // 2 second rate limit
+      console.log(`⚠️ Rate limiting ${phoneNumber} - too many messages`);
+      return true;
+    }
+    
+    this.rateLimitMap.set(phoneNumber, now);
+    return false;
+  }
+
+  // Handle incoming WhatsApp messages with deduplication
+  async handleIncomingMessage(phoneNumber: string, messageText: string, messageId?: string): Promise<void> {
+    console.log(`\n📨 INCOMING MESSAGE:`);
+    console.log(`📱 From: ${phoneNumber}`);
+    console.log(`💬 Text: "${messageText}"`);
+    console.log(`🆔 Message ID: ${messageId || 'N/A'}`);
+    
+    // Check for duplicate messages
+    if (messageId && this.processedMessages.has(messageId)) {
+      console.log(`⚠️ Duplicate message detected: ${messageId} - SKIPPING`);
+      return;
+    }
+    
+    // Add to processed messages
+    if (messageId) {
+      this.processedMessages.add(messageId);
+      // Clean up old messages (keep last 100)
+      if (this.processedMessages.size > 100) {
+        const first = this.processedMessages.values().next().value;
+        this.processedMessages.delete(first);
+      }
+    }
+    
+    // Check rate limiting
+    if (this.isRateLimited(phoneNumber)) {
+      return;
+    }
     
     const command = messageText.toLowerCase().trim();
+    console.log(`🎯 Processing command: "${command}"`);
     
     try {
-      // Log user interaction
-      await this.logUserInteraction(phoneNumber, messageText, 'command');
+      // Log user interaction (with error handling)
+      try {
+        await this.logUserInteraction(phoneNumber, messageText, 'command');
+        console.log(`✅ Interaction logged for ${phoneNumber}`);
+      } catch (dbError) {
+        console.warn(`⚠️ Failed to log interaction - continuing without logging:`, dbError.message);
+      }
       
       switch (command) {
         case '/start':
         case 'start':
         case 'hi':
         case 'hello':
+          console.log(`🚀 Executing START command for ${phoneNumber}`);
           await this.handleStartCommand(phoneNumber);
+          console.log(`✅ START command completed for ${phoneNumber}`);
           break;
           
         case '/help':
         case 'help':
         case 'menu':
+          console.log(`📋 Executing HELP command for ${phoneNumber}`);
           await this.sendHelpMenu(phoneNumber);
+          console.log(`✅ HELP command completed for ${phoneNumber}`);
           break;
           
         case '/devotional':
         case 'devotional':
+          console.log(`📖 Executing DEVOTIONAL command for ${phoneNumber}`);
           await this.sendTodaysDevotional(phoneNumber);
-          // Send follow-up buttons after devotional
-          await this.sendInteractiveMessage(phoneNumber, "🙏 How else can I assist your spiritual journey today?", [
-            { id: 'remind', title: '⏰ Set Reminders' },
-            { id: 'status', title: '📊 My Status' },
-            { id: 'help', title: '📋 Main Menu' }
-          ]);
+          console.log(`✅ DEVOTIONAL command completed for ${phoneNumber}`);
           break;
           
         case '/remind':
         case 'remind':
         case 'reminders':
+          console.log(`⏰ Executing REMIND command for ${phoneNumber}`);
           await this.enableSlotReminders(phoneNumber);
           await this.sendInteractiveMessage(phoneNumber, "✅ Prayer slot reminders enabled! You'll receive notifications before your prayer sessions.", [
             { id: 'devotional', title: '📖 Get Devotional' },
             { id: 'status', title: '📊 Check Status' },
             { id: 'help', title: '📋 Main Menu' }
           ]);
+          console.log(`✅ REMIND command completed for ${phoneNumber}`);
           break;
           
         case '/stop':
@@ -1339,9 +1401,17 @@ Type 'menu' to see all available options!`);
           break;
       }
     } catch (error) {
-      console.error('Error handling WhatsApp command:', error);
-      await this.sendWhatsAppMessage(phoneNumber, "Sorry, I encountered an error. Please try again later or type 'help' for assistance.");
+      console.error(`❌ Error handling WhatsApp command "${command}" for ${phoneNumber}:`, error);
+      
+      // Try to send error message, but don't fail if this also errors
+      try {
+        await this.sendWhatsAppMessage(phoneNumber, "Sorry, I encountered an error. Please try again later or type 'help' for assistance.");
+      } catch (sendError) {
+        console.error(`❌ Failed to send error message to ${phoneNumber}:`, sendError);
+      }
     }
+    
+    console.log(`📝 Message processing completed for ${phoneNumber}\n`);
   }
 
   // Handle start command with registration

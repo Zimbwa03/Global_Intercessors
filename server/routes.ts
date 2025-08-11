@@ -1205,7 +1205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Determine response length based on input message length
       const inputLength = message.trim().length;
       let maxTokens = 200; // Default for short inputs
-      
+
       if (inputLength > 100) {
         maxTokens = 400;
       } else if (inputLength > 50) {
@@ -1291,7 +1291,7 @@ Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
       }
 
       console.log('Gemini API response received successfully');
-      
+
       // Clean the response from markdown formatting
       const cleanResponse = aiResponse
         .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
@@ -1302,14 +1302,14 @@ Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
 
       // Try to extract scripture reference and text from the response
       let extractedScripture = null;
-      
+
       // Enhanced Bible verse patterns to catch more formats
       const versePatterns = [
         /(\d?\s*[A-Za-z]+\s+\d+:\d+(?:-\d+)?)\s+(.+?)(?=\n\n|\. [A-Z]|Prayer Point:|$)/,
         /([A-Za-z]+\s+\d+:\d+)\s+states?,?\s*["'""]?(.+?)["'""]?(?=\n|\. [A-Z]|Prayer Point:|$)/,
         /([A-Za-z]+\s+\d+:\d+)\s+(.+?)(?=\n|\. [A-Z]|Prayer Point:|$)/
       ];
-      
+
       for (const pattern of versePatterns) {
         const match = cleanResponse.match(pattern);
         if (match) {
@@ -1319,10 +1319,10 @@ Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
             .replace(/states?,?\s*$/, '') // Remove trailing "states"
             .replace(/\s+/g, ' ') // Normalize whitespace
             .trim();
-          
+
           // Clean up common artifacts
           text = text.replace(/^(says?|states?):?\s*/i, '');
-          
+
           if (text.length > 10) { // Ensure we have meaningful text
             extractedScripture = {
               reference: reference,
@@ -1340,7 +1340,7 @@ Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
       if (cleanResponse.includes('strength') || cleanResponse.includes('power')) insights.push("God's strength sustains us");
       if (cleanResponse.includes('hope') || cleanResponse.includes('faith')) insights.push("Hope through faith");
       if (cleanResponse.includes('love') || cleanResponse.includes('compassion')) insights.push("God's love endures");
-      
+
       // Default insights if none found
       if (insights.length === 0) {
         insights.push("Trust in God's plan", "Scripture guides our path", "Prayer connects us to divine wisdom");
@@ -3122,7 +3122,7 @@ Format your response as JSON:
 
 Make it personal, biblical, and actionable for intercession.`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -3793,18 +3793,18 @@ Make it personal, biblical, and actionable for intercession.`;
   });
 
   // WhatsApp Bot API Endpoints
-  
+
   // Register user for WhatsApp notifications
   app.post('/api/whatsapp/register', async (req: Request, res: Response) => {
     try {
       const { userId, whatsAppNumber } = req.body;
-      
+
       if (!userId || !whatsAppNumber) {
         return res.status(400).json({ error: 'userId and whatsAppNumber are required' });
       }
 
       const success = await whatsAppBot.registerWhatsAppUser(userId, whatsAppNumber);
-      
+
       if (success) {
         res.json({ success: true, message: 'WhatsApp user registered successfully' });
       } else {
@@ -3820,13 +3820,13 @@ Make it personal, biblical, and actionable for intercession.`;
   app.post('/api/whatsapp/preferences', async (req: Request, res: Response) => {
     try {
       const { userId, preferences } = req.body;
-      
+
       if (!userId || !preferences) {
         return res.status(400).json({ error: 'userId and preferences are required' });
       }
 
       const success = await whatsAppBot.updateUserPreferences(userId, preferences);
-      
+
       if (success) {
         res.json({ success: true, message: 'Preferences updated successfully' });
       } else {
@@ -3842,13 +3842,13 @@ Make it personal, biblical, and actionable for intercession.`;
   app.post('/api/whatsapp/deactivate', async (req: Request, res: Response) => {
     try {
       const { userId } = req.body;
-      
+
       if (!userId) {
         return res.status(400).json({ error: 'userId is required' });
       }
 
       const success = await whatsAppBot.deactivateWhatsAppUser(userId);
-      
+
       if (success) {
         res.json({ success: true, message: 'WhatsApp user deactivated successfully' });
       } else {
@@ -3864,12 +3864,12 @@ Make it personal, biblical, and actionable for intercession.`;
   app.post('/api/whatsapp/broadcast', async (req: Request, res: Response) => {
     try {
       const { title, content, adminKey } = req.body;
-      
+
       // Simple admin authentication
       if (adminKey !== process.env.ADMIN_SECRET_KEY) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
-      
+
       if (!title || !content) {
         return res.status(400).json({ error: 'title and content are required' });
       }
@@ -3897,7 +3897,7 @@ Make it personal, biblical, and actionable for intercession.`;
   app.post('/api/whatsapp/test-devotional', async (req: Request, res: Response) => {
     try {
       const { adminKey } = req.body;
-      
+
       if (adminKey !== process.env.ADMIN_SECRET_KEY) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -3915,17 +3915,17 @@ Make it personal, biblical, and actionable for intercession.`;
   app.post('/api/whatsapp/test-message', async (req: Request, res: Response) => {
     try {
       const { phoneNumber, message, adminKey } = req.body;
-      
+
       if (adminKey !== process.env.ADMIN_SECRET_KEY) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
-      
+
       if (!phoneNumber || !message) {
         return res.status(400).json({ error: 'phoneNumber and message are required' });
       }
 
       console.log(`Testing WhatsApp message to ${phoneNumber}: ${message}`);
-      
+
       const result = await whatsAppBot.sendMessage(phoneNumber, message);
       res.json({ 
         success: true, 
@@ -3946,7 +3946,7 @@ Make it personal, biblical, and actionable for intercession.`;
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
-    
+
     console.log('🔐 Webhook verification attempt:', {
       mode,
       receivedToken: token,
@@ -3967,56 +3967,60 @@ Make it personal, biblical, and actionable for intercession.`;
   app.post('/api/whatsapp/webhook', async (req: Request, res: Response) => {
     try {
       const body = req.body;
-      
+
       if (body.object === 'whatsapp_business_account') {
         // Process incoming WhatsApp messages with interactive handling
         console.log('📨 Incoming WhatsApp webhook:', JSON.stringify(body, null, 2));
-        
-        // Extract message data from webhook
+
+        // Extract message data
         const entry = body.entry?.[0];
         const changes = entry?.changes?.[0];
         const value = changes?.value;
-        const messages = value?.messages;
+        const messages = value?.messages || [];
+        const statuses = value?.statuses || [];
 
-        console.log('🔍 Extracted webhook data:');
-        console.log('Entry:', !!entry);
-        console.log('Changes:', !!changes);  
-        console.log('Value:', !!value);
-        console.log('Messages:', messages?.length || 0);
+        console.log('🔍 Webhook data analysis:');
+        console.log(`📊 Entry: ${!!entry}, Changes: ${!!changes}, Value: ${!!value}`);
+        console.log(`📱 Messages: ${messages.length}, Statuses: ${statuses.length}`);
 
-        if (messages && messages.length > 0) {
+        if (messages.length > 0) {
+          console.log(`📬 Processing ${messages.length} messages...`);
+
           for (const message of messages) {
             const phoneNumber = message.from;
             const messageText = message.text?.body;
             const messageType = message.type;
+            const messageId = message.id;
 
-            console.log(`📝 Processing message: ${messageType} from ${phoneNumber}: "${messageText}"`);
+            console.log(`\n📬 MESSAGE ${messages.indexOf(message) + 1}/${messages.length}:`);
+            console.log(`📱 From: ${phoneNumber}`);
+            console.log(`🏷️ Type: ${messageType}`);
+            console.log(`🆔 ID: ${messageId}`);
 
             if (messageType === 'text' && messageText) {
-              // Handle text command using the WhatsApp bot service
-              await whatsAppBot.handleIncomingMessage(phoneNumber, messageText);
+              console.log(`💬 Text: "${messageText}"`);
+              await whatsAppBot.handleIncomingMessage(phoneNumber, messageText, messageId);
             } else if (messageType === 'interactive') {
-              // Handle interactive button clicks
               const buttonReply = message.interactive?.button_reply;
               if (buttonReply) {
                 const buttonId = buttonReply.id;
                 const buttonTitle = buttonReply.title;
-                console.log(`🔘 Button clicked: ${buttonId} (${buttonTitle}) from ${phoneNumber}`);
-                
-                // Process button click as command
-                await whatsAppBot.handleIncomingMessage(phoneNumber, buttonId);
+                console.log(`🔘 Button: ${buttonId} (${buttonTitle})`);
+                await whatsAppBot.handleIncomingMessage(phoneNumber, buttonId, messageId);
               } else {
                 console.log(`⚠️ Interactive message without button reply`);
               }
             } else {
-              console.log(`⚠️ Skipping non-text/non-interactive message or message without body`);
+              console.log(`⚠️ Skipping message type "${messageType}"`);
             }
           }
+        } else if (statuses.length > 0) {
+          console.log(`📊 Received ${statuses.length} status updates (delivery/read receipts) - no action needed`);
         } else {
-          console.log('❌ No messages found in webhook data');
+          console.log('❌ No messages or statuses found in webhook data');
         }
       }
-      
+
       res.sendStatus(200);
     } catch (error) {
       console.error('Error processing WhatsApp webhook:', error);
