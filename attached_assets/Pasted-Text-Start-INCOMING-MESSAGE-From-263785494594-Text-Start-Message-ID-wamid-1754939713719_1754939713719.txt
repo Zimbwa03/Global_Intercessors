@@ -1,0 +1,68 @@
+Text: "Start"
+
+📨 INCOMING MESSAGE:
+📱 From: 263785494594
+💬 Text: "Start"
+🆔 Message ID: wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0E3QkZCQTZENjM4MzVEQTlDN0YA
+🎯 Processing command: "start"
+🚀 Executing START command for 263785494594
+🚀 Processing start command for 263785494594
+⚠️ Failed to log interaction for 263785494594: write CONNECT_TIMEOUT jncxejkssgvxhdurmvxy.supabase.co:5432
+❌ Error registering user 263785494594: Database operation timeout
+📨 Incoming WhatsApp webhook: {
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "1497486351664717",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "263782445675",
+              "phone_number_id": "761100597081178"
+            },
+            "contacts": [
+              {
+                "profile": {
+                  "name": "Ngonidzashe Zimbwa"
+                },
+                "wa_id": "263785494594"
+              }
+            ],
+            "messages": [
+              {
+                "from": "263785494594",
+                "id": "wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0E3QkZCQTZENjM4MzVEQTlDN0YA",
+                "timestamp": "1754939476",
+                "text": {
+                  "body": "Start"
+                },
+                "type": "text"
+              }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ]
+}
+🔍 Webhook data analysis:
+📊 Entry: true, Changes: true, Value: true
+📱 Messages: 1, Statuses: 0
+Processing 1 messages...
+
+MESSAGE 1/1:
+From: 263785494594
+Type: text
+ID: wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0E3QkZCQTZENjM4MzVEQTlDN0YA
+Text: "Start"
+
+📨 INCOMING MESSAGE:
+📱 From: 263785494594
+💬 Text: "Start"
+🆔 Message ID: wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0E3QkZCQTZENjM4MzVEQTlDN0YA
+⚠️ Duplicate message detected: wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0E3QkZCQTZENjM4MzVEQTlDN0YA - SKIPPING
+7:11:42 PM [express] POST /api/whatsapp/webhook 200 in 1ms
+^C
