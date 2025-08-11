@@ -177,6 +177,16 @@ The Global Intercessors Prayer Management Platform is a comprehensive full-stack
   - Added comprehensive interaction logging for analytics and support
   - Webhook verification working correctly with Meta WhatsApp Business API
   - Bot responds to commands with personalized messages and interactive menus
+- August 11, 2025. Enhanced WhatsApp bot with professional personalization and DeepSeek AI:
+  - Added getUserName function to fetch actual user names from user_profiles table
+  - Implemented personalized greetings using first names throughout all bot interactions
+  - Created professional welcome message highlighting bot capabilities for "start" or "Hi" commands
+  - Removed automatic unsolicited devotional messages - users must explicitly request content
+  - Enhanced both "Today's Devotional" and "Generate Fresh Messages" with DeepSeek AI integration
+  - Added interactive buttons throughout the bot experience for better navigation
+  - Improved DevotionalContent generation with structured prompts and better parsing
+  - Professional UI with spiritual warfare themes and prophetic declarations
+  - All devotional content now AI-generated with fallback system for reliability
 
 ## User Preferences
 

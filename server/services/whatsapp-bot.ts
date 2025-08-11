@@ -814,7 +814,7 @@ Provide only the summarized content without any formatting.`;
     console.log(`📝 Message processing completed for ${phoneNumber}\n`);
   }
 
-  // Handle start command with registration
+  // Handle start command with registration and personalized welcome
   private async handleStartCommand(phoneNumber: string): Promise<void> {
     console.log(`🚀 Processing start command for ${phoneNumber}`);
 
@@ -825,57 +825,81 @@ Provide only the summarized content without any formatting.`;
       console.warn('⚠️ User registration failed, continuing with welcome message:', error.message);
     }
 
-    const welcomeMessage = `🙏 Welcome to Global Intercessors Prayer Bot!
+    // Get user's name for personalization
+    const userName = await this.getUserName(phoneNumber);
+    
+    const welcomeMessage = `🙏 Hello ${userName}! Welcome to Global Intercessors Prayer Bot!
 
-I'm here to support your spiritual journey with:
+I'm your personal prayer companion, here to empower your spiritual journey with:
 
-📖 Daily devotionals and scripture
-⏰ Prayer slot reminders
-🌍 Global prayer updates
-⚙️ Personalized settings
+📖 **AI-Powered Devotionals** - Daily scripture with fresh insights
+⏰ **Smart Prayer Reminders** - Never miss your intercession slot  
+🌍 **Global Prayer Updates** - Connect with intercessors worldwide
+✨ **Fresh Messages** - AI-generated declarations and prayer points
+📊 **Personal Dashboard** - Track your spiritual growth
+⚙️ **Custom Settings** - Personalized prayer experience
 
-God bless your intercession! 🌟`;
+Ready to transform your prayer life? Choose an option below to begin your spiritual adventure!
 
-    // Always try to send welcome message, fallback to simple message if interactive fails
+*"The effective, fervent prayer of a righteous man avails much." - James 5:16*`;
+
+    // Always try to send welcome message with interactive buttons
     try {
       await this.sendInteractiveMessage(phoneNumber, welcomeMessage, [
-        { id: 'devotional', title: '📖 Today\'s Devotional' },
-        { id: 'remind', title: '⏰ Enable Reminders' },
-        { id: 'help', title: '📋 Show Menu' }
+        { id: 'devotional', title: '📖 Get Today\'s Word' },
+        { id: 'remind', title: '⏰ Setup Reminders' },
+        { id: 'help', title: '📋 Full Menu' }
       ]);
     } catch (error) {
       console.warn('⚠️ Interactive message failed, sending simple welcome:', error.message);
-      await this.sendMessage(phoneNumber, `${welcomeMessage}\n\nType 'menu' to see available options.`);
+      await this.sendMessage(phoneNumber, `${welcomeMessage}\n\nType 'menu' to explore all features.`);
     }
   }
 
-  // Send help menu with available commands
+  // Send personalized help menu with available commands
   private async sendHelpMenu(phoneNumber: string): Promise<void> {
-    const helpMessage = `📋 Global Intercessors Prayer Bot Menu
+    const userName = await this.getUserName(phoneNumber);
+    const helpMessage = `📋 Welcome ${userName}! 
+    
+Here's your complete Global Intercessors command center:
 
-Choose an option below or type any command:`;
+🎯 **Quick Access Menu**
+Choose any option below to continue your spiritual journey:`;
 
     // Send interactive menu with essential buttons
     await this.sendInteractiveMessage(phoneNumber, helpMessage, [
-      { id: 'devotional', title: '📖 Daily Devotional' },
-      { id: 'remind', title: '⏰ Prayer Reminders' },
-      { id: 'status', title: '📊 My Status' },
-      { id: 'settings', title: '⚙️ Settings' },
-      { id: 'pause', title: '⏸️ Pause Notifications' },
-      { id: 'stop', title: '🛑 Unsubscribe' }
+      { id: 'devotional', title: '📖 Daily Word' },
+      { id: 'remind', title: '⏰ Prayer Alerts' },
+      { id: 'status', title: '📊 My Dashboard' }
     ]);
+
+    // Send additional options as second menu
+    setTimeout(async () => {
+      const additionalMessage = `⚙️ **Additional Options**
+      
+More features to enhance your prayer experience:`;
+      
+      await this.sendInteractiveMessage(phoneNumber, additionalMessage, [
+        { id: 'settings', title: '⚙️ Preferences' },
+        { id: 'pause', title: '⏸️ Pause Alerts' },
+        { id: 'stop', title: '🛑 Unsubscribe' }
+      ]);
+    }, 1000);
   }
 
-  // Send devotional menu with options
+  // Send personalized devotional menu with options
   private async sendDevotionalMenu(phoneNumber: string): Promise<void> {
-    const menuMessage = `📖 Devotional Menu
+    const userName = await this.getUserName(phoneNumber);
+    const menuMessage = `📖 ${userName}, Welcome to Your Spiritual Menu!
 
-Select your preferred option:`;
+**Choose your spiritual nourishment:**
+
+🤖 **Powered by DeepSeek AI** - Get authentic, personalized devotional content crafted just for you!`;
 
     await this.sendInteractiveMessage(phoneNumber, menuMessage, [
-      { id: 'today_devotional', title: '📅 Today\'s Devotional' },
-      { id: 'fresh_devotional', title: '✨ Generate Fresh Message' },
-      { id: 'back_menu', title: '🔙 Back to Main Menu' }
+      { id: 'today_devotional', title: '📅 Today\'s Word' },
+      { id: 'fresh_devotional', title: '✨ Fresh Declaration' },
+      { id: 'back_menu', title: '🔙 Main Menu' }
     ]);
   }
 
@@ -1013,48 +1037,44 @@ Select your preferred option:`;
     }
   }
 
-  // Send welcome message to new users
+  // This method should NOT automatically send devotionals - REMOVED AUTOMATIC SENDING
+  // Users must explicitly request devotionals through commands or buttons
   private async sendWelcomeMessage(phoneNumber: string): Promise<void> {
-    const welcomeText = `🙏 Welcome to Global Intercessors Prayer Bot!
-
-I'm here to help you stay connected with our global prayer community.
-
-🌟 What I can do for you:
-• Send daily devotionals and prayer points
-• Remind you of your prayer time slots
-• Help you manage your prayer schedule
-• Connect you with our 24/7 prayer coverage
-
-Type 'menu' anytime to see all available options.
-
-May God bless your prayer journey! 🙌`;
-
-    await this.sendMessage(phoneNumber, welcomeText);
+    // This method is deprecated - use handleStartCommand instead
+    console.log('⚠️ sendWelcomeMessage deprecated - redirecting to handleStartCommand');
+    await this.handleStartCommand(phoneNumber);
   }
 
-  // Send today's devotional
+  // Send today's devotional with DeepSeek AI and personalized buttons
   private async sendTodaysDevotional(phoneNumber: string): Promise<void> {
     try {
+      const userName = await this.getUserName(phoneNumber);
       const devotional = await this.getTodaysDevotional();
 
-      const devotionalText = `📖 Today's Devotional
+      const devotionalText = `📖 ${userName}, Here's Your Word for Today!
 
 ${devotional.devotionText}
 
 📜 Scripture: "${devotional.bibleVerse}"
 - ${devotional.verseReference}
 
-🙏 Prayer Point: Take a moment to meditate on this verse and let it guide your prayers today.
+🙏 **Prayer Focus:** Let this word guide your intercession today as you stand in the gap for breakthrough!
 
-Type 'menu' for more options.`;
+**Continue Your Spiritual Journey:**`;
 
-      await this.sendMessage(phoneNumber, devotionalText);
+      // Send devotional with interactive buttons
+      await this.sendInteractiveMessage(phoneNumber, devotionalText, [
+        { id: 'fresh_devotional', title: '✨ Get Fresh Word' },
+        { id: 'remind', title: '⏰ Set Reminders' },
+        { id: 'back_menu', title: '🔙 Main Menu' }
+      ]);
 
       // Log devotional delivery
       await this.logUserInteraction(phoneNumber, 'devotional_requested', 'feature_use');
     } catch (error) {
       console.error('Error sending devotional:', error);
-      await this.sendMessage(phoneNumber, "Sorry, I couldn't fetch today's devotional right now. Please try again later. 🙏");
+      const userName = await this.getUserName(phoneNumber);
+      await this.sendMessage(phoneNumber, `Sorry ${userName}, I couldn't generate your devotional right now. Please try again later. 🙏`);
     }
   }
 
@@ -1185,32 +1205,36 @@ REFERENCE: [Book Chapter:Verse]`;
     };
   }
 
-  // Send fresh devotional generated by AI
+  // Send fresh devotional generated by DeepSeek AI with interactive buttons
   private async sendFreshDevotional(phoneNumber: string): Promise<void> {
     try {
+      const userName = await this.getUserName(phoneNumber);
       const freshDevotional = await this.generateFreshDevotionalWithAI();
 
-      // Get user's name for personalization
-      const userName = await this.getUserName(phoneNumber);
-
-      const devotionalText = `✨ Fresh Devotional for ${userName}
+      const devotionalText = `✨ ${userName}, Fresh Word from the Lord!
 
 ${freshDevotional.devotionText}
 
 📜 Scripture: "${freshDevotional.bibleVerse}"
 - ${freshDevotional.verseReference}
 
-🙏 Prayer Point: Let this fresh word of God guide your prayers today.
+🔥 **Prophetic Declaration:** This fresh word is your spiritual weapon for breakthrough today!
 
-Type 'menu' for more options.`;
+**Ready for More Spiritual Power?**`;
 
-      await this.sendMessage(phoneNumber, devotionalText);
+      // Send fresh devotional with interactive buttons
+      await this.sendInteractiveMessage(phoneNumber, devotionalText, [
+        { id: 'today_devotional', title: '📅 Today\'s Word' },
+        { id: 'fresh_devotional', title: '🔄 Generate Another' },
+        { id: 'back_menu', title: '🔙 Main Menu' }
+      ]);
 
       // Log devotional delivery
       await this.logUserInteraction(phoneNumber, 'fresh_devotional_requested', 'feature_use');
     } catch (error) {
       console.error('Error sending fresh devotional:', error);
-      await this.sendMessage(phoneNumber, "Sorry, I couldn't generate a fresh devotional right now. Please try again later. 🙏");
+      const userName = await this.getUserName(phoneNumber);
+      await this.sendMessage(phoneNumber, `Sorry ${userName}, I couldn't generate a fresh word right now. Please try again later. 🙏`);
     }
   }
 
@@ -1303,6 +1327,48 @@ DECLARATION: [a short declaration prayer based on the devotional]`;
 
     console.log('Using fallback devotional due to API error');
     return this.getFallbackDevotional();
+  }
+
+  // Get user name from user profiles table for personalization
+  private async getUserName(phoneNumber: string): Promise<string> {
+    if (!this.db) {
+      return 'Beloved Intercessor';
+    }
+
+    try {
+      // First, try to get from WhatsApp bot users table to get userId
+      const whatsAppUser = await this.db
+        .select()
+        .from(whatsAppBotUsers)
+        .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber))
+        .limit(1);
+
+      if (whatsAppUser.length > 0) {
+        const userId = whatsAppUser[0].userId;
+        
+        // Now get the user profile by userId
+        const userProfile = await this.db
+          .select()
+          .from(userProfiles)
+          .where(eq(userProfiles.userId, userId))
+          .limit(1);
+
+        if (userProfile.length > 0) {
+          const fullName = userProfile[0].fullName;
+          if (fullName) {
+            // Return first name only for personalization
+            const firstName = fullName.split(' ')[0];
+            return firstName || 'Beloved Intercessor';
+          }
+        }
+      }
+
+      // If no profile found, try to extract name from phone contacts (fallback)
+      return 'Beloved Intercessor';
+    } catch (error) {
+      console.warn(`Warning: Could not get user name for ${phoneNumber}:`, error.message);
+      return 'Beloved Intercessor';
+    }
   }
 
   // Show reminder preference options
