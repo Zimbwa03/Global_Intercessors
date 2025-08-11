@@ -71,7 +71,7 @@ export function UserProfile({ userEmail }: UserProfileProps) {
   const { handleSubmit, reset, formState: { errors } } = methods;
 
   // Fetch user profile
-  const { data: profile, isLoading, error: profileError } = useQuery({
+  const profileQuery = useQuery({ // Renamed from data to profileQuery for clarity in onSuccess
     queryKey: ['user-profile', userEmail],
     queryFn: async () => {
       try {
@@ -98,7 +98,7 @@ export function UserProfile({ userEmail }: UserProfileProps) {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           };
-          
+
           const profileData = {
             fullName: '',
             profilePicture: '',
@@ -121,7 +121,7 @@ export function UserProfile({ userEmail }: UserProfileProps) {
           fullName: data?.full_name || '',
           profilePicture: data?.profile_picture || '',
           gender: data?.gender || undefined,
-          dateOfBirth: data?.date_of_birth || '',
+          dateOfBirth: data?.date_of_birth ? new Date(data.date_of_birth).toISOString().split('T')[0] : '', // Format date for input type="date"
           phoneNumber: data?.phone_number || '',
           country: data?.country || '',
           city: data?.city || '',
@@ -130,12 +130,12 @@ export function UserProfile({ userEmail }: UserProfileProps) {
           spiritualGifts: data?.spiritual_gifts || [],
           prayerPreferences: data?.prayer_preferences || ''
         };
-        
+
         // Use setTimeout to avoid React state update warnings
         setTimeout(() => {
           reset(profileData);
         }, 0);
-        
+
         return data as UserProfile;
       } catch (error) {
         console.error('Profile query error:', error);
@@ -154,27 +154,29 @@ export function UserProfile({ userEmail }: UserProfileProps) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Not authenticated');
 
+        // Prepare the update data, ensuring proper field mapping
+        const updateData: any = {
+          full_name: values.fullName || null,
+          profile_picture: values.profilePicture || null,
+          gender: values.gender || null,
+          date_of_birth: values.dateOfBirth && values.dateOfBirth.trim() !== '' ? values.dateOfBirth : null,
+          phone_number: values.phoneNumber || null,
+          country: values.country || null,
+          city: values.city || null,
+          timezone: values.timezone || 'UTC+0',
+          bio: values.bio || null,
+          spiritual_gifts: values.spiritualGifts || [],
+          prayer_preferences: values.prayerPreferences || null,
+          updated_at: new Date().toISOString()
+        };
+
         // Use upsert to handle both insert and update cases
         const { data, error: updateError } = await supabase
           .from('user_profiles')
           .upsert({
             id: user.id,
             email: user.email || '',
-            full_name: values.fullName,
-            phone_number: values.phoneNumber,
-            region: values.city,
-            profile_picture: values.profilePicture || null,
-            gender: values.gender || null,
-            date_of_birth: values.dateOfBirth || null,
-            country: values.country || null,
-            city: values.city || null,
-            timezone: values.timezone || 'UTC+0',
-            bio: values.bio || null,
-            spiritual_gifts: values.spiritualGifts || [],
-            prayer_preferences: values.prayerPreferences || null,
-            role: 'intercessor',
-            is_active: true,
-            updated_at: new Date().toISOString(),
+            ...updateData
           }, {
             onConflict: 'id'
           })
@@ -183,13 +185,24 @@ export function UserProfile({ userEmail }: UserProfileProps) {
 
         if (updateError) {
           console.error('Profile update error:', updateError);
-          throw new Error(`Failed to update profile: ${updateError.message}`);
+          throw new Error(updateError.message || 'An error occurred during profile update.');
         }
-        
+
         return data;
       } catch (error) {
         console.error('Profile mutation error:', error);
-        throw error;
+
+        // Extract meaningful error message
+        let errorMessage = 'Failed to update profile';
+        if (error?.message) {
+          errorMessage = error.message;
+        } else if (error?.details) {
+          errorMessage = error.details;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        }
+
+        throw new Error(errorMessage);
       }
     },
     onSuccess: async (data) => { // Added async here
@@ -233,20 +246,28 @@ export function UserProfile({ userEmail }: UserProfileProps) {
       }
 
       toast({
-        title: "Profile Updated",
-        description: "Your profile has been successfully updated.",
+        title: "Success",
+        description: "Your profile has been updated successfully!",
       });
-      setIsEditing(false);
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      // Refetch profile data to ensure UI is in sync
+      profileQuery.refetch();
     },
     onError: (error) => {
+      console.error('Profile update error:', error);
+
+      let errorMessage = "Failed to update profile";
+      if (error?.message?.includes('date')) {
+        errorMessage = "Please check your date format. Leave date fields empty if not needed.";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive"
+        description: errorMessage,
+        variant: "destructive",
       });
-      console.error('Profile update error:', error);
-    }
+    },
   });
 
   const onSubmit = async (values: UserProfileFormData) => {
@@ -303,7 +324,7 @@ export function UserProfile({ userEmail }: UserProfileProps) {
   );
 
 
-  if (isLoading) {
+  if (profileQuery.isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
@@ -313,6 +334,18 @@ export function UserProfile({ userEmail }: UserProfileProps) {
       </div>
     );
   }
+
+  if (profileQuery.error) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <p className="text-red-500 text-lg">Error loading profile: {profileQuery.error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const profile = profileQuery.data; // Get data from the query
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
@@ -420,6 +453,35 @@ export function UserProfile({ userEmail }: UserProfileProps) {
                         />
                       </FormControl>
                       <FormMessage error={errors.city?.message} />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={methods.control}
+                  name="dateOfBirth"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="dateOfBirth">
+                        Date of Birth
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          placeholder="Select your birth date"
+                          {...field}
+                          value={field.value || ''}
+                          onChange={(e) => {
+                            // Only set valid dates, clear if empty
+                            const value = e.target.value;
+                            field.onChange(value === '' ? '' : value);
+                          }}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Optional: Enter your date of birth.
+                      </FormDescription>
+                      <FormMessage error={errors.dateOfBirth?.message} />
                     </FormItem>
                   )}
                 />

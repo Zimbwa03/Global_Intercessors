@@ -73,20 +73,22 @@ export function WhatsAppSettings() {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setIsRegistered(true);
+      const phoneNumber = data.whatsAppNumber; // Assuming the API returns the number
       toast({
-        title: "WhatsApp Registration Successful",
-        description: "You'll now receive prayer reminders and daily devotionals via WhatsApp.",
+        title: "WhatsApp Registered!",
+        description: `Your number ${phoneNumber} has been successfully registered for prayer reminders.`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/stats'] });
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Registration Failed", 
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: (error: any) => { // Changed to 'any' to access potential message property
+      const errorMessage = error?.message || "Failed to register WhatsApp number. Please check your phone number format and try again.";
+        toast({
+          title: "Registration Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
     },
   });
 
