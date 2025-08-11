@@ -1,0 +1,81 @@
+
+📨 INCOMING MESSAGE:
+📱 From: 263785494594
+💬 Text: "remind_1hour"
+🆔 Message ID: wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0E0MDAzQkFCNTU5ODg5MkNERTgA
+🎯 Processing command: "remind_1hour"
+Error checking prayer slot reminders: Error: write CONNECT_TIMEOUT jncxejkssgvxhdurmvxy.supabase.co:5432
+    at connectTimedOut (file:///home/runner/workspace/node_modules/postgres/src/connection.js:257:20)
+    at Timeout.done [as _onTimeout] (file:///home/runner/workspace/node_modules/postgres/src/connection.js:1039:8)
+    at listOnTimeout (node:internal/timers:583:11)
+    at process.processTimers (node:internal/timers:519:7) {
+  code: 'CONNECT_TIMEOUT',
+  errno: 'CONNECT_TIMEOUT',
+  address: 'jncxejkssgvxhdurmvxy.supabase.co',
+  port: 5432
+}
+📨 Incoming WhatsApp webhook: {
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "1497486351664717",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "263782445675",
+              "phone_number_id": "761100597081178"
+            },
+            "contacts": [
+              {
+                "profile": {
+                  "name": "Ngonidzashe Zimbwa"
+                },
+                "wa_id": "263785494594"
+              }
+            ],
+            "messages": [
+              {
+                "context": {
+                  "from": "263782445675",
+                  "id": "wamid.HBgMMjYzNzg1NDk0NTk0FQIAERgSOURCMTgyODNBODYxOTRDRDJBAA=="
+                },
+                "from": "263785494594",
+                "id": "wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0E0MDAzQkFCNTU5ODg5MkNERTgA",
+                "timestamp": "1754936108",
+                "type": "interactive",
+                "interactive": {
+                  "type": "button_reply",
+                  "button_reply": {
+                    "id": "remind_1hour",
+                    "title": "🕐 1 Hour Before"
+                  }
+                }
+              }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ]
+}
+🔍 Webhook data analysis:
+📊 Entry: true, Changes: true, Value: true
+📱 Messages: 1, Statuses: 0
+Processing 1 messages...
+
+MESSAGE 1/1:
+From: 263785494594
+Type: interactive
+ID: wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0E0MDAzQkFCNTU5ODg5MkNERTgA
+Button: remind_1hour (🕐 1 Hour Before)
+
+📨 INCOMING MESSAGE:
+📱 From: 263785494594
+💬 Text: "remind_1hour"
+🆔 Message ID: wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0E0MDAzQkFCNTU5ODg5MkNERTgA
+⚠️ Duplicate message detected: wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0E0MDAzQkFCNTU5ODg5MkNERTgA - SKIPPING
+6:15:35 PM [express] POST /api/whatsapp/webhook 200 in 1ms
+Error checking prayer slot reminders: Error: write CONNECT_TIMEOUT j
