@@ -1,0 +1,36 @@
+ ]
+}
+🔍 Webhook data analysis:
+📊 Entry: true, Changes: true, Value: true
+📱 Messages: 0, Statuses: 1
+Received 1 status updates (delivery/read receipts) - no action needed
+8:25:57 PM [express] POST /api/whatsapp/webhook 200 in 1ms
+Error checking prayer slot reminders: TypeError: Cannot read properties of undefined (reading 'select')
+    at WhatsAppPrayerBot.checkPrayerSlotReminders (/home/runner/workspace/server/services/whatsapp-bot.ts:337:10)
+    at <anonymous> (/home/runner/workspace/server/services/whatsapp-bot.ts:103:12)
+    at Runner.onMatch (/home/runner/workspace/node_modules/node-cron/src/tasks/inline-scheduled-task.ts:70:14)
+    at Timeout._onTimeout (/home/runner/workspace/node_modules/node-cron/src/scheduler/runner.ts:100:41)
+    at listOnTimeout (node:internal/timers:581:17)
+    at process.processTimers (node:internal/timers:519:7)
+Error checking prayer slot reminders: TypeError: Cannot read properties of undefined (reading 'select')
+    at WhatsAppPrayerBot.checkPrayerSlotReminders (/home/runner/workspace/server/services/whatsapp-bot.ts:337:10)
+    at <anonymous> (/home/runner/workspace/server/services/whatsapp-bot.ts:103:12)
+    at Runner.onMatch (/home/runner/workspace/node_modules/node-cron/src/tasks/inline-scheduled-task.ts:70:14)
+    at Timeout._onTimeout (/home/runner/workspace/node_modules/node-cron/src/scheduler/runner.ts:100:41)
+    at listOnTimeout (node:internal/timers:581:17)
+    at process.processTimers (node:internal/timers:519:7)
+Error checking prayer slot reminders: TypeError: Cannot read properties of undefined (reading 'select')
+    at WhatsAppPrayerBot.checkPrayerSlotReminders (/home/runner/workspace/server/services/whatsapp-bot.ts:337:10)
+    at <anonymous> (/home/runner/workspace/server/services/whatsapp-bot.ts:103:12)
+    at Runner.onMatch (/home/runner/workspace/node_modules/node-cron/src/tasks/inline-scheduled-task.ts:70:14)
+    at Timeout._onTimeout (/home/runner/workspace/node_modules/node-cron/src/scheduler/runner.ts:100:41)
+    at listOnTimeout (node:internal/timers:581:17)
+    at process.processTimers (node:internal/timers:519:7)
+Error checking prayer slot reminders: TypeError: Cannot read properties of undefined (reading 'select')
+    at WhatsAppPrayerBot.checkPrayerSlotReminders (/home/runner/workspace/server/services/whatsapp-bot.ts:337:10)
+    at <anonymous> (/home/runner/workspace/server/services/whatsapp-bot.ts:103:12)
+    at Runner.onMatch (/home/runner/workspace/node_modules/node-cron/src/tasks/inline-scheduled-task.ts:70:14)
+    at Timeout._onTimeout (/home/runner/workspace/node_modules/node-cron/src/scheduler/runner.ts:100:41)
+    at listOnTimeout (node:internal/timers:581:17)
+    at process.processTimers (node:internal/timers:519:7)
+^C

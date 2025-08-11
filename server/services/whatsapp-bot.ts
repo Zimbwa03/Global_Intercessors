@@ -314,37 +314,30 @@ May God bless your day and strengthen your prayers! 🙏`;
 
   // Prayer slot reminder system
   private async checkPrayerSlotReminders() {
+    if (!this.db) {
+      console.log('⚠️ Database not available for prayer slot reminders');
+      return;
+    }
+
     try {
       const now = new Date();
       const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
       const currentHour = parseInt(currentTime.split(':')[0]);
       const currentMinute = parseInt(currentTime.split(':')[1]);
 
-      // Get active prayer slots with user information
-      const { data: activeSlots, error } = await supabase
-        .from('prayer_slots')
-        .select(`
-          slot_time,
-          user_id,
-          whatsapp_bot_users!inner(
-            whatsapp_number,
-            reminder_preferences
-          ),
-          user_profiles(full_name)
-        `)
-        .eq('status', 'active')
-        .not('whatsapp_bot_users.whatsapp_number', 'is', null);
-
-      if (error) {
-        console.error('Error fetching prayer slots:', error);
-        return;
-      }
+      // Get active prayer slots with user information using Drizzle ORM instead of Supabase
+      const activeSlots = await this.db
+        .select()
+        .from(prayerSlots)
+        .innerJoin(whatsAppBotUsers, eq(prayerSlots.userId, whatsAppBotUsers.userId))
+        .leftJoin(userProfiles, eq(prayerSlots.userId, userProfiles.userId))
+        .where(eq(prayerSlots.status, 'active'));
 
       for (const slot of activeSlots || []) {
-        const whatsAppNumber = slot.whatsapp_bot_users?.whatsapp_number;
+        const whatsAppNumber = slot.whatsapp_bot_users?.whatsAppNumber;
         if (!whatsAppNumber) continue;
 
-        const slotParts = slot.slot_time?.split('–'); // Expecting "HH:MM–HH:MM"
+        const slotParts = slot.prayer_slots?.slotTime?.split('–'); // Expecting "HH:MM–HH:MM"
         if (!slotParts || slotParts.length !== 2) continue;
 
         const slotStartTimeStr = slotParts[0];
@@ -357,9 +350,9 @@ May God bless your day and strengthen your prayers! 🙏`;
         const timeDifferenceMinutes = slotTotalMinutes - currentTotalMinutes;
 
         let preferences: any = {};
-        if (slot.whatsapp_bot_users?.reminder_preferences) {
+        if (slot.whatsapp_bot_users?.reminderPreferences) {
           try {
-            preferences = JSON.parse(slot.whatsapp_bot_users.reminder_preferences);
+            preferences = JSON.parse(slot.whatsapp_bot_users.reminderPreferences);
           } catch (e) {
             console.error('Error parsing reminder preferences:', e);
           }
@@ -369,7 +362,7 @@ May God bless your day and strengthen your prayers! 🙏`;
 
         // Check for 1-hour reminder
         if (reminderTiming === '1hour' && timeDifferenceMinutes === 60) {
-          await this.sendPrayerSlotReminder(whatsAppNumber, slot.user_profiles?.full_name, slot.slot_time, '1 hour');
+          await this.sendPrayerSlotReminder(whatsAppNumber, slot.user_profiles?.fullName, slot.prayer_slots?.slotTime, '1 hour');
         }
 
         // Check for 30-minute reminder
