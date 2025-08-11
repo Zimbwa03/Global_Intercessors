@@ -61,6 +61,11 @@ export class WhatsAppPrayerBot {
     };
 
     this.deepSeekApiKey = process.env.DEEPSEEK_API_KEY || process.env.GEMINI_API_KEY || '';
+    
+    console.log('🔧 WhatsApp Bot Configuration:');
+    console.log('Phone Number ID:', this.config.phoneNumberId ? 'Configured' : 'Missing');
+    console.log('Access Token:', this.config.accessToken ? 'Configured' : 'Missing');
+    console.log('AI API Key:', this.deepSeekApiKey ? 'Configured' : 'Missing');
 
     if (!this.config.phoneNumberId || !this.config.accessToken) {
       console.warn('WhatsApp API credentials not configured. Bot functionality will be limited.');
@@ -86,9 +91,12 @@ export class WhatsAppPrayerBot {
   // Core messaging functionality
   private async sendWhatsAppMessage(phoneNumber: string, message: string): Promise<boolean> {
     if (!this.config.phoneNumberId || !this.config.accessToken) {
-      console.log(`Would send WhatsApp message to ${phoneNumber}: ${message}`);
+      console.log(`❌ WhatsApp credentials missing. Would send message to ${phoneNumber}: ${message}`);
       return false;
     }
+    
+    console.log(`📤 Sending WhatsApp message to ${phoneNumber}`);
+    console.log(`Message: ${message.substring(0, 100)}...`);
 
     try {
       const response = await fetch(`https://graph.facebook.com/${this.config.apiVersion}/${this.config.phoneNumberId}/messages`, {
@@ -1246,6 +1254,128 @@ Type 'menu' for more options.`;
 🌍 Contributing to 24/7 prayer coverage
 
 Type 'menu' to see all available options!`);
+  }
+
+  // Handle incoming WhatsApp messages
+  async handleIncomingMessage(phoneNumber: string, messageText: string): Promise<void> {
+    console.log(`🎯 Handling WhatsApp command: "${messageText}" from ${phoneNumber}`);
+    
+    const command = messageText.toLowerCase().trim();
+    
+    try {
+      // Log user interaction
+      await this.logUserInteraction(phoneNumber, messageText, 'command');
+      
+      switch (command) {
+        case '/start':
+        case 'start':
+        case 'hi':
+        case 'hello':
+          await this.handleStartCommand(phoneNumber);
+          break;
+          
+        case '/help':
+        case 'help':
+        case 'menu':
+          await this.sendHelpMenu(phoneNumber);
+          break;
+          
+        case '/devotional':
+        case 'devotional':
+          await this.sendTodaysDevotional(phoneNumber);
+          break;
+          
+        case '/remind':
+        case 'remind':
+        case 'reminders':
+          await this.enableSlotReminders(phoneNumber);
+          await this.sendWhatsAppMessage(phoneNumber, "✅ Prayer slot reminders enabled! You'll receive notifications before your prayer sessions.");
+          break;
+          
+        case '/stop':
+        case 'stop':
+        case 'unsubscribe':
+          await this.handleUnsubscribe(phoneNumber);
+          await this.sendWhatsAppMessage(phoneNumber, "😢 You've been unsubscribed from all notifications. Type '/start' anytime to rejoin our prayer community!");
+          break;
+          
+        case '/status':
+        case 'status':
+          await this.sendUserStatus(phoneNumber);
+          break;
+          
+        case '/settings':
+        case 'settings':
+          await this.sendUserSettings(phoneNumber);
+          break;
+          
+        case '/pause':
+        case 'pause':
+          await this.pauseUserReminders(phoneNumber);
+          break;
+          
+        default:
+          // Handle time setting (e.g., "7:00" or "19:30")
+          if (/^\d{1,2}:\d{2}$/.test(command)) {
+            await this.setDailyReminder(phoneNumber, command);
+            await this.sendWhatsAppMessage(phoneNumber, `⏰ Personal reminder set for ${command}! You'll receive daily devotionals at this time.`);
+          } else {
+            // Unknown command - show help
+            await this.sendWhatsAppMessage(phoneNumber, `I didn't understand "${messageText}". Type 'menu' to see available commands!`);
+          }
+          break;
+      }
+    } catch (error) {
+      console.error('Error handling WhatsApp command:', error);
+      await this.sendWhatsAppMessage(phoneNumber, "Sorry, I encountered an error. Please try again later or type 'help' for assistance.");
+    }
+  }
+
+  // Handle start command with registration
+  private async handleStartCommand(phoneNumber: string): Promise<void> {
+    console.log(`🚀 Processing start command for ${phoneNumber}`);
+    
+    // Register user
+    await this.registerUser(phoneNumber);
+    
+    const welcomeMessage = `🙏 Welcome to Global Intercessors Prayer Bot!
+
+I'm here to support your spiritual journey with:
+
+📖 Daily devotionals and scripture
+⏰ Prayer slot reminders
+🌍 Global prayer updates
+⚙️ Personalized settings
+
+Type 'menu' for all available commands.
+
+God bless your intercession! 🌟`;
+
+    await this.sendWhatsAppMessage(phoneNumber, welcomeMessage);
+  }
+
+  // Send help menu with available commands
+  private async sendHelpMenu(phoneNumber: string): Promise<void> {
+    const helpMessage = `📋 Available Commands:
+
+🟢 Essential Commands:
+• 'start' - Welcome & registration
+• 'help' or 'menu' - This help menu
+• 'devotional' - Today's devotion
+• 'remind' - Enable prayer reminders
+• 'status' - Check your connection
+
+⚙️ Settings Commands:
+• 'settings' - View your preferences
+• 'pause' - Pause all reminders
+• 'stop' - Unsubscribe completely
+
+⏰ Custom Reminders:
+• Send time like "7:00" to set personal reminder
+
+🙏 Ready to serve your prayer journey!`;
+
+    await this.sendWhatsAppMessage(phoneNumber, helpMessage);
   }
 }
 

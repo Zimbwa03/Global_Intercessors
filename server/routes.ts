@@ -3972,8 +3972,36 @@ Make it personal, biblical, and actionable for intercession.`;
         // Process incoming WhatsApp messages with interactive handling
         console.log('📨 Incoming WhatsApp webhook:', JSON.stringify(body, null, 2));
         
-        // Handle incoming messages with interactive bot
-        await whatsAppBot.handleIncomingMessage(body);
+        // Extract message data from webhook
+        const entry = body.entry?.[0];
+        const changes = entry?.changes?.[0];
+        const value = changes?.value;
+        const messages = value?.messages;
+
+        console.log('🔍 Extracted webhook data:');
+        console.log('Entry:', !!entry);
+        console.log('Changes:', !!changes);  
+        console.log('Value:', !!value);
+        console.log('Messages:', messages?.length || 0);
+
+        if (messages && messages.length > 0) {
+          for (const message of messages) {
+            const phoneNumber = message.from;
+            const messageText = message.text?.body;
+            const messageType = message.type;
+
+            console.log(`📝 Processing message: ${messageType} from ${phoneNumber}: "${messageText}"`);
+
+            if (messageType === 'text' && messageText) {
+              // Handle the command using the WhatsApp bot service
+              await whatsAppBot.handleIncomingMessage(phoneNumber, messageText);
+            } else {
+              console.log(`⚠️ Skipping non-text message or message without body`);
+            }
+          }
+        } else {
+          console.log('❌ No messages found in webhook data');
+        }
       }
       
       res.sendStatus(200);
