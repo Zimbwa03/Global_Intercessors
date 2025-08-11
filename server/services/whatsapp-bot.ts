@@ -629,7 +629,7 @@ Provide only the summarized content without any formatting.`;
     // Skip duplicate detection for button interactions to allow fast responses
     const isButtonInteraction = ['devotional', 'today_devotional', 'fresh_devotional', 'back_menu'].includes(messageText) || 
                                messageText.startsWith('remind_');
-    
+
     if (!isButtonInteraction && messageId && this.processedMessages.has(messageId)) {
       console.log(`⚠️ Duplicate message detected: ${messageId} - SKIPPING`);
       return;
@@ -796,7 +796,7 @@ Provide only the summarized content without any formatting.`;
 
     // Get user's name for personalization
     const userName = await this.getUserName(phoneNumber);
-    
+
     const welcomeMessage = `🙏 Hello ${userName}! Welcome to Global Intercessors Prayer Bot!
 
 I'm your personal prayer companion, here to empower your spiritual journey with:
@@ -829,7 +829,7 @@ Ready to transform your prayer life? Choose an option below to begin your spirit
   private async sendHelpMenu(phoneNumber: string): Promise<void> {
     const userName = await this.getUserName(phoneNumber);
     const helpMessage = `📋 Welcome ${userName}! 
-    
+
 Here's your complete Global Intercessors command center:
 
 🎯 **Quick Access Menu**
@@ -845,9 +845,9 @@ Choose any option below to continue your spiritual journey:`;
     // Send additional options as second menu
     setTimeout(async () => {
       const additionalMessage = `⚙️ **Additional Options**
-      
+
 More features to enhance your prayer experience:`;
-      
+
       await this.sendInteractiveMessage(phoneNumber, additionalMessage, [
         { id: 'settings', title: '⚙️ Preferences' },
         { id: 'pause', title: '⏸️ Pause Alerts' },
@@ -868,7 +868,7 @@ More features to enhance your prayer experience:`;
     await this.sendInteractiveMessage(phoneNumber, menuMessage, [
       { id: 'today_devotional', title: '📅 Today\'s Word' },
       { id: 'fresh_devotional', title: '🔥 Fresh Declarations' },
-      { id: 'back_menu', title: '🔙 Main Menu' }
+      { id: 'back_menu', title: '🔙 Back' }
     ]);
   }
 
@@ -925,7 +925,7 @@ More features to enhance your prayer experience:`;
         body: JSON.stringify(data),
         signal: controller.signal
       });
-      
+
       clearTimeout(timeoutId);
 
       if (!response.ok) {
@@ -956,7 +956,7 @@ More features to enhance your prayer experience:`;
   private async registerUser(phoneNumber: string): Promise<void> {
     try {
       console.log(`📝 Registering user for ${phoneNumber}`);
-      
+
       // Check if user exists
       const { data: existingUser, error: selectError } = await supabase
         .from('whatsapp_bot_users')
@@ -1118,7 +1118,7 @@ EXPLANATION: [detailed breakdown of the topic using the verse]
 PRAYER: [powerful prayer focused on the topic]`;
 
       console.log('Calling DeepSeek API for structured Today\'s Word...');
-      
+
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -1152,7 +1152,7 @@ PRAYER: [powerful prayer focused on the topic]`;
 
       if (aiResponse) {
         console.log('DeepSeek AI response received for Today\'s Word');
-        
+
         // Parse the structured response
         const topicMatch = aiResponse.match(/TOPIC:\s*(.*?)(?=VERSE:|$)/s);
         const verseMatch = aiResponse.match(/VERSE:\s*(.*?)(?=REFERENCE:|$)/s);
@@ -1295,7 +1295,7 @@ REFERENCE2: [Book Chapter:Verse]
 [Continue for all 10 declarations]`;
 
       console.log('Calling DeepSeek API for fresh declarations...');
-      
+
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -1329,17 +1329,17 @@ REFERENCE2: [Book Chapter:Verse]
 
       if (aiResponse) {
         console.log('DeepSeek AI response received for fresh declarations');
-        
+
         // Parse the structured response
         const focusMatch = aiResponse.match(/FOCUS:\s*(.*?)(?=DECLARATION1:|$)/s);
         const focus = focusMatch?.[1]?.trim() || "💖 Heart Standing Firm in the Lord";
-        
+
         const declarations = [];
         for (let i = 1; i <= 10; i++) {
           const declMatch = aiResponse.match(new RegExp(`DECLARATION${i}:\\s*(.*?)(?=VERSE${i}:|$)`, 's'));
           const verseMatch = aiResponse.match(new RegExp(`VERSE${i}:\\s*(.*?)(?=REFERENCE${i}:|DECLARATION${i+1}:|$)`, 's'));
           const refMatch = aiResponse.match(new RegExp(`REFERENCE${i}:\\s*(.*?)(?=DECLARATION${i+1}:|VERSE${i+1}:|$)`, 's'));
-          
+
           if (declMatch && verseMatch && refMatch) {
             declarations.push({
               declaration: declMatch[1].trim(),
@@ -1348,7 +1348,7 @@ REFERENCE2: [Book Chapter:Verse]
             });
           }
         }
-        
+
         // If we didn't get 10 declarations, fill with fallback
         while (declarations.length < 10) {
           const fallback = this.getFallbackDeclarations();
@@ -1449,7 +1449,7 @@ REFERENCE: [Book Chapter:Verse]
 DECLARATION: [a short declaration prayer based on the devotional]`;
 
       console.log('Calling DeepSeek API for fresh devotional...');
-      
+
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -1483,7 +1483,7 @@ DECLARATION: [a short declaration prayer based on the devotional]`;
 
       if (aiResponse) {
         console.log('DeepSeek AI response received for fresh devotional');
-        
+
         // Parse the structured response
         const devotionMatch = aiResponse.match(/DEVOTION:\s*(.*?)(?=VERSE:|$)/s);
         const verseMatch = aiResponse.match(/VERSE:\s*(.*?)(?=REFERENCE:|DECLARATION:|$)/s);
@@ -2288,7 +2288,7 @@ Type 'menu' to see all available options!`);
     const currentTime = new Date();
     const currentHour = currentTime.getHours();
     const currentMinute = currentTime.getMinutes();
-    
+
     // Sample prayer reminder message with realistic details
     const reminderMessage = `🔔 PRAYER REMINDER - Global Intercessors
 
