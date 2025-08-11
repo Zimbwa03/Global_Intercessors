@@ -3969,11 +3969,11 @@ Make it personal, biblical, and actionable for intercession.`;
       const body = req.body;
       
       if (body.object === 'whatsapp_business_account') {
-        // Process incoming WhatsApp messages
-        console.log('Incoming WhatsApp message:', JSON.stringify(body, null, 2));
+        // Process incoming WhatsApp messages with interactive handling
+        console.log('📨 Incoming WhatsApp webhook:', JSON.stringify(body, null, 2));
         
-        // TODO: Implement interactive message handling
-        // This would handle user commands like "customize reminders", "stop notifications", etc.
+        // Handle incoming messages with interactive bot
+        await whatsAppBot.handleIncomingMessage(body);
       }
       
       res.sendStatus(200);

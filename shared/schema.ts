@@ -108,6 +108,15 @@ export const dailyDevotionals = pgTable("daily_devotionals", {
   generatedAt: timestamp("generated_at").defaultNow().notNull(),
 });
 
+// WhatsApp interactions table for tracking user commands and responses
+export const whatsAppInteractions = pgTable("whatsapp_interactions", {
+  id: serial("id").primaryKey(),
+  phoneNumber: text("phone_number").notNull(),
+  interactionType: text("interaction_type").notNull(), // "command", "button_click", "list_selection", "feature_use"
+  content: text("content").notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
 // Audio Bible progress table for tracking playback state
 export const audioBibleProgress = pgTable("audio_bible_progress", {
   id: serial("id").primaryKey(),
@@ -317,6 +326,11 @@ export const insertDailyDevotionalSchema = createInsertSchema(dailyDevotionals).
   generatedAt: true,
 });
 
+export const insertWhatsAppInteractionSchema = createInsertSchema(whatsAppInteractions).omit({
+  id: true,
+  timestamp: true,
+});
+
 export type PrayerSlot = typeof prayerSlots.$inferSelect;
 export type InsertPrayerSlot = z.infer<typeof insertPrayerSlotSchema>;
 export type AvailableSlot = typeof availableSlots.$inferSelect;
@@ -346,6 +360,8 @@ export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
 export type WhatsAppBotUser = typeof whatsAppBotUsers.$inferSelect;
 export type InsertWhatsAppBotUser = z.infer<typeof insertWhatsAppBotUserSchema>;
 export type WhatsAppMessage = typeof whatsAppMessages.$inferSelect;
+export type WhatsAppInteraction = typeof whatsAppInteractions.$inferSelect;
 export type InsertWhatsAppMessage = z.infer<typeof insertWhatsAppMessageSchema>;
+export type InsertWhatsAppInteraction = z.infer<typeof insertWhatsAppInteractionSchema>;
 export type DailyDevotional = typeof dailyDevotionals.$inferSelect;
 export type InsertDailyDevotional = z.infer<typeof insertDailyDevotionalSchema>;
