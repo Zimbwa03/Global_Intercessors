@@ -662,22 +662,25 @@ Provide only the summarized content without any formatting.`;
     console.log(`💬 Text: "${messageText}"`);
     console.log(`🆔 Message ID: ${messageId || 'N/A'}`);
 
-    // Check for duplicate messages
-    if (messageId && this.responses.has(messageId)) {
+    // Skip duplicate detection for button interactions to allow fast responses
+    const isButtonInteraction = ['devotional', 'today_devotional', 'fresh_devotional', 'back_menu'].includes(messageText) || 
+                               messageText.startsWith('remind_');
+    
+    if (!isButtonInteraction && messageId && this.responses.has(messageId)) {
       console.log(`⚠️ Duplicate message detected: ${messageId} - SKIPPING`);
       return;
     }
 
-    // Add to processed messages
-    if (messageId) {
+    // Track processed messages (but not button clicks for speed)
+    if (!isButtonInteraction && messageId) {
       this.responses.set(messageId, {
         messageId,
         from: phoneNumber,
         response: 'Processing...',
         timestamp: new Date()
       });
-      // Clean up old messages (keep last 100)
-      if (this.responses.size > 100) {
+      // Clean up old messages (keep last 50 for better performance)
+      if (this.responses.size > 50) {
         const first = this.responses.values().next().value;
         this.responses.delete(first.messageId);
       }
@@ -692,13 +695,10 @@ Provide only the summarized content without any formatting.`;
     console.log(`🎯 Processing command: "${command}"`);
 
     try {
-      // Log user interaction (with error handling)
-      try {
-        await this.logUserInteraction(phoneNumber, messageText, 'command'); // Log original message text
-        console.log(`✅ Interaction logged for ${phoneNumber}`);
-      } catch (dbError) {
-        console.warn(`⚠️ Failed to log interaction - continuing without logging:`, dbError.message);
-      }
+      // Log user interaction asynchronously for speed
+      this.logUserInteraction(phoneNumber, messageText, 'command').catch(dbError => {
+        console.warn(`⚠️ Failed to log interaction for ${phoneNumber}:`, dbError.message);
+      });
 
       switch (command) {
         case '/start':
