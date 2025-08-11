@@ -21,9 +21,16 @@ const getTimeBasedGreeting = () => {
   return { text: "Good Evening", emoji: "🌙" };
 };
 
-// Extract username from email
-const getUserName = (email: string) => {
-  return email.split('@')[0];
+// Get user's first name from profile or fallback to email username
+const getUserName = (userProfile: any, email?: string) => {
+  if (userProfile?.fullName || userProfile?.full_name || userProfile?.name) {
+    const fullName = userProfile.fullName || userProfile.full_name || userProfile.name;
+    return fullName.split(' ')[0]; // Return first name
+  }
+  if (email) {
+    return email.split('@')[0]; // Fallback to email username
+  }
+  return 'Intercessor';
 };
 
 export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
@@ -41,6 +48,28 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
     };
     getCurrentUser();
   }, []);
+
+  // Fetch user profile for name
+  const { data: userProfileData } = useQuery({
+    queryKey: ['user-profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
+      }
+
+      return data;
+    },
+    enabled: !!user?.id,
+  });
 
   // Fetch user's attendance statistics
   const { data: attendanceStats } = useQuery({
@@ -244,10 +273,10 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                 }}
               />
               <div>
-                {userEmail ? (
+                {userEmail || userProfileData ? (
                   <>
                     <h1 className="text-3xl font-bold font-poppins">
-                      {getTimeBasedGreeting().text}, {getUserName(userEmail)}! {getTimeBasedGreeting().emoji}
+                      {getTimeBasedGreeting().text}, {getUserName(userProfileData, userEmail)}! {getTimeBasedGreeting().emoji}
                     </h1>
                     <p className="text-gi-gold/90 text-lg">Ready for your prayer session today</p>
                   </>
@@ -278,8 +307,22 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
+                    <p className="text-gi-primary/70 text-sm font-medium mb-1">Sessions This Month</p>
+                    <p className="text-3xl font-bold text-gi-primary">{attendanceStats?.sessionsThisMonth || 0}</p>
+                  </div>
+                  <div className="h-12 w-12 bg-gi-gold/20 rounded-full flex items-center justify-center">
+                    <i className="fas fa-calendar-check text-gi-primary text-xl"></i>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/90 backdrop-blur-sm shadow-brand border-2 border-gi-gold/30 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
                     <p className="text-gi-primary/70 text-sm font-medium mb-1">Prayer Streak</p>
-                    <p className="text-3xl font-bold text-gi-primary">23 days</p>
+                    <p className="text-3xl font-bold text-gi-primary">{attendanceStats?.dayStreak || 0} days</p>
                   </div>
                   <div className="h-12 w-12 bg-gi-gold/20 rounded-full flex items-center justify-center">
                     <i className="fas fa-fire text-gi-primary text-xl"></i>
@@ -287,10 +330,24 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                 </div>
               </CardContent>
             </Card>
+
+            <Card className="bg-white/90 backdrop-blur-sm shadow-brand border-2 border-gi-gold/30 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gi-primary/70 text-sm font-medium mb-1">Global Intercessors</p>
+                    <p className="text-3xl font-bold text-gi-primary">{globalStats?.totalIntercessors || 0}</p>
+                  </div>
+                  <div className="h-12 w-12 bg-gi-gold/20 rounded-full flex items-center justify-center">
+                    <i className="fas fa-globe text-gi-primary text-xl"></i>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
           
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <Card className="bg-white/90 backdrop-blur-sm shadow-brand border border-gi-primary/20 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer">
               <CardContent className="p-6 text-center">
                 <div className="h-16 w-16 bg-gi-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -301,17 +358,13 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
               </CardContent>
             </Card>
 
-            {/* WhatsApp Contact Button */}
-            <Card className="bg-gradient-to-br from-green-500 to-green-600 shadow-brand border border-green-400/30 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer" onClick={() => window.open('https://wa.me/263782445675', '_blank')}>
+            <Card className="bg-white/90 backdrop-blur-sm shadow-brand border border-gi-primary/20 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer">
               <CardContent className="p-6 text-center">
-                <div className="h-16 w-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <i className="fab fa-whatsapp text-white text-3xl"></i>
+                <div className="h-16 w-16 bg-gi-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i className="fas fa-book-open text-gi-primary text-2xl"></i>
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">WhatsApp Support</h3>
-                <p className="text-white/90 text-sm">Get prayer support & guidance</p>
-                <div className="mt-3 px-3 py-1 bg-white/20 rounded-full text-xs text-white font-medium">
-                  Click to Connect
-                </div>
+                <h3 className="text-lg font-semibold text-gi-primary mb-2">Bible Study</h3>
+                <p className="text-gray-600 text-sm">Access spiritual resources</p>
               </CardContent>
             </Card>
           </div>
@@ -449,7 +502,31 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
         </CardContent>
       </Card>
 
-      {/* Note: The WhatsApp bot removal from the menu is assumed to be handled in a separate navigation component, as it's not present in this file */}
+      {/* Separate WhatsApp Bot Panel */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <Card 
+          className="bg-gradient-to-br from-green-500 to-green-600 shadow-2xl border border-green-400/30 hover:shadow-3xl transition-all duration-300 hover:scale-105 cursor-pointer w-72"
+          onClick={() => window.open('https://wa.me/263782445675', '_blank')}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-4">
+              <div className="h-12 w-12 bg-white/20 rounded-full flex items-center justify-center">
+                <i className="fab fa-whatsapp text-white text-2xl"></i>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-white mb-1">WhatsApp Prayer Bot</h3>
+                <p className="text-white/90 text-sm">Get instant prayer support & guidance</p>
+              </div>
+            </div>
+            <div className="mt-3 flex justify-between items-center">
+              <div className="px-3 py-1 bg-white/20 rounded-full text-xs text-white font-medium">
+                Available 24/7
+              </div>
+              <div className="w-3 h-3 bg-green-300 rounded-full animate-pulse"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
