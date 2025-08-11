@@ -3322,7 +3322,7 @@ Make it personal, biblical, and actionable for intercession.`;
     try {
       const { userId } = req.params;
 
-      const { data: profile, error } = await supabase
+      const { data: profile, error } = await supabaseAdmin
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
@@ -3335,24 +3335,22 @@ Make it personal, biblical, and actionable for intercession.`;
 
       // If no profile exists, return a default structure
       if (!profile) {
-        const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+        const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
         return res.json({
           id: userId,
           email: authUser.user?.email || '',
-          fullName: null,
-          profilePicture: null,
+          full_name: null,
+          profile_picture: null,
           gender: null,
-          dateOfBirth: null,
-          phoneNumber: null,
+          date_of_birth: null,
+          phone_number: null,
           country: null,
           city: null,
           timezone: 'UTC+0',
           bio: null,
-          spiritualGifts: [],
-          prayerPreferences: null,
-          isActive: true,
-          joinedAt: new Date(),
-          updatedAt: new Date()
+          is_active: true,
+          created_at: new Date(),
+          updated_at: new Date()
         });
       }
 
@@ -3368,54 +3366,42 @@ Make it personal, biblical, and actionable for intercession.`;
       const { userId } = req.params;
       const profileData = req.body;
 
-      // First check if profile exists
-      const { data: existingProfile } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .eq('id', userId)
-        .single();
+      console.log('Updating profile for user:', userId, 'with data:', profileData);
 
-      let result;
-
-      if (existingProfile) {
-        // Update existing profile
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .update({
-            ...profileData,
-            updatedAt: new Date()
-          })
-          .eq('id', userId)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error updating user profile:', error);
-          return res.status(500).json({ error: 'Failed to update user profile' });
-        }
-
-        result = data;
-      } else {
-        // Create new profile
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .insert({
-            id: userId,
-            ...profileData,
-            joinedAt: new Date(),
-            updatedAt: new Date()
-          })
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error creating user profile:', error);
-          return res.status(500).json({ error: 'Failed to create user profile' });
-        }
-
-        result = data;
+      // Get user email for the upsert
+      let userEmail = profileData.email;
+      if (!userEmail) {
+        const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
+        userEmail = authUser.user?.email || '';
       }
 
+      // Use the service function to upsert profile (bypasses RLS)
+      const { data: result, error } = await supabaseAdmin
+        .rpc('upsert_user_profile', {
+          p_user_id: userId,
+          p_email: userEmail,
+          p_full_name: profileData.full_name || profileData.fullName || null,
+          p_phone_number: profileData.phone_number || profileData.phoneNumber || null,
+          p_whatsapp_number: profileData.whatsapp_number || profileData.whatsappNumber || null,
+          p_whatsapp_active: profileData.whatsapp_active || profileData.whatsappActive || false,
+          p_gender: profileData.gender || null,
+          p_date_of_birth: profileData.date_of_birth || profileData.dateOfBirth || null,
+          p_country: profileData.country || null,
+          p_city: profileData.city || null,
+          p_timezone: profileData.timezone || 'UTC+0',
+          p_bio: profileData.bio || null,
+          p_profile_picture: profileData.profile_picture || profileData.profilePicture || null
+        });
+
+      if (error) {
+        console.error('Error upserting user profile:', error);
+        return res.status(500).json({ 
+          error: 'Failed to save user profile',
+          details: error.message 
+        });
+      }
+
+      console.log('Profile upserted successfully:', result);
       res.json(result);
     } catch (error) {
       console.error('Error in update user profile:', error);
