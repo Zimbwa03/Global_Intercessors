@@ -24,10 +24,10 @@ export function MobileDashboardOverview({ userEmail, userId, onTabChange }: Mobi
     queryKey: ['prayer-slot', userId || userEmail],
     queryFn: async () => {
       if (!userId && !userEmail) return null;
-      
+
       // Use the correct API endpoint that works
       const endpoint = userId ? `/api/prayer-slot/${userId}` : `/api/prayer-slot?userEmail=${encodeURIComponent(userEmail)}`;
-      
+
       console.log('Fetching prayer slot from:', endpoint);
       const response = await fetch(endpoint);
       if (!response.ok) {
@@ -74,7 +74,7 @@ export function MobileDashboardOverview({ userEmail, userId, onTabChange }: Mobi
     const calculateNextSession = () => {
       const now = new Date();
       const slotTime = prayerSlot.prayerSlot.slotTime;
-      
+
       if (!slotTime || !slotTime.includes('–')) {
         console.log('Invalid slot time format:', slotTime);
         setTimeUntilSlot({ hours: 0, minutes: 0, seconds: 0 });
@@ -134,7 +134,7 @@ export function MobileDashboardOverview({ userEmail, userId, onTabChange }: Mobi
     return () => clearInterval(interval);
   }, [prayerSlot?.prayerSlot?.slotTime, prayerSlot?.prayerSlot?.status]);
 
-  
+
 
   const getGreeting = () => {
     const name = userEmail?.split('@')[0] || 'Intercessor';
@@ -292,7 +292,7 @@ export function MobileDashboardOverview({ userEmail, userId, onTabChange }: Mobi
                 </Badge>
               </div>
 
-              
+
 
               <div className="mt-4">
                 <div className="text-sm text-gray-600 mb-2">Prayer consistency this week</div>
@@ -337,10 +337,21 @@ export function MobileDashboardOverview({ userEmail, userId, onTabChange }: Mobi
               </CardContent>
             </Card>
           ))}
+
+          {/* WhatsApp Contact Button */}
+          <Card className="bg-gradient-to-br from-green-500 to-green-600 shadow-md border border-green-400/30 hover:shadow-lg transition-all duration-300 cursor-pointer" onClick={() => window.open('https://wa.me/263782445675', '_blank')}>
+            <CardContent className="p-4 text-center">
+              <div className="h-12 w-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i className="fab fa-whatsapp text-white text-xl"></i>
+              </div>
+              <h3 className="text-sm font-semibold text-white mb-1">WhatsApp</h3>
+              <p className="text-white/90 text-xs">Prayer Support</p>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
-      
+
 
       {/* Stats Overview */}
       <div>

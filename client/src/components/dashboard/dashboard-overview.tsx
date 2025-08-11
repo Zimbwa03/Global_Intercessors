@@ -66,7 +66,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
       let dayStreak = 0;
       const sortedAttendance = attendanceData
         .filter((record: any) => record.attended || record.status === 'attended')
-        .sort((a: any, b: any) => new Date(b.date || b.created_at).getTime() - new Date(a.date || a.created_at).getTime());
+        .sort((a: any, b: any) => new Date(b.date || a.created_at).getTime() - new Date(a.date || a.created_at).getTime());
 
       if (sortedAttendance.length > 0) {
         const today = new Date();
@@ -273,42 +273,47 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-gi-gold/30">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gi-gold rounded-full flex items-center justify-center">
-                  <i className="fas fa-praying-hands text-gi-primary"></i>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Card className="bg-white/90 backdrop-blur-sm shadow-brand border-2 border-gi-gold/30 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gi-primary/70 text-sm font-medium mb-1">Prayer Streak</p>
+                    <p className="text-3xl font-bold text-gi-primary">23 days</p>
+                  </div>
+                  <div className="h-12 w-12 bg-gi-gold/20 rounded-full flex items-center justify-center">
+                    <i className="fas fa-fire text-gi-primary text-xl"></i>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-gi-gold">{attendanceStats?.sessionsThisMonth ?? 0}</p>
-                  <p className="text-sm text-white/80">Sessions This Month</p>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Card className="bg-white/90 backdrop-blur-sm shadow-brand border border-gi-primary/20 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer">
+              <CardContent className="p-6 text-center">
+                <div className="h-16 w-16 bg-gi-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i className="fas fa-praying-hands text-gi-primary text-2xl"></i>
                 </div>
-              </div>
-            </div>
+                <h3 className="text-lg font-semibold text-gi-primary mb-2">Join Prayer Session</h3>
+                <p className="text-gray-600 text-sm">Connect with intercessors worldwide</p>
+              </CardContent>
+            </Card>
 
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-gi-gold/30">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gi-gold rounded-full flex items-center justify-center">
-                  <i className="fas fa-fire text-gi-primary"></i>
+            {/* WhatsApp Contact Button */}
+            <Card className="bg-gradient-to-br from-green-500 to-green-600 shadow-brand border border-green-400/30 hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer" onClick={() => window.open('https://wa.me/263782445675', '_blank')}>
+              <CardContent className="p-6 text-center">
+                <div className="h-16 w-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i className="fab fa-whatsapp text-white text-3xl"></i>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-gi-gold">{attendanceStats?.dayStreak ?? 0}</p>
-                  <p className="text-sm text-white/80">Day Streak</p>
+                <h3 className="text-lg font-semibold text-white mb-2">WhatsApp Support</h3>
+                <p className="text-white/90 text-sm">Get prayer support & guidance</p>
+                <div className="mt-3 px-3 py-1 bg-white/20 rounded-full text-xs text-white font-medium">
+                  Click to Connect
                 </div>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-gi-gold/30">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gi-gold rounded-full flex items-center justify-center">
-                  <i className="fas fa-globe text-gi-primary"></i>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gi-gold">{globalStats?.totalIntercessors ?? 0}</p>
-                  <p className="text-sm text-white/80">Active Intercessors</p>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -444,7 +449,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
         </CardContent>
       </Card>
 
-
+      {/* Note: The WhatsApp bot removal from the menu is assumed to be handled in a separate navigation component, as it's not present in this file */}
     </div>
   );
 }

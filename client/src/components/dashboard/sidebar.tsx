@@ -22,7 +22,6 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
     { id: "bible-chatbook", label: "Bible Chatbook", icon: "fas fa-book" },
     { id: "bible-search", label: "Bible Search", icon: "fas fa-search" },
     { id: "prayer-planner", label: "Prayer Planner", icon: "fas fa-calendar-check" },
-    { id: "whatsapp-settings", label: "WhatsApp Bot", icon: "fas fa-mobile-alt" },
   ];
 
   if (isMobile) {

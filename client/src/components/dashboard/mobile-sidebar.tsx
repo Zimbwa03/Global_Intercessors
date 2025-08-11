@@ -29,7 +29,6 @@ export function MobileSidebar({
     { id: "prayer-planner", label: "Prayer Planner", icon: MessageCircle, description: "Plan Your Prayers" },
     { id: "bible-search", label: "Bible Verse Search", icon: Search, description: "Find Scripture" },
     { id: "prayer-journey", label: "Prayer Journey", icon: TrendingUp, description: "Track Your Growth" },
-    { id: "whatsapp-settings", label: "WhatsApp Bot", icon: Smartphone, description: "Prayer Reminders via WhatsApp" },
   ];
 
   const handleItemClick = (tabId: string) => {

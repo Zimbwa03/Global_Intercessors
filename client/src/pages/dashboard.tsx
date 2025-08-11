@@ -184,8 +184,7 @@ export default function Dashboard() {
         return <UpdatesAnnouncements />;
       case "profile":
         return <UserProfile userEmail={user.email} />;
-      case "whatsapp-settings":
-        return <WhatsAppSettings />;
+      
       case "settings":
         return <div className="p-6 bg-white rounded-lg shadow-md">
           <h2 className="text-2xl font-bold text-gi-primary mb-4">Settings</h2>
