@@ -1,7 +1,5 @@
 import cron from 'node-cron';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import { eq, and, sql } from 'drizzle-orm';
+import { supabase } from '../supabase.js';
 import fetch from 'node-fetch';
 
 import { 
@@ -49,7 +47,6 @@ interface UserSession {
 }
 
 export class WhatsAppPrayerBot {
-  private db!: ReturnType<typeof drizzle>;
   private config!: WhatsAppAPIConfig;
   private deepSeekApiKey!: string;
   private processedMessages: Set<string> = new Set(); // Prevent duplicate message processing
@@ -67,47 +64,8 @@ export class WhatsAppPrayerBot {
   constructor() {
     console.log('🤖 Initializing WhatsApp Prayer Bot...');
 
-    const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) {
-      console.warn('⚠️ DATABASE_URL environment variable is not set. WhatsApp bot will run with limited functionality.');
-      // Initialize bot service properties even if DB is not available
-      this.accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '';
-      this.phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID || '';
-      this.webhookVerifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || '';
-      return;
-    }
-
-    try {
-      const client = postgres(connectionString, {
-        connect_timeout: 30,
-        idle_timeout: 60,
-        max_lifetime: 60 * 60,
-        max: 1, // Use single connection for bot
-        transform: postgres.camel,
-        onnotice: () => {}, // Ignore notices
-        debug: false
-      });
-      this.db = drizzle(client);
-      console.log('✅ Database connection established for WhatsApp bot');
-
-      // Test connection
-      setTimeout(async () => {
-        try {
-          await client`SELECT 1`;
-          console.log('✅ WhatsApp bot database connection verified');
-        } catch (testError) {
-          console.warn('⚠️ WhatsApp bot database connection test failed:', testError.message);
-        }
-      }, 1000);
-    } catch (error) {
-      console.warn('❌ Failed to connect to database for WhatsApp bot:', error);
-      console.log('WhatsApp bot will run without database functionality');
-      // Initialize bot service properties even if DB connection fails
-      this.accessToken = process.env.WHATSAPP_ACCESS_TOKEN || '';
-      this.phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID || '';
-      this.webhookVerifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || '';
-      return;
-    }
+    // Use Supabase client instead of direct PostgreSQL connection
+    console.log('✅ Using Supabase client for WhatsApp bot database operations');
 
     this.config = {
       phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
@@ -310,14 +268,19 @@ Format as plain text without formatting.`;
       }
 
       // Get all active WhatsApp bot users
-      const botUsers = await this.db
-        .select({
-          whatsAppNumber: whatsAppBotUsers.whatsAppNumber,
-          userId: whatsAppBotUsers.userId
-        })
-        .from(whatsAppBotUsers)
-        .leftJoin(userProfiles, eq(whatsAppBotUsers.userId, userProfiles.id))
-        .where(eq(whatsAppBotUsers.isActive, true));
+      const { data: botUsers, error } = await supabase
+        .from('whatsapp_bot_users')
+        .select(`
+          whatsapp_number,
+          user_id,
+          user_profiles!inner(full_name)
+        `)
+        .eq('is_active', true);
+
+      if (error) {
+        console.error('Error fetching bot users:', error);
+        return;
+      }
 
       // Send devotional to each user
       for (const user of botUsers) {
@@ -666,23 +629,18 @@ Provide only the summarized content without any formatting.`;
     const isButtonInteraction = ['devotional', 'today_devotional', 'fresh_devotional', 'back_menu'].includes(messageText) || 
                                messageText.startsWith('remind_');
     
-    if (!isButtonInteraction && messageId && this.responses.has(messageId)) {
+    if (!isButtonInteraction && messageId && this.processedMessages.has(messageId)) {
       console.log(`⚠️ Duplicate message detected: ${messageId} - SKIPPING`);
       return;
     }
 
     // Track processed messages (but not button clicks for speed)
     if (!isButtonInteraction && messageId) {
-      this.responses.set(messageId, {
-        messageId,
-        from: phoneNumber,
-        response: 'Processing...',
-        timestamp: new Date()
-      });
-      // Clean up old messages (keep last 50 for better performance)
-      if (this.responses.size > 50) {
-        const first = this.responses.values().next().value;
-        this.responses.delete(first.messageId);
+      this.processedMessages.add(messageId);
+      // Clean up old messages (keep last 100 for better performance)
+      if (this.processedMessages.size > 100) {
+        const firstMessage = this.processedMessages.values().next().value;
+        this.processedMessages.delete(firstMessage);
       }
     }
 
@@ -711,8 +669,12 @@ Provide only the summarized content without any formatting.`;
             console.log(`✅ START command completed for ${phoneNumber}`);
           } catch (startError) {
             console.error(`❌ START command failed for ${phoneNumber}:`, startError.message);
-            // Fallback response
-            await this.sendMessage(phoneNumber, "🙏 Welcome to Global Intercessors Prayer Bot!\n\nI'm here to support your spiritual journey. Type 'menu' for options.\n\nGod bless your intercession! 🌟");
+            // Always send a fallback response
+            try {
+              await this.sendMessage(phoneNumber, "🙏 Welcome to Global Intercessors Prayer Bot!\n\nI'm here to support your spiritual journey. Type 'menu' for options.\n\nGod bless your intercession! 🌟");
+            } catch (fallbackError) {
+              console.error(`❌ Failed to send fallback message:`, fallbackError.message);
+            }
           }
           break;
 
@@ -985,52 +947,50 @@ More features to enhance your prayer experience:`;
 
   // Database operations for user management
   private async registerUser(phoneNumber: string): Promise<void> {
-    if (!this.db) {
-      console.log(`📝 No database connection - skipping user registration for ${phoneNumber}`);
-      return;
-    }
-
     try {
-      // Set a timeout for database operations
-      const dbTimeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Database operation timeout')), 5000)
-      );
+      console.log(`📝 Registering user for ${phoneNumber}`);
+      
+      // Check if user exists
+      const { data: existingUser, error: selectError } = await supabase
+        .from('whatsapp_bot_users')
+        .select('*')
+        .eq('whatsapp_number', phoneNumber)
+        .single();
 
-      const dbOperation = async () => {
-        // Check if user exists
-        const existingUser = await this.db
-          .select()
-          .from(whatsAppBotUsers)
-          .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber))
-          .limit(1);
+      if (selectError && selectError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Error checking existing user:', selectError);
+        return;
+      }
 
-        if (existingUser.length === 0) {
-          // Register new user
-          await this.db.insert(whatsAppBotUsers).values({
-            userId: `whatsapp_user_${phoneNumber.replace('+', '')}`,
-            whatsAppNumber: phoneNumber,
-            isActive: true,
-            reminderPreferences: JSON.stringify({
+      if (!existingUser) {
+        // Register new user
+        const { error: insertError } = await supabase
+          .from('whatsapp_bot_users')
+          .insert({
+            user_id: `whatsapp_user_${phoneNumber.replace('+', '')}`,
+            whatsapp_number: phoneNumber,
+            is_active: true,
+            reminder_preferences: JSON.stringify({
               dailyDevotionals: true,
               prayerSlotReminders: true,
               customReminderTime: null,
               timezone: 'UTC'
             }),
-            personalReminderTime: null,
+            personal_reminder_time: null,
             timezone: 'UTC',
-            createdAt: new Date(),
-            updatedAt: new Date()
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           });
 
-          console.log(`✅ New user registered: ${phoneNumber}`);
-        } else {
-          console.log(`👤 User already exists: ${phoneNumber}`);
+        if (insertError) {
+          console.error('Error inserting new user:', insertError);
+          return;
         }
-      };
 
-      // Race between database operation and timeout
-      await Promise.race([dbOperation(), dbTimeout]);
-
+        console.log(`✅ New user registered: ${phoneNumber}`);
+      } else {
+        console.log(`👤 User already exists: ${phoneNumber}`);
+      }
     } catch (error) {
       console.error(`❌ Error registering user ${phoneNumber}:`, error.message);
       // Don't throw error - continue with bot functionality even if registration fails
@@ -1457,36 +1417,34 @@ Select when you'd like to be reminded before your prayer slot:`;
 
   // Get user's name from profile
   private async getUserName(phoneNumber: string): Promise<string> {
-    if (!this.db) return 'Dear Intercessor';
-
     try {
-      const user = await this.db
-        .select({
-          userId: whatsAppBotUsers.userId,
-          userName: userProfiles.fullName
-        })
-        .from(whatsAppBotUsers)
-        .leftJoin(userProfiles, eq(whatsAppBotUsers.userId, userProfiles.id))
-        .where(eq(whatsAppBotUsers.whatsAppNumber, phoneNumber))
-        .limit(1);
+      const { data: user, error } = await supabase
+        .from('whatsapp_bot_users')
+        .select(`
+          user_id,
+          user_profiles!inner(full_name)
+        `)
+        .eq('whatsapp_number', phoneNumber)
+        .single();
 
-      if (user[0]?.userName) {
-        return user[0].userName.split(' ')[0]; // First name
+      if (error) {
+        console.warn('Error getting user name:', error.message);
+        return 'Dear Intercessor';
+      }
+
+      if (user?.user_profiles?.full_name) {
+        return user.user_profiles.full_name.split(' ')[0]; // First name
       }
 
       // Fallback: try to get from user profiles table directly using phone number
-      try {
-        const directProfile = await this.db
-          .select({ fullName: userProfiles.fullName })
-          .from(userProfiles)
-          .where(eq(userProfiles.phoneNumber, phoneNumber))
-          .limit(1);
+      const { data: directProfile, error: directError } = await supabase
+        .from('user_profiles')
+        .select('full_name')
+        .eq('phone_number', phoneNumber)
+        .single();
 
-        if (directProfile[0]?.fullName) {
-          return directProfile[0].fullName.split(' ')[0];
-        }
-      } catch (fallbackError) {
-        console.error('Fallback profile lookup failed:', fallbackError);
+      if (!directError && directProfile?.full_name) {
+        return directProfile.full_name.split(' ')[0];
       }
 
       return 'Dear Intercessor';
@@ -1725,19 +1683,21 @@ Format as plain text without formatting.`;
 
   // Log user interactions with better error handling
   private async logUserInteraction(phoneNumber: string, content: string, interactionType: string): Promise<void> {
-    if (!this.db) {
-      console.log(`📝 No database connection - skipping interaction log for ${phoneNumber}`);
-      return;
-    }
-
     try {
-      await this.db.insert(whatsAppInteractions).values({
-        phoneNumber,
-        interactionType,
-        content,
-        createdAt: new Date()
-      });
-      console.log(`📊 Interaction logged: ${interactionType} from ${phoneNumber}`);
+      const { error } = await supabase
+        .from('whatsapp_interactions')
+        .insert({
+          phone_number: phoneNumber,
+          interaction_type: interactionType,
+          content: content,
+          timestamp: new Date().toISOString()
+        });
+
+      if (error) {
+        console.warn(`⚠️ Failed to log interaction for ${phoneNumber}:`, error.message);
+      } else {
+        console.log(`📊 Interaction logged: ${interactionType} from ${phoneNumber}`);
+      }
     } catch (error) {
       console.warn(`⚠️ Failed to log interaction for ${phoneNumber}:`, error.message);
       // Don't throw error - logging failure shouldn't stop bot operation
