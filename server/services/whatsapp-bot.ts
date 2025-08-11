@@ -699,9 +699,15 @@ Provide only the summarized content without any formatting.`;
           await this.sendTodaysDevotional(phoneNumber);
           break;
 
+        case 'get_fresh_word':
+          console.log(`✨ Generating fresh word for ${phoneNumber}`);
+          await this.sendFreshWord(phoneNumber);
+          break;
+
         case 'fresh_devotional':
-          console.log(`✨ Generating fresh devotional for ${phoneNumber}`);
-          await this.sendFreshDevotional(phoneNumber);
+        case 'generate_declarations':
+          console.log(`🔥 Generating fresh declarations for ${phoneNumber}`);
+          await this.sendFreshDeclarations(phoneNumber);
           break;
 
         case 'back_menu':
@@ -861,7 +867,7 @@ More features to enhance your prayer experience:`;
 
     await this.sendInteractiveMessage(phoneNumber, menuMessage, [
       { id: 'today_devotional', title: '📅 Today\'s Word' },
-      { id: 'fresh_devotional', title: '✨ Fresh Declaration' },
+      { id: 'fresh_devotional', title: '🔥 Fresh Declarations' },
       { id: 'back_menu', title: '🔙 Main Menu' }
     ]);
   }
@@ -1010,32 +1016,37 @@ More features to enhance your prayer experience:`;
   private async sendTodaysDevotional(phoneNumber: string): Promise<void> {
     try {
       const userName = await this.getUserName(phoneNumber);
-      const devotional = await this.getTodaysDevotional();
+      const devotional = await this.generateStructuredTodaysWord();
 
       const devotionalText = `📖 ${userName}, Here's Your Word for Today!
 
-${devotional.devotionText}
+**${devotional.topic}**
 
-📜 Scripture: "${devotional.bibleVerse}"
+📜 **Scripture:** "${devotional.bibleVerse}"
 - ${devotional.verseReference}
 
-🙏 **Prayer Focus:** Let this word guide your intercession today as you stand in the gap for breakthrough!
+**Deep Understanding:**
+${devotional.explanation}
+
+🙏 **Prayer:**
+${devotional.prayer}
+
+**Amen.**
 
 **Continue Your Spiritual Journey:**`;
 
       // Send devotional with interactive buttons
       await this.sendInteractiveMessage(phoneNumber, devotionalText, [
-        { id: 'fresh_devotional', title: '✨ Get Fresh Word' },
-        { id: 'remind', title: '⏰ Set Reminders' },
-        { id: 'back_menu', title: '🔙 Main Menu' }
+        { id: 'get_fresh_word', title: '✨ Get Fresh Word' },
+        { id: 'back_menu', title: '🔙 Back' }
       ]);
 
       // Log devotional delivery
-      await this.logUserInteraction(phoneNumber, 'devotional_requested', 'feature_use');
+      await this.logUserInteraction(phoneNumber, 'todays_word_requested', 'feature_use');
     } catch (error) {
-      console.error('Error sending devotional:', error);
+      console.error('Error sending today\'s word:', error);
       const userName = await this.getUserName(phoneNumber);
-      await this.sendMessage(phoneNumber, `Sorry ${userName}, I couldn't generate your devotional right now. Please try again later. 🙏`);
+      await this.sendMessage(phoneNumber, `Sorry ${userName}, I couldn't generate your word right now. Please try again later. 🙏`);
     }
   }
 
@@ -1083,28 +1094,30 @@ ${devotional.devotionText}
     }
   }
 
-  // Generate devotional using DeepSeek AI
-  private async generateDevotionalWithAI(): Promise<DevotionalContent> {
+  // Generate structured Today's Word with DeepSeek AI
+  private async generateStructuredTodaysWord(): Promise<{topic: string, bibleVerse: string, verseReference: string, explanation: string, prayer: string}> {
     if (!this.deepSeekApiKey) {
-      console.log('No DeepSeek API key available, using fallback devotional');
-      return this.getFallbackDevotional();
+      console.log('No DeepSeek API key available, using fallback word');
+      return this.getFallbackTodaysWord();
     }
 
     try {
       const today = new Date().toDateString();
-      const prompt = `Generate a daily devotional for Christian intercessors for ${today}. Include:
+      const prompt = `Generate a powerful "Today's Word" for Christian intercessors for ${today}. Follow this exact structure:
 
-1. A powerful devotional message (2-3 sentences) about prayer, intercession, faith, or spiritual growth
-2. A relevant Bible verse that supports the message
-3. The complete Bible reference (Book Chapter:Verse)
-4. Make it encouraging and practical for daily spiritual warfare and intercession
+1. A compelling topic title about prayer, faith, spiritual warfare, or intercession
+2. A relevant Bible verse that supports the topic
+3. A deep, detailed explanation of the topic using the Bible verse, breaking it down for intercessors (3-4 sentences)
+4. A powerful, focused prayer based on the topic (2-3 sentences)
 
 Respond in this exact format:
-DEVOTION: [your devotional message]
-VERSE: [the complete Bible verse]
-REFERENCE: [Book Chapter:Verse]`;
+TOPIC: [powerful topic title]
+VERSE: [complete Bible verse text]
+REFERENCE: [Book Chapter:Verse]
+EXPLANATION: [detailed breakdown of the topic using the verse]
+PRAYER: [powerful prayer focused on the topic]`;
 
-      console.log('Calling DeepSeek API for today\'s devotional...');
+      console.log('Calling DeepSeek API for structured Today\'s Word...');
       
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
@@ -1117,46 +1130,61 @@ REFERENCE: [Book Chapter:Verse]`;
           messages: [
             {
               role: 'system',
-              content: 'You are a Christian spiritual advisor creating devotional content for prayer warriors and intercessors. Provide biblical, encouraging, and practical spiritual guidance.'
+              content: 'You are a Christian spiritual advisor creating powerful devotional content for prayer warriors and intercessors. Provide biblical, encouraging, and practical spiritual guidance that empowers intercession.'
             },
             {
               role: 'user',
               content: prompt
             }
           ],
-          max_tokens: 400,
+          max_tokens: 600,
           temperature: 0.8
         })
       });
 
       if (!response.ok) {
         console.error(`DeepSeek API error: ${response.status} ${response.statusText}`);
-        return this.getFallbackDevotional();
+        return this.getFallbackTodaysWord();
       }
 
       const data = await response.json();
       const aiResponse = data.choices?.[0]?.message?.content;
 
       if (aiResponse) {
-        console.log('DeepSeek AI response received for devotional');
+        console.log('DeepSeek AI response received for Today\'s Word');
         
         // Parse the structured response
-        const devotionMatch = aiResponse.match(/DEVOTION:\s*(.*?)(?=VERSE:|$)/s);
+        const topicMatch = aiResponse.match(/TOPIC:\s*(.*?)(?=VERSE:|$)/s);
         const verseMatch = aiResponse.match(/VERSE:\s*(.*?)(?=REFERENCE:|$)/s);
-        const referenceMatch = aiResponse.match(/REFERENCE:\s*(.*?)$/s);
+        const referenceMatch = aiResponse.match(/REFERENCE:\s*(.*?)(?=EXPLANATION:|$)/s);
+        const explanationMatch = aiResponse.match(/EXPLANATION:\s*(.*?)(?=PRAYER:|$)/s);
+        const prayerMatch = aiResponse.match(/PRAYER:\s*(.*?)$/s);
 
-        const devotionText = devotionMatch?.[1]?.trim() || "Trust in the Lord with all your heart and lean not on your own understanding.";
-        const bibleVerse = verseMatch?.[1]?.trim() || "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.";
-        const verseReference = referenceMatch?.[1]?.trim() || "Proverbs 3:5-6";
+        const topic = topicMatch?.[1]?.trim() || "Divine Authority in Prayer";
+        const bibleVerse = verseMatch?.[1]?.trim() || "The effective, fervent prayer of a righteous man avails much.";
+        const verseReference = referenceMatch?.[1]?.trim() || "James 5:16";
+        const explanation = explanationMatch?.[1]?.trim() || "When we pray with righteousness and fervency, our prayers carry divine authority that moves heaven and earth.";
+        const prayer = prayerMatch?.[1]?.trim() || "Father, empower my prayers today with Your righteousness and fervent spirit. Let my intercession break through every barrier and accomplish Your will.";
 
-        return { devotionText, bibleVerse, verseReference };
+        return { topic, bibleVerse, verseReference, explanation, prayer };
       }
     } catch (error) {
-      console.error('Error generating devotional with DeepSeek AI:', error);
+      console.error('Error generating Today\'s Word with DeepSeek AI:', error);
     }
 
-    console.log('Using fallback devotional due to API error');
-    return this.getFallbackDevotional();
+    console.log('Using fallback Today\'s Word due to API error');
+    return this.getFallbackTodaysWord();
+  }
+
+  // Fallback Today's Word content
+  private getFallbackTodaysWord(): {topic: string, bibleVerse: string, verseReference: string, explanation: string, prayer: string} {
+    return {
+      topic: "Divine Authority in Prayer",
+      bibleVerse: "The effective, fervent prayer of a righteous man avails much.",
+      verseReference: "James 5:16",
+      explanation: "When we pray with righteousness and fervency, our prayers carry divine authority that moves heaven and earth. This verse reveals that our prayers are not mere words, but powerful spiritual weapons that accomplish much in the kingdom of God. As intercessors, we must understand that our prayers have the power to change circumstances, heal the sick, and transform nations.",
+      prayer: "Father, I thank You that my prayers are effective and powerful. Fill me with Your righteousness and grant me a fervent spirit as I intercede today. Let my prayers accomplish much for Your kingdom and bring breakthrough in every situation I lift before You."
+    };
   }
 
   // Fallback devotional content
@@ -1168,37 +1196,232 @@ REFERENCE: [Book Chapter:Verse]`;
     };
   }
 
-  // Send fresh devotional generated by DeepSeek AI with interactive buttons
-  private async sendFreshDevotional(phoneNumber: string): Promise<void> {
+  // Send fresh word generated by DeepSeek AI with interactive buttons
+  private async sendFreshWord(phoneNumber: string): Promise<void> {
     try {
       const userName = await this.getUserName(phoneNumber);
-      const freshDevotional = await this.generateFreshDevotionalWithAI();
+      const freshWord = await this.generateStructuredTodaysWord();
 
-      const devotionalText = `✨ ${userName}, Fresh Word from the Lord!
+      const wordText = `✨ ${userName}, Fresh Word from the Lord!
 
-${freshDevotional.devotionText}
+**${freshWord.topic}**
 
-📜 Scripture: "${freshDevotional.bibleVerse}"
-- ${freshDevotional.verseReference}
+📜 **Scripture:** "${freshWord.bibleVerse}"
+- ${freshWord.verseReference}
 
-🔥 **Prophetic Declaration:** This fresh word is your spiritual weapon for breakthrough today!
+**Deep Understanding:**
+${freshWord.explanation}
+
+🙏 **Prayer:**
+${freshWord.prayer}
+
+**Amen.**
 
 **Ready for More Spiritual Power?**`;
 
-      // Send fresh devotional with interactive buttons
-      await this.sendInteractiveMessage(phoneNumber, devotionalText, [
-        { id: 'today_devotional', title: '📅 Today\'s Word' },
-        { id: 'fresh_devotional', title: '🔄 Generate Another' },
-        { id: 'back_menu', title: '🔙 Main Menu' }
+      // Send fresh word with interactive buttons
+      await this.sendInteractiveMessage(phoneNumber, wordText, [
+        { id: 'get_fresh_word', title: '✨ Get Fresh Word' },
+        { id: 'back_menu', title: '🔙 Back' }
       ]);
 
-      // Log devotional delivery
-      await this.logUserInteraction(phoneNumber, 'fresh_devotional_requested', 'feature_use');
+      // Log word delivery
+      await this.logUserInteraction(phoneNumber, 'fresh_word_requested', 'feature_use');
     } catch (error) {
-      console.error('Error sending fresh devotional:', error);
+      console.error('Error sending fresh word:', error);
       const userName = await this.getUserName(phoneNumber);
       await this.sendMessage(phoneNumber, `Sorry ${userName}, I couldn't generate a fresh word right now. Please try again later. 🙏`);
     }
+  }
+
+  // Send fresh declarations generated by DeepSeek AI
+  private async sendFreshDeclarations(phoneNumber: string): Promise<void> {
+    try {
+      const userName = await this.getUserName(phoneNumber);
+      const declarations = await this.generateFreshDeclarations();
+
+      const declarationsText = `🔥 ${userName}, Fresh Declarations from Heaven!
+
+📌 **Declaration Focus:** ${declarations.focus}
+
+${declarations.declarations.map((decl, index) => 
+        `${index + 1}️⃣ 🔥 ${decl.declaration}
+📖 ${decl.verseReference} — "${decl.verse}"`
+      ).join('\n\n')}
+
+**Continue in the Spirit:**`;
+
+      // Send declarations with interactive buttons
+      await this.sendInteractiveMessage(phoneNumber, declarationsText, [
+        { id: 'fresh_devotional', title: '🔄 Generate Another' },
+        { id: 'back_menu', title: '🔙 Back' }
+      ]);
+
+      // Log declarations delivery
+      await this.logUserInteraction(phoneNumber, 'fresh_declarations_requested', 'feature_use');
+    } catch (error) {
+      console.error('Error sending fresh declarations:', error);
+      const userName = await this.getUserName(phoneNumber);
+      await this.sendMessage(phoneNumber, `Sorry ${userName}, I couldn't generate fresh declarations right now. Please try again later. 🙏`);
+    }
+  }
+
+  // Generate fresh declarations using DeepSeek AI
+  private async generateFreshDeclarations(): Promise<{focus: string, declarations: Array<{declaration: string, verse: string, verseReference: string}>}> {
+    if (!this.deepSeekApiKey) {
+      console.log('No DeepSeek API key available, using fallback declarations');
+      return this.getFallbackDeclarations();
+    }
+
+    try {
+      const timestamp = Date.now();
+      const prompt = `Generate 10 powerful declarations for Christian intercessors (ID: ${timestamp}). Create:
+
+1. A compelling focus theme (e.g., "Heart Standing Firm in the Lord", "Divine Authority", "Spiritual Breakthrough")
+2. 10 numbered declarations with Bible verses, following this format exactly:
+   - Each declaration should be powerful, faith-filled, and in first person ("I declare...")
+   - Include relevant emojis naturally in the declarations
+   - Each declaration must have a supporting Bible verse with reference
+   - Make them unique and spiritually empowering
+
+Respond in this exact format:
+FOCUS: [compelling focus theme]
+DECLARATION1: [powerful "I declare" statement with emojis]
+VERSE1: [complete Bible verse text]
+REFERENCE1: [Book Chapter:Verse]
+DECLARATION2: [powerful "I declare" statement with emojis]
+VERSE2: [complete Bible verse text]
+REFERENCE2: [Book Chapter:Verse]
+[Continue for all 10 declarations]`;
+
+      console.log('Calling DeepSeek API for fresh declarations...');
+      
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.deepSeekApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a prophetic spiritual advisor creating powerful declarations for Christian intercessors and prayer warriors. Always create faith-filled, victorious declarations that empower spiritual warfare and intercession.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 1200,
+          temperature: 0.95
+        })
+      });
+
+      if (!response.ok) {
+        console.error(`DeepSeek API error: ${response.status} ${response.statusText}`);
+        return this.getFallbackDeclarations();
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices?.[0]?.message?.content;
+
+      if (aiResponse) {
+        console.log('DeepSeek AI response received for fresh declarations');
+        
+        // Parse the structured response
+        const focusMatch = aiResponse.match(/FOCUS:\s*(.*?)(?=DECLARATION1:|$)/s);
+        const focus = focusMatch?.[1]?.trim() || "💖 Heart Standing Firm in the Lord";
+        
+        const declarations = [];
+        for (let i = 1; i <= 10; i++) {
+          const declMatch = aiResponse.match(new RegExp(`DECLARATION${i}:\\s*(.*?)(?=VERSE${i}:|$)`, 's'));
+          const verseMatch = aiResponse.match(new RegExp(`VERSE${i}:\\s*(.*?)(?=REFERENCE${i}:|DECLARATION${i+1}:|$)`, 's'));
+          const refMatch = aiResponse.match(new RegExp(`REFERENCE${i}:\\s*(.*?)(?=DECLARATION${i+1}:|VERSE${i+1}:|$)`, 's'));
+          
+          if (declMatch && verseMatch && refMatch) {
+            declarations.push({
+              declaration: declMatch[1].trim(),
+              verse: verseMatch[1].trim(),
+              verseReference: refMatch[1].trim()
+            });
+          }
+        }
+        
+        // If we didn't get 10 declarations, fill with fallback
+        while (declarations.length < 10) {
+          const fallback = this.getFallbackDeclarations();
+          declarations.push(fallback.declarations[declarations.length % fallback.declarations.length]);
+        }
+
+        return { focus, declarations: declarations.slice(0, 10) };
+      }
+    } catch (error) {
+      console.error('Error generating fresh declarations with DeepSeek AI:', error);
+    }
+
+    console.log('Using fallback declarations due to API error');
+    return this.getFallbackDeclarations();
+  }
+
+  // Fallback declarations content
+  private getFallbackDeclarations(): {focus: string, declarations: Array<{declaration: string, verse: string, verseReference: string}>} {
+    return {
+      focus: "💖 Heart Standing Firm in the Lord",
+      declarations: [
+        {
+          declaration: "I declare my heart is unshakable because the Lord is my foundation! 🙏💪🏽✨",
+          verse: "They will have no fear of bad news; their hearts are steadfast, trusting in the Lord.",
+          verseReference: "Psalm 112:7"
+        },
+        {
+          declaration: "I declare that my heart remains pure and faithful to God's Word! 💎❤️🙌",
+          verse: "Blessed are the pure in heart, for they will see God.",
+          verseReference: "Matthew 5:8"
+        },
+        {
+          declaration: "I declare my heart is guarded by the peace of Christ! 🕊️💖🛡️",
+          verse: "And the peace of God… will guard your hearts and your minds in Christ Jesus.",
+          verseReference: "Philippians 4:7"
+        },
+        {
+          declaration: "I declare that my heart overflows with unshakable joy! 😄🔥💐",
+          verse: "The joy of the Lord is your strength.",
+          verseReference: "Nehemiah 8:10"
+        },
+        {
+          declaration: "I declare my heart will not be troubled but rests in His promises! 🌊🛌🙏",
+          verse: "Do not let your hearts be troubled. You believe in God; believe also in me.",
+          verseReference: "John 14:1"
+        },
+        {
+          declaration: "I declare my heart beats with faith, not fear! 💓🛡️🔥",
+          verse: "So do not fear, for I am with you… I will uphold you with my righteous right hand.",
+          verseReference: "Isaiah 41:10"
+        },
+        {
+          declaration: "I declare my heart treasures the Word of God daily! 📖❤️💎",
+          verse: "I have hidden your word in my heart that I might not sin against you.",
+          verseReference: "Psalm 119:11"
+        },
+        {
+          declaration: "I declare my heart is strengthened every day by the Spirit of God! 💪🔥💨",
+          verse: "That He may strengthen you with power through His Spirit in your inner being.",
+          verseReference: "Ephesians 3:16"
+        },
+        {
+          declaration: "I declare my heart overflows with love for God and people! ❤️🤝🔥",
+          verse: "Love the Lord your God… and love your neighbor as yourself.",
+          verseReference: "Mark 12:30-31"
+        },
+        {
+          declaration: "I declare my heart remains faithful until the end! 🏁❤️🙌",
+          verse: "We have come to share in Christ, if indeed we hold our original conviction firmly to the very end.",
+          verseReference: "Hebrews 3:14"
+        }
+      ]
+    };
   }
 
   // Generate fresh devotional using DeepSeek AI
@@ -1295,26 +1518,7 @@ DECLARATION: [a short declaration prayer based on the devotional]`;
   // Get user name from user profiles table for personalization
   private async getUserName(phoneNumber: string): Promise<string> {
     try {
-      // Get user info from WhatsApp bot users table with joined profile
-      const { data: user, error } = await supabase
-        .from('whatsapp_bot_users')
-        .select(`
-          user_id,
-          user_profiles(full_name)
-        `)
-        .eq('whatsapp_number', phoneNumber)
-        .single();
-
-      if (error) {
-        console.warn('Error getting user name:', error.message);
-        return 'Dear Intercessor';
-      }
-
-      if (user?.user_profiles?.full_name) {
-        return user.user_profiles.full_name.split(' ')[0]; // First name
-      }
-
-      // Fallback: try to get from user profiles table directly using phone number
+      // First try to get from user profiles table directly using phone number
       const { data: directProfile, error: directError } = await supabase
         .from('user_profiles')
         .select('full_name')
@@ -1323,6 +1527,25 @@ DECLARATION: [a short declaration prayer based on the devotional]`;
 
       if (!directError && directProfile?.full_name) {
         return directProfile.full_name.split(' ')[0];
+      }
+
+      // Fallback: try to get user ID from whatsapp_bot_users and then look up profile
+      const { data: botUser, error: botError } = await supabase
+        .from('whatsapp_bot_users')
+        .select('user_id')
+        .eq('whatsapp_number', phoneNumber)
+        .single();
+
+      if (!botError && botUser?.user_id) {
+        const { data: profile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('full_name')
+          .eq('id', botUser.user_id)
+          .single();
+
+        if (!profileError && profile?.full_name) {
+          return profile.full_name.split(' ')[0];
+        }
       }
 
       return 'Dear Intercessor';
@@ -1694,6 +1917,7 @@ Format as plain text without formatting.`;
   // Log user interactions with better error handling
   private async logUserInteraction(phoneNumber: string, content: string, interactionType: string): Promise<void> {
     try {
+      // Check if whatsapp_interactions table exists first
       const { error } = await supabase
         .from('whatsapp_interactions')
         .insert({
@@ -1704,12 +1928,12 @@ Format as plain text without formatting.`;
         });
 
       if (error) {
-        console.warn(`⚠️ Failed to log interaction for ${phoneNumber}:`, error.message);
+        console.warn(`⚠️ Failed to log interaction for ${phoneNumber}:`, error.message || 'Unknown database error');
       } else {
         console.log(`📊 Interaction logged: ${interactionType} from ${phoneNumber}`);
       }
-    } catch (error) {
-      console.warn(`⚠️ Failed to log interaction for ${phoneNumber}:`, error.message);
+    } catch (error: any) {
+      console.warn(`⚠️ Failed to log interaction for ${phoneNumber}:`, error?.message || 'undefined');
       // Don't throw error - logging failure shouldn't stop bot operation
     }
   }
