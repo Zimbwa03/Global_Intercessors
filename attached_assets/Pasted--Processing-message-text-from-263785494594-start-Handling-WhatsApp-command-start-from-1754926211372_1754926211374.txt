@@ -1,0 +1,109 @@
+📝 Processing message: text from 263785494594: "/start"
+🎯 Handling WhatsApp command: "/start" from 263785494594
+Error checking prayer slot reminders: Error: write CONNECT_TIMEOUT jncxejkssgvxhdurmvxy.supabase.co:5432
+    at connectTimedOut (file:///home/runner/workspace/node_modules/postgres/src/connection.js:257:20)
+    at Timeout.done [as _onTimeout] (file:///home/runner/workspace/node_modules/postgres/src/connection.js:1039:8)
+    at listOnTimeout (node:internal/timers:583:11)
+    at process.processTimers (node:internal/timers:519:7) {
+  code: 'CONNECT_TIMEOUT',
+  errno: 'CONNECT_TIMEOUT',
+  address: 'jncxejkssgvxhdurmvxy.supabase.co',
+  port: 5432
+}
+📨 Incoming WhatsApp webhook: {
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "1497486351664717",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "263782445675",
+              "phone_number_id": "761100597081178"
+            },
+            "contacts": [
+              {
+                "profile": {
+                  "name": "Ngonidzashe Zimbwa"
+                },
+                "wa_id": "263785494594"
+              }
+            ],
+            "messages": [
+              {
+                "from": "263785494594",
+                "id": "wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0FGQUI1RjdDQUM1NzkwRjIyOTkA",
+                "timestamp": "1754926168",
+                "text": {
+                  "body": "/start"
+                },
+                "type": "text"
+              }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ]
+}
+🔍 Extracted webhook data:
+Entry: true
+Changes: true
+Value: true
+Messages: 1
+📝 Processing message: text from 263785494594: "/start"
+🎯 Handling WhatsApp command: "/start" from 263785494594
+Error logging interaction: Error: write CONNECT_TIMEOUT jncxejkssgvxhdurmvxy.supabase.co:5432
+    at connectTimedOut (file:///home/runner/workspace/node_modules/postgres/src/connection.js:257:20)
+    at Timeout.done [as _onTimeout] (file:///home/runner/workspace/node_modules/postgres/src/connection.js:1039:8)
+    at listOnTimeout (node:internal/timers:583:11)
+    at process.processTimers (node:internal/timers:519:7) {
+  code: 'CONNECT_TIMEOUT',
+  errno: 'CONNECT_TIMEOUT',
+  address: 'jncxejkssgvxhdurmvxy.supabase.co',
+  port: 5432
+}
+Error handling WhatsApp command: TypeError: this.handleStartCommand is not a function
+    at WhatsAppPrayerBot.handleIncomingMessage (/home/runner/workspace/server/services/whatsapp-bot.ts:1274:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:3997:15)
+📤 Sending WhatsApp message to 263785494594
+Message: Sorry, I encountered an error. Please try again later or type 'help' for assistance....
+🔄 Requesting Zoom access token...
+Using Account ID: BRd_lsW5THORoWN5I3epUw
+Request payload: grant_type=account_credentials&account_id=BRd_lsW5THORoWN5I3epUw
+Authorization header (first 20 chars): WkVZT0RCRU9RSXFJX3lx...
+WhatsApp API error: {
+  error: {
+    message: '(#10) Application does not have permission for this action',
+    type: 'OAuthException',
+    code: 10,
+    error_data: {
+      messaging_product: 'whatsapp',
+      details: 'There was a problem with the access token or permissions you are using for the API call.'
+    },
+    fbtrace_id: 'AUN0C3srOiAPURQy1uWQ7bn'
+  }
+}
+✅ Zoom access token obtained successfully
+Token type: bearer
+Expires in: 3600 seconds
+Processing attendance for: 2025-08-11 15:30
+🔍 Searching for meetings from 2025-08-04 to 2025-08-11
+📊 Found 1 meetings in the last 7 days
+📋 Sample meeting data: {
+  "uuid": "5vyYGHQzSZ6pPIL8DjCJLQ==",
+  "id": 87011203115,
+  "host_id": "eJNAwAYtSBiGIICIQ8FM1g",
+  "topic": "Neuronet's Zoom Meeting",
+  "type": 2,
+  "start_time": "2025-08-08T17:00:00Z",
+  "duration": 30,
+  "timezone": "Africa/Harare",
+  "created_at": "2025-08-08T15:52:10Z",
+  "join_url": "https://us05web.zoom.us/j/87011203115?pwd=08YCQ7UoY3deQ4OGk25QHuHjmAjpuD.1"
+}
+📅 Meeting 1: Neuronet's Zoom Meeting (87011203115) - 2025-08-08T17:00:00Z

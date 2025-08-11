@@ -97,6 +97,9 @@ export class WhatsAppPrayerBot {
     
     console.log(`📤 Sending WhatsApp message to ${phoneNumber}`);
     console.log(`Message: ${message.substring(0, 100)}...`);
+    
+    // For testing - show full message in console
+    console.log(`\n🤖 BOT RESPONSE TO ${phoneNumber}:\n${message}\n`);
 
     try {
       const response = await fetch(`https://graph.facebook.com/${this.config.apiVersion}/${this.config.phoneNumberId}/messages`, {
