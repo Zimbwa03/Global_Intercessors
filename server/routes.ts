@@ -3795,24 +3795,87 @@ Make it personal, biblical, and actionable for intercession.`;
   // WhatsApp Bot API Endpoints
 
   // Register user for WhatsApp notifications
-  app.post('/api/whatsapp/register', async (req: Request, res: Response) => {
+  app.post("/api/whatsapp/register", async (req: Request, res: Response) => {
     try {
       const { userId, whatsAppNumber } = req.body;
 
       if (!userId || !whatsAppNumber) {
-        return res.status(400).json({ error: 'userId and whatsAppNumber are required' });
+        return res.status(400).json({ 
+          error: 'Missing required fields',
+          message: 'User ID and WhatsApp number are required'
+        });
       }
 
-      const success = await whatsAppBot.registerWhatsAppUser(userId, whatsAppNumber);
+      // First check if user profile exists
+      const { data: existingProfile, error: checkError } = await supabaseAdmin
+        .from('user_profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
 
-      if (success) {
-        res.json({ success: true, message: 'WhatsApp user registered successfully' });
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking user profile:', checkError);
+        return res.status(500).json({ 
+          error: 'Database error',
+          message: 'Failed to verify user profile. Please try again.'
+        });
+      }
+
+      // If profile doesn't exist, create it first
+      if (!existingProfile) {
+        const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(userId);
+
+        const { error: createError } = await supabaseAdmin
+          .from('user_profiles')
+          .insert({
+            id: userId,
+            email: user?.email || '',
+            full_name: '',
+            whatsapp_number: whatsAppNumber,
+            whatsapp_active: true,
+            role: 'intercessor',
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (createError) {
+          console.error('Error creating user profile:', createError);
+          return res.status(500).json({ 
+            error: 'Profile creation failed',
+            message: 'Failed to create user profile. Please try again.'
+          });
+        }
       } else {
-        res.status(500).json({ error: 'Failed to register WhatsApp user' });
+        // Update existing profile with WhatsApp number
+        const { error: updateError } = await supabaseAdmin
+          .from('user_profiles')
+          .update({
+            whatsapp_number: whatsAppNumber,
+            whatsapp_active: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId);
+
+        if (updateError) {
+          console.error('WhatsApp registration error:', updateError);
+          return res.status(500).json({ 
+            error: 'Registration failed',
+            message: 'Failed to register WhatsApp number. Please try again.'
+          });
+        }
       }
+
+      res.json({ 
+        success: true,
+        message: 'WhatsApp number registered successfully'
+      });
     } catch (error) {
-      console.error('Error registering WhatsApp user:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      console.error('WhatsApp registration error:', error);
+      res.status(500).json({ 
+        error: 'Internal server error',
+        message: 'An unexpected error occurred. Please try again.'
+      });
     }
   });
 
@@ -3984,7 +4047,7 @@ Make it personal, biblical, and actionable for intercession.`;
         console.log(`📱 Messages: ${messages.length}, Statuses: ${statuses.length}`);
 
         if (messages.length > 0) {
-          console.log(`📬 Processing ${messages.length} messages...`);
+          console.log(`Processing ${messages.length} messages...`);
 
           for (const message of messages) {
             const phoneNumber = message.from;
@@ -3992,32 +4055,32 @@ Make it personal, biblical, and actionable for intercession.`;
             const messageType = message.type;
             const messageId = message.id;
 
-            console.log(`\n📬 MESSAGE ${messages.indexOf(message) + 1}/${messages.length}:`);
-            console.log(`📱 From: ${phoneNumber}`);
-            console.log(`🏷️ Type: ${messageType}`);
-            console.log(`🆔 ID: ${messageId}`);
+            console.log(`\nMESSAGE ${messages.indexOf(message) + 1}/${messages.length}:`);
+            console.log(`From: ${phoneNumber}`);
+            console.log(`Type: ${messageType}`);
+            console.log(`ID: ${messageId}`);
 
             if (messageType === 'text' && messageText) {
-              console.log(`💬 Text: "${messageText}"`);
+              console.log(`Text: "${messageText}"`);
               await whatsAppBot.handleIncomingMessage(phoneNumber, messageText, messageId);
             } else if (messageType === 'interactive') {
               const buttonReply = message.interactive?.button_reply;
               if (buttonReply) {
                 const buttonId = buttonReply.id;
                 const buttonTitle = buttonReply.title;
-                console.log(`🔘 Button: ${buttonId} (${buttonTitle})`);
+                console.log(`Button: ${buttonId} (${buttonTitle})`);
                 await whatsAppBot.handleIncomingMessage(phoneNumber, buttonId, messageId);
               } else {
-                console.log(`⚠️ Interactive message without button reply`);
+                console.log(`Interactive message without button reply`);
               }
             } else {
-              console.log(`⚠️ Skipping message type "${messageType}"`);
+              console.log(`Skipping message type "${messageType}"`);
             }
           }
         } else if (statuses.length > 0) {
-          console.log(`📊 Received ${statuses.length} status updates (delivery/read receipts) - no action needed`);
+          console.log(`Received ${statuses.length} status updates (delivery/read receipts) - no action needed`);
         } else {
-          console.log('❌ No messages or statuses found in webhook data');
+          console.log('No messages or statuses found in webhook data');
         }
       }
 
