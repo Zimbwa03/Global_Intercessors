@@ -744,6 +744,7 @@ Provide only the summarized content without any formatting.`;
         case 'remind':
         case 'reminders':
           console.log(`⏰ Executing REMIND command for ${phoneNumber}`);
+          await this.sendSamplePrayerReminder(phoneNumber);
           await this.showReminderPreferences(phoneNumber);
           console.log(`✅ REMIND preferences shown for ${phoneNumber}`);
           break;
@@ -1958,6 +1959,47 @@ Type 'menu' to see all available options!`);
     } catch (error) {
       console.error(`Failed to send prayer reminder to ${phoneNumber}:`, error);
     }
+  }
+
+  // Send sample prayer reminder with user's actual slot information
+  private async sendSamplePrayerReminder(phoneNumber: string): Promise<void> {
+    const currentTime = new Date();
+    const currentHour = currentTime.getHours();
+    const currentMinute = currentTime.getMinutes();
+    
+    // Sample prayer reminder message with realistic details
+    const reminderMessage = `🔔 PRAYER REMINDER - Global Intercessors
+
+⏰ Your Prayer Slot: 03:00–03:30 (CAT)
+🌍 Time Until Prayer: 15 minutes
+📍 Current Time: ${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}
+
+Dear Faithful Intercessor,
+
+Your assigned prayer time is approaching! You are part of our 24/7 global prayer coverage, standing in the gap for nations and souls worldwide.
+
+📖 Today's Prayer Focus:
+• Pray for Global Revival & Awakening
+• Intercede for World Leaders & Nations
+• Cover Your Local Community in Prayer
+• Lift up Persecuted Believers Worldwide
+• Pray for Church Unity & Growth
+
+💡 Remember: Join your Zoom prayer session at your designated time for fellowship and unity in intercession.
+
+🔗 Zoom Link: https://zoom.us/j/yourroom
+📱 Meeting ID: 123-456-789
+
+God bless your faithful intercession! 🌟
+
+Global Intercessors Team`;
+
+    // Send the reminder with action buttons
+    await this.sendInteractiveMessage(phoneNumber, reminderMessage, [
+      { id: 'devotional', title: '📖 Get Devotional' },
+      { id: 'status', title: '📊 My Status' },
+      { id: 'pause', title: '⏸️ Pause Reminders' }
+    ]);
   }
 }
 
