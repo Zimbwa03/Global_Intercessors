@@ -51,12 +51,26 @@ export class WhatsAppPrayerBot {
 
     try {
       const client = postgres(connectionString, {
-        connect_timeout: 10,
-        idle_timeout: 20,
-        max_lifetime: 60 * 30
+        connect_timeout: 30,
+        idle_timeout: 60,
+        max_lifetime: 60 * 60,
+        max: 1, // Use single connection for bot
+        transform: postgres.camel,
+        onnotice: () => {}, // Ignore notices
+        debug: false
       });
       this.db = drizzle(client);
       console.log('✅ Database connection established for WhatsApp bot');
+      
+      // Test connection
+      setTimeout(async () => {
+        try {
+          await client`SELECT 1`;
+          console.log('✅ WhatsApp bot database connection verified');
+        } catch (testError) {
+          console.warn('⚠️ WhatsApp bot database connection test failed:', testError.message);
+        }
+      }, 1000);
     } catch (error) {
       console.warn('❌ Failed to connect to database for WhatsApp bot:', error);
       console.log('WhatsApp bot will run without database functionality');

@@ -65,77 +65,132 @@ export function UserProfile({ userEmail }: UserProfileProps) {
       spiritualGifts: [],
       prayerPreferences: ''
     },
+    mode: 'onChange'
   });
 
   const { handleSubmit, reset, formState: { errors } } = methods;
 
   // Fetch user profile
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isLoading, error: profileError } = useQuery({
     queryKey: ['user-profile', userEmail],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
 
-      if (error && error.code !== 'PGRST116') {
+        if (error && error.code !== 'PGRST116') {
+          console.error('Profile fetch error:', error);
+          // Return default profile structure for new users
+          const defaultProfile = {
+            id: user.id,
+            email: user.email || '',
+            full_name: '',
+            phone_number: '',
+            region: '',
+            role: 'intercessor',
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          
+          const profileData = {
+            fullName: '',
+            profilePicture: '',
+            gender: undefined,
+            dateOfBirth: '',
+            phoneNumber: '',
+            country: '',
+            city: '',
+            timezone: 'UTC+0',
+            bio: '',
+            spiritualGifts: [],
+            prayerPreferences: ''
+          };
+          reset(profileData);
+          return defaultProfile as UserProfile;
+        }
+
+        // Map Supabase data to form data structure
+        const profileData = {
+          fullName: data?.full_name || '',
+          profilePicture: data?.profile_picture || '',
+          gender: data?.gender || undefined,
+          dateOfBirth: data?.date_of_birth || '',
+          phoneNumber: data?.phone_number || '',
+          country: data?.country || '',
+          city: data?.city || '',
+          timezone: data?.timezone || 'UTC+0',
+          bio: data?.bio || '',
+          spiritualGifts: data?.spiritual_gifts || [],
+          prayerPreferences: data?.prayer_preferences || ''
+        };
+        
+        // Use setTimeout to avoid React state update warnings
+        setTimeout(() => {
+          reset(profileData);
+        }, 0);
+        
+        return data as UserProfile;
+      } catch (error) {
+        console.error('Profile query error:', error);
         throw error;
       }
-
-      // Map Supabase data to form data structure
-      const profileData = {
-        fullName: data?.full_name || '',
-        profilePicture: data?.profile_picture || '',
-        gender: data?.gender,
-        dateOfBirth: data?.date_of_birth || '',
-        phoneNumber: data?.phone_number || '',
-        country: data?.country || '',
-        city: data?.city || '',
-        timezone: data?.timezone || 'UTC+0',
-        bio: data?.bio || '',
-        spiritualGifts: data?.spiritual_gifts || [],
-        prayerPreferences: data?.prayer_preferences || ''
-      };
-      reset(profileData); // Reset form with fetched data
-      return data as UserProfile;
     },
-    enabled: !!userEmail
+    enabled: !!userEmail,
+    retry: 2,
+    retryDelay: 1000
   });
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (values: UserProfileFormData) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
 
-      const { data, error: updateError } = await supabase
-        .from('user_profiles')
-        .upsert({
-          id: user.id,
-          email: user.email || '',
-          full_name: values.fullName,
-          phone_number: values.phoneNumber,
-          region: values.city, // Assuming 'city' from form maps to 'region' in DB for this example
-          // Add other fields as needed, mapping from form values to DB columns
-          profile_picture: values.profilePicture,
-          gender: values.gender,
-          date_of_birth: values.dateOfBirth,
-          country: values.country,
-          timezone: values.timezone,
-          bio: values.bio,
-          spiritual_gifts: values.spiritualGifts,
-          prayer_preferences: values.prayerPreferences,
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+        // Use upsert to handle both insert and update cases
+        const { data, error: updateError } = await supabase
+          .from('user_profiles')
+          .upsert({
+            id: user.id,
+            email: user.email || '',
+            full_name: values.fullName,
+            phone_number: values.phoneNumber,
+            region: values.city,
+            profile_picture: values.profilePicture,
+            gender: values.gender,
+            date_of_birth: values.dateOfBirth,
+            country: values.country,
+            city: values.city,
+            timezone: values.timezone,
+            bio: values.bio,
+            spiritual_gifts: values.spiritualGifts,
+            prayer_preferences: values.prayerPreferences,
+            role: 'intercessor',
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'id'
+          })
+          .select()
+          .single();
 
-      if (updateError) throw updateError;
-      return data;
+        if (updateError) {
+          console.error('Profile update error:', updateError);
+          throw new Error(`Failed to update profile: ${updateError.message}`);
+        }
+        
+        return data;
+      } catch (error) {
+        console.error('Profile mutation error:', error);
+        throw error;
+      }
     },
     onSuccess: async (data) => { // Added async here
       // Register for WhatsApp bot if phone number is provided and changed or new
@@ -349,21 +404,22 @@ export function UserProfile({ userEmail }: UserProfileProps) {
 
                 <FormField
                   control={methods.control}
-                  name="region" // Assuming 'region' in form maps to 'city' in DB, adjust if needed
+                  name="city"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel htmlFor="region">
-                        Region
+                      <FormLabel htmlFor="city">
+                        City/Region
                       </FormLabel>
                       <FormControl>
                         <Input
-                          id="region"
+                          id="city"
                           type="text"
-                          placeholder="Enter your region/city"
-                          {...field}
+                          placeholder="Enter your city/region"
+                          value={field.value || ''}
+                          onChange={field.onChange}
                         />
                       </FormControl>
-                      <FormMessage error={errors.region?.message} />
+                      <FormMessage error={errors.city?.message} />
                     </FormItem>
                   )}
                 />
