@@ -322,29 +322,74 @@ May God bless your day and strengthen your prayers! 🙏`;
       const currentHour = parseInt(currentTime.split(':')[0]);
       const currentMinute = parseInt(currentTime.split(':')[1]);
 
-      // Get active prayer slots first, then match with WhatsApp users
-      const { data: prayerSlots, error: slotsError } = await supabase
+      // Test Supabase connection and query prayer_slots table
+      console.log('🔍 Testing Supabase connection...');
+      console.log('🔗 Supabase URL:', process.env.SUPABASE_URL?.substring(0, 30) + '...');
+      
+      // First, test if we can connect to any table
+      const { data: testConnection, error: testError } = await supabase
+        .from('user_profiles')
+        .select('count')
+        .limit(1);
+      
+      console.log('🔗 Supabase connection test:', { success: !testError, error: testError?.message });
+      
+      // Note: RLS policy issue identified - need to fix service role permissions
+      console.log('🔧 Detected RLS policy blocking service role access to prayer_slots table');
+      console.log('📋 Execute fix-prayer-slots-rls-policy.sql in Supabase to resolve this issue');
+      
+      // Now query the prayer_slots table directly 
+      console.log('🔍 Querying prayer_slots table directly...');
+      const { data: allPrayerSlots, error: allSlotsError } = await supabase
         .from('prayer_slots')
-        .select('slot_time, user_id')
-        .eq('status', 'active');
+        .select('*');
+        
+      console.log('📊 ALL prayer_slots query result:', { 
+        count: allPrayerSlots?.length || 0, 
+        error: allSlotsError?.message,
+        sample: allPrayerSlots?.[0] 
+      });
 
-      if (slotsError) {
-        console.error('Error fetching prayer slots:', slotsError);
+      if (allSlotsError) {
+        console.error('❌ Error accessing prayer_slots table:', allSlotsError);
         return;
       }
 
-      if (!prayerSlots?.length) {
-        console.log('No active prayer slots found');
+      if (!allPrayerSlots?.length) {
+        console.log('⚠️ prayer_slots table is empty or not accessible');
+        return;
+      }
+
+      // Filter for active status
+      const prayerSlots = allPrayerSlots.filter(slot => slot.status === 'active');
+      console.log(`✅ Found ${prayerSlots.length} active prayer slots out of ${allPrayerSlots.length} total slots`);
+      
+      if (!prayerSlots.length) {
+        console.log('📋 Available statuses:', [...new Set(allPrayerSlots.map(slot => slot.status))]);
+        console.log('⚠️ No slots with "active" status found');
+        return;
+      }
+
+      // Extract user IDs, handling different possible column name formats
+      const userIds = prayerSlots.map(slot => {
+        return slot.user_id || slot.userId || slot.User_ID || slot['user-id'];
+      }).filter(id => id);
+
+      console.log('🔍 Extracted user IDs:', userIds);
+
+      if (!userIds.length) {
+        console.log('❌ No user IDs found in prayer slots');
         return;
       }
 
       // Get WhatsApp bot users who have active prayer slots
-      const userIds = prayerSlots.map(slot => slot.user_id);
       const { data: whatsappUsers, error: usersError } = await supabase
         .from('whatsapp_bot_users')
         .select('user_id, whatsapp_number, reminder_preferences')
         .in('user_id', userIds)
         .not('whatsapp_number', 'is', null);
+
+      console.log('📱 WhatsApp users found:', whatsappUsers?.length || 0);
 
       if (usersError) {
         console.error('Error fetching WhatsApp users:', usersError);
@@ -357,6 +402,8 @@ May God bless your day and strengthen your prayers! 🙏`;
         .select('user_id, full_name')
         .in('user_id', userIds);
 
+      console.log('👥 User profiles found:', userProfiles?.length || 0);
+
       if (profilesError) {
         console.error('Error fetching user profiles:', profilesError);
         return;
@@ -364,17 +411,22 @@ May God bless your day and strengthen your prayers! 🙏`;
 
       // Combine the data
       const activeSlots = prayerSlots.map(slot => {
-        const whatsappUser = whatsappUsers?.find(user => user.user_id === slot.user_id);
-        const userProfile = userProfiles?.find(profile => profile.user_id === slot.user_id);
+        const userId = slot.user_id || slot.userId || slot.User_ID || slot['user-id'];
+        const slotTime = slot.slot_time || slot.slotTime || slot.Slot_Time || slot['slot-time'];
+        
+        const whatsappUser = whatsappUsers?.find(user => user.user_id === userId);
+        const userProfile = userProfiles?.find(profile => profile.user_id === userId);
         
         return {
-          slot_time: slot.slot_time,
-          user_id: slot.user_id,
+          slot_time: slotTime,
+          user_id: userId,
           whatsapp_number: whatsappUser?.whatsapp_number,
           reminder_preferences: whatsappUser?.reminder_preferences,
           full_name: userProfile?.full_name
         };
       }).filter(slot => slot.whatsapp_number); // Only include users with WhatsApp numbers
+
+      console.log(`✅ Final active slots with WhatsApp numbers: ${activeSlots.length}`);
 
       console.log(`Found ${activeSlots.length} active prayer slots with WhatsApp users`);
 
