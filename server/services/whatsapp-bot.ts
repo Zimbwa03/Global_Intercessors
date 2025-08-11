@@ -1100,71 +1100,79 @@ Type 'menu' for more options.`;
     }
   }
 
-  // Generate devotional using AI
+  // Generate devotional using DeepSeek AI
   private async generateDevotionalWithAI(): Promise<DevotionalContent> {
     if (!this.deepSeekApiKey) {
+      console.log('No DeepSeek API key available, using fallback devotional');
       return this.getFallbackDevotional();
     }
 
     try {
-      const prompt = `Generate a daily devotional for Christian intercessors with:
-1. A short devotional message (2-3 sentences) about prayer, faith, or spiritual growth
-2. A relevant Bible verse with its reference
-3. Keep it encouraging and practical for daily spiritual life
+      const today = new Date().toDateString();
+      const prompt = `Generate a daily devotional for Christian intercessors for ${today}. Include:
 
-Format as plain text without formatting.`;
+1. A powerful devotional message (2-3 sentences) about prayer, intercession, faith, or spiritual growth
+2. A relevant Bible verse that supports the message
+3. The complete Bible reference (Book Chapter:Verse)
+4. Make it encouraging and practical for daily spiritual warfare and intercession
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${this.deepSeekApiKey}`, {
+Respond in this exact format:
+DEVOTION: [your devotional message]
+VERSE: [the complete Bible verse]
+REFERENCE: [Book Chapter:Verse]`;
+
+      console.log('Calling DeepSeek API for today\'s devotional...');
+      
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${this.deepSeekApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 300,
-          }
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a Christian spiritual advisor creating devotional content for prayer warriors and intercessors. Provide biblical, encouraging, and practical spiritual guidance.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 400,
+          temperature: 0.8
         })
       });
 
-      const data = await response.json() as any;
-      const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!response.ok) {
+        console.error(`DeepSeek API error: ${response.status} ${response.statusText}`);
+        return this.getFallbackDevotional();
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices?.[0]?.message?.content;
 
       if (aiResponse) {
-        // Parse the AI response to extract devotion and verse
-        const lines = aiResponse.split('\n').filter((line: string) => line.trim());
-        let devotionText = '';
-        let bibleVerse = '';
-        let verseReference = '';
+        console.log('DeepSeek AI response received for devotional');
+        
+        // Parse the structured response
+        const devotionMatch = aiResponse.match(/DEVOTION:\s*(.*?)(?=VERSE:|$)/s);
+        const verseMatch = aiResponse.match(/VERSE:\s*(.*?)(?=REFERENCE:|$)/s);
+        const referenceMatch = aiResponse.match(/REFERENCE:\s*(.*?)$/s);
 
-        // Simple parsing logic
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (line.includes(':') && /\d+:\d+/.test(line)) {
-            // Likely a Bible verse reference
-            const parts = line.split(' ');
-            verseReference = parts.slice(0, 2).join(' ');
-            bibleVerse = parts.slice(2).join(' ');
-          } else if (line.length > 20 && !devotionText) {
-            devotionText = line;
-          }
-        }
-
-        if (!devotionText) devotionText = lines[0] || "Trust in the Lord with all your heart and lean not on your own understanding.";
-        if (!bibleVerse) bibleVerse = "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.";
-        if (!verseReference) verseReference = "Proverbs 3:5-6";
+        const devotionText = devotionMatch?.[1]?.trim() || "Trust in the Lord with all your heart and lean not on your own understanding.";
+        const bibleVerse = verseMatch?.[1]?.trim() || "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.";
+        const verseReference = referenceMatch?.[1]?.trim() || "Proverbs 3:5-6";
 
         return { devotionText, bibleVerse, verseReference };
       }
     } catch (error) {
-      console.error('Error generating devotional with AI:', error);
+      console.error('Error generating devotional with DeepSeek AI:', error);
     }
 
+    console.log('Using fallback devotional due to API error');
     return this.getFallbackDevotional();
   }
 
@@ -1209,20 +1217,30 @@ Type 'menu' for more options.`;
   // Generate fresh devotional using DeepSeek AI
   private async generateFreshDevotionalWithAI(): Promise<DevotionalContent> {
     if (!this.deepSeekApiKey) {
+      console.log('No DeepSeek API key available, using fallback devotional');
       return this.getFallbackDevotional();
     }
 
     try {
       const timestamp = Date.now();
-      const prompt = `Generate a completely unique daily devotional for Christian intercessors (ID: ${timestamp}). This must be fresh and different from any previous devotional with:
-1. An inspiring devotional message (2-3 sentences) about prayer, faith, or spiritual growth
-2. A relevant Bible verse with its reference
-3. Keep it encouraging and practical for daily spiritual life
-4. Make it unique and meaningful for today's spiritual needs
+      const currentTime = new Date().toLocaleString();
+      const prompt = `Generate a completely unique and fresh devotional for Christian intercessors (${timestamp} - ${currentTime}). This must be entirely different from any previous devotional. Create:
 
-Format as plain text without formatting.`;
+1. A powerful, inspiring devotional message (2-3 sentences) about intercession, spiritual warfare, prayer breakthrough, or faith victories
+2. A relevant Bible verse that aligns with the devotional theme
+3. The complete Bible reference (Book Chapter:Verse)
+4. Make it unique, encouraging, and practical for intercessors standing in the gap
+5. Include themes like: breakthrough prayers, spiritual authority, prophetic intercession, or nations transformation
 
-      const response = await fetch(`https://api.deepseek.com/v1/chat/completions`, {
+Respond in this exact format:
+DEVOTION: [your unique devotional message]
+VERSE: [the complete Bible verse]
+REFERENCE: [Book Chapter:Verse]
+DECLARATION: [a short declaration prayer based on the devotional]`;
+
+      console.log('Calling DeepSeek API for fresh devotional...');
+      
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.deepSeekApiKey}`,
@@ -1233,55 +1251,57 @@ Format as plain text without formatting.`;
           messages: [
             {
               role: 'system',
-              content: 'You are a spiritual advisor providing fresh, unique devotional content for Christian intercessors. Always create new, meaningful content.'
+              content: 'You are a prophetic spiritual advisor creating fresh, unique devotional content for Christian intercessors and prayer warriors. Always create completely new, powerful, and meaningful content that empowers spiritual warfare.'
             },
             {
               role: 'user',
               content: prompt
             }
           ],
-          max_tokens: 300,
-          temperature: 0.9 // Higher temperature for more creative/unique content
+          max_tokens: 500,
+          temperature: 0.95 // Very high temperature for maximum creativity and uniqueness
         })
       });
 
       if (!response.ok) {
-        throw new Error(`DeepSeek API error: ${response.status}`);
+        console.error(`DeepSeek API error: ${response.status} ${response.statusText}`);
+        return this.getFallbackDevotional();
       }
 
       const data = await response.json();
       const aiResponse = data.choices?.[0]?.message?.content;
 
       if (aiResponse) {
-        // Parse the AI response to extract devotion and verse
-        const lines = aiResponse.split('\n').filter((line: string) => line.trim());
-        let devotionText = '';
-        let bibleVerse = '';
-        let verseReference = '';
+        console.log('DeepSeek AI response received for fresh devotional');
+        
+        // Parse the structured response
+        const devotionMatch = aiResponse.match(/DEVOTION:\s*(.*?)(?=VERSE:|$)/s);
+        const verseMatch = aiResponse.match(/VERSE:\s*(.*?)(?=REFERENCE:|DECLARATION:|$)/s);
+        const referenceMatch = aiResponse.match(/REFERENCE:\s*(.*?)(?=DECLARATION:|$)/s);
+        const declarationMatch = aiResponse.match(/DECLARATION:\s*(.*?)$/s);
 
-        // Simple parsing logic
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (line.includes(':') && /\d+:\d+/.test(line)) {
-            // Likely a Bible verse reference
-            const parts = line.split(' ');
-            verseReference = parts.slice(0, 2).join(' ');
-            bibleVerse = parts.slice(2).join(' ');
-          } else if (line.length > 20 && !devotionText) {
-            devotionText = line;
-          }
+        const devotionText = devotionMatch?.[1]?.trim() || "God has positioned you as a watchman on the wall. Your prayers are powerful and effective for breakthrough.";
+        const bibleVerse = verseMatch?.[1]?.trim() || "The effective, fervent prayer of a righteous man avails much.";
+        const verseReference = referenceMatch?.[1]?.trim() || "James 5:16";
+        const declaration = declarationMatch?.[1]?.trim();
+
+        // Add declaration to the devotional text if present
+        let finalDevotionText = devotionText;
+        if (declaration) {
+          finalDevotionText += `\n\n🔥 Declaration: ${declaration}`;
         }
 
-        if (!devotionText) devotionText = lines[0] || "Trust in the Lord with all your heart and lean not on your own understanding.";
-        if (!bibleVerse) bibleVerse = "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.";
-        if (!verseReference) verseReference = "Proverbs 3:5-6";
-
-        return { devotionText, bibleVerse, verseReference };
+        return { 
+          devotionText: finalDevotionText, 
+          bibleVerse, 
+          verseReference 
+        };
       }
     } catch (error) {
-      console.error('Error generating fresh devotional with DeepSeek:', error);
+      console.error('Error generating fresh devotional with DeepSeek AI:', error);
     }
 
+    console.log('Using fallback devotional due to API error');
     return this.getFallbackDevotional();
   }
 
