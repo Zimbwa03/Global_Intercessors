@@ -39,13 +39,13 @@ export function WhatsAppSettings() {
     };
     getUser();
   }, []);
-  
+
   const [whatsAppNumber, setWhatsAppNumber] = useState('');
   const [personalReminderTime, setPersonalReminderTime] = useState('07:00');
   const [personalReminderDays, setPersonalReminderDays] = useState('Everyday');
   const [timezone, setTimezone] = useState('UTC');
   const [isRegistered, setIsRegistered] = useState(false);
-  
+
   // Test message functionality
   const [testPhoneNumber, setTestPhoneNumber] = useState('');
   const [testMessage, setTestMessage] = useState('');
@@ -65,12 +65,12 @@ export function WhatsAppSettings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to register for WhatsApp notifications');
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -105,12 +105,12 @@ export function WhatsAppSettings() {
           preferences,
         }),
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to update preferences');
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -136,12 +136,12 @@ export function WhatsAppSettings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to send test message');
       }
-      
+
       return response.json();
     },
     onSuccess: (data) => {
@@ -169,12 +169,12 @@ export function WhatsAppSettings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user?.id }),
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to deactivate WhatsApp notifications');
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -315,7 +315,7 @@ export function WhatsAppSettings() {
                   Include your country code (e.g., +1 for US, +44 for UK)
                 </p>
               </div>
-              
+
               <Button 
                 onClick={handleRegister}
                 disabled={registerMutation.isPending || !whatsAppNumber.trim()}
@@ -341,7 +341,7 @@ export function WhatsAppSettings() {
                   <Clock className="h-5 w-5" />
                   <span>Personal Reminder Settings</span>
                 </h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="reminder-time">Reminder Time</Label>
@@ -352,7 +352,7 @@ export function WhatsAppSettings() {
                       onChange={(e) => setPersonalReminderTime(e.target.value)}
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="reminder-days">Days</Label>
                     <Select value={personalReminderDays} onValueChange={setPersonalReminderDays}>
@@ -448,7 +448,7 @@ export function WhatsAppSettings() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start space-x-3">
               <MessageSquare className="h-5 w-5 text-green-600 mt-0.5" />
               <div>
@@ -458,7 +458,7 @@ export function WhatsAppSettings() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start space-x-3">
               <Bell className="h-5 w-5 text-purple-600 mt-0.5" />
               <div>
@@ -468,7 +468,7 @@ export function WhatsAppSettings() {
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-start space-x-3">
               <Calendar className="h-5 w-5 text-orange-600 mt-0.5" />
               <div>
