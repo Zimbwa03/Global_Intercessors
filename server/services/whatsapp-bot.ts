@@ -351,12 +351,17 @@ May God bless your day and strengthen your prayers! 🙏`;
       });
 
       if (allSlotsError) {
-        console.error('❌ Error accessing prayer_slots table:', allSlotsError);
+        if (allSlotsError.code === '42P01') {
+          console.error('❌ prayer_slots table does not exist. Please create the table first.');
+        } else {
+          console.error('❌ Error accessing prayer_slots table:', allSlotsError);
+        }
         return;
       }
 
       if (!allPrayerSlots?.length) {
-        console.log('⚠️ prayer_slots table is empty or not accessible');
+        console.log('⚠️ prayer_slots table is empty - no prayer slots available for reminders');
+        console.log('💡 Add sample prayer slots using create-whatsapp-bot-tables.sql');
         return;
       }
 
@@ -1055,6 +1060,10 @@ More features to enhance your prayer experience:`;
         .single();
 
       if (selectError && selectError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        if (selectError.code === '42P01') {
+          console.error('⚠️ whatsapp_bot_users table does not exist. Please run create-whatsapp-bot-tables.sql');
+          return;
+        }
         console.error('Error checking existing user:', selectError);
         return;
       }
@@ -1070,7 +1079,7 @@ More features to enhance your prayer experience:`;
             reminder_preferences: JSON.stringify({
               dailyDevotionals: true,
               prayerSlotReminders: true,
-              customReminderTime: null,
+              reminderTiming: '30min',
               timezone: 'UTC'
             }),
             personal_reminder_time: null,
@@ -1081,15 +1090,30 @@ More features to enhance your prayer experience:`;
 
         if (insertError) {
           console.error('Error inserting new user:', insertError);
+          if (insertError.code === '42P01') {
+            console.error('⚠️ Please run create-whatsapp-bot-tables.sql in Supabase to create missing tables');
+          }
           return;
         }
 
         console.log(`✅ New user registered: ${phoneNumber}`);
       } else {
         console.log(`👤 User already exists: ${phoneNumber}`);
+        
+        // Update user as active if they were inactive
+        if (!existingUser.is_active) {
+          const { error: updateError } = await supabase
+            .from('whatsapp_bot_users')
+            .update({ is_active: true, updated_at: new Date().toISOString() })
+            .eq('whatsapp_number', phoneNumber);
+
+          if (!updateError) {
+            console.log(`✅ User reactivated: ${phoneNumber}`);
+          }
+        }
       }
-    } catch (error) {
-      console.error(`❌ Error registering user ${phoneNumber}:`, error.message);
+    } catch (error: any) {
+      console.error(`❌ Error registering user ${phoneNumber}:`, error?.message || 'Unknown error');
       // Don't throw error - continue with bot functionality even if registration fails
     }
   }
@@ -1626,7 +1650,14 @@ DECLARATION: [a short declaration prayer based on the devotional]`;
         .eq('whatsapp_number', phoneNumber)
         .single();
 
-      if (!botError && botUser?.user_id) {
+      if (botError) {
+        if (botError.code === '42P01') {
+          console.warn('⚠️ whatsapp_bot_users table missing - using default name');
+        }
+        return 'Dear Intercessor';
+      }
+
+      if (botUser?.user_id) {
         const { data: profile, error: profileError } = await supabase
           .from('user_profiles')
           .select('full_name')
@@ -1639,8 +1670,8 @@ DECLARATION: [a short declaration prayer based on the devotional]`;
       }
 
       return 'Dear Intercessor';
-    } catch (error) {
-      console.error('Error getting user name:', error);
+    } catch (error: any) {
+      console.warn('Error getting user name:', error?.message || 'Unknown error');
       return 'Dear Intercessor';
     }
   }
