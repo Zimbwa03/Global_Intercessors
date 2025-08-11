@@ -56,18 +56,32 @@ DATABASE_URL=your_supabase_connection_string
 
 ### Step 4: Configure Webhook
 
-1. Set webhook URL to: `https://your-replit-domain.replit.app/api/whatsapp/webhook`
-2. Set verify token to: `nerdx_verify_token_123` (already configured as `WHATSAPP_VERIFY_TOKEN`)
-3. Subscribe to these webhook fields:
+**Important:** Your Replit app must be ALWAYS ON for Meta to verify the webhook successfully.
+
+1. **Webhook URL:** `https://workspace.Ngoni2003.repl.co/api/whatsapp/webhook`
+2. **Verify Token:** `nerdx_verify_token_123` (already configured as `WHATSAPP_VERIFY_TOKEN`)
+3. **Webhook Fields to Subscribe:**
    - `messages`
    - `message_deliveries`
    - `message_reads`
 
-**Webhook Verification Test:**
-```bash
-curl "https://your-replit-domain.replit.app/api/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=nerdx_verify_token_123&hub.challenge=test"
-# Should return: test
-```
+**Troubleshooting Meta Webhook Validation:**
+
+If Meta shows "The callback URL or verify token couldn't be validated":
+
+1. **Check App Status:** Ensure your Replit app is running (not sleeping)
+2. **Test Webhook Locally:**
+   ```bash
+   curl "https://workspace.Ngoni2003.repl.co/api/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=nerdx_verify_token_123&hub.challenge=test123"
+   # Should return: test123
+   ```
+3. **Enable Always On:** Go to your Repl settings and enable "Always On" (requires paid plan)
+4. **Check HTTPS:** Meta requires HTTPS - Replit provides this automatically
+5. **Verify Environment:** Ensure `WHATSAPP_VERIFY_TOKEN=nerdx_verify_token_123` is set
+
+**Alternative Solutions:**
+- Use ngrok for local development: `ngrok http 5000`
+- Deploy to a service with guaranteed uptime
 
 ## Database Setup
 

@@ -1,6 +1,6 @@
 import cron from 'node-cron';
-import { drizzle } from 'drizzle-orm/neon-http';
-import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import { eq, and, sql } from 'drizzle-orm';
 import fetch from 'node-fetch';
 
@@ -32,9 +32,9 @@ interface DevotionalContent {
 }
 
 export class WhatsAppPrayerBot {
-  private db: ReturnType<typeof drizzle>;
-  private config: WhatsAppAPIConfig;
-  private deepSeekApiKey: string;
+  private db!: ReturnType<typeof drizzle>;
+  private config!: WhatsAppAPIConfig;
+  private deepSeekApiKey!: string;
 
   constructor() {
     const connectionString = process.env.DATABASE_URL;
@@ -44,7 +44,8 @@ export class WhatsAppPrayerBot {
     }
 
     try {
-      this.db = drizzle(neon(connectionString));
+      const client = postgres(connectionString);
+      this.db = drizzle(client);
     } catch (error) {
       console.warn('Failed to connect to database for WhatsApp bot:', error);
       console.log('WhatsApp bot will run without database functionality');
@@ -160,7 +161,7 @@ Format as plain text without formatting.`;
 
       if (aiResponse) {
         // Parse the AI response to extract devotion and verse
-        const lines = aiResponse.split('\n').filter(line => line.trim());
+        const lines = aiResponse.split('\n').filter((line: string) => line.trim());
         let devotionText = '';
         let bibleVerse = '';
         let verseReference = '';
