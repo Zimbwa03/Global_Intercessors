@@ -354,7 +354,7 @@ export class WhatsAppPrayerBot {
         userId: `whatsapp_${phoneNumber}`,
         slotInfo: '⏱ Prayer slot: Information unavailable',
         slotTime: null,
-        userDetails: { error: error.message }
+        userDetails: { error: (error as Error).message || 'Unknown error' }
       };
     }
   }
@@ -728,9 +728,20 @@ Reply *help* for more options.`;
         .single();
 
       if (profileError || !userProfile) {
+        console.log(`❌ No user profile found for user ${userId}`);
         return { 
           success: false, 
-          message: "Your login was successful, but we couldn't find your profile. Please contact support." 
+          message: `🔒 Authentication successful, but your phone number ${phoneNumber} is not saved in your Global Intercessors profile.
+
+📱 To continue using the WhatsApp bot:
+
+1️⃣ Open the Global Intercessors web application
+2️⃣ Go to your User Profile settings
+3️⃣ Add your WhatsApp number: ${phoneNumber}
+4️⃣ Save your profile
+5️⃣ Return here and try logging in again
+
+This ensures secure connection between your account and WhatsApp bot access.` 
         };
       }
 
@@ -814,8 +825,7 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
 
     const buttons = [
       { id: 'help_login', title: '❓ Need Help?' },
-      { id: 'retry_login', title: '🔄 Try Again' },
-      { id: 'support', title: '💬 Get Support' }
+      { id: 'retry_login', title: '🔄 Try Again' }
     ];
 
     await this.sendInteractiveMessage(phoneNumber, loginMessage, buttons);
@@ -902,8 +912,7 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
             // Send error message with retry buttons
             const retryButtons = [
               { id: 'retry_login', title: '🔄 Try Again' },
-              { id: 'help_login', title: '❓ Need Help?' },
-              { id: 'support', title: '💬 Support' }
+              { id: 'help_login', title: '❓ Need Help?' }
             ];
             await this.sendInteractiveMessage(phoneNumber, authResult.message, retryButtons);
           }
@@ -954,8 +963,7 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
         await this.sendLoginPrompt(phoneNumber);
       } else if (command === 'help_login') {
         await this.handleLoginHelpCommand(phoneNumber);
-      } else if (command === 'support') {
-        await this.handleSupportCommand(phoneNumber);
+
       } else if (command === 'back' || command === 'menu') {
         await this.handleStartCommand(phoneNumber, userName);
       
@@ -1251,56 +1259,37 @@ Thank you for your heart for intercession!`;
 
   // New helper functions for button interactions
   private async handleLoginHelpCommand(phoneNumber: string): Promise<void> {
-    const helpMessage = `🔒 *Login Help* 🔒
+    const helpMessage = `🕊️ *Welcome to Global Intercessors WhatsApp Bot* 🕊️
 
-Having trouble logging in? Here's what to do:
+*What is Global Intercessors?*
+Global Intercessors is a worldwide prayer movement that maintains 24/7 prayer coverage around the globe. We unite believers from every nation in continuous intercession for revival, breakthrough, and God's kingdom advancement.
 
-✅ Make sure you're using the SAME email and password from the Global Intercessors web app
-✅ Format should be exactly:
-   Email: youremail@example.com
-   Password: yourpassword
+🌍 *Our Mission:*
+• Maintain unbroken prayer chain across all time zones
+• Connect intercessors globally for powerful corporate prayer
+• Provide spiritual resources and AI-powered prayer assistance
+• Track prayer consistency and spiritual growth
 
-❌ Common issues:
-• Wrong email address (check spelling)
-• Incorrect password (case-sensitive)
-• Account not created on web app yet
+🔑 *To Access This Bot You Need:*
 
-💡 *Need to create an account?*
-Visit the Global Intercessors web application first to sign up, then return here to log in.
+1️⃣ **Create Account:** Sign up at the Global Intercessors web application
+2️⃣ **Complete Profile:** Add your personal information and WhatsApp number
+3️⃣ **Login Here:** Use the same email and password from the web app
+4️⃣ **Format:** Email: your@email.com Password: yourpassword
 
-📧 *Contact support if you continue having issues*`;
+🙏 *Bot Features After Login:*
+• Daily AI-powered devotionals and prophetic words
+• Interactive Bible quizzes and spiritual challenges
+• Prayer slot reminders and global updates
+• Personal dashboard tracking your prayer journey
+
+*Ready to join the global prayer movement?*`;
 
     const buttons = [
-      { id: 'retry_login', title: '🔄 Try Login Again' },
-      { id: 'support', title: '💬 Contact Support' }
+      { id: 'retry_login', title: '🔄 Try Login Again' }
     ];
 
     await this.sendInteractiveMessage(phoneNumber, helpMessage, buttons);
-  }
-
-  private async handleSupportCommand(phoneNumber: string): Promise<void> {
-    const supportMessage = `💬 *Global Intercessors Support* 💬
-
-Need assistance? We're here to help!
-
-📧 Contact our support team:
-• Email: support@globalintercessors.org
-• Response time: Within 24 hours
-
-🌐 Visit our help center:
-• Web: globalintercessors.org/help
-• FAQ, tutorials, and guides available
-
-🕊️ *"Cast all your anxiety on him because he cares for you."* - 1 Peter 5:7
-
-Our team is praying for you and ready to assist with any technical or spiritual needs.`;
-
-    const buttons = [
-      { id: 'retry_login', title: '🔄 Try Login Again' },
-      { id: 'back', title: '⬅️ Back to Menu' }
-    ];
-
-    await this.sendInteractiveMessage(phoneNumber, supportMessage, buttons);
   }
 
   // Specific button interaction handlers
