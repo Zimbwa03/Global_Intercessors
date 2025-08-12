@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useTypingDetector } from "@/hooks/use-typing-detector";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { supabase } from "@/lib/supabase";
@@ -138,6 +139,7 @@ const MobileNavButton = ({ icon: Icon, label, isActive, onClick }: {
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
+  const isTyping = useTypingDetector();
 
   // Fetch skip requests for admin
   const { data: skipRequests = [], refetch: refetchSkipRequests } = useQuery({
@@ -147,7 +149,9 @@ export default function AdminDashboard() {
       if (!response.ok) throw new Error('Failed to fetch skip requests');
       return response.json();
     },
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchInterval: isTyping ? false : 10000,
+    staleTime: isTyping ? Infinity : 5000
   });
 
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
@@ -166,6 +170,10 @@ export default function AdminDashboard() {
   const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'excellent' | 'good' | 'needs-improvement'>('all');
   const [sortOrder, setSortOrder] = useState<'highest' | 'lowest' | 'alphabetical'>('highest');
   const [dataAllocationFilter, setDataAllocationFilter] = useState({ min: 0, max: 100 });
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
+  const [, setLocation] = useLocation();
 
   // Fetch data allocation
   const { data: dataAllocation = [], isLoading: dataAllocationLoading, refetch: refetchDataAllocation } = useQuery({
@@ -176,12 +184,10 @@ export default function AdminDashboard() {
       return response.json();
     },
     enabled: !!adminUser && activeTab === 'data-allocation',
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchInterval: isTyping ? false : 15000,
+    staleTime: isTyping ? Infinity : 10000
   });
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const isMobile = useIsMobile();
 
   // Check admin authentication
   useEffect(() => {

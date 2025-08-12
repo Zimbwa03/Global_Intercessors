@@ -448,7 +448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Skip request has already been processed" });
       }
 
-      // Update the skip request status using service role to bypass RLS
+      // Update the skip request status directly using service role
       const { error: updateError } = await supabaseAdmin
         .from('skip_requests')
         .update({
@@ -483,9 +483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).json({ error: "Failed to update prayer slot" });
         }
 
-        // TODO: Create approval notification for the user
-        // Temporarily disabled due to database schema mismatch
-        // Will implement proper notification system later
+        console.log(`Prayer slot updated for skip request approval: ${request.user_id}`);
       }
 
       console.log(`Skip request ${requestId} ${action} successfully`);
