@@ -1,40 +1,27 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 export function useScrollDirection() {
-  const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | null>(null);
-  const lastScrollY = useRef(0);
-  const ticking = useRef(false);
+  const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
     const updateScrollDirection = () => {
       const scrollY = window.scrollY;
-      const difference = scrollY - lastScrollY.current;
+      const direction = scrollY > lastScrollY ? 'down' : 'up';
       
-      // Only update if we've scrolled more than 10px to prevent jitter
-      if (Math.abs(difference) > 10) {
-        const direction = difference > 0 ? 'down' : 'up';
-        if (direction !== scrollDirection) {
-          setScrollDirection(direction);
-        }
+      if (direction !== scrollDirection && (scrollY - lastScrollY > 10 || scrollY - lastScrollY < -10)) {
+        setScrollDirection(direction);
       }
-      
-      lastScrollY.current = scrollY > 0 ? scrollY : 0;
-      ticking.current = false;
+      setLastScrollY(scrollY > 0 ? scrollY : 0);
     };
 
     const handleScroll = () => {
-      if (!ticking.current) {
-        requestAnimationFrame(updateScrollDirection);
-        ticking.current = true;
-      }
+      updateScrollDirection();
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [scrollDirection]);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [scrollDirection, lastScrollY]);
 
   return scrollDirection;
 }

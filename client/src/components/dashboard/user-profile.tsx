@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { User, Mail, Phone, MapPin, Calendar, Save, Edit2, X } from "lucide-react";
+import { User, Mail, Phone, MapPin, Calendar, Save, Edit2, X, Clock } from "lucide-react";
+import { IntercessorScheduleSettings } from "@/components/intercessor-schedule-settings";
 import { z } from "zod";
 import { useForm, FormProvider, useFormContext, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -571,6 +572,28 @@ export function UserProfile({ userEmail, onTabChange, userProfile }: UserProfile
               Last updated: {profile?.updated_at ? new Date(profile.updated_at).toLocaleDateString() : 'N/A'}
             </span>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Prayer Schedule Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Clock className="w-5 h-5 text-gi-primary" />
+            <span>Prayer Schedule</span>
+          </CardTitle>
+          <p className="text-sm text-gray-600">
+            Manage your prayer commitment and track your spiritual consistency.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {profile?.id ? (
+            <IntercessorScheduleSettings userId={profile.id} />
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              Please complete your profile setup to access prayer scheduling.
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

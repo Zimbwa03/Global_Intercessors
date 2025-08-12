@@ -20,6 +20,8 @@ import { UserProfile } from "@/components/dashboard/user-profile";
 import { PrayerJourneyVisualizer } from "@/components/dashboard/prayer-journey-visualizer";
 import { BibleVerseSearch } from "@/components/dashboard/bible-verse-search";
 import { WhatsAppSettings } from "@/components/dashboard/whatsapp-settings";
+import { IntercessorScheduleSettings } from "@/components/intercessor-schedule-settings";
+import { WeeklyPrayerAttendance } from "@/components/weekly-prayer-attendance";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { notificationService } from "@/lib/notificationService";
@@ -184,6 +186,16 @@ export default function Dashboard() {
         return <UpdatesAnnouncements />;
       case "profile":
         return <UserProfile userEmail={user.email} />;
+      
+      case "schedule":
+        return (
+          <div className="space-y-6">
+            <div className="grid gap-6">
+              <IntercessorScheduleSettings userId={user.id} />
+              <WeeklyPrayerAttendance userId={user.id} />
+            </div>
+          </div>
+        );
       
       case "settings":
         return <div className="p-6 bg-white rounded-lg shadow-md">

@@ -3,7 +3,9 @@ import { Bell, Menu, Search, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Badge } from "@/components/ui/badge"; // Assuming Badge component is available
+import { Badge } from "@/components/ui/badge";
+import { useScrollDirection } from "@/hooks/use-scroll-direction";
+import { motion } from "framer-motion";
 
 // Define Update and AuthUser types if not already defined globally or imported
 interface Update {
@@ -38,7 +40,7 @@ export function MobileHeader({
   unreadCount = 0, // Initial unreadCount, but internal state will manage it
   onTabChange
 }: MobileHeaderProps) {
-
+  const scrollDirection = useScrollDirection();
   const [notificationCount, setNotificationCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [updates, setUpdates] = useState<Update[]>([]);
@@ -83,7 +85,15 @@ export function MobileHeader({
   // For now, we assume it's handled by the routing/tab change logic
 
   return (
-    <header className="lg:hidden sticky top-0 z-30 bg-white dark:bg-gray-900 shadow-md border-b border-gray-200 dark:border-gray-700">
+    <motion.header
+      initial={{ y: 0 }}
+      animate={{ 
+        y: scrollDirection === 'down' ? -100 : 0,
+        opacity: scrollDirection === 'down' ? 0 : 1
+      }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className="lg:hidden sticky top-0 z-30 bg-white dark:bg-gray-900 shadow-md border-b border-gray-200 dark:border-gray-700"
+    >
       <div className="flex items-center justify-between p-4">
         {/* Left side - Menu and Title */}
         <div className="flex items-center space-x-3">
@@ -180,6 +190,6 @@ export function MobileHeader({
         </div>
       </div>
 
-    </header>
+    </motion.header>
   );
 }

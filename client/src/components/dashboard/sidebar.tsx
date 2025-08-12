@@ -84,13 +84,18 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
           <ul className="space-y-3">
             {[
               ...menuItems,
-              { id: "ai-assistant", label: "AI Assistant", icon: "fas fa-robot" }
+              { id: "ai-assistant", label: "AI Assistant", icon: "fas fa-robot" },
+              { id: "schedule", label: "Prayer Schedule", icon: "fas fa-calendar-alt" }
             ].map((item) => (
               <li key={item.id}>
                 <Button
-                  onClick={() => onTabChange(item.id)}
+                  onClick={() => {
+                    console.log('Sidebar button clicked:', item.id);
+                    onTabChange(item.id);
+                  }}
                   variant="ghost"
-                  className={`w-full justify-start text-left p-4 h-auto ${
+                  disabled={false}
+                  className={`w-full justify-start text-left p-4 h-auto transition-all duration-200 ${
                     activeTab === item.id
                       ? "bg-gi-gold text-gi-primary font-semibold"
                       : "text-white hover:bg-gi-primary/50"

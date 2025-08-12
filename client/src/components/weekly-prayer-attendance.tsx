@@ -1,93 +1,127 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { toast } from "@/hooks/use-toast";
-import { Calendar, ChevronLeft, ChevronRight, Check, X } from "lucide-react";
-import { format, addWeeks, subWeeks, startOfWeek, addDays, isSameDay } from "date-fns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { Calendar, ChevronLeft, ChevronRight, Check, X, Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay } from "date-fns";
 
 interface WeeklyPrayerAttendanceProps {
   userId: string;
 }
 
+const DAYS_OF_WEEK = [
+  { id: 'sunday', label: 'Sunday', short: 'Sun', dayIndex: 0 },
+  { id: 'monday', label: 'Monday', short: 'Mon', dayIndex: 1 },
+  { id: 'tuesday', label: 'Tuesday', short: 'Tue', dayIndex: 2 },
+  { id: 'wednesday', label: 'Wednesday', short: 'Wed', dayIndex: 3 },
+  { id: 'thursday', label: 'Thursday', short: 'Thu', dayIndex: 4 },
+  { id: 'friday', label: 'Friday', short: 'Fri', dayIndex: 5 },
+  { id: 'saturday', label: 'Saturday', short: 'Sat', dayIndex: 6 }
+];
+
 export function WeeklyPrayerAttendance({ userId }: WeeklyPrayerAttendanceProps) {
-  const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 })); // Monday start
+  const [currentWeek, setCurrentWeek] = useState(() => startOfWeek(new Date()));
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch user's active days
+  // Fetch user schedule
   const { data: schedule } = useQuery({
     queryKey: ['/api/intercessor/schedule', userId],
-    queryFn: () => apiRequest(`/api/intercessor/schedule/${userId}`),
+    queryFn: async () => {
+      const response = await fetch(`/api/intercessor/schedule/${userId}`);
+      if (!response.ok) throw new Error('Failed to fetch schedule');
+      return response.json();
+    },
+    enabled: !!userId,
   });
 
-  // Fetch attendance for current week
+  // Fetch weekly attendance
   const { data: attendance, isLoading } = useQuery({
     queryKey: ['/api/intercessor/attendance', userId, format(currentWeek, 'yyyy-MM-dd')],
-    queryFn: () => apiRequest(`/api/intercessor/attendance/${userId}?week=${format(currentWeek, 'yyyy-MM-dd')}`),
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/intercessor/attendance/${userId}?week=${format(currentWeek, 'yyyy-MM-dd')}`
+      );
+      if (!response.ok) throw new Error('Failed to fetch attendance');
+      return response.json();
+    },
+    enabled: !!userId,
   });
 
   // Mark attendance mutation
   const markAttendanceMutation = useMutation({
-    mutationFn: ({ date, attended }: { date: string; attended: boolean }) =>
-      apiRequest('/api/intercessor/attendance', {
+    mutationFn: async ({ 
+      prayerDate, 
+      isAttended, 
+      dayOfWeek 
+    }: { 
+      prayerDate: string; 
+      isAttended: boolean; 
+      dayOfWeek: number; 
+    }) => {
+      const response = await fetch('/api/intercessor/attendance', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
-          prayerDate: date,
-          isAttended: attended,
-          scheduledDayOfWeek: new Date(date).getDay()
+          prayerDate,
+          isAttended,
+          scheduledDayOfWeek: dayOfWeek,
         }),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ['/api/intercessor/attendance', userId, format(currentWeek, 'yyyy-MM-dd')] 
       });
+      if (!response.ok) throw new Error('Failed to mark attendance');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/intercessor/attendance', userId] });
       queryClient.invalidateQueries({ queryKey: ['/api/intercessor/metrics', userId] });
       toast({
         title: "Attendance Updated",
-        description: "Your prayer attendance has been recorded.",
+        description: "Your prayer attendance has been recorded!",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to update attendance. Please try again.",
+        description: error.message || "Failed to update attendance",
         variant: "destructive",
       });
     },
   });
 
-  const activeDays = schedule?.activeDays || [];
-  
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeek, i));
-  
-  const getDayName = (date: Date) => format(date, 'EEEE').toLowerCase();
-  
-  const isActiveDay = (date: Date) => activeDays.includes(getDayName(date));
-  
-  const getAttendanceStatus = (date: Date) => {
-    if (!attendance) return null;
-    const dateStr = format(date, 'yyyy-MM-dd');
-    return attendance.find((a: any) => a.prayerDate === dateStr);
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    setCurrentWeek(prev => 
+      direction === 'prev' ? subWeeks(prev, 1) : addWeeks(prev, 1)
+    );
   };
 
-  const handleAttendanceToggle = (date: Date, currentStatus: boolean | null) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const newStatus = currentStatus === null ? true : !currentStatus;
+  const markAttendance = (date: Date, isAttended: boolean) => {
+    const prayerDate = format(date, 'yyyy-MM-dd');
+    const dayOfWeek = date.getDay();
     
     markAttendanceMutation.mutate({
-      date: dateStr,
-      attended: newStatus
+      prayerDate,
+      isAttended,
+      dayOfWeek,
     });
   };
 
-  const previousWeek = () => setCurrentWeek(subWeeks(currentWeek, 1));
-  const nextWeek = () => setCurrentWeek(addWeeks(currentWeek, 1));
-  
-  const isCurrentWeek = isSameDay(startOfWeek(new Date(), { weekStartsOn: 1 }), currentWeek);
-  const isFutureWeek = currentWeek > startOfWeek(new Date(), { weekStartsOn: 1 });
+  const getAttendanceForDate = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return attendance?.find((record: any) => record.prayer_date === dateStr);
+  };
+
+  const isActiveDay = (dayId: string) => {
+    return schedule?.activeDays?.includes(dayId) || false;
+  };
+
+  const weekDays = DAYS_OF_WEEK.map(day => ({
+    ...day,
+    date: addDays(currentWeek, day.dayIndex),
+  }));
 
   if (isLoading) {
     return (
@@ -100,10 +134,16 @@ export function WeeklyPrayerAttendance({ userId }: WeeklyPrayerAttendanceProps) 
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            <div className="flex justify-between items-center">
+              <div className="h-4 bg-gray-200 rounded w-32"></div>
+              <div className="flex gap-2">
+                <div className="h-8 w-8 bg-gray-200 rounded"></div>
+                <div className="h-8 w-8 bg-gray-200 rounded"></div>
+              </div>
+            </div>
             <div className="grid grid-cols-7 gap-2">
-              {[...Array(7)].map((_, i) => (
-                <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
               ))}
             </div>
           </div>
@@ -119,141 +159,137 @@ export function WeeklyPrayerAttendance({ userId }: WeeklyPrayerAttendanceProps) 
           <Calendar className="w-5 h-5 text-gi-primary" />
           Weekly Prayer Attendance
         </CardTitle>
-        <p className="text-sm text-gray-600">
-          Mark your attendance for your active prayer days. Only your scheduled days are shown.
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Week Navigation */}
         <div className="flex items-center justify-between">
-          <Button variant="outline" size="sm" onClick={previousWeek}>
-            <ChevronLeft className="w-4 h-4" />
-            Previous Week
-          </Button>
-          
-          <div className="text-center">
-            <h3 className="font-semibold">
-              {format(currentWeek, 'MMM d')} - {format(addDays(currentWeek, 6), 'MMM d, yyyy')}
-            </h3>
-            {isCurrentWeek && (
-              <p className="text-sm text-gi-primary">Current Week</p>
-            )}
+          <p className="text-sm text-gray-600">
+            Track your prayer attendance for the week of {format(currentWeek, 'MMM d, yyyy')}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateWeek('prev')}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateWeek('next')}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
           </div>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={nextWeek}
-            disabled={isFutureWeek}
-          >
-            Next Week
-            <ChevronRight className="w-4 h-4" />
-          </Button>
         </div>
-
-        {/* Week Grid */}
-        <div className="grid grid-cols-7 gap-2">
-          {weekDays.map((date, index) => {
-            const isActive = isActiveDay(date);
-            const attendanceRecord = getAttendanceStatus(date);
-            const isAttended = attendanceRecord?.isAttended;
-            const dayName = format(date, 'EEE');
-            const dayNumber = format(date, 'd');
-            const isFuture = date > new Date();
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-7 gap-3">
+          {weekDays.map((day) => {
+            const attendanceRecord = getAttendanceForDate(day.date);
+            const isActive = isActiveDay(day.id);
+            const isToday = isSameDay(day.date, new Date());
+            const isPast = day.date < new Date() && !isToday;
             
-            if (!isActive) {
-              return (
-                <div
-                  key={index}
-                  className="p-3 rounded-lg bg-gray-50 text-center opacity-50"
-                >
-                  <div className="text-xs text-gray-400 mb-1">{dayName}</div>
-                  <div className="text-sm text-gray-400">{dayNumber}</div>
-                  <div className="text-xs text-gray-400 mt-1">Rest Day</div>
-                </div>
-              );
-            }
-
             return (
               <div
-                key={index}
-                className={`
-                  p-3 rounded-lg border-2 transition-all duration-200 cursor-pointer
-                  ${isAttended === true
-                    ? 'border-green-500 bg-green-50 text-green-700'
-                    : isAttended === false
-                    ? 'border-red-500 bg-red-50 text-red-700'
-                    : 'border-gi-primary/30 bg-gi-primary/5 hover:border-gi-primary'
-                  }
-                  ${isFuture ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
-                onClick={() => !isFuture && handleAttendanceToggle(date, isAttended)}
+                key={day.id}
+                className={cn(
+                  "border rounded-lg p-3 text-center space-y-2",
+                  isActive 
+                    ? "border-gi-primary/50 bg-gi-primary/5" 
+                    : "border-gray-200 bg-gray-50",
+                  isToday && "ring-2 ring-gi-gold"
+                )}
               >
-                <div className="text-center">
-                  <div className="text-xs mb-1">{dayName}</div>
-                  <div className="text-lg font-semibold">{dayNumber}</div>
-                  <div className="mt-1">
-                    {isAttended === true && <Check className="w-4 h-4 mx-auto text-green-600" />}
-                    {isAttended === false && <X className="w-4 h-4 mx-auto text-red-600" />}
-                    {isAttended === null && !isFuture && (
-                      <div className="w-4 h-4 mx-auto border-2 border-gi-primary rounded"></div>
-                    )}
-                    {isFuture && (
-                      <div className="text-xs text-gray-400">Future</div>
-                    )}
+                {/* Day Header */}
+                <div>
+                  <div className="font-semibold text-sm">{day.short}</div>
+                  <div className="text-xs text-gray-500">
+                    {format(day.date, 'd')}
                   </div>
+                  {isToday && (
+                    <Badge variant="secondary" className="text-xs mt-1">
+                      Today
+                    </Badge>
+                  )}
                 </div>
+
+                {/* Attendance Status */}
+                {isActive ? (
+                  <div className="space-y-2">
+                    {attendanceRecord ? (
+                      <div className="flex items-center justify-center">
+                        {attendanceRecord.is_attended ? (
+                          <div className="flex items-center gap-1 text-green-600">
+                            <Check className="w-4 h-4" />
+                            <span className="text-xs">Attended</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-red-600">
+                            <X className="w-4 h-4" />
+                            <span className="text-xs">Missed</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center text-gray-400">
+                        <Clock className="w-4 h-4" />
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant={attendanceRecord?.is_attended ? "default" : "outline"}
+                        className="flex-1 h-6 text-xs"
+                        onClick={() => markAttendance(day.date, true)}
+                        disabled={markAttendanceMutation.isPending}
+                      >
+                        <Check className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={attendanceRecord && !attendanceRecord.is_attended ? "destructive" : "outline"}
+                        className="flex-1 h-6 text-xs"
+                        onClick={() => markAttendance(day.date, false)}
+                        disabled={markAttendanceMutation.isPending}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-xs text-gray-400 py-4">
+                    Not scheduled
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
 
         {/* Legend */}
-        <div className="flex justify-center space-x-6 text-sm">
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 border-2 border-green-500 bg-green-50 rounded"></div>
-            <span>Attended</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 border-2 border-red-500 bg-red-50 rounded"></div>
-            <span>Missed</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 border-2 border-gi-primary bg-gi-primary/5 rounded"></div>
-            <span>Pending</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-gray-50 border-2 border-gray-200 rounded"></div>
-            <span>Rest Day</span>
-          </div>
-        </div>
-
-        {/* Weekly Summary */}
-        {attendance && (
-          <div className="bg-gi-primary/5 rounded-lg p-4">
-            <h4 className="font-semibold text-gi-primary mb-2">Week Summary</h4>
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div>
-                <span className="text-green-600 font-medium">
-                  {attendance.filter((a: any) => a.isAttended).length}
-                </span>
-                <span className="text-gray-600"> attended</span>
-              </div>
-              <div>
-                <span className="text-red-600 font-medium">
-                  {attendance.filter((a: any) => !a.isAttended).length}
-                </span>
-                <span className="text-gray-600"> missed</span>
-              </div>
-              <div>
-                <span className="text-gi-primary font-medium">
-                  {activeDays.length - attendance.length}
-                </span>
-                <span className="text-gray-600"> pending</span>
-              </div>
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <h4 className="font-semibold text-sm mb-3">Legend</h4>
+          <div className="grid grid-cols-2 gap-4 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 border border-gi-primary/50 bg-gi-primary/5 rounded"></div>
+              <span>Active prayer day</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 border border-gray-200 bg-gray-50 rounded"></div>
+              <span>Not scheduled</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check className="w-3 h-3 text-green-600" />
+              <span>Prayer attended</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <X className="w-3 h-3 text-red-600" />
+              <span>Prayer missed</span>
             </div>
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );

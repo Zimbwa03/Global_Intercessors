@@ -1,85 +1,106 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { toast } from "@/hooks/use-toast";
-import { Calendar, Clock, CheckCircle, Activity } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { Calendar, Clock, Save, Settings } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface IntercessorScheduleSettingsProps {
   userId: string;
 }
 
 const DAYS_OF_WEEK = [
+  { id: 'sunday', label: 'Sunday', short: 'Sun' },
   { id: 'monday', label: 'Monday', short: 'Mon' },
   { id: 'tuesday', label: 'Tuesday', short: 'Tue' },
   { id: 'wednesday', label: 'Wednesday', short: 'Wed' },
   { id: 'thursday', label: 'Thursday', short: 'Thu' },
   { id: 'friday', label: 'Friday', short: 'Fri' },
-  { id: 'saturday', label: 'Saturday', short: 'Sat' },
-  { id: 'sunday', label: 'Sunday', short: 'Sun' }
+  { id: 'saturday', label: 'Saturday', short: 'Sat' }
 ];
 
 export function IntercessorScheduleSettings({ userId }: IntercessorScheduleSettingsProps) {
-  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [activeDays, setActiveDays] = useState<string[]>([]);
+  const [hasChanges, setHasChanges] = useState(false);
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Fetch current schedule
   const { data: schedule, isLoading } = useQuery({
     queryKey: ['/api/intercessor/schedule', userId],
-    queryFn: () => apiRequest(`/api/intercessor/schedule/${userId}`),
+    queryFn: async () => {
+      const response = await fetch(`/api/intercessor/schedule/${userId}`);
+      if (!response.ok) throw new Error('Failed to fetch schedule');
+      return response.json();
+    },
+    enabled: !!userId,
   });
 
-  // Fetch attendance metrics
+  // Fetch user metrics
   const { data: metrics } = useQuery({
     queryKey: ['/api/intercessor/metrics', userId],
-    queryFn: () => apiRequest(`/api/intercessor/metrics/${userId}`),
+    queryFn: async () => {
+      const response = await fetch(`/api/intercessor/metrics/${userId}`);
+      if (!response.ok) throw new Error('Failed to fetch metrics');
+      return response.json();
+    },
+    enabled: !!userId,
   });
 
   // Update schedule mutation
   const updateScheduleMutation = useMutation({
-    mutationFn: (activeDays: string[]) =>
-      apiRequest('/api/intercessor/schedule', {
+    mutationFn: async (newActiveDays: string[]) => {
+      const response = await fetch('/api/intercessor/schedule', {
         method: 'POST',
-        body: JSON.stringify({
-          userId,
-          activeDays
-        }),
-      }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, activeDays: newActiveDays }),
+      });
+      if (!response.ok) throw new Error('Failed to update schedule');
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/intercessor/schedule', userId] });
       queryClient.invalidateQueries({ queryKey: ['/api/intercessor/metrics', userId] });
+      setHasChanges(false);
       toast({
         title: "Schedule Updated",
-        description: "Your prayer schedule has been saved successfully.",
+        description: "Your prayer schedule has been saved successfully!",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to update your schedule. Please try again.",
+        description: error.message || "Failed to update schedule",
         variant: "destructive",
       });
     },
   });
 
+  // Update local state when schedule data loads
   useEffect(() => {
     if (schedule?.activeDays) {
-      setSelectedDays(schedule.activeDays);
+      setActiveDays(schedule.activeDays);
     }
   }, [schedule]);
 
-  const handleDayToggle = (dayId: string) => {
-    setSelectedDays(prev => 
-      prev.includes(dayId) 
-        ? prev.filter(d => d !== dayId)
-        : [...prev, dayId]
-    );
+  const toggleDay = (dayId: string) => {
+    const newActiveDays = activeDays.includes(dayId)
+      ? activeDays.filter(day => day !== dayId)
+      : [...activeDays, dayId];
+    
+    setActiveDays(newActiveDays);
+    setHasChanges(true);
   };
 
-  const handleSaveSchedule = () => {
-    updateScheduleMutation.mutate(selectedDays);
+  const saveSchedule = () => {
+    updateScheduleMutation.mutate(activeDays);
+  };
+
+  const resetSchedule = () => {
+    setActiveDays(schedule?.activeDays || []);
+    setHasChanges(false);
   };
 
   if (isLoading) {
@@ -87,16 +108,15 @@ export function IntercessorScheduleSettings({ userId }: IntercessorScheduleSetti
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            Prayer Schedule
+            <Settings className="w-5 h-5" />
+            Prayer Schedule Settings
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="grid grid-cols-2 gap-2">
-              {[...Array(7)].map((_, i) => (
-                <div key={i} className="h-10 bg-gray-200 rounded"></div>
+            <div className="grid grid-cols-7 gap-2">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="h-20 bg-gray-200 rounded-lg"></div>
               ))}
             </div>
           </div>
@@ -106,143 +126,107 @@ export function IntercessorScheduleSettings({ userId }: IntercessorScheduleSetti
   }
 
   return (
-    <div className="space-y-6">
-      {/* Schedule Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-gi-primary" />
-            Prayer Schedule Settings
-          </CardTitle>
-          <p className="text-sm text-gray-600">
-            Select the days of the week when you plan to attend your prayer slot. 
-            Your streak and attendance metrics will be calculated based on these active days only.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Day Selection Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-            {DAYS_OF_WEEK.map((day) => (
-              <div
-                key={day.id}
-                className={`
-                  border-2 rounded-lg p-3 cursor-pointer transition-all duration-200
-                  ${selectedDays.includes(day.id)
-                    ? 'border-gi-primary bg-gi-primary/10 text-gi-primary'
-                    : 'border-gray-200 hover:border-gi-primary/50'
-                  }
-                `}
-                onClick={() => handleDayToggle(day.id)}
-              >
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    checked={selectedDays.includes(day.id)}
-                    onChange={() => handleDayToggle(day.id)}
-                  />
-                  <div className="text-center">
-                    <div className="font-medium text-sm md:hidden">{day.short}</div>
-                    <div className="font-medium text-sm hidden md:block">{day.label}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Settings className="w-5 h-5 text-gi-primary" />
+          Prayer Schedule Settings
+        </CardTitle>
+        <p className="text-sm text-gray-600">
+          Select the days when you can commit to prayer. Your attendance tracking 
+          will be based on these active days.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Current Metrics Display */}
+        {metrics && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gi-primary">{metrics.currentStreak}</div>
+              <div className="text-sm text-gray-600">Current Streak</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gi-gold">{Math.round(metrics.attendanceRate)}%</div>
+              <div className="text-sm text-gray-600">Attendance Rate</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{metrics.daysAttended}</div>
+              <div className="text-sm text-gray-600">Days Attended</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{metrics.totalActiveDays}</div>
+              <div className="text-sm text-gray-600">Active Days/Week</div>
+            </div>
           </div>
+        )}
 
-          {/* Quick Selection Buttons */}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedDays(['monday', 'tuesday', 'wednesday', 'thursday', 'friday'])}
-            >
-              Weekdays
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedDays(['saturday', 'sunday'])}
-            >
-              Weekends
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedDays(DAYS_OF_WEEK.map(d => d.id))}
-            >
-              All Days
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedDays([])}
-            >
-              Clear All
-            </Button>
+        {/* Day Selection Grid */}
+        <div>
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
+            Select Your Prayer Days
+          </h3>
+          <div className="grid grid-cols-7 gap-3">
+            {DAYS_OF_WEEK.map((day) => {
+              const isActive = activeDays.includes(day.id);
+              return (
+                <button
+                  key={day.id}
+                  onClick={() => toggleDay(day.id)}
+                  className={cn(
+                    "p-4 rounded-lg border-2 transition-all duration-200 text-center",
+                    "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gi-primary/50",
+                    isActive
+                      ? "border-gi-primary bg-gi-primary text-white shadow-lg"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-gi-primary/50"
+                  )}
+                >
+                  <div className="font-semibold text-sm mb-1">{day.short}</div>
+                  <div className="text-xs opacity-75">{day.label.slice(0, 3)}</div>
+                  {isActive && (
+                    <div className="mt-2">
+                      <Clock className="w-3 h-3 mx-auto" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
-
-          {/* Save Button */}
-          <Button
-            onClick={handleSaveSchedule}
-            disabled={updateScheduleMutation.isPending}
-            className="w-full bg-gi-primary hover:bg-gi-primary/90"
-          >
-            {updateScheduleMutation.isPending ? "Saving..." : "Save Schedule"}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Metrics Display */}
-      {metrics && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gi-primary/10 rounded-lg">
-                  <Activity className="w-6 h-6 text-gi-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Current Streak</p>
-                  <p className="text-2xl font-bold text-gi-primary">
-                    {metrics.currentStreak} {metrics.currentStreak === 1 ? 'day' : 'days'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gi-gold/10 rounded-lg">
-                  <CheckCircle className="w-6 h-6 text-gi-gold" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Attendance Rate</p>
-                  <p className="text-2xl font-bold text-gi-gold">
-                    {Math.round(metrics.attendanceRate)}%
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Clock className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Days Attended</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {metrics.daysAttended}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
-      )}
-    </div>
+
+        {/* Action Buttons */}
+        {hasChanges && (
+          <div className="flex gap-3 pt-4 border-t">
+            <Button 
+              onClick={saveSchedule}
+              disabled={updateScheduleMutation.isPending}
+              className="flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              {updateScheduleMutation.isPending ? 'Saving...' : 'Save Schedule'}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={resetSchedule}
+              disabled={updateScheduleMutation.isPending}
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
+
+        {/* Helper Text */}
+        <div className="text-sm text-gray-500 space-y-2">
+          <p>
+            <strong>How it works:</strong> Select the days you can consistently pray. 
+            Your streak and attendance rate will be calculated based only on these active days.
+          </p>
+          <p>
+            You can update your schedule anytime to reflect changes in your availability. 
+            Past attendance records will be preserved.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

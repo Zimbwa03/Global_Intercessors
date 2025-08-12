@@ -4795,5 +4795,172 @@ Make it personal, biblical, and actionable for intercession.`;
     }
   });
 
+  // =====================================================
+  // INTERCESSOR SCHEDULE API ENDPOINTS
+  // =====================================================
+
+  // Get user's prayer schedule
+  app.get("/api/intercessor/schedule/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+
+      const { data: schedule, error } = await supabase
+        .from('intercessor_schedules')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Error fetching schedule:', error);
+        return res.status(500).json({ error: 'Failed to fetch schedule' });
+      }
+
+      // Return default schedule if none exists
+      const defaultSchedule = {
+        activeDays: [],
+        timezone: 'UTC',
+        notificationPreferences: { "5min": true, "15min": true, "1hour": false }
+      };
+
+      res.json(schedule || defaultSchedule);
+    } catch (error) {
+      console.error('Error in schedule endpoint:', error);
+      res.status(500).json({ error: 'Failed to fetch schedule' });
+    }
+  });
+
+  // Update user's prayer schedule
+  app.post("/api/intercessor/schedule", async (req: Request, res: Response) => {
+    try {
+      const { userId, activeDays, timezone = 'UTC', notificationPreferences } = req.body;
+
+      if (!userId || !Array.isArray(activeDays)) {
+        return res.status(400).json({ error: 'userId and activeDays array are required' });
+      }
+
+      const { data: schedule, error } = await supabase
+        .from('intercessor_schedules')
+        .upsert({
+          user_id: userId,
+          active_days: activeDays,
+          timezone,
+          notification_preferences: notificationPreferences || { "5min": true, "15min": true, "1hour": false },
+          is_active: true,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating schedule:', error);
+        return res.status(500).json({ error: 'Failed to update schedule' });
+      }
+
+      res.json({ success: true, schedule });
+    } catch (error) {
+      console.error('Error in schedule update endpoint:', error);
+      res.status(500).json({ error: 'Failed to update schedule' });
+    }
+  });
+
+  // Get user's prayer metrics
+  app.get("/api/intercessor/metrics/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+
+      // Call the database function to get metrics
+      const { data: metrics, error } = await supabase
+        .rpc('get_user_metrics', { p_user_id: userId });
+
+      if (error) {
+        console.error('Error fetching metrics:', error);
+        return res.status(500).json({ error: 'Failed to fetch metrics' });
+      }
+
+      // Return first result from the function or default values
+      const userMetrics = metrics?.[0] || {
+        current_streak: 0,
+        attendance_rate: 0,
+        days_attended: 0,
+        total_active_days: 0,
+        longest_streak: 0,
+        last_attendance_date: null
+      };
+
+      res.json({
+        currentStreak: userMetrics.current_streak,
+        attendanceRate: userMetrics.attendance_rate,
+        daysAttended: userMetrics.days_attended,
+        totalActiveDays: userMetrics.total_active_days,
+        longestStreak: userMetrics.longest_streak,
+        lastAttendanceDate: userMetrics.last_attendance_date
+      });
+    } catch (error) {
+      console.error('Error in metrics endpoint:', error);
+      res.status(500).json({ error: 'Failed to fetch metrics' });
+    }
+  });
+
+  // Get weekly attendance for a user
+  app.get("/api/intercessor/attendance/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const { week } = req.query;
+
+      let weekStart = week ? new Date(week as string) : null;
+
+      // Call the database function to get weekly attendance
+      const { data: attendance, error } = await supabase
+        .rpc('get_weekly_attendance', { 
+          p_user_id: userId,
+          p_week_start: weekStart?.toISOString().split('T')[0] || null
+        });
+
+      if (error) {
+        console.error('Error fetching attendance:', error);
+        return res.status(500).json({ error: 'Failed to fetch attendance' });
+      }
+
+      res.json(attendance || []);
+    } catch (error) {
+      console.error('Error in attendance endpoint:', error);
+      res.status(500).json({ error: 'Failed to fetch attendance' });
+    }
+  });
+
+  // Mark prayer attendance
+  app.post("/api/intercessor/attendance", async (req: Request, res: Response) => {
+    try {
+      const { userId, prayerDate, isAttended, scheduledDayOfWeek, notes } = req.body;
+
+      if (!userId || !prayerDate || typeof isAttended !== 'boolean' || scheduledDayOfWeek === undefined) {
+        return res.status(400).json({ 
+          error: 'userId, prayerDate, isAttended, and scheduledDayOfWeek are required' 
+        });
+      }
+
+      // Call the database function to upsert attendance
+      const { data: attendanceId, error } = await supabase
+        .rpc('upsert_attendance', {
+          p_user_id: userId,
+          p_prayer_date: prayerDate,
+          p_is_attended: isAttended,
+          p_scheduled_day_of_week: scheduledDayOfWeek,
+          p_notes: notes || null
+        });
+
+      if (error) {
+        console.error('Error marking attendance:', error);
+        return res.status(500).json({ error: 'Failed to mark attendance' });
+      }
+
+      res.json({ success: true, attendanceId });
+    } catch (error) {
+      console.error('Error in attendance marking endpoint:', error);
+      res.status(500).json({ error: 'Failed to mark attendance' });
+    }
+  });
+
   return httpServer;
 }
