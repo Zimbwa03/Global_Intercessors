@@ -1049,7 +1049,21 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
       } else if (command === 'devotionals' || command === '/devotionals') {
         await this.handleDevotionalsMenuCommand(phoneNumber, userName);
       } else if (command === 'quiz' || command === '/quiz') {
-        await this.handleQuizCommand(phoneNumber, userName);
+        try {
+          await this.handleQuizCommand(phoneNumber, userName);
+        } catch (error) {
+          console.error('❌ Error in quiz command:', error);
+          await this.sendWhatsAppMessage(phoneNumber, `🧠 *Bible Quiz* 🧠
+
+Welcome ${userName}! Let's test your biblical knowledge!
+
+Reply with:
+• "daily" for Daily Challenge
+• "smart" for Smart Quiz
+• "topic" for Topic Quiz
+
+Ready to explore God's Word? 📚`);
+        }
       } else if (command === 'reminders' || command === '/reminders') {
         await this.handleRemindersCommand(phoneNumber, userName);
       } else if (command === 'updates' || command === '/updates') {
@@ -1225,31 +1239,46 @@ Choose your devotional experience:`;
   }
 
   private async handleQuizCommand(phoneNumber: string, userName: string): Promise<void> {
-    await this.logInteraction(phoneNumber, 'command', 'quiz');
+    try {
+      await this.logInteraction(phoneNumber, 'command', 'quiz');
 
-    // Get user's quiz progress
-    const userInfo = await this.getCompleteUserInfo(phoneNumber);
-    const quizProgress = await this.getUserQuizProgress(userInfo.userId);
+      // Get user's quiz progress
+      const userInfo = await this.getCompleteUserInfo(phoneNumber);
+      const quizProgress = await this.getUserQuizProgress(userInfo.userId);
 
-    const quizMessage = `🧠 *Bible Quiz Challenge* 🧠
+      const quizMessage = `🧠 *Bible Quiz Challenge* 🧠
 
 Welcome back, ${userName}! 🎯
 
 📊 **Your Quiz Stats:**
-📈 Level: ${quizProgress.currentLevel} (${quizProgress.totalXP} XP)
-🔥 Current Streak: ${quizProgress.currentStreak}
-🎯 Accuracy: ${quizProgress.totalQuestionsAnswered > 0 ? Math.round((quizProgress.totalCorrectAnswers / quizProgress.totalQuestionsAnswered) * 100) : 0}%
-🏆 Total Score: ${quizProgress.totalScore}
+📈 Level: ${quizProgress?.current_level || 1} (${quizProgress?.total_xp || 0} XP)
+🔥 Current Streak: ${quizProgress?.current_streak || 0}
+🎯 Accuracy: ${quizProgress?.total_questions_answered > 0 ? Math.round((quizProgress.total_correct_answers / quizProgress.total_questions_answered) * 100) : 0}%
+🏆 Total Score: ${quizProgress?.total_score || 0}
 
 Choose your quiz adventure:`;
 
-    const buttons = [
-      { id: 'daily_challenge', title: '🌟 Daily Challenge' },
-      { id: 'adaptive_quiz', title: '🎯 Smart Quiz' },
-      { id: 'topic_quiz', title: '📖 Topic Focus' }
-    ];
+      const buttons = [
+        { id: 'daily_challenge', title: '🌟 Daily Challenge' },
+        { id: 'adaptive_quiz', title: '🎯 Smart Quiz' },
+        { id: 'topic_quiz', title: '📖 Topic Focus' }
+      ];
 
-    await this.sendInteractiveMessage(phoneNumber, quizMessage, buttons);
+      await this.sendInteractiveMessage(phoneNumber, quizMessage, buttons);
+    } catch (error) {
+      console.error('❌ Error in handleQuizCommand:', error);
+      await this.sendWhatsAppMessage(phoneNumber, `🧠 *Bible Quiz Challenge* 🧠
+
+Welcome ${userName}! Ready to test your biblical knowledge?
+
+Choose your quiz adventure:
+
+🌟 Type "daily_challenge" for Daily Challenge
+🎯 Type "adaptive_quiz" for Smart Quiz  
+📖 Type "topic_quiz" for Topic Focus
+
+Let's dive into God's Word together! 📚`);
+    }
   }
 
   private async handleRemindersCommand(phoneNumber: string, userName: string): Promise<void> {
@@ -2402,13 +2431,17 @@ Remember, the journey of faith is continuous. Feel free to start another study s
   // Bible Quiz Game Methods
   private async getUserQuizProgress(userId: string) {
     try {
+      console.log(`📊 Fetching quiz progress for user: ${userId}`);
+      
       const { data: progress, error } = await supabase
         .from('bible_quiz_progress')
         .select('*')
         .eq('user_id', userId)
         .single();
 
-      if (error || !progress) {
+      if (error) {
+        console.log(`ℹ️ No existing quiz progress found, creating new record:`, error.message);
+        
         // Create new progress record
         const newProgress = {
           user_id: userId,
@@ -2427,12 +2460,26 @@ Remember, the journey of faith is continuous. Feel free to start another study s
           .select()
           .single();
 
+        if (createError) {
+          console.error('❌ Error creating quiz progress:', createError);
+          return {
+            current_level: 1,
+            total_xp: 0,
+            current_streak: 0,
+            total_score: 0,
+            total_questions_answered: 0,
+            total_correct_answers: 0
+          };
+        }
+
+        console.log(`✅ Created new quiz progress for user: ${userId}`);
         return created || newProgress;
       }
 
+      console.log(`✅ Found existing quiz progress for user: ${userId}`);
       return progress;
     } catch (error) {
-      console.error('Error getting quiz progress:', error);
+      console.error('❌ Error getting quiz progress:', error);
       return {
         current_level: 1,
         total_xp: 0,
