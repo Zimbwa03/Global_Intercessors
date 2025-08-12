@@ -1067,6 +1067,8 @@ Ready to explore God's Word? 📚`);
         }
       } else if (command === 'more_quiz_types') {
         await this.handleMoreQuizTypes(phoneNumber, userName);
+      } else if (command === 'daily_challenge' || command === 'smart_quiz' || command === 'memory_verse' || command === 'situational_quiz' || command === 'topic_quiz') {
+        await this.startQuizSession(phoneNumber, userName, command);
       } else if (command === 'reminders' || command === '/reminders') {
         await this.handleRemindersCommand(phoneNumber, userName);
       } else if (command === 'updates' || command === '/updates') {
@@ -1886,15 +1888,15 @@ Deep dive, ${userName}!
     const userInfo = await this.getCompleteUserInfo(phoneNumber);
 
     if (quizType === 'daily_challenge') {
-      await this.startDailyChallenge(phoneNumber, userName, userInfo.userId);
+      await this.startQuizSession(phoneNumber, userName, 'daily_challenge');
     } else if (quizType === 'adaptive_quiz') {
-      await this.startAdaptiveQuiz(phoneNumber, userName, userInfo.userId);
+      await this.startQuizSession(phoneNumber, userName, 'smart_quiz');
     } else if (quizType === 'topic_quiz') {
       await this.showTopicSelection(phoneNumber, userName);
     } else {
       // Legacy difficulty-based quiz
       const difficulty = quizType.replace('_quiz', '');
-      await this.startQuizSession(phoneNumber, userName, userInfo.userId, difficulty, 'difficulty_based');
+      await this.startQuizSession(phoneNumber, userName, 'smart_quiz', difficulty);
     }
   }
 
@@ -2679,10 +2681,13 @@ Ready to dive deep into Scripture? Let's begin! 🚀`;
     await this.sendInteractiveMessage(phoneNumber, message, buttons);
 
     // Start the quiz with topic focus
-    await this.startQuizSession(phoneNumber, userName, userId, 'medium', `topic_${topicType}`);
+    await this.startQuizSession(phoneNumber, userName, `topic_${topicType}`, 'medium');
   }
 
-  private async startQuizSession(phoneNumber: string, userName: string, userId: string, difficulty: string, sessionType: string): Promise<void> {
+  private async startQuizSession(phoneNumber: string, userName: string, sessionType: string, difficulty: string = 'easy'): Promise<void> {
+    // Get user info for database operations
+    const userInfo = await this.getCompleteUserInfo(phoneNumber);
+    const userId = userInfo.userId;
     try {
       console.log(`🎮 Starting quiz session for ${userName} - ${difficulty} ${sessionType}`);
 
@@ -2737,17 +2742,67 @@ Ready to dive deep into Scripture? Let's begin! 🚀`;
 
       console.log(`📝 Memory session stored for ${phoneNumber}`);
 
-      // Send welcome message with first question
-      const welcomeMessage = `🎯 *${sessionType.replace('_', ' ').toUpperCase()}* 🎯
+      // Send welcome message with session-specific details
+      let welcomeMessage = '';
+      let maxQuestions = 10;
+      
+      switch (sessionType) {
+        case 'daily_challenge':
+          maxQuestions = 5;
+          welcomeMessage = `🌟 *DAILY CHALLENGE* 🌟
 
-Welcome ${userName}! Ready for your Bible quiz challenge?
+Welcome ${userName}! Ready for today's Bible challenge?
+
+📊 **Challenge Details:**
+📅 Limited: Once per day
+❓ Questions: 5 questions
+🎯 Mixed question types for complete learning
+⏱️ No time limit - reflect on God's Word!
+
+Let's begin today's spiritual journey! 🚀`;
+          break;
+          
+        case 'memory_verse':
+          welcomeMessage = `📖 *MEMORY VERSE CHALLENGE* 📖
+
+Welcome ${userName}! Time to test your Scripture memory!
+
+📊 **Challenge Details:**
+🧠 Type: Fill-in-the-blank Bible verses
+❓ Questions: Up to 10
+📝 Focus: Memorizing God's Word
+⏱️ Take your time to recall the verses!
+
+Let's strengthen your biblical foundation! 🚀`;
+          break;
+          
+        case 'situational_quiz':
+          welcomeMessage = `💡 *LIFE SITUATIONS QUIZ* 💡
+
+Welcome ${userName}! Apply God's Word to real life!
+
+📊 **Challenge Details:**
+🎯 Type: Real intercession scenarios
+❓ Questions: Up to 10
+💪 Focus: Practical Bible application
+⏱️ Consider each situation carefully!
+
+Let's connect Scripture to ministry! 🚀`;
+          break;
+          
+        default:
+          welcomeMessage = `🎯 *SMART QUIZ* 🎯
+
+Welcome ${userName}! Ready for your adaptive Bible challenge?
 
 📊 **Session Details:**
 🎚️ Difficulty: ${difficulty.toUpperCase()}
-❓ Questions: Up to 10
+❓ Questions: Up to ${maxQuestions}
+🔄 Mixed question types
 ⏱️ No time limit - take your time to think!
 
 Let's begin! 🚀`;
+      }
 
       await this.sendWhatsAppMessage(phoneNumber, welcomeMessage);
 
@@ -3057,6 +3112,38 @@ Choose your answer:`;
     };
 
     try {
+      // Use Gemini AI to generate diverse question types
+      const aiQuestion = await this.generateAIQuestion(difficulty, questionType, questionNumber);
+      
+      if (aiQuestion) {
+        console.log(`✅ Generated ${questionType} question via Gemini AI`);
+        return aiQuestion;
+      } else {
+        console.log('⚠️ AI generation failed, using fallback questions');
+      }
+    } catch (error) {
+      console.log('❌ Error generating AI question:', error);
+    }
+    
+    // Enhanced fallback system - select appropriate question based on type and difficulty
+    const difficultyQuestions = fallbackQuestions[difficulty] || fallbackQuestions.easy;
+    const typeSpecificQuestions = difficultyQuestions.filter(q => q.questionType === questionType);
+    
+    let selectedQuestion;
+    if (typeSpecificQuestions.length > 0) {
+      // Use questions matching the requested type
+      selectedQuestion = typeSpecificQuestions[Math.floor(Math.random() * typeSpecificQuestions.length)];
+    } else {
+      // Use any question from the difficulty level
+      selectedQuestion = difficultyQuestions[Math.floor(Math.random() * difficultyQuestions.length)];
+    }
+    
+    console.log(`📚 Using ${selectedQuestion.questionType} fallback question for ${difficulty} level`);
+    return selectedQuestion;
+  }
+
+  private async generateAIQuestion(difficulty: string, questionType: string, questionNumber: number) {
+    try {
       let prompt = '';
       
       // Generate different prompts based on question type
@@ -3145,27 +3232,59 @@ ${difficulty} guidelines:
         throw new Error('Invalid question format from AI');
       }
 
-      console.log('✅ Successfully generated and validated AI quiz question');
+      // Ensure questionType is set
+      question.questionType = questionType;
+      
+      console.log(`✅ Generated valid ${questionType} question: "${question.question.substring(0, 50)}..."`);
       return question;
 
     } catch (error) {
-      console.error('❌ Error generating AI quiz question:', error);
-      console.log('🔄 Using fallback question instead');
+      console.log(`❌ Error generating AI question: ${error}`);
+      return null;
+    }
+  }
 
-      // Use fallback questions with rotation based on question type
-      const questionPool = fallbackQuestions[difficulty as keyof typeof fallbackQuestions] || fallbackQuestions.easy;
-      
-      // Filter by question type if specified
-      let filteredQuestions = questionPool;
-      if (questionType !== 'standard') {
-        filteredQuestions = questionPool.filter(q => q.questionType === questionType);
-        if (filteredQuestions.length === 0) {
-          filteredQuestions = questionPool; // Fallback to all questions if none of the specified type
-        }
+  private async generateAIContent(prompt: string): Promise<string> {
+    try {
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error('Gemini API key not configured');
       }
+
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=' + process.env.GEMINI_API_KEY, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Gemini API request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
       
-      const questionIndex = (questionNumber - 1) % filteredQuestions.length;
-      return filteredQuestions[questionIndex];
+      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
+        throw new Error('Invalid response structure from Gemini API');
+      }
+
+      return data.candidates[0].content.parts[0].text;
+
+    } catch (error) {
+      console.error('Error generating AI content:', error);
+      throw error;
     }
   }
 
