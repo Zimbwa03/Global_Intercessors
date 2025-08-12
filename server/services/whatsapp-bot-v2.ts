@@ -994,7 +994,7 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
       if (command === 'continue' || command === 'start' || command === '/start' || command === 'hi' || command === 'hello') {
         await this.handleStartCommand(phoneNumber, userName);
       } else if (command === 'devotionals' || command === '/devotionals') {
-        await this.handleDevotionalsCommand(phoneNumber, userName);
+        await this.handleDevotionalsMenuCommand(phoneNumber, userName);
       } else if (command === 'quiz' || command === '/quiz') {
         await this.handleQuizCommand(phoneNumber, userName);
       } else if (command === 'reminders' || command === '/reminders') {
@@ -1018,6 +1018,10 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
         await this.handleStartCommand(phoneNumber, userName);
       
       // Handle specific button interactions
+      } else if (command === 'todays_word' || command === 'daily_declarations') {
+        await this.handleDevotionalContent(phoneNumber, userName, command);
+      } else if (command === 'get_fresh_word' || command === 'generate_another') {
+        await this.handleGenerateContent(phoneNumber, userName, command);
       } else if (command === 'daily_devotional' || command === 'fresh_word' || command === 'scripture_insight') {
         await this.handleSpecificDevotional(phoneNumber, userName, command);
       } else if (command === 'easy_quiz' || command === 'medium_quiz' || command === 'hard_quiz') {
@@ -1340,6 +1344,205 @@ Global Intercessors is a worldwide prayer movement that maintains 24/7 prayer co
     ];
 
     await this.sendInteractiveMessage(phoneNumber, helpMessage, buttons);
+  }
+
+  // New devotional menu handler
+  private async handleDevotionalsMenuCommand(phoneNumber: string, userName: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'command', 'devotionals_menu');
+    
+    const welcomeMessage = `🕊️ *${userName}, Welcome to Devotions* 🕊️
+
+*"Your word is a lamp for my feet, a light on my path."* - Psalm 119:105
+
+Choose your spiritual nourishment for today:`;
+
+    const buttons = [
+      { id: 'todays_word', title: "📖 Today's Word" },
+      { id: 'daily_declarations', title: '🔥 Daily Declarations' },
+      { id: 'back', title: '⬅️ Back to Menu' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, welcomeMessage, buttons);
+  }
+
+  // Handle devotional content generation
+  private async handleDevotionalContent(phoneNumber: string, userName: string, type: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', type);
+
+    if (type === 'todays_word') {
+      await this.generateTodaysWord(phoneNumber, userName);
+    } else if (type === 'daily_declarations') {
+      await this.generateDailyDeclarations(phoneNumber, userName);
+    }
+  }
+
+  // Generate Today's Word using DeepSeek AI
+  private async generateTodaysWord(phoneNumber: string, userName: string): Promise<void> {
+    try {
+      const prompt = `Generate a powerful "Today's Word" devotional message for a Christian intercessor. Structure it exactly as follows:
+
+1. Today's Word Topic (a compelling spiritual theme)
+2. A relevant Bible verse that supports the topic
+3. Deep explanation of the topic using the verse, breaking it down for the intercessor
+4. A powerful short prayer focused on the message topic
+5. End with "Amen."
+
+Make it spiritually powerful, encouraging, and focused on prayer and intercession. Keep it concise but impactful.`;
+
+      const content = await this.generateAIContent(prompt);
+      
+      const todaysWordMessage = `📖 *Today's Word* 📖
+
+${content}
+
+*May this word strengthen your prayer life today, ${userName}.*`;
+
+      const buttons = [
+        { id: 'get_fresh_word', title: '🔄 Get Fresh Word' },
+        { id: 'back', title: '⬅️ Back' }
+      ];
+
+      await this.sendInteractiveMessage(phoneNumber, todaysWordMessage, buttons);
+
+    } catch (error) {
+      console.error('Error generating Today\'s Word:', error);
+      
+      const fallbackMessage = `📖 *Today's Word* 📖
+
+**Topic: Standing Firm in Faith**
+
+*"Be on your guard; stand firm in the faith; be courageous; be strong."* - 1 Corinthians 16:13
+
+Dear ${userName}, in times of uncertainty, God calls us to stand firm in our faith. This verse reminds us that being on guard is not about fear, but about spiritual alertness. When we stand firm in faith, we become unshakeable pillars of strength in prayer.
+
+As an intercessor, your firm foundation in Christ enables you to pray with authority and confidence. Let your faith be the anchor that holds steady when the storms of life rage around you.
+
+**Prayer:** *Father God, help me to stand firm in my faith today. Give me courage to pray boldly and strength to persevere in intercession. Let my faith be unwavering as I stand in the gap for others. In Jesus' name, Amen.*`;
+
+      const buttons = [
+        { id: 'get_fresh_word', title: '🔄 Get Fresh Word' },
+        { id: 'back', title: '⬅️ Back' }
+      ];
+
+      await this.sendInteractiveMessage(phoneNumber, fallbackMessage, buttons);
+    }
+  }
+
+  // Generate Daily Declarations using DeepSeek AI
+  private async generateDailyDeclarations(phoneNumber: string, userName: string): Promise<void> {
+    try {
+      const prompt = `Generate 10 powerful daily declarations for Christian intercessors. Structure exactly as follows:
+
+📌 Declaration Focus: [Choose a spiritual theme like "Heart Standing Firm in the Lord", "Walking in Divine Authority", "Breakthrough and Victory", etc.]
+
+For each declaration (1️⃣ through 🔟):
+- Start with "🔥 I declare..." 
+- Make it personal, powerful, and faith-building
+- Add relevant emojis to make it engaging
+- Include a supporting Bible verse with reference: 📖 [Verse] — "[Quote]"
+
+Make them spiritually powerful, encouraging, and focused on prayer, faith, and intercession. Each declaration should be different and impactful.`;
+
+      const content = await this.generateAIContent(prompt);
+      
+      const declarationsMessage = `🔥 *Daily Declarations* 🔥
+
+*${userName}, speak these declarations over your life today:*
+
+${content}
+
+*Declare these with faith and watch God move in your life and ministry!*`;
+
+      const buttons = [
+        { id: 'generate_another', title: '🔄 Generate Another' },
+        { id: 'back', title: '⬅️ Back' }
+      ];
+
+      await this.sendInteractiveMessage(phoneNumber, declarationsMessage, buttons);
+
+    } catch (error) {
+      console.error('Error generating Daily Declarations:', error);
+      
+      const fallbackMessage = `🔥 *Daily Declarations* 🔥
+
+*${userName}, speak these declarations over your life today:*
+
+📌 Declaration Focus: 💖 Heart Standing Firm in the Lord
+
+1️⃣ 🔥 I declare my heart is unshakable because the Lord is my foundation! 🙏💪🏽✨
+📖 Psalm 112:7 — "They will have no fear of bad news; their hearts are steadfast, trusting in the Lord."
+
+2️⃣ 🔥 I declare that my heart remains pure and faithful to God's Word! 💎❤️🙌
+📖 Matthew 5:8 — "Blessed are the pure in heart, for they will see God."
+
+3️⃣ 🔥 I declare my heart is guarded by the peace of Christ! 🕊️💖🛡️
+📖 Philippians 4:7 — "And the peace of God… will guard your hearts and your minds in Christ Jesus."
+
+4️⃣ 🔥 I declare that my heart overflows with unshakable joy! 😄🔥💐
+📖 Nehemiah 8:10 — "The joy of the Lord is your strength."
+
+5️⃣ 🔥 I declare my heart will not be troubled but rests in His promises! 🌊🛌🙏
+📖 John 14:1 — "Do not let your hearts be troubled. You believe in God; believe also in me."
+
+*Declare these with faith and watch God move in your life and ministry!*`;
+
+      const buttons = [
+        { id: 'generate_another', title: '🔄 Generate Another' },
+        { id: 'back', title: '⬅️ Back' }
+      ];
+
+      await this.sendInteractiveMessage(phoneNumber, fallbackMessage, buttons);
+    }
+  }
+
+  // Handle content regeneration
+  private async handleGenerateContent(phoneNumber: string, userName: string, command: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', command);
+
+    if (command === 'get_fresh_word') {
+      await this.generateTodaysWord(phoneNumber, userName);
+    } else if (command === 'generate_another') {
+      await this.generateDailyDeclarations(phoneNumber, userName);
+    }
+  }
+
+  // AI content generation helper
+  private async generateAIContent(prompt: string): Promise<string> {
+    try {
+      const response = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY || process.env.AI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a Christian devotional writer specializing in powerful, biblically-grounded content for intercessors and prayer warriors. Your writing is inspiring, scripturally sound, and spiritually empowering.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 2000,
+          temperature: 0.8
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`DeepSeek API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0]?.message?.content || '';
+
+    } catch (error) {
+      console.error('DeepSeek AI generation failed:', error);
+      throw error;
+    }
   }
 
   // Specific button interaction handlers

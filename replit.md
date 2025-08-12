@@ -16,6 +16,11 @@ Preferred communication style: Simple, everyday language.
   - Replaced all text commands with click-based button interactions for better mobile user experience
   - Added navigation buttons (Continue, Try Again, Help, Back) across all features including login flow, devotionals, bible quiz, reminders, updates, messages, and dashboard
   - Bot now restricts access to registered phone numbers only, preventing same credentials from working on multiple unregistered phones
+  - Implemented comprehensive devotional menu with personalized user greetings and Bible verse
+  - Added AI-powered "Today's Word" feature with DeepSeek AI generating spiritual topics, verses, explanations, and prayers
+  - Added AI-powered "Daily Declarations" feature generating 10 faith declarations with supporting Bible verses
+  - Included "Get Fresh Word" and "Generate Another" buttons for continuous AI content generation
+  - Added fallback devotional content for seamless experience during AI service interruptions
 
 ## System Architecture
 
@@ -34,7 +39,7 @@ Preferred communication style: Simple, everyday language.
 - **Communication**: Global update system, push notifications via Firebase Cloud Messaging, SMTP-based email alerts, and real-time dashboard updates.
 - **Prayer Management**: System for 48 half-hour prayer slots, attendance tracking, slot transfers, skip requests, and real-time coverage monitoring.
 - **Admin Dashboard**: Comprehensive user management, global updates, analytics, event management, and system monitoring.
-- **WhatsApp Bot**: An interactive WhatsApp Prayer Reminder Bot with comprehensive database integration, user authentication (requires Global Intercessors web app login credentials), personalized greetings using real user names, cross-table data retrieval, command handling, devotional content generation (via DeepSeek AI), and prayer slot reminders with actual slot information. New users must authenticate with email/password from web app before accessing bot features.
+- **WhatsApp Bot**: An interactive WhatsApp Prayer Reminder Bot with comprehensive database integration, user authentication (requires Global Intercessors web app login credentials), personalized greetings using real user names, cross-table data retrieval, command handling, AI-powered devotional content generation (via DeepSeek AI), enhanced devotional menu with "Today's Word" and "Daily Declarations" features, and prayer slot reminders with actual slot information. New users must authenticate with email/password from web app before accessing bot features.
 
 ### System Design Choices
 - **Data Protection**: Row Level Security (RLS) implemented for data protection, with PostgreSQL functions for complex operations bypassing RLS when needed.
