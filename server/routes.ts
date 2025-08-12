@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { supabaseAdmin, supabase } from "./supabase";
-import { whatsAppBot } from "./services/whatsapp-bot.js";
+import { whatsAppBot } from "./services/whatsapp-bot-v2.js";
 import axios from "axios";
 import * as htmlPdf from 'html-pdf-node';
 

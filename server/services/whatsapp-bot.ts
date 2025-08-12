@@ -1,6 +1,5 @@
-import cron from 'node-cron';
-import { supabaseAdmin as supabase } from '../supabase.js';
-import fetch from 'node-fetch';
+// DEPRECATED: This file has been replaced by whatsapp-bot-v2.ts
+// Please update imports to use whatsapp-bot-v2.js directly
 
 interface WhatsAppAPIConfig {
   phoneNumberId: string;
