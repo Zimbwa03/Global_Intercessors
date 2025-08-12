@@ -1379,23 +1379,26 @@ Choose your spiritual nourishment for today:`;
   // Generate Today's Word using DeepSeek AI
   private async generateTodaysWord(phoneNumber: string, userName: string): Promise<void> {
     try {
-      const prompt = `Generate a powerful "Today's Word" devotional message for a Christian intercessor. Structure it exactly as follows:
-
-1. Today's Word Topic (a compelling spiritual theme)
-2. A relevant Bible verse that supports the topic
-3. Deep explanation of the topic using the verse, breaking it down for the intercessor
-4. A powerful short prayer focused on the message topic
+      const prompt = `Generate a concise "Today's Word" devotional for a Christian intercessor (MAX 400 words total). Include:
+1. Topic (3-5 words)
+2. Bible verse 
+3. Brief explanation (2-3 sentences)
+4. Short prayer (2-3 sentences)
 5. End with "Amen."
 
-Make it spiritually powerful, encouraging, and focused on prayer and intercession. Keep it concise but impactful.`;
+Keep it powerful but concise for mobile reading.`;
 
       const content = await this.generateAIContent(prompt);
       
-      const todaysWordMessage = `📖 *Today's Word* 📖
-
-${content}
-
-*May this word strengthen your prayer life today, ${userName}.*`;
+      // Ensure the message stays under 1000 characters
+      const baseMessage = `📖 *Today's Word* 📖\n\n`;
+      const footer = `\n\n*May this strengthen your prayer life, ${userName}.*`;
+      const availableSpace = 1000 - baseMessage.length - footer.length;
+      
+      const truncatedContent = content.length > availableSpace ? 
+        content.substring(0, availableSpace - 3) + "..." : content;
+      
+      const todaysWordMessage = baseMessage + truncatedContent + footer;
 
       const buttons = [
         { id: 'get_fresh_word', title: '🔄 Get Fresh Word' },
@@ -1413,11 +1416,11 @@ ${content}
 
 *"Be on your guard; stand firm in the faith; be courageous; be strong."* - 1 Corinthians 16:13
 
-Dear ${userName}, in times of uncertainty, God calls us to stand firm in our faith. This verse reminds us that being on guard is not about fear, but about spiritual alertness. When we stand firm in faith, we become unshakeable pillars of strength in prayer.
+Dear ${userName}, God calls us to stand firm in faith. This verse reminds us that being on guard means spiritual alertness. When we stand firm, we become unshakeable pillars in prayer.
 
-As an intercessor, your firm foundation in Christ enables you to pray with authority and confidence. Let your faith be the anchor that holds steady when the storms of life rage around you.
+Your foundation in Christ enables you to pray with authority and confidence.
 
-**Prayer:** *Father God, help me to stand firm in my faith today. Give me courage to pray boldly and strength to persevere in intercession. Let my faith be unwavering as I stand in the gap for others. In Jesus' name, Amen.*`;
+**Prayer:** *Father, help me stand firm in faith today. Give me courage to pray boldly and strength to persevere in intercession. In Jesus' name, Amen.*`;
 
       const buttons = [
         { id: 'get_fresh_word', title: '🔄 Get Fresh Word' },
@@ -1428,63 +1431,69 @@ As an intercessor, your firm foundation in Christ enables you to pray with autho
     }
   }
 
-  // Generate Daily Declarations using DeepSeek AI
+  // Generate Daily Declarations using DeepSeek AI - Split into multiple messages
   private async generateDailyDeclarations(phoneNumber: string, userName: string): Promise<void> {
     try {
-      const prompt = `Generate 10 powerful daily declarations for Christian intercessors. Structure exactly as follows:
+      const prompt = `Generate 5 powerful daily declarations for Christian intercessors (MAX 400 words). Structure:
 
-📌 Declaration Focus: [Choose a spiritual theme like "Heart Standing Firm in the Lord", "Walking in Divine Authority", "Breakthrough and Victory", etc.]
+📌 Declaration Focus: [spiritual theme]
 
-For each declaration (1️⃣ through 🔟):
-- Start with "🔥 I declare..." 
-- Make it personal, powerful, and faith-building
-- Add relevant emojis to make it engaging
-- Include a supporting Bible verse with reference: 📖 [Verse] — "[Quote]"
+For each (1️⃣-5️⃣):
+- "🔥 I declare..." (be concise)
+- Bible verse reference only (not full quote)
 
-Make them spiritually powerful, encouraging, and focused on prayer, faith, and intercession. Each declaration should be different and impactful.`;
+Keep it short but powerful for mobile reading.`;
 
       const content = await this.generateAIContent(prompt);
       
-      const declarationsMessage = `🔥 *Daily Declarations* 🔥
-
-*${userName}, speak these declarations over your life today:*
-
-${content}
-
-*Declare these with faith and watch God move in your life and ministry!*`;
+      // Split into two messages to stay under character limit
+      const headerMessage = `🔥 *Daily Declarations* 🔥\n\n*${userName}, speak these over your life today:*`;
+      
+      // Send header first
+      await this.sendWhatsAppMessage(phoneNumber, headerMessage);
+      
+      // Wait a moment then send content
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Ensure content stays under limit
+      const availableSpace = 950; // Leave buffer for safety
+      const truncatedContent = content.length > availableSpace ? 
+        content.substring(0, availableSpace - 3) + "..." : content;
+      
+      const contentMessage = truncatedContent + "\n\n*Declare with faith and watch God move!*";
 
       const buttons = [
         { id: 'generate_another', title: '🔄 Generate Another' },
         { id: 'back', title: '⬅️ Back' }
       ];
 
-      await this.sendInteractiveMessage(phoneNumber, declarationsMessage, buttons);
+      await this.sendInteractiveMessage(phoneNumber, contentMessage, buttons);
 
     } catch (error) {
       console.error('Error generating Daily Declarations:', error);
       
       const fallbackMessage = `🔥 *Daily Declarations* 🔥
 
-*${userName}, speak these declarations over your life today:*
+*${userName}, speak these over your life:*
 
-📌 Declaration Focus: 💖 Heart Standing Firm in the Lord
+📌 Focus: 💖 Heart Standing Firm
 
-1️⃣ 🔥 I declare my heart is unshakable because the Lord is my foundation! 🙏💪🏽✨
-📖 Psalm 112:7 — "They will have no fear of bad news; their hearts are steadfast, trusting in the Lord."
+1️⃣ 🔥 I declare my heart is unshakable! 🙏💪
+📖 Psalm 112:7
 
-2️⃣ 🔥 I declare that my heart remains pure and faithful to God's Word! 💎❤️🙌
-📖 Matthew 5:8 — "Blessed are the pure in heart, for they will see God."
+2️⃣ 🔥 I declare my heart stays pure! 💎❤️
+📖 Matthew 5:8
 
-3️⃣ 🔥 I declare my heart is guarded by the peace of Christ! 🕊️💖🛡️
-📖 Philippians 4:7 — "And the peace of God… will guard your hearts and your minds in Christ Jesus."
+3️⃣ 🔥 I declare my heart has Christ's peace! 🕊️💖
+📖 Philippians 4:7
 
-4️⃣ 🔥 I declare that my heart overflows with unshakable joy! 😄🔥💐
-📖 Nehemiah 8:10 — "The joy of the Lord is your strength."
+4️⃣ 🔥 I declare my heart overflows with joy! 😄🔥
+📖 Nehemiah 8:10
 
-5️⃣ 🔥 I declare my heart will not be troubled but rests in His promises! 🌊🛌🙏
-📖 John 14:1 — "Do not let your hearts be troubled. You believe in God; believe also in me."
+5️⃣ 🔥 I declare my heart rests in His promises! 🌊🙏
+📖 John 14:1
 
-*Declare these with faith and watch God move in your life and ministry!*`;
+*Declare with faith and watch God move!*`;
 
       const buttons = [
         { id: 'generate_another', title: '🔄 Generate Another' },
@@ -1527,7 +1536,7 @@ ${content}
               content: prompt
             }
           ],
-          max_tokens: 2000,
+          max_tokens: 800,
           temperature: 0.8
         }),
       });
