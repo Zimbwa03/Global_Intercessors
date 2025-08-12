@@ -1472,29 +1472,29 @@ God's kingdom stands firm when everything else crumbles. As intercessors, we pra
     }
   }
 
-  // Generate Daily Declarations using DeepSeek AI - 5 detailed declarations
+  // Generate Daily Declarations using DeepSeek AI - 5 concise declarations
   private async generateDailyDeclarations(phoneNumber: string, userName: string): Promise<void> {
     try {
-      const prompt = `Generate 5 powerful daily declarations for Christian intercessors. Structure exactly:
+      const prompt = `Generate 5 concise daily declarations for Christian intercessors. Keep VERY SHORT for WhatsApp (max 800 characters total). Structure:
 
-**Declaration Focus:** [Compelling spiritual theme]
+**Focus:** [Short theme]
 
-1️⃣ **I DECLARE:** [Powerful first-person faith declaration with spiritual authority]
-*Scripture Foundation:* [Book Chapter:Verse - "Complete verse text here"]*
+1️⃣ I DECLARE: [Short powerful statement]
+📖 [Book Ch:V]
 
-2️⃣ **I DECLARE:** [Second powerful declaration about breakthrough/victory]
-*Scripture Foundation:* [Book Chapter:Verse - "Complete verse text here"]*
+2️⃣ I DECLARE: [Short breakthrough statement] 
+📖 [Book Ch:V]
 
-3️⃣ **I DECLARE:** [Third declaration about God's favor/blessing]
-*Scripture Foundation:* [Book Chapter:Verse - "Complete verse text here"]*
+3️⃣ I DECLARE: [Short favor statement]
+📖 [Book Ch:V]
 
-4️⃣ **I DECLARE:** [Fourth declaration about spiritual warfare/authority]
-*Scripture Foundation:* [Book Chapter:Verse - "Complete verse text here"]*
+4️⃣ I DECLARE: [Short authority statement]
+📖 [Book Ch:V]
 
-5️⃣ **I DECLARE:** [Fifth declaration about divine purpose/calling]
-*Scripture Foundation:* [Book Chapter:Verse - "Complete verse text here"]*
+5️⃣ I DECLARE: [Short purpose statement]
+📖 [Book Ch:V]
 
-Make each declaration bold, faith-filled, and personally empowering for prayer warriors.`;
+Keep each declaration under 60 characters. Only reference, no full verse text.`;
 
       const content = await this.generateAIContent(prompt);
       
@@ -1505,9 +1505,14 @@ Make each declaration bold, faith-filled, and personally empowering for prayer w
 
 ${content}
 
-💪 *Declare these with bold faith and watch God move!*
+💪 *Declare with bold faith!*
 
-*"Let the redeemed of the Lord SAY SO!" - Psalm 107:2*`;
+*"Let the redeemed SAY SO!" - Psalm 107:2*`;
+
+      // Check message length and truncate if needed
+      if (declarationsMessage.length > 1000) {
+        throw new Error('Message too long, using fallback');
+      }
 
       const buttons = [
         { id: 'generate_another', title: '🔄 Fresh Declarations' },
@@ -1515,38 +1520,38 @@ ${content}
         { id: 'back', title: '⬅️ Back' }
       ];
 
-      console.log(`📏 Enhanced declarations message length: ${declarationsMessage.length} characters`);
+      console.log(`📏 Declarations message length: ${declarationsMessage.length} characters`);
       await this.sendInteractiveMessage(phoneNumber, declarationsMessage, buttons);
 
     } catch (error) {
       console.error('Error generating Daily Declarations:', error);
       
-      // Enhanced fallback message
+      // Concise fallback message
       const firstName = userName.split(' ')[0];
       const fallbackMessage = `🔥 *Daily Declarations* 🔥
 
 *${firstName}, speak these over your life:*
 
-**Declaration Focus:** Kingdom Authority
+**Focus:** Kingdom Authority
 
-1️⃣ **I DECLARE:** God's kingdom power flows through my prayers today!
-*Scripture Foundation:* Matthew 6:13 - "For yours is the kingdom and the power and the glory forever."*
+1️⃣ I DECLARE: God's power flows through my prayers!
+📖 Matthew 6:13
 
-2️⃣ **I DECLARE:** Every chain of bondage is broken in my life and family!
-*Scripture Foundation:* Isaiah 61:1 - "The Spirit of the Lord GOD is upon me... to proclaim liberty to the captives."*
+2️⃣ I DECLARE: Every chain is broken in Jesus' name!
+📖 Isaiah 61:1
 
-3️⃣ **I DECLARE:** Divine favor surrounds me like a shield everywhere I go!
-*Scripture Foundation:* Psalm 5:12 - "For you bless the righteous, O LORD; you cover him with favor as with a shield."*
+3️⃣ I DECLARE: Divine favor surrounds me like a shield!
+📖 Psalm 5:12
 
-4️⃣ **I DECLARE:** I walk in spiritual authority over every force of darkness!
-*Scripture Foundation:* Luke 10:19 - "Behold, I have given you authority to tread on serpents and scorpions."*
+4️⃣ I DECLARE: I walk in spiritual authority today!
+📖 Luke 10:19
 
-5️⃣ **I DECLARE:** My prayers align with God's perfect will and release His purposes!
-*Scripture Foundation:* 1 John 5:14 - "And this is the confidence that we have toward him, that if we ask anything according to his will he hears us."*
+5️⃣ I DECLARE: My prayers align with God's will!
+📖 1 John 5:14
 
-💪 *Declare these with bold faith and watch God move!*
+💪 *Declare with bold faith!*
 
-*"Let the redeemed of the Lord SAY SO!" - Psalm 107:2*`;
+*"Let the redeemed SAY SO!" - Psalm 107:2*`;
 
       const buttons = [
         { id: 'generate_another', title: '🔄 Fresh Declarations' },
@@ -1554,7 +1559,7 @@ ${content}
         { id: 'back', title: '⬅️ Back' }
       ];
 
-      console.log(`📏 Enhanced fallback declarations length: ${fallbackMessage.length} characters`);
+      console.log(`📏 Fallback declarations length: ${fallbackMessage.length} characters`);
       await this.sendInteractiveMessage(phoneNumber, fallbackMessage, buttons);
     }
   }
