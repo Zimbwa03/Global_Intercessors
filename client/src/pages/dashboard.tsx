@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unreadUpdates, setUnreadUpdates] = useState(3); // Track unread updates
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -286,8 +287,6 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
     <div className="min-h-screen bg-brand-neutral flex">
