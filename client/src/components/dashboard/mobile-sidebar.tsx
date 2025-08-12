@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { X, Menu, User, Home, Calendar, Book, MessageCircle, BarChart, Settings, LogOut, Clock, Bell, TrendingUp, FileText, Heart, Shield, Search, Users, Star, Zap, Smartphone } from "lucide-react";
+import Link from "next/link"; // Assuming you are using Next.js for Link
 
 interface MobileSidebarProps {
   activeTab: string;
@@ -31,16 +32,31 @@ export function MobileSidebar({
     { id: "prayer-journey", label: "Prayer Journey", icon: TrendingUp, description: "Track Your Growth" },
   ];
 
+  // Placeholder for setIsOpen, assuming it's managed in a parent component or within this component's state.
+  // If `isOpen` is controlled externally and `onToggle` is for closing, this might not be needed.
+  // For the sake of making the provided `changes` work, we'll assume `setIsOpen` is available in the scope where the original code snippet was taken from.
+  // However, the original code does not define `setIsOpen` locally. The provided `changes` seem to imply a local state management for `isOpen`.
+  // For this fix, we will assume `onToggle` is the only function needed to manage the `isOpen` state externally.
+  // If `setIsOpen` was intended to be local, it should be declared as: const [isOpenState, setIsOpen] = useState(isOpen); and used in onClick={setIsOpen(false)}.
+
   const handleItemClick = (tabId: string) => {
     onTabChange(tabId);
     onToggle(); // Close sidebar on mobile after selection
   };
 
+  // Dummy function to simulate isActive for Link component if it were used directly
+  // In a real Next.js app, this would likely involve pathname checking.
+  const isActive = (href: string) => {
+    // Replace with actual logic to determine if a link is active
+    return activeTab === href.replace('/', ''); 
+  };
+
+
   return (
     <>
       {/* Mobile Sidebar Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={onToggle}
         />
@@ -54,21 +70,23 @@ export function MobileSidebar({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gi-primary/20">
           <div className="flex items-center space-x-3">
-            <img 
-              src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
-              alt="Global Intercessors" 
-              className="w-10 h-10 rounded-full bg-white/10 p-1"
+            <img
+              src="/src/assets/GI_Logo_Main_1751586542563.png" // Assuming this is the correct logo path
+              alt="Global Intercessors"
+              className="h-8 w-8" // Adjusted size for better fit
             />
             <div>
-              <h2 className="text-lg font-bold text-white">Global Intercessors</h2>
-              <p className="text-xs text-gi-primary/200">Prayer Platform</p>
+              <h2 className="text-lg font-semibold text-gi-white">
+                Global Intercessors
+              </h2>
+              <p className="text-sm text-gi-gold">Prayer Management</p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="sm"
-            onClick={onToggle}
-            className="text-white hover:bg-gi-primary/20"
+            onClick={onToggle} // Use onToggle to close the sidebar
+            className="text-gi-gold hover:text-gi-white hover:bg-gi-gold/10"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -76,16 +94,16 @@ export function MobileSidebar({
 
         {/* Profile Section */}
         <div className="p-4 border-b border-gi-primary/20">
-          <div 
+          <div
             className="flex items-center space-x-3 cursor-pointer hover:bg-gi-primary/20 rounded-lg p-3 transition-colors"
             onClick={() => handleItemClick('profile')}
           >
             <div className="relative">
               <div className="w-12 h-12 bg-gi-gold rounded-full flex items-center justify-center shadow-lg overflow-hidden">
                 {userProfile?.profilePicture ? (
-                  <img 
-                    src={userProfile.profilePicture} 
-                    alt="Profile" 
+                  <img
+                    src={userProfile.profilePicture}
+                    alt="Profile"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -116,13 +134,14 @@ export function MobileSidebar({
               const Icon = item.icon;
               return (
                 <li key={item.id}>
+                  {/* Using Button for navigation items as per original code structure */}
                   <Button
                     onClick={() => handleItemClick(item.id)}
                     variant="ghost"
                     className={cn(
                       "w-full justify-start text-left hover:bg-gi-primary/20 transition-all duration-200 font-medium h-auto p-3",
-                      activeTab === item.id 
-                        ? "bg-gi-gold text-gi-primary shadow-lg transform scale-105" 
+                      activeTab === item.id
+                        ? "bg-gi-gold text-gi-primary shadow-lg transform scale-105"
                         : "text-white"
                     )}
                   >

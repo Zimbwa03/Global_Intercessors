@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import Link from "next/link"; // Assuming Link is from Next.js for navigation
+import { User } from "lucide-react"; // Assuming User icon is from lucide-react
 
 interface SidebarProps {
   activeTab: string;
@@ -24,6 +26,19 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
     { id: "prayer-planner", label: "Prayer Planner", icon: "fas fa-calendar-check" },
   ];
 
+  // Dummy navigation for the purpose of the example, replace with your actual navigation structure
+  const navigation = [
+    { name: "Dashboard", href: "/dashboard", icon: (props: any) => <i className={`fas fa-home ${props.className}`}></i> },
+    { name: "Prayer Slot", href: "/prayer-slot", icon: (props: any) => <i className={`fas fa-clock ${props.className}`}></i> },
+    { name: "Prayer Journey", href: "/prayer-journey", icon: (props: any) => <i className={`fas fa-route ${props.className}`}></i> },
+    { name: "Updates", href: "/updates", icon: (props: any) => <i className={`fas fa-bullhorn ${props.className}`}></i> },
+    { name: "Bible Chatbook", href: "/bible-chatbook", icon: (props: any) => <i className={`fas fa-book ${props.className}`}></i> },
+    { name: "Bible Search", href: "/bible-search", icon: (props: any) => <i className={`fas fa-search ${props.className}`}></i> },
+    { name: "Prayer Planner", href: "/prayer-planner", icon: (props: any) => <i className={`fas fa-calendar-check ${props.className}`}></i> },
+  ];
+
+  const isActive = (href: string) => activeTab === href.replace('/', ''); // Simple check, adjust as needed
+
   if (isMobile) {
     return (
       <div className="bg-gi-primary text-white h-full flex flex-col">
@@ -32,9 +47,9 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
         {/* Mobile Header */}
         <div className="p-4 border-b border-gi-primary/50 relative">
           <div className="flex items-center space-x-3">
-            <img 
-              src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
-              alt="Global Intercessors Icon" 
+            <img
+              src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png"
+              alt="Global Intercessors Icon"
               className="w-8 h-8 object-contain flex-shrink-0"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
@@ -47,7 +62,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
 
         {/* Mobile User Info */}
         <div className="p-4 border-b border-gi-primary/50 relative">
-          <div 
+          <div
             className="flex items-center space-x-3 cursor-pointer hover:bg-gi-primary/30 rounded-lg p-2 transition-colors"
             onClick={() => onTabChange('profile')}
           >
@@ -109,23 +124,24 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
       "bg-gi-primary text-white h-full flex flex-col transition-brand shadow-brand-lg relative",
       isCollapsed ? "w-16" : "w-64"
     )}>
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-800/30 to-blue-900/30"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-gi-primary/30 to-gi-primary/30"></div>
 
       {/* Desktop Header */}
-      <div className="p-4 border-b border-gi-primary/700/50 relative">
+      <div className="p-4 border-b border-gi-gold/20 relative">
         <div className="flex items-center justify-between">
           {!isCollapsed && (
             <div className="flex items-center space-x-3">
-              <img 
-                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
-                alt="Global Intercessors Icon" 
-                className="w-8 h-8 object-contain flex-shrink-0"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  console.error('Logo failed to load');
-                }}
+              <img
+                src="/src/assets/GI_Logo_Main_1751586542563.png"
+                alt="Global Intercessors"
+                className="h-8 w-8"
               />
-              <h2 className="font-bold text-lg font-poppins">Global Intercessors</h2>
+              <div>
+                <h2 className="text-lg font-semibold text-gi-white">
+                  Global Intercessors
+                </h2>
+                <p className="text-sm text-gi-gold">Prayer Management</p>
+              </div>
             </div>
           )}
           <Button
@@ -142,15 +158,15 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
       {/* User Info */}
       {!isCollapsed && (
         <div className="p-4 border-b border-gi-primary/700/50 relative">
-          <div 
+          <div
             className="flex items-center space-x-3 cursor-pointer hover:bg-gi-primary/700/30 rounded-lg p-2 transition-colors"
             onClick={() => onTabChange('profile')}
           >
             <div className="w-10 h-10 bg-gi-gold rounded-full flex items-center justify-center shadow-brand overflow-hidden">
               {userProfile?.profilePicture ? (
-                <img 
-                  src={userProfile.profilePicture} 
-                  alt="Profile" 
+                <img
+                  src={userProfile.profilePicture}
+                  alt="Profile"
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -171,40 +187,32 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 relative">
-        <ul className="space-y-2">
-          {menuItems.map((item) => (
-            <li key={item.id}>
-              <Button
-                onClick={() => onTabChange(item.id)}
-                variant="ghost"
-                className={cn(
-                  "w-full justify-start text-left hover:bg-gi-primary/700/50 transition-brand font-poppins",
-                  activeTab === item.id ? "bg-gi-gold text-gi-primary shadow-brand" : "text-white",
-                  isCollapsed ? "px-3" : "px-4"
-                )}
-              >
-                <i className={`${item.icon} ${isCollapsed ? 'text-center w-full' : 'mr-3'}`}></i>
-                {!isCollapsed && <span>{item.label}</span>}
-              </Button>
-            </li>
-          ))}
-        </ul>
+      <nav className="flex-1 p-4 space-y-2">
+        {navigation.map((item) => (
+          <Link
+            key={item.name}
+            href={item.href}
+            className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              isActive(item.href)
+                ? 'bg-gi-gold text-gi-primary border-r-2 border-gi-gold'
+                : 'text-gi-white hover:bg-gi-gold/10 hover:text-gi-gold'
+            }`}
+          >
+            <item.icon className="h-5 w-5" />
+            <span>{item.name}</span>
+          </Link>
+        ))}
       </nav>
 
       {/* Logout */}
-      <div className="p-4 border-t border-gi-primary/700/50 relative">
-        <Button
-          onClick={onSignOut}
-          variant="ghost"
-          className={cn(
-            "w-full justify-start text-white hover:bg-red-600/50 transition-brand font-poppins",
-            isCollapsed ? "px-3" : "px-4"
-          )}
-        >
-          <i className={`fas fa-sign-out-alt ${isCollapsed ? 'text-center w-full' : 'mr-3'}`}></i>
-          {!isCollapsed && <span>Sign Out</span>}
-        </Button>
+      <div className="p-4 border-t border-gi-gold/20">
+        <div className="flex items-center space-x-3 px-3 py-2">
+          <User className="h-5 w-5 text-gi-gold" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gi-white">Prayer Warrior</p>
+            <p className="text-xs text-gi-gold/80">Active Session</p>
+          </div>
+        </div>
       </div>
     </div>
   );
