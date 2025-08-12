@@ -23,7 +23,7 @@ Preferred communication style: Simple, everyday language.
 - **Communication**: Global update system, push notifications via Firebase Cloud Messaging, SMTP-based email alerts, and real-time dashboard updates.
 - **Prayer Management**: System for 48 half-hour prayer slots, attendance tracking, slot transfers, skip requests, and real-time coverage monitoring.
 - **Admin Dashboard**: Comprehensive user management, global updates, analytics, event management, and system monitoring.
-- **WhatsApp Bot**: An interactive WhatsApp Prayer Reminder Bot with personalized greetings, command handling, devotional content generation (via DeepSeek AI), and prayer slot reminders.
+- **WhatsApp Bot**: An interactive WhatsApp Prayer Reminder Bot with comprehensive database integration, personalized greetings using real user names, cross-table data retrieval, command handling, devotional content generation (via DeepSeek AI), and prayer slot reminders with actual slot information.
 
 ### System Design Choices
 - **Data Protection**: Row Level Security (RLS) implemented for data protection, with PostgreSQL functions for complex operations bypassing RLS when needed.

@@ -198,33 +198,104 @@ export class WhatsAppPrayerBot {
     }
   }
 
-  // Get user's assigned prayer slot
-  private async getUserPrayerSlot(phoneNumber: string): Promise<string | null> {
+  // Get complete user information from database using WhatsApp number
+  private async getCompleteUserInfo(phoneNumber: string): Promise<{
+    name: string;
+    email: string;
+    userId: string;
+    slotInfo: string;
+    slotTime: string | null;
+    userDetails: any;
+  }> {
     try {
-      // Get user_id from WhatsApp bot users table
-      const { data: botUser } = await supabase
+      console.log(`🔍 Fetching complete user info for WhatsApp: ${phoneNumber}`);
+      
+      // Step 1: Get user_id from WhatsApp bot users table
+      const { data: botUser, error: botUserError } = await supabase
         .from('whatsapp_bot_users')
         .select('user_id')
         .eq('whatsapp_number', phoneNumber)
         .single();
 
+      console.log('📱 WhatsApp bot user query result:', { success: !botUserError, botUser, error: botUserError?.message });
+
+      let userId = botUser?.user_id;
+      
+      // If no WhatsApp user found, create one for this phone number
       if (!botUser) {
-        return null;
+        userId = `whatsapp_${phoneNumber}`;
+        await this.createOrUpdateUser(phoneNumber, { user_id: userId });
+        console.log(`✅ Created new WhatsApp user with ID: ${userId}`);
       }
 
-      // Get prayer slot for this user
-      const { data: prayerSlot } = await supabase
+      // Step 2: Get user profile information
+      const { data: userProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      console.log('👤 User profile query result:', { success: !profileError, profile: userProfile, error: profileError?.message });
+
+      // Step 3: Get prayer slot information
+      const { data: prayerSlot, error: slotError } = await supabase
         .from('prayer_slots')
-        .select('slot_time')
-        .eq('user_id', botUser.user_id)
+        .select('*')
+        .eq('user_id', userId)
         .eq('status', 'active')
         .single();
 
-      return prayerSlot?.slot_time || null;
+      console.log('🕊️ Prayer slot query result:', { success: !slotError, slot: prayerSlot, error: slotError?.message });
+
+      // Build comprehensive user information
+      const name = userProfile ? `${userProfile.first_name} ${userProfile.last_name}`.trim() : 'Beloved Intercessor';
+      const email = userProfile?.email || 'Not registered';
+      const slotTime = prayerSlot?.slot_time || null;
+      const slotInfo = slotTime ? `⏱ Your current prayer slot: ${slotTime}` : `⏱ Prayer slot: Not assigned yet`;
+
+      const userInfo = {
+        name,
+        email,
+        userId: userId!,
+        slotInfo,
+        slotTime,
+        userDetails: {
+          profile: userProfile,
+          prayerSlot: prayerSlot,
+          whatsappNumber: phoneNumber
+        }
+      };
+
+      console.log('✅ Complete user info compiled:', { 
+        name, 
+        email, 
+        userId, 
+        slotTime, 
+        hasProfile: !!userProfile, 
+        hasPrayerSlot: !!prayerSlot 
+      });
+
+      return userInfo;
+
     } catch (error) {
-      console.error('❌ Error getting user prayer slot:', error);
-      return null;
+      console.error('❌ Error getting complete user info:', error);
+      
+      // Fallback user info
+      return {
+        name: 'Beloved Intercessor',
+        email: 'Not available',
+        userId: `whatsapp_${phoneNumber}`,
+        slotInfo: '⏱ Prayer slot: Information unavailable',
+        slotTime: null,
+        userDetails: { error: error }
+      };
     }
+  }
+
+  // Get user's assigned prayer slot (legacy method for backward compatibility)
+  private async getUserPrayerSlot(phoneNumber: string): Promise<string | null> {
+    const userInfo = await this.getCompleteUserInfo(phoneNumber);
+    return userInfo.slotTime;
   }
 
   // Database operations using Supabase
@@ -563,7 +634,12 @@ Reply *help* for more options.`;
 
     // Process command
     const command = messageText.toLowerCase().trim();
-    const userName = await this.getUserName(user?.user_id || phoneNumber);
+    
+    // Get complete user information for personalized responses
+    const userInfo = await this.getCompleteUserInfo(phoneNumber);
+    console.log(`🎯 Processing command "${command}" for user: ${userInfo.name} (${userInfo.userId})`);
+    
+    const userName = userInfo.name;
 
     if (command === 'start' || command === 'hi' || command === 'hello') {
       await this.handleStartCommand(phoneNumber, userName);
@@ -591,13 +667,12 @@ Reply *help* for more options.`;
   private async handleStartCommand(phoneNumber: string, userName: string): Promise<void> {
     await this.logInteraction(phoneNumber, 'command', 'start');
 
-    // Get user's prayer slot information
-    const userPrayerSlot = await this.getUserPrayerSlot(phoneNumber);
-    const slotInfo = userPrayerSlot ? `⏱ Your current prayer slot: ${userPrayerSlot}` : `⏱ Prayer slot: Not assigned yet`;
-
-    const welcomeMessage = `🙏 Hello, ${userName}!
+    // Get complete user information from database
+    const userInfo = await this.getCompleteUserInfo(phoneNumber);
+    
+    const welcomeMessage = `🙏 Hello, ${userInfo.name}!
 Welcome to Global Intercessors Prayer Bot! 🙌
-${slotInfo}
+${userInfo.slotInfo}
 
 I'm your personal prayer companion, here to strengthen your walk with God through:
 
