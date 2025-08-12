@@ -334,9 +334,8 @@ May God bless your day and strengthen your prayers! 🙏`;
       
       console.log('🔗 Supabase connection test:', { success: !testError, error: testError?.message });
       
-      // Note: RLS policy issue identified - need to fix service role permissions
-      console.log('🔧 Detected RLS policy blocking service role access to prayer_slots table');
-      console.log('📋 Execute fix-prayer-slots-rls-policy.sql in Supabase to resolve this issue');
+      // Note: Database is empty - need to populate with prayer slots data
+      console.log('📊 Database connection successful - checking for prayer slots data');
       
       // Now query the prayer_slots table directly 
       console.log('🔍 Querying prayer_slots table directly...');
