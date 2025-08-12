@@ -198,7 +198,7 @@ export class WhatsAppPrayerBot {
     }
   }
 
-  // Get complete user information from database using WhatsApp number
+  // Get complete user information using phone number to access user auth and database
   private async getCompleteUserInfo(phoneNumber: string): Promise<{
     name: string;
     email: string;
@@ -208,36 +208,85 @@ export class WhatsAppPrayerBot {
     userDetails: any;
   }> {
     try {
-      console.log(`🔍 Fetching complete user info for WhatsApp: ${phoneNumber}`);
+      console.log(`🔍 Looking up user by phone number: ${phoneNumber}`);
       
-      // Step 1: Get user_id from WhatsApp bot users table
-      const { data: botUser, error: botUserError } = await supabase
-        .from('whatsapp_bot_users')
-        .select('user_id')
-        .eq('whatsapp_number', phoneNumber)
-        .single();
-
-      console.log('📱 WhatsApp bot user query result:', { success: !botUserError, botUser, error: botUserError?.message });
-
-      let userId = botUser?.user_id;
-      
-      // If no WhatsApp user found, create one for this phone number
-      if (!botUser) {
-        userId = `whatsapp_${phoneNumber}`;
-        await this.createOrUpdateUser(phoneNumber, { user_id: userId });
-        console.log(`✅ Created new WhatsApp user with ID: ${userId}`);
-      }
-
-      // Step 2: Get user profile information
-      const { data: userProfile, error: profileError } = await supabase
+      // Search directly by phone number in user_profiles table
+      const { data: profilesByPhone, error: phoneSearchError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('user_id', userId)
-        .single();
+        .or(`phone.eq.${phoneNumber},phone.eq.+${phoneNumber},phone.eq.263${phoneNumber.replace('263', '')}`);
 
-      console.log('👤 User profile query result:', { success: !profileError, profile: userProfile, error: profileError?.message });
+      console.log('📞 Phone search in user_profiles:', { 
+        success: !phoneSearchError, 
+        count: profilesByPhone?.length || 0,
+        data: profilesByPhone,
+        error: phoneSearchError?.message 
+      });
 
-      // Step 3: Get prayer slot information
+      let authUser = null;
+      let userId = null;
+
+      if (profilesByPhone && profilesByPhone.length > 0) {
+        authUser = profilesByPhone[0];
+        userId = authUser.user_id;
+        console.log(`✅ Found user by phone: ${authUser.first_name} ${authUser.last_name} (ID: ${userId})`);
+        
+        // Check if WhatsApp bot user record exists, create if not
+        const { data: existingBotUser } = await supabase
+          .from('whatsapp_bot_users')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+
+        if (!existingBotUser) {
+          await supabase
+            .from('whatsapp_bot_users')
+            .insert({
+              whatsapp_number: phoneNumber,
+              user_id: userId,
+              is_active: true,
+              first_interaction: new Date().toISOString()
+            });
+          console.log(`✅ Created WhatsApp bot record for user ${userId}`);
+        }
+      } else {
+        console.log('🔍 No user found by phone number, checking existing WhatsApp users...');
+        
+        // Fallback: check existing WhatsApp bot users
+        const { data: botUser, error: botUserError } = await supabase
+          .from('whatsapp_bot_users')
+          .select('*')
+          .eq('whatsapp_number', phoneNumber)
+          .single();
+
+        if (botUser) {
+          userId = botUser.user_id;
+          console.log(`📱 Found existing WhatsApp user: ${userId}`);
+
+        } else {
+          console.log('❌ No user found by phone number or existing WhatsApp records');
+          throw new Error(`No user found for phone number ${phoneNumber}`);
+        }
+      }
+
+      // Now get user profile using the userId
+      if (!authUser) {
+        const { data: userProfile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+
+        console.log('👤 User profile lookup:', { 
+          success: !profileError, 
+          profile: userProfile, 
+          error: profileError?.message 
+        });
+
+        authUser = userProfile;
+      }
+
+      // Get prayer slot information
       const { data: prayerSlot, error: slotError } = await supabase
         .from('prayer_slots')
         .select('*')
@@ -245,42 +294,46 @@ export class WhatsAppPrayerBot {
         .eq('status', 'active')
         .single();
 
-      console.log('🕊️ Prayer slot query result:', { success: !slotError, slot: prayerSlot, error: slotError?.message });
+      console.log('🕊️ Prayer slot lookup:', { 
+        success: !slotError, 
+        slot: prayerSlot, 
+        error: slotError?.message 
+      });
 
-      // Build comprehensive user information
-      const name = userProfile ? `${userProfile.first_name} ${userProfile.last_name}`.trim() : 'Beloved Intercessor';
-      const email = userProfile?.email || 'Not registered';
+      // Build user information from auth data
+      const firstName = authUser?.first_name || '';
+      const lastName = authUser?.last_name || '';
+      const name = (firstName || lastName) ? `${firstName} ${lastName}`.trim() : 'Beloved Intercessor';
+      const email = authUser?.email || prayerSlot?.user_email || 'Not registered';
       const slotTime = prayerSlot?.slot_time || null;
       const slotInfo = slotTime ? `⏱ Your current prayer slot: ${slotTime}` : `⏱ Prayer slot: Not assigned yet`;
 
-      const userInfo = {
+      console.log('✅ User data compiled:', {
+        name,
+        email,
+        userId,
+        slotTime,
+        hasAuthUser: !!authUser,
+        hasPrayerSlot: !!prayerSlot,
+        phoneNumber
+      });
+
+      return {
         name,
         email,
         userId: userId!,
         slotInfo,
         slotTime,
         userDetails: {
-          profile: userProfile,
-          prayerSlot: prayerSlot,
+          authUser,
+          prayerSlot,
           whatsappNumber: phoneNumber
         }
       };
 
-      console.log('✅ Complete user info compiled:', { 
-        name, 
-        email, 
-        userId, 
-        slotTime, 
-        hasProfile: !!userProfile, 
-        hasPrayerSlot: !!prayerSlot 
-      });
-
-      return userInfo;
-
     } catch (error) {
-      console.error('❌ Error getting complete user info:', error);
+      console.error('❌ Error connecting phone to user auth database:', error);
       
-      // Fallback user info
       return {
         name: 'Beloved Intercessor',
         email: 'Not available',
