@@ -923,10 +923,16 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
     }
     this.processedMessages.add(messageId);
 
+    // Clear old processed messages (keep only last 100)
+    if (this.processedMessages.size > 100) {
+      const oldMessages = Array.from(this.processedMessages).slice(0, 50);
+      oldMessages.forEach(id => this.processedMessages.delete(id));
+    }
+
     // Rate limiting
     const now = Date.now();
     const lastMessage = this.rateLimitMap.get(phoneNumber) || 0;
-    if (now - lastMessage < 2000) { // 2 second rate limit
+    if (now - lastMessage < 1000) { // 1 second rate limit
       console.log('⚠️ Rate limited, skipping message');
       return;
     }
@@ -1379,19 +1385,18 @@ Choose your spiritual nourishment for today:`;
   // Generate Today's Word using DeepSeek AI
   private async generateTodaysWord(phoneNumber: string, userName: string): Promise<void> {
     try {
-      const prompt = `Generate a very concise "Today's Word" devotional for WhatsApp (MAX 600 characters total). Include:
-1. Topic (2-4 words)
-2. ONE Bible verse reference and short quote
+      const prompt = `Generate a very concise "Today's Word" devotional for WhatsApp (MAX 400 characters total). Include:
+1. Topic (2-3 words)
+2. ONE Bible verse reference (book chapter:verse)
 3. ONE sentence explanation 
-4. ONE sentence prayer
-5. End with "Amen."
+4. ONE sentence prayer ending with "Amen."
 
-Keep it extremely brief for mobile WhatsApp reading.`;
+Keep extremely brief for mobile WhatsApp.`;
 
       const content = await this.generateAIContent(prompt);
       
-      // WhatsApp limit is 1024, but we need buffer for buttons and formatting
-      const maxContentLength = 800;
+      // Strict WhatsApp limit enforcement - max 500 chars for content
+      const maxContentLength = 500;
       const baseMessage = `📖 *Today's Word*\n\n`;
       const footer = `\n\n*Blessings, ${userName.split(' ')[0]}!*`;
       
@@ -1400,14 +1405,14 @@ Keep it extremely brief for mobile WhatsApp reading.`;
       
       let processedContent = content;
       if (processedContent.length > availableSpace) {
-        // Truncate and ensure it ends properly
-        processedContent = processedContent.substring(0, availableSpace - 10) + "... Amen.";
+        // Aggressive truncation
+        processedContent = processedContent.substring(0, availableSpace - 10) + " Amen.";
       }
       
       const todaysWordMessage = baseMessage + processedContent + footer;
 
-      // Validate final message length
-      if (todaysWordMessage.length > 950) {
+      // Final validation - if still too long, use ultra-compact fallback
+      if (todaysWordMessage.length > 700) {
         throw new Error('Message still too long, using fallback');
       }
 
@@ -1422,16 +1427,17 @@ Keep it extremely brief for mobile WhatsApp reading.`;
     } catch (error) {
       console.error('Error generating Today\'s Word:', error);
       
-      // Compact fallback message
+      // Ultra-compact fallback message
+      const firstName = userName.split(' ')[0];
       const fallbackMessage = `📖 *Today's Word*
 
 **Faith Foundation**
 
 *"Be strong and courageous!"* - Joshua 1:9
 
-${userName.split(' ')[0]}, God calls you to stand firm. Your prayers have divine authority when rooted in faith.
+${firstName}, God calls you to stand firm. Your prayers have divine authority.
 
-**Prayer:** *Lord, strengthen my faith and empower my prayers. Amen.*
+*Lord, strengthen my faith. Amen.*
 
 *Blessings!*`;
 
@@ -1448,7 +1454,7 @@ ${userName.split(' ')[0]}, God calls you to stand firm. Your prayers have divine
   // Generate Daily Declarations using DeepSeek AI - Split into multiple messages
   private async generateDailyDeclarations(phoneNumber: string, userName: string): Promise<void> {
     try {
-      const prompt = `Generate 3 powerful daily declarations for WhatsApp (MAX 500 characters). Structure:
+      const prompt = `Generate 3 brief daily declarations for WhatsApp (MAX 300 characters). Structure:
 
 📌 Focus: [theme]
 
@@ -1456,16 +1462,16 @@ For each (1️⃣-3️⃣):
 - "🔥 I declare..." (very brief)
 - Bible reference only
 
-Keep extremely short for mobile WhatsApp.`;
+Keep ultra-short for mobile WhatsApp.`;
 
       const content = await this.generateAIContent(prompt);
       
-      // Check content length and truncate if needed
-      const maxLength = 700;
+      // Strict length enforcement
+      const maxLength = 400;
       let processedContent = content;
       
       if (processedContent.length > maxLength) {
-        // Find a good truncation point
+        // Aggressive truncation
         processedContent = processedContent.substring(0, maxLength);
         // Try to end at a complete declaration
         const lastDeclaration = processedContent.lastIndexOf('3️⃣');
@@ -1474,13 +1480,14 @@ Keep extremely short for mobile WhatsApp.`;
         }
       }
       
-      const headerMessage = `🔥 *Daily Declarations*\n\n*${userName.split(' ')[0]}, declare these today:*\n\n`;
+      const firstName = userName.split(' ')[0];
+      const headerMessage = `🔥 *Daily Declarations*\n\n*${firstName}, declare these:*\n\n`;
       const footerMessage = `\n\n*Speak with faith! 🙏*`;
       
       const fullMessage = headerMessage + processedContent + footerMessage;
       
-      // Validate final length
-      if (fullMessage.length > 950) {
+      // Final validation - if still too long, use fallback
+      if (fullMessage.length > 650) {
         throw new Error('Message too long, using fallback');
       }
 
@@ -1495,20 +1502,21 @@ Keep extremely short for mobile WhatsApp.`;
     } catch (error) {
       console.error('Error generating Daily Declarations:', error);
       
-      // Compact fallback message
+      // Ultra-compact fallback message
+      const firstName = userName.split(' ')[0];
       const fallbackMessage = `🔥 *Daily Declarations*
 
-*${userName.split(' ')[0]}, declare these today:*
+*${firstName}, declare these:*
 
-📌 Focus: 💖 Heart Firm in God
+📌 Focus: 💖 Firm Heart
 
-1️⃣ 🔥 I declare my heart unshakable!
+1️⃣ 🔥 My heart is unshakable!
 📖 Psalm 112:7
 
-2️⃣ 🔥 I declare my heart pure!
+2️⃣ 🔥 My heart stays pure!
 📖 Matthew 5:8
 
-3️⃣ 🔥 I declare God's peace guards me!
+3️⃣ 🔥 God's peace guards me!
 📖 Philippians 4:7
 
 *Speak with faith! 🙏*`;

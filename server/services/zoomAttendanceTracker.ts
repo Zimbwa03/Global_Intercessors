@@ -599,23 +599,44 @@ class ZoomAttendanceTracker {
 
       // Check if any slot is currently active (within 15 minutes)
       const currentlyActiveSlots = activeSlots.filter(slot => {
-        const [startTime, endTime] = slot.slot_time.split('–');
-        const [startHour, startMin] = startTime.split(':').map(Number);
-        const [endHour, endMin] = endTime.split(':').map(Number);
-
-        const slotStart = now.clone().hour(startHour).minute(startMin);
-        const slotEnd = now.clone().hour(endHour).minute(endMin);
-
-        // Handle overnight slots
-        if (slotEnd.isBefore(slotStart)) {
-          slotEnd.add(1, 'day');
+        // Check if slot_time exists and is valid
+        if (!slot.slot_time || typeof slot.slot_time !== 'string') {
+          console.log(`⚠️ Invalid slot_time for slot ${slot.id}:`, slot.slot_time);
+          return false;
         }
 
-        // Check if we're within the slot time (with 15 min buffer)
-        const flexStart = slotStart.subtract(15, 'minute');
-        const flexEnd = slotEnd.add(15, 'minute');
+        try {
+          const [startTime, endTime] = slot.slot_time.split('–');
+          if (!startTime || !endTime) {
+            console.log(`⚠️ Invalid slot_time format for slot ${slot.id}:`, slot.slot_time);
+            return false;
+          }
 
-        return now.isBetween(flexStart, flexEnd, null, '[]');
+          const [startHour, startMin] = startTime.split(':').map(Number);
+          const [endHour, endMin] = endTime.split(':').map(Number);
+
+          if (isNaN(startHour) || isNaN(startMin) || isNaN(endHour) || isNaN(endMin)) {
+            console.log(`⚠️ Invalid time values for slot ${slot.id}:`, slot.slot_time);
+            return false;
+          }
+
+          const slotStart = now.clone().hour(startHour).minute(startMin);
+          const slotEnd = now.clone().hour(endHour).minute(endMin);
+
+          // Handle overnight slots
+          if (slotEnd.isBefore(slotStart)) {
+            slotEnd.add(1, 'day');
+          }
+
+          // Check if we're within the slot time (with 15 min buffer)
+          const flexStart = slotStart.subtract(15, 'minute');
+          const flexEnd = slotEnd.add(15, 'minute');
+
+          return now.isBetween(flexStart, flexEnd, null, '[]');
+        } catch (error) {
+          console.log(`⚠️ Error parsing slot_time for slot ${slot.id}:`, error.message);
+          return false;
+        }
       });
 
       if (currentlyActiveSlots.length > 0) {
