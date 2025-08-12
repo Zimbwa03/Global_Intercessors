@@ -1379,54 +1379,68 @@ Choose your spiritual nourishment for today:`;
   // Generate Today's Word using DeepSeek AI
   private async generateTodaysWord(phoneNumber: string, userName: string): Promise<void> {
     try {
-      const prompt = `Generate a concise "Today's Word" devotional for a Christian intercessor (MAX 400 words total). Include:
-1. Topic (3-5 words)
-2. Bible verse 
-3. Brief explanation (2-3 sentences)
-4. Short prayer (2-3 sentences)
+      const prompt = `Generate a very concise "Today's Word" devotional for WhatsApp (MAX 600 characters total). Include:
+1. Topic (2-4 words)
+2. ONE Bible verse reference and short quote
+3. ONE sentence explanation 
+4. ONE sentence prayer
 5. End with "Amen."
 
-Keep it powerful but concise for mobile reading.`;
+Keep it extremely brief for mobile WhatsApp reading.`;
 
       const content = await this.generateAIContent(prompt);
       
-      // Ensure the message stays under 1000 characters
-      const baseMessage = `📖 *Today's Word* 📖\n\n`;
-      const footer = `\n\n*May this strengthen your prayer life, ${userName}.*`;
-      const availableSpace = 1000 - baseMessage.length - footer.length;
+      // WhatsApp limit is 1024, but we need buffer for buttons and formatting
+      const maxContentLength = 800;
+      const baseMessage = `📖 *Today's Word*\n\n`;
+      const footer = `\n\n*Blessings, ${userName.split(' ')[0]}!*`;
       
-      const truncatedContent = content.length > availableSpace ? 
-        content.substring(0, availableSpace - 3) + "..." : content;
+      // Calculate available space for content
+      const availableSpace = maxContentLength - baseMessage.length - footer.length;
       
-      const todaysWordMessage = baseMessage + truncatedContent + footer;
+      let processedContent = content;
+      if (processedContent.length > availableSpace) {
+        // Truncate and ensure it ends properly
+        processedContent = processedContent.substring(0, availableSpace - 10) + "... Amen.";
+      }
+      
+      const todaysWordMessage = baseMessage + processedContent + footer;
+
+      // Validate final message length
+      if (todaysWordMessage.length > 950) {
+        throw new Error('Message still too long, using fallback');
+      }
 
       const buttons = [
         { id: 'get_fresh_word', title: '🔄 Get Fresh Word' },
         { id: 'back', title: '⬅️ Back' }
       ];
 
+      console.log(`📏 Today's Word message length: ${todaysWordMessage.length} characters`);
       await this.sendInteractiveMessage(phoneNumber, todaysWordMessage, buttons);
 
     } catch (error) {
       console.error('Error generating Today\'s Word:', error);
       
-      const fallbackMessage = `📖 *Today's Word* 📖
+      // Compact fallback message
+      const fallbackMessage = `📖 *Today's Word*
 
-**Topic: Standing Firm in Faith**
+**Faith Foundation**
 
-*"Be on your guard; stand firm in the faith; be courageous; be strong."* - 1 Corinthians 16:13
+*"Be strong and courageous!"* - Joshua 1:9
 
-Dear ${userName}, God calls us to stand firm in faith. This verse reminds us that being on guard means spiritual alertness. When we stand firm, we become unshakeable pillars in prayer.
+${userName.split(' ')[0]}, God calls you to stand firm. Your prayers have divine authority when rooted in faith.
 
-Your foundation in Christ enables you to pray with authority and confidence.
+**Prayer:** *Lord, strengthen my faith and empower my prayers. Amen.*
 
-**Prayer:** *Father, help me stand firm in faith today. Give me courage to pray boldly and strength to persevere in intercession. In Jesus' name, Amen.*`;
+*Blessings!*`;
 
       const buttons = [
         { id: 'get_fresh_word', title: '🔄 Get Fresh Word' },
         { id: 'back', title: '⬅️ Back' }
       ];
 
+      console.log(`📏 Fallback message length: ${fallbackMessage.length} characters`);
       await this.sendInteractiveMessage(phoneNumber, fallbackMessage, buttons);
     }
   }
@@ -1434,72 +1448,77 @@ Your foundation in Christ enables you to pray with authority and confidence.
   // Generate Daily Declarations using DeepSeek AI - Split into multiple messages
   private async generateDailyDeclarations(phoneNumber: string, userName: string): Promise<void> {
     try {
-      const prompt = `Generate 5 powerful daily declarations for Christian intercessors (MAX 400 words). Structure:
+      const prompt = `Generate 3 powerful daily declarations for WhatsApp (MAX 500 characters). Structure:
 
-📌 Declaration Focus: [spiritual theme]
+📌 Focus: [theme]
 
-For each (1️⃣-5️⃣):
-- "🔥 I declare..." (be concise)
-- Bible verse reference only (not full quote)
+For each (1️⃣-3️⃣):
+- "🔥 I declare..." (very brief)
+- Bible reference only
 
-Keep it short but powerful for mobile reading.`;
+Keep extremely short for mobile WhatsApp.`;
 
       const content = await this.generateAIContent(prompt);
       
-      // Split into two messages to stay under character limit
-      const headerMessage = `🔥 *Daily Declarations* 🔥\n\n*${userName}, speak these over your life today:*`;
+      // Check content length and truncate if needed
+      const maxLength = 700;
+      let processedContent = content;
       
-      // Send header first
-      await this.sendWhatsAppMessage(phoneNumber, headerMessage);
+      if (processedContent.length > maxLength) {
+        // Find a good truncation point
+        processedContent = processedContent.substring(0, maxLength);
+        // Try to end at a complete declaration
+        const lastDeclaration = processedContent.lastIndexOf('3️⃣');
+        if (lastDeclaration > maxLength * 0.7) {
+          processedContent = processedContent.substring(0, lastDeclaration - 1);
+        }
+      }
       
-      // Wait a moment then send content
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const headerMessage = `🔥 *Daily Declarations*\n\n*${userName.split(' ')[0]}, declare these today:*\n\n`;
+      const footerMessage = `\n\n*Speak with faith! 🙏*`;
       
-      // Ensure content stays under limit
-      const availableSpace = 950; // Leave buffer for safety
-      const truncatedContent = content.length > availableSpace ? 
-        content.substring(0, availableSpace - 3) + "..." : content;
+      const fullMessage = headerMessage + processedContent + footerMessage;
       
-      const contentMessage = truncatedContent + "\n\n*Declare with faith and watch God move!*";
+      // Validate final length
+      if (fullMessage.length > 950) {
+        throw new Error('Message too long, using fallback');
+      }
 
       const buttons = [
         { id: 'generate_another', title: '🔄 Generate Another' },
         { id: 'back', title: '⬅️ Back' }
       ];
 
-      await this.sendInteractiveMessage(phoneNumber, contentMessage, buttons);
+      console.log(`📏 Declarations message length: ${fullMessage.length} characters`);
+      await this.sendInteractiveMessage(phoneNumber, fullMessage, buttons);
 
     } catch (error) {
       console.error('Error generating Daily Declarations:', error);
       
-      const fallbackMessage = `🔥 *Daily Declarations* 🔥
+      // Compact fallback message
+      const fallbackMessage = `🔥 *Daily Declarations*
 
-*${userName}, speak these over your life:*
+*${userName.split(' ')[0]}, declare these today:*
 
-📌 Focus: 💖 Heart Standing Firm
+📌 Focus: 💖 Heart Firm in God
 
-1️⃣ 🔥 I declare my heart is unshakable! 🙏💪
+1️⃣ 🔥 I declare my heart unshakable!
 📖 Psalm 112:7
 
-2️⃣ 🔥 I declare my heart stays pure! 💎❤️
+2️⃣ 🔥 I declare my heart pure!
 📖 Matthew 5:8
 
-3️⃣ 🔥 I declare my heart has Christ's peace! 🕊️💖
+3️⃣ 🔥 I declare God's peace guards me!
 📖 Philippians 4:7
 
-4️⃣ 🔥 I declare my heart overflows with joy! 😄🔥
-📖 Nehemiah 8:10
-
-5️⃣ 🔥 I declare my heart rests in His promises! 🌊🙏
-📖 John 14:1
-
-*Declare with faith and watch God move!*`;
+*Speak with faith! 🙏*`;
 
       const buttons = [
         { id: 'generate_another', title: '🔄 Generate Another' },
         { id: 'back', title: '⬅️ Back' }
       ];
 
+      console.log(`📏 Fallback declarations length: ${fallbackMessage.length} characters`);
       await this.sendInteractiveMessage(phoneNumber, fallbackMessage, buttons);
     }
   }
