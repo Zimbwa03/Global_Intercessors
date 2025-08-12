@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import Link from "next/link"; // Assuming Link is from Next.js for navigation
-import { User } from "lucide-react"; // Assuming User icon is from lucide-react
+import { Link } from "wouter";
+import { User } from "lucide-react";
 
 interface SidebarProps {
   activeTab: string;

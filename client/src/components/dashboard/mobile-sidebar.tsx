@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { X, Menu, User, Home, Calendar, Book, MessageCircle, BarChart, Settings, LogOut, Clock, Bell, TrendingUp, FileText, Heart, Shield, Search, Users, Star, Zap, Smartphone } from "lucide-react";
-import Link from "next/link"; // Assuming you are using Next.js for Link
+import { Link } from "wouter";
 
 interface MobileSidebarProps {
   activeTab: string;
