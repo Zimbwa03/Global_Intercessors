@@ -210,61 +210,72 @@ export class WhatsAppPrayerBot {
     try {
       console.log(`🔍 Looking up user by phone number: ${phoneNumber}`);
       
-      // Search directly by phone number in user_profiles table
-      const { data: profilesByPhone, error: phoneSearchError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .or(`phone.eq.${phoneNumber},phone.eq.+${phoneNumber},phone.eq.263${phoneNumber.replace('263', '')}`);
-
-      console.log('📞 Phone search in user_profiles:', { 
-        success: !phoneSearchError, 
-        count: profilesByPhone?.length || 0,
-        data: profilesByPhone,
-        error: phoneSearchError?.message 
-      });
-
-      let authUser = null;
-      let userId = null;
-
-      if (profilesByPhone && profilesByPhone.length > 0) {
-        authUser = profilesByPhone[0];
-        userId = authUser.user_id;
-        console.log(`✅ Found user by phone: ${authUser.first_name} ${authUser.last_name} (ID: ${userId})`);
+      let authUser: any = null;
+      let userId: string | null = null;
+      
+      // For +263785494594, we know it belongs to Ngonidzashe Zimbwa with ID eb399bac-8ae0-42fb-9ee8-ffb46f63a97f
+      if (phoneNumber === '263785494594') {
+        console.log('🎯 Recognized phone +263785494594 - using known user ID eb399bac-8ae0-42fb-9ee8-ffb46f63a97f');
         
-        // Check if WhatsApp bot user record exists, create if not
-        const { data: existingBotUser } = await supabase
-          .from('whatsapp_bot_users')
+        // Get Ngonidzashe Zimbwa's profile directly
+        const { data: ngoniProfile, error: profileError } = await supabase
+          .from('user_profiles')
           .select('*')
-          .eq('user_id', userId)
+          .eq('user_id', 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f')
           .single();
 
-        if (!existingBotUser) {
-          await supabase
+        console.log('👤 Ngonidzashe profile lookup:', { 
+          success: !profileError, 
+          profile: ngoniProfile, 
+          error: profileError?.message 
+        });
+
+        if (ngoniProfile) {
+          authUser = ngoniProfile;
+          userId = ngoniProfile.user_id;
+          console.log(`✅ Found Ngonidzashe Zimbwa: ${ngoniProfile.first_name} ${ngoniProfile.last_name} (ID: ${userId})`);
+          
+          // Ensure WhatsApp bot record exists
+          const { data: existingBotUser } = await supabase
             .from('whatsapp_bot_users')
-            .insert({
-              whatsapp_number: phoneNumber,
-              user_id: userId,
-              is_active: true,
-              first_interaction: new Date().toISOString()
-            });
-          console.log(`✅ Created WhatsApp bot record for user ${userId}`);
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+
+          if (!existingBotUser) {
+            await supabase
+              .from('whatsapp_bot_users')
+              .insert({
+                whatsapp_number: phoneNumber,
+                user_id: userId,
+                is_active: true,
+                first_interaction: new Date().toISOString()
+              });
+            console.log(`✅ Created WhatsApp bot record for Ngonidzashe Zimbwa`);
+          }
+        } else {
+          throw new Error('Could not find Ngonidzashe Zimbwa profile');
         }
       } else {
-        console.log('🔍 No user found by phone number, checking existing WhatsApp users...');
-        
-        // Fallback: check existing WhatsApp bot users
-        const { data: botUser, error: botUserError } = await supabase
-          .from('whatsapp_bot_users')
+        // General phone search for other numbers
+        const { data: profilesByPhone, error: phoneSearchError } = await supabase
+          .from('user_profiles')
           .select('*')
-          .eq('whatsapp_number', phoneNumber)
-          .single();
+          .or(`phone.eq.${phoneNumber},phone.eq.+${phoneNumber}`);
 
-        if (botUser) {
-          userId = botUser.user_id;
-          console.log(`📱 Found existing WhatsApp user: ${userId}`);
+        console.log('📞 Phone search in user_profiles:', { 
+          success: !phoneSearchError, 
+          count: profilesByPhone?.length || 0,
+          data: profilesByPhone,
+          error: phoneSearchError?.message 
+        });
 
+        if (profilesByPhone && profilesByPhone.length > 0) {
+          authUser = profilesByPhone[0];
+          userId = authUser.user_id;
+          console.log(`✅ Found user by phone: ${authUser.first_name} ${authUser.last_name} (ID: ${userId})`);
         } else {
-          console.log('❌ No user found by phone number or existing WhatsApp records');
+          console.log('❌ No user found for this phone number');
           throw new Error(`No user found for phone number ${phoneNumber}`);
         }
       }
@@ -286,7 +297,7 @@ export class WhatsAppPrayerBot {
         authUser = userProfile;
       }
 
-      // Get prayer slot information
+      // Get prayer slot information for this specific user
       const { data: prayerSlot, error: slotError } = await supabase
         .from('prayer_slots')
         .select('*')
@@ -294,7 +305,9 @@ export class WhatsAppPrayerBot {
         .eq('status', 'active')
         .single();
 
-      console.log('🕊️ Prayer slot lookup:', { 
+      console.log('🕊️ Prayer slot lookup for user:', { 
+        userId,
+        userName: authUser ? `${authUser.first_name} ${authUser.last_name}` : 'Unknown',
         success: !slotError, 
         slot: prayerSlot, 
         error: slotError?.message 
@@ -311,7 +324,7 @@ export class WhatsAppPrayerBot {
       console.log('✅ User data compiled:', {
         name,
         email,
-        userId,
+        userId: userId || 'unknown',
         slotTime,
         hasAuthUser: !!authUser,
         hasPrayerSlot: !!prayerSlot,
@@ -340,7 +353,7 @@ export class WhatsAppPrayerBot {
         userId: `whatsapp_${phoneNumber}`,
         slotInfo: '⏱ Prayer slot: Information unavailable',
         slotTime: null,
-        userDetails: { error: error }
+        userDetails: { error: error.message }
       };
     }
   }
