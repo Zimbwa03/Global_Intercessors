@@ -839,12 +839,23 @@ Provide only the summarized content without any formatting.`;
         case 'bible_quiz':
         case 'quiz':
           console.log(`🧠 Starting Bible Quiz for ${phoneNumber}`);
-          await this.sendBibleQuizMenu(phoneNumber);
+          try {
+            await this.sendBibleQuizMenu(phoneNumber);
+          } catch (error) {
+            console.error('Error showing Bible Quiz menu:', error);
+            await this.sendMessage(phoneNumber, `🧠 Welcome to Bible Quiz! Let's test your biblical knowledge!\n\nChoose a mode:\n\n🌟 Type 'daily' for Daily Challenge\n🧠 Type 'smart' for Smart Quiz\n📖 Type 'topic' for Topic Quiz\n\nType 'menu' to go back.`);
+          }
           break;
 
         case 'daily_challenge':
+        case 'daily':
           console.log(`📅 Starting daily challenge for ${phoneNumber}`);
-          await this.startBibleQuiz(phoneNumber, 'daily_challenge');
+          try {
+            await this.startBibleQuiz(phoneNumber, 'daily_challenge');
+          } catch (error) {
+            console.error('Error starting daily challenge:', error);
+            await this.sendMessage(phoneNumber, `Sorry, I'm having trouble starting the daily challenge right now. Please try again in a moment! 🙏`);
+          }
           break;
 
         case 'smart_quiz':
@@ -2738,16 +2749,23 @@ Choose your challenge level and let's begin your spiritual knowledge journey!`;
   // Start Bible Quiz Session
   private async startBibleQuiz(phoneNumber: string, quizType: 'daily_challenge' | 'smart_quiz' | 'topic_quiz'): Promise<void> {
     try {
+      console.log(`🎯 Starting Bible Quiz for ${phoneNumber}, type: ${quizType}`);
+      
       const userName = await this.getUserName(phoneNumber);
+      console.log(`👤 Got user name: ${userName}`);
+      
       const userId = await this.getUserId(phoneNumber);
+      console.log(`🔑 Got user ID: ${userId}`);
       
       if (!userId) {
+        console.log(`❌ No user ID found for ${phoneNumber}`);
         await this.sendMessage(phoneNumber, `Sorry ${userName}, please login first to start the quiz!`);
         return;
       }
 
       // Check for existing session
       if (this.bibleQuizSessions.has(phoneNumber)) {
+        console.log(`🔄 Ending existing quiz session for ${phoneNumber}`);
         await this.endBibleQuiz(phoneNumber);
       }
 
@@ -2766,15 +2784,32 @@ Choose your challenge level and let's begin your spiritual knowledge journey!`;
         currentQuestion: null
       };
 
+      console.log(`📝 Created quiz session for ${phoneNumber}`);
       this.bibleQuizSessions.set(phoneNumber, session);
 
       // Send first question
+      console.log(`📖 Sending first question to ${phoneNumber}`);
+      
+      // Add a small delay to ensure session is properly set
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       await this.sendNextBibleQuestion(phoneNumber);
 
     } catch (error) {
-      console.error('Error starting Bible quiz:', error);
-      const userName = await this.getUserName(phoneNumber);
-      await this.sendMessage(phoneNumber, `Sorry ${userName}, I couldn't start the quiz right now. Please try again later! 🙏`);
+      console.error('❌ CRITICAL ERROR starting Bible quiz:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace',
+        phoneNumber,
+        quizType
+      });
+      
+      try {
+        const userName = await this.getUserName(phoneNumber);
+        await this.sendMessage(phoneNumber, `Sorry ${userName}, there was an error starting your quiz. Please try again! 🙏`);
+      } catch (sendError) {
+        console.error('❌ Failed to send error message:', sendError);
+      }
     }
   }
 
@@ -2910,16 +2945,47 @@ Make the question appropriate for Christian intercessors and spiritually enrichi
   // Send Next Bible Question
   private async sendNextBibleQuestion(phoneNumber: string): Promise<void> {
     try {
+      console.log(`📖 Attempting to send Bible question to ${phoneNumber}`);
+      
       const session = this.bibleQuizSessions.get(phoneNumber);
-      if (!session) return;
-
-      // Generate question with Gemini AI
-      const question = await this.generateBibleQuestionWithGemini(session.difficulty);
-      if (!question) {
-        await this.endBibleQuiz(phoneNumber);
+      if (!session) {
+        console.log(`❌ No quiz session found for ${phoneNumber}`);
         return;
       }
 
+      console.log(`🎲 Generating question with difficulty: ${session.difficulty}`);
+      
+      // Generate question with Gemini AI
+      const question = await this.generateBibleQuestionWithGemini(session.difficulty);
+      if (!question) {
+        console.log(`❌ Failed to generate question for ${phoneNumber}, using fallback`);
+        const fallbackQuestion = this.getFallbackBibleQuestion();
+        session.currentQuestion = fallbackQuestion;
+        session.questionStartTime = Date.now();
+
+        const questionMessage = `📖 **Question ${session.questionsAnswered + 1}**
+
+${fallbackQuestion.question}
+
+**Choose your answer:**
+A) ${fallbackQuestion.options[0]}
+B) ${fallbackQuestion.options[1]}
+C) ${fallbackQuestion.options[2]}
+D) ${fallbackQuestion.options[3]}
+
+⏱️ Take your time to think and choose wisely!`;
+
+        await this.sendInteractiveMessage(phoneNumber, questionMessage, [
+          { id: 'quiz_a', title: `A) ${fallbackQuestion.options[0].substring(0, 20)}...` },
+          { id: 'quiz_b', title: `B) ${fallbackQuestion.options[1].substring(0, 20)}...` },
+          { id: 'quiz_c', title: `C) ${fallbackQuestion.options[2].substring(0, 20)}...` },
+          { id: 'quiz_d', title: `D) ${fallbackQuestion.options[3].substring(0, 20)}...` }
+        ]);
+        return;
+      }
+
+      console.log(`✅ Generated question: ${question.question.substring(0, 50)}...`);
+      
       session.currentQuestion = question;
       session.questionStartTime = Date.now();
 
@@ -2935,6 +3001,8 @@ D) ${question.options[3]}
 
 ⏱️ Take your time to think and choose wisely!`;
 
+      console.log(`📱 Sending interactive message with question to ${phoneNumber}`);
+
       await this.sendInteractiveMessage(phoneNumber, questionMessage, [
         { id: 'quiz_a', title: `A) ${question.options[0].substring(0, 20)}...` },
         { id: 'quiz_b', title: `B) ${question.options[1].substring(0, 20)}...` },
@@ -2942,9 +3010,22 @@ D) ${question.options[3]}
         { id: 'quiz_d', title: `D) ${question.options[3].substring(0, 20)}...` }
       ]);
 
+      console.log(`✅ Successfully sent Bible question to ${phoneNumber}`);
+
     } catch (error) {
-      console.error('Error sending Bible question:', error);
-      await this.endBibleQuiz(phoneNumber);
+      console.error('❌ CRITICAL ERROR sending Bible question:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace',
+        phoneNumber
+      });
+      
+      try {
+        await this.sendMessage(phoneNumber, "Sorry, I had trouble loading your question. Let me try again...");
+        await this.endBibleQuiz(phoneNumber);
+      } catch (sendError) {
+        console.error('❌ Failed to send error message:', sendError);
+      }
     }
   }
 
