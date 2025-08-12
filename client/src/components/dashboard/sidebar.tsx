@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Link } from "wouter";
+
 import { User } from "lucide-react";
 
 interface SidebarProps {
@@ -26,18 +26,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
     { id: "prayer-planner", label: "Prayer Planner", icon: "fas fa-calendar-check" },
   ];
 
-  // Dummy navigation for the purpose of the example, replace with your actual navigation structure
-  const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: (props: any) => <i className={`fas fa-home ${props.className}`}></i> },
-    { name: "Prayer Slot", href: "/prayer-slot", icon: (props: any) => <i className={`fas fa-clock ${props.className}`}></i> },
-    { name: "Prayer Journey", href: "/prayer-journey", icon: (props: any) => <i className={`fas fa-route ${props.className}`}></i> },
-    { name: "Updates", href: "/updates", icon: (props: any) => <i className={`fas fa-bullhorn ${props.className}`}></i> },
-    { name: "Bible Chatbook", href: "/bible-chatbook", icon: (props: any) => <i className={`fas fa-book ${props.className}`}></i> },
-    { name: "Bible Search", href: "/bible-search", icon: (props: any) => <i className={`fas fa-search ${props.className}`}></i> },
-    { name: "Prayer Planner", href: "/prayer-planner", icon: (props: any) => <i className={`fas fa-calendar-check ${props.className}`}></i> },
-  ];
-
-  const isActive = (href: string) => activeTab === href.replace('/', ''); // Simple check, adjust as needed
+  
 
   if (isMobile) {
     return (
@@ -210,22 +199,61 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
-        {navigation.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            className={`flex items-center ${isCollapsed ? 'justify-center px-2' : 'space-x-3 px-3'} py-2 rounded-md text-sm font-medium transition-colors ${
-              isActive(item.href)
+      <nav className="flex-1 p-4 space-y-2 relative">
+        {menuItems.map((item) => (
+          <Button
+            key={item.id}
+            onClick={() => {
+              console.log('Desktop sidebar button clicked:', item.id);
+              onTabChange(item.id);
+            }}
+            variant="ghost"
+            className={`w-full ${isCollapsed ? 'justify-center px-2' : 'justify-start space-x-3 px-3'} py-2 h-auto text-sm font-medium transition-colors ${
+              activeTab === item.id
                 ? 'bg-gi-gold text-gi-primary border-r-2 border-gi-gold'
                 : 'text-gi-white hover:bg-gi-gold/10 hover:text-gi-gold'
             }`}
-            title={isCollapsed ? item.name : undefined}
+            title={isCollapsed ? item.label : undefined}
           >
-            <item.icon className="h-5 w-5" />
-            {!isCollapsed && <span>{item.name}</span>}
-          </Link>
+            <i className={`${item.icon} h-5 w-5`}></i>
+            {!isCollapsed && <span>{item.label}</span>}
+          </Button>
         ))}
+        
+        {/* Additional menu items */}
+        <Button
+          onClick={() => {
+            console.log('Desktop sidebar button clicked: ai-assistant');
+            onTabChange('ai-assistant');
+          }}
+          variant="ghost"
+          className={`w-full ${isCollapsed ? 'justify-center px-2' : 'justify-start space-x-3 px-3'} py-2 h-auto text-sm font-medium transition-colors ${
+            activeTab === 'ai-assistant'
+              ? 'bg-gi-gold text-gi-primary border-r-2 border-gi-gold'
+              : 'text-gi-white hover:bg-gi-gold/10 hover:text-gi-gold'
+          }`}
+          title={isCollapsed ? 'AI Assistant' : undefined}
+        >
+          <i className="fas fa-robot h-5 w-5"></i>
+          {!isCollapsed && <span>AI Assistant</span>}
+        </Button>
+        
+        <Button
+          onClick={() => {
+            console.log('Desktop sidebar button clicked: schedule');
+            onTabChange('schedule');
+          }}
+          variant="ghost"
+          className={`w-full ${isCollapsed ? 'justify-center px-2' : 'justify-start space-x-3 px-3'} py-2 h-auto text-sm font-medium transition-colors ${
+            activeTab === 'schedule'
+              ? 'bg-gi-gold text-gi-primary border-r-2 border-gi-gold'
+              : 'text-gi-white hover:bg-gi-gold/10 hover:text-gi-gold'
+          }`}
+          title={isCollapsed ? 'Prayer Schedule' : undefined}
+        >
+          <i className="fas fa-calendar-alt h-5 w-5"></i>
+          {!isCollapsed && <span>Prayer Schedule</span>}
+        </Button>
       </nav>
 
       {/* Logout */}
