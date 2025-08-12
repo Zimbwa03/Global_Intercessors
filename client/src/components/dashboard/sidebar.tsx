@@ -128,30 +128,48 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
 
       {/* Desktop Header */}
       <div className="p-4 border-b border-gi-gold/20 relative">
-        <div className="flex items-center justify-between">
-          {!isCollapsed && (
-            <div className="flex items-center space-x-3">
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+          {isCollapsed ? (
+            <div className="flex flex-col items-center space-y-2">
               <img
                 src="/src/assets/GI_Logo_Main_1751586542563.png"
                 alt="Global Intercessors"
                 className="h-8 w-8"
               />
-              <div>
-                <h2 className="text-lg font-semibold text-gi-white">
-                  Global Intercessors
-                </h2>
-                <p className="text-sm text-gi-gold">Prayer Management</p>
-              </div>
+              <Button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-gi-primary/50 transition-brand"
+              >
+                <i className="fas fa-chevron-right"></i>
+              </Button>
             </div>
+          ) : (
+            <>
+              <div className="flex items-center space-x-3">
+                <img
+                  src="/src/assets/GI_Logo_Main_1751586542563.png"
+                  alt="Global Intercessors"
+                  className="h-8 w-8"
+                />
+                <div>
+                  <h2 className="text-lg font-semibold text-gi-white">
+                    Global Intercessors
+                  </h2>
+                  <p className="text-sm text-gi-gold">Prayer Management</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-gi-primary/50 transition-brand"
+              >
+                <i className="fas fa-chevron-left"></i>
+              </Button>
+            </>
           )}
-          <Button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            variant="ghost"
-            size="sm"
-            className="text-white hover:bg-gi-primary/700/50 transition-brand"
-          >
-            <i className={`fas ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'}`}></i>
-          </Button>
         </div>
       </div>
 
@@ -192,26 +210,29 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
           <Link
             key={item.name}
             href={item.href}
-            className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex items-center ${isCollapsed ? 'justify-center px-2' : 'space-x-3 px-3'} py-2 rounded-md text-sm font-medium transition-colors ${
               isActive(item.href)
                 ? 'bg-gi-gold text-gi-primary border-r-2 border-gi-gold'
                 : 'text-gi-white hover:bg-gi-gold/10 hover:text-gi-gold'
             }`}
+            title={isCollapsed ? item.name : undefined}
           >
             <item.icon className="h-5 w-5" />
-            <span>{item.name}</span>
+            {!isCollapsed && <span>{item.name}</span>}
           </Link>
         ))}
       </nav>
 
       {/* Logout */}
       <div className="p-4 border-t border-gi-gold/20">
-        <div className="flex items-center space-x-3 px-3 py-2">
+        <div className={`flex items-center ${isCollapsed ? 'justify-center px-2' : 'space-x-3 px-3'} py-2`}>
           <User className="h-5 w-5 text-gi-gold" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gi-white">Prayer Warrior</p>
-            <p className="text-xs text-gi-gold/80">Active Session</p>
-          </div>
+          {!isCollapsed && (
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gi-white">Prayer Warrior</p>
+              <p className="text-xs text-gi-gold/80">Active Session</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
