@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +35,7 @@ const getUserName = (userProfile: any, email?: string) => {
 
 export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [nextSession, setNextSession] = useState({ hours: 2, minutes: 15, seconds: 30 });
   const [user, setUser] = useState<any>(null);
@@ -48,6 +49,46 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
     };
     getCurrentUser();
   }, []);
+
+  // Set up real-time subscription for prayer_slots updates on dashboard
+  useEffect(() => {
+    if (!user?.id) return;
+
+    console.log('Setting up dashboard real-time subscription...');
+    
+    const dashboardSubscription = supabase
+      .channel('dashboard_prayer_slots')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'prayer_slots'
+        },
+        (payload) => {
+          console.log('Dashboard: Real-time prayer slot change detected:', payload);
+          
+          // Refresh dashboard data when prayer slots change
+          queryClient.refetchQueries({ queryKey: ['user-profile'] });
+          queryClient.refetchQueries({ queryKey: ['prayer-slot'] });
+          queryClient.refetchQueries({ queryKey: ['attendance-stats'] });
+          
+          // Show notification for user's slot updates
+          if (payload.eventType === 'UPDATE' && payload.new?.user_id === user.id) {
+            toast({
+              title: "Prayer Slot Updated",
+              description: `Your dashboard has been refreshed with the latest changes`,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up dashboard subscription...');
+      supabase.removeChannel(dashboardSubscription);
+    };
+  }, [user?.id, queryClient, toast]);
 
   // Fetch user profile for name
   const { data: userProfileData } = useQuery({

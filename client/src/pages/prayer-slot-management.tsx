@@ -23,6 +23,7 @@ export default function PrayerSlotManagement() {
   const [isChangeSlotModalOpen, setIsChangeSlotModalOpen] = useState(false);
   const [countdown, setCountdown] = useState<CountdownTime>({ hours: 0, minutes: 0, seconds: 0 });
   const [user, setUser] = useState<any>(null);
+  const [isRealTimeConnected, setIsRealTimeConnected] = useState(false);
 
   // Get current user
   useEffect(() => {
@@ -33,7 +34,50 @@ export default function PrayerSlotManagement() {
     getCurrentUser();
   }, []);
 
-  // Fetch user's prayer slot
+  // Set up real-time subscription for prayer_slots updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    console.log('Setting up real-time subscription for prayer slots...');
+    
+    const prayerSlotsSubscription = supabase
+      .channel('prayer_slots_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'prayer_slots'
+        },
+        (payload) => {
+          console.log('Real-time prayer slot change detected:', payload);
+          
+          // Force immediate refetch of prayer slot data
+          queryClient.refetchQueries({ queryKey: ['prayer-slot'] });
+          queryClient.refetchQueries({ queryKey: ['available-slots'] });
+          
+          // Show a toast notification for updates to current user
+          if (payload.eventType === 'UPDATE' && payload.new?.user_id === user.id) {
+            toast({
+              title: "Prayer Slot Updated",
+              description: `Your slot has been changed to ${payload.new.slot_time}`,
+            });
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+        setIsRealTimeConnected(status === 'SUBSCRIBED');
+      });
+
+    // Cleanup subscription on component unmount
+    return () => {
+      console.log('Cleaning up prayer slots subscription...');
+      supabase.removeChannel(prayerSlotsSubscription);
+    };
+  }, [user?.id, queryClient, toast]);
+
+  // Fetch user's prayer slot with real-time updates
   const { data: prayerSlotData, isLoading: isLoadingSlot } = useQuery({
     queryKey: ['prayer-slot', user?.id],
     queryFn: async () => {
@@ -42,12 +86,14 @@ export default function PrayerSlotManagement() {
       const data = await response.json();
       return data.prayerSlot || null;
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    refetchInterval: 5000, // Poll every 5 seconds for updates
+    refetchIntervalInBackground: true
   });
 
   const prayerSlot = prayerSlotData;
 
-  // Fetch available slots
+  // Fetch available slots with real-time updates
   const { data: availableSlotsData, isLoading: isLoadingSlots } = useQuery({
     queryKey: ['available-slots'],
     queryFn: async () => {
@@ -55,7 +101,9 @@ export default function PrayerSlotManagement() {
       if (!response.ok) throw new Error('Failed to fetch available slots');
       const data = await response.json();
       return data.availableSlots || [];
-    }
+    },
+    refetchInterval: 10000, // Poll every 10 seconds for slot availability
+    refetchIntervalInBackground: true
   });
 
   const availableSlots = availableSlotsData || [];
@@ -85,7 +133,9 @@ export default function PrayerSlotManagement() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
+      // Force immediate refetch instead of just invalidating
+      queryClient.refetchQueries({ queryKey: ['prayer-slot'] });
+      queryClient.refetchQueries({ queryKey: ['available-slots'] });
       toast({
         title: "Slot Skipped Successfully",
         description: "Your prayer slot has been paused for 5 days.",
@@ -114,8 +164,9 @@ export default function PrayerSlotManagement() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
-      queryClient.invalidateQueries({ queryKey: ['available-slots'] });
+      // Force immediate refetch instead of just invalidating
+      queryClient.refetchQueries({ queryKey: ['prayer-slot'] });
+      queryClient.refetchQueries({ queryKey: ['available-slots'] });
       setIsChangeSlotModalOpen(false);
       toast({
         title: "Slot Changed Successfully",
@@ -239,6 +290,14 @@ export default function PrayerSlotManagement() {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-brand-text font-poppins mb-2">Prayer Slot Management</h1>
           <p className="text-gray-600 text-lg">Manage your committed prayer time and schedule</p>
+          
+          {/* Real-time status indicator */}
+          <div className="flex items-center justify-center gap-2 mt-3">
+            <div className={`w-2 h-2 rounded-full ${isRealTimeConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+            <span className="text-sm text-gray-500">
+              {isRealTimeConnected ? 'Live updates active' : 'Connecting...'}
+            </span>
+          </div>
         </div>
 
         {/* Current Slot Status */}
