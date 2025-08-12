@@ -64,7 +64,7 @@ export class WhatsAppPrayerBot {
     waitingForTopic?: boolean;
     language?: string;
   }> = new Map();
-  
+
   // Language preferences for users
   private userLanguagePreferences: Map<string, string> = new Map();
 
@@ -219,14 +219,14 @@ export class WhatsAppPrayerBot {
   }> {
     try {
       console.log(`🔍 Looking up user by phone number: ${phoneNumber}`);
-      
+
       let authUser: any = null;
       let userId: string | null = null;
-      
+
       // For +263785494594, we know it belongs to Ngonidzashe Zimbwa with ID eb399bac-8ae0-42fb-9ee8-ffb46f63a97f
       if (phoneNumber === '263785494594') {
         console.log('🎯 Recognized phone +263785494594 - using known user ID eb399bac-8ae0-42fb-9ee8-ffb46f63a97f');
-        
+
         // Get Ngonidzashe Zimbwa's profile directly
         const { data: ngoniProfile, error: profileError } = await supabase
           .from('user_profiles')
@@ -244,7 +244,7 @@ export class WhatsAppPrayerBot {
           authUser = ngoniProfile;
           userId = ngoniProfile.id;
           console.log(`✅ Found Ngonidzashe Zimbwa: ${ngoniProfile.fullName || ngoniProfile.full_name} (ID: ${userId})`);
-          
+
           // Ensure WhatsApp bot record exists
           const { data: existingBotUser } = await supabase
             .from('whatsapp_bot_users')
@@ -357,7 +357,7 @@ export class WhatsAppPrayerBot {
 
     } catch (error) {
       console.error('❌ Error connecting phone to user auth database:', error);
-      
+
       return {
         name: 'Beloved Intercessor',
         email: 'Not available',
@@ -379,7 +379,7 @@ export class WhatsAppPrayerBot {
   private async getUserName(userIdOrPhone: string): Promise<string> {
     try {
       console.log(`🔍 Fetching user name for: ${userIdOrPhone}`);
-      
+
       // First try to get by user_id
       let { data: profile } = await supabase
         .from('user_profiles')
@@ -500,100 +500,100 @@ export class WhatsAppPrayerBot {
   // Prayer slot reminders
   public async checkPrayerSlotReminders(): Promise<void> {
     console.log('🔍 Checking prayer slot reminders using Supabase...');
-    
+
     try {
       console.log('🔍 Testing Supabase connection...');
       console.log('🔗 Supabase URL:', process.env.SUPABASE_URL?.substring(0, 50) + '...');
-      
+
       // Test basic connection
       const { data: connectionTest, error: connectionError } = await supabase
         .from('prayer_slots')
         .select('count', { count: 'exact', head: true });
-      
+
       console.log('🔗 Supabase connection test:', { success: !connectionError, error: connectionError?.message });
-      
+
       if (connectionError) {
         console.error('❌ Failed to connect to Supabase:', connectionError);
         return;
       }
-      
+
       console.log('📊 Database connection successful - checking for prayer slots data');
-      
+
       // Query all prayer slots with detailed logging
       console.log('🔍 Querying prayer_slots table directly...');
       const { data: allSlots, count: totalCount, error: queryError } = await supabase
         .from('prayer_slots')
         .select('*', { count: 'exact' });
-      
+
       console.log('📊 ALL prayer_slots query result:', { 
         count: totalCount, 
         error: queryError?.message, 
         sample: allSlots?.[0] 
       });
-      
+
       if (queryError) {
         console.error('❌ Error querying prayer slots:', queryError);
         return;
       }
-      
+
       if (!allSlots || allSlots.length === 0) {
         console.log('⚠️ prayer_slots table is empty - no prayer slots available for reminders');
         console.log('💡 Add sample prayer slots using create-whatsapp-bot-tables.sql');
         return;
       }
-      
+
       console.log(`✅ BREAKTHROUGH! Found ${totalCount} total prayer slots in database!`);
-      
+
       // Filter active slots
       const activeSlots = allSlots.filter(slot => slot.status === 'active');
       console.log(`✅ Found ${activeSlots.length} active prayer slots out of ${totalCount} total slots`);
-      
+
       if (activeSlots.length === 0) {
         console.log('⚠️ No active prayer slots found for reminders');
         return;
       }
-      
+
       // Extract user IDs for debugging
       const userIds = activeSlots.map(slot => slot.user_id);
       console.log('🔍 Extracted user IDs:', userIds);
-      
+
       // Get WhatsApp bot users
       const { data: whatsappUsers, count: whatsappCount } = await supabase
         .from('whatsapp_bot_users')
         .select('*', { count: 'exact' })
         .eq('is_active', true);
-      
+
       console.log(`📱 WhatsApp users found: ${whatsappCount || 0}`);
-      
+
       // Get user profiles for names
       const { data: userProfiles, count: profilesCount, error: profilesError } = await supabase
         .from('user_profiles')
         .select('*', { count: 'exact' });
-      
+
       console.log(`👥 User profiles found: ${profilesCount || 0}`);
       if (profilesError) {
         console.log('Error fetching user profiles:', profilesError);
       }
-      
+
       if (!whatsappUsers || whatsappUsers.length === 0) {
         console.log('⚠️ No WhatsApp bot users found - no one to send reminders to');
         return;
       }
-      
+
       // Process reminders for each active slot
       const currentTime = new Date();
       const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
-      
+
       for (const slot of activeSlots) {
         // Parse slot time (e.g., "04:00" or "14:30–15:00")
         const slotTimeStr = slot.slot_time.split('–')[0] || slot.slot_time;
         const [hours, minutes] = slotTimeStr.split(':').map(Number);
         const slotMinutes = hours * 60 + minutes;
-        
+
         // Check if reminder should be sent (30 minutes before)
         const reminderMinutes = slotMinutes - 30;
         const timeDiff = Math.abs(currentMinutes - reminderMinutes);
-        
+
         // Send reminder if within 1 minute of reminder time
         if (timeDiff <= 1) {
           const whatsappUser = whatsappUsers.find(user => user.user_id === slot.user_id);
@@ -602,7 +602,7 @@ export class WhatsAppPrayerBot {
           }
         }
       }
-      
+
     } catch (error) {
       console.error('❌ Error in checkPrayerSlotReminders:', error);
     }
@@ -611,7 +611,7 @@ export class WhatsAppPrayerBot {
   private async sendPrayerSlotReminder(user: WhatsAppBotUser, slot: PrayerSlot): Promise<void> {
     try {
       const userName = await this.getUserName(user.user_id);
-      
+
       const message = `🕊️ *Prayer Reminder* 🕊️
 
 Hello ${userName}! 
@@ -625,7 +625,7 @@ May the Lord strengthen you as you stand in the gap for His people and purposes.
 Reply *help* for more options.`;
 
       const success = await this.sendWhatsAppMessage(user.whatsapp_number, message);
-      
+
       if (success) {
         console.log(`✅ Prayer reminder sent to ${user.whatsapp_number} for slot ${slot.slot_time}`);
         await this.logInteraction(user.whatsapp_number, 'reminder', 'prayer_slot');
@@ -665,7 +665,7 @@ Reply *help* for more options.`;
       for (const user of activeUsers) {
         const userName = await this.getUserName(user.user_id);
         const personalizedMessage = declarations.replace('Prayer Warrior', userName);
-        
+
         await this.sendWhatsAppMessage(user.whatsapp_number, personalizedMessage);
         await this.logInteraction(user.whatsapp_number, 'morning_declaration', 'daily');
       }
@@ -712,7 +712,7 @@ Reply *help* for more options.`;
   private async authenticateUser(phoneNumber: string, email: string, password: string): Promise<{success: boolean, userId?: string, message: string}> {
     try {
       console.log(`🔐 Authenticating user: ${email}`);
-      
+
       // Use Supabase auth to verify credentials
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email,
@@ -757,7 +757,7 @@ This ensures secure connection between your account and WhatsApp bot access.`
 
       // CRITICAL SECURITY CHECK: Verify the current phone number matches the registered WhatsApp number
       const registeredWhatsAppNumber = userProfile.whatsapp_number || userProfile.phone_number;
-      
+
       if (!registeredWhatsAppNumber) {
         console.log(`❌ No WhatsApp number registered for user ${userId}`);
         return { 
@@ -813,7 +813,7 @@ Your login credentials are correct, but this phone number (${phoneNumber}) is no
         .single();
 
       let upsertError = null;
-      
+
       if (existingRecord) {
         // Update existing record
         const { error: updateError } = await supabase
@@ -854,7 +854,7 @@ Your login credentials are correct, but this phone number (${phoneNumber}) is no
       await this.logInteraction(phoneNumber, 'authentication', 'login_success');
 
       const userName = userProfile.fullName || userProfile.full_name || 'Beloved Intercessor';
-      
+
       return { 
         success: true, 
         userId: userId,
@@ -896,18 +896,18 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
     // Look for email and password in the message
     const emailMatch = messageText.match(/email:\s*([^\s\n]+)/i);
     const passwordMatch = messageText.match(/password:\s*([^\s\n]+)/i);
-    
+
     if (emailMatch && passwordMatch) {
       return {
         email: emailMatch[1].trim(),
         password: passwordMatch[1].trim()
       };
     }
-    
+
     // Try alternative format - lines with email and password
     const lines = messageText.split('\n');
     let email, password;
-    
+
     for (const line of lines) {
       if (line.toLowerCase().includes('@') && !email) {
         email = line.trim();
@@ -915,7 +915,7 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
         password = line.trim();
       }
     }
-    
+
     return { email, password };
   }
 
@@ -955,18 +955,18 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
       // First, check if user is authenticated
       const authStatus = await this.isUserAuthenticated(phoneNumber);
       const command = messageText.toLowerCase().trim();
-      
+
       // Handle authentication for non-authenticated users
       if (!authStatus.authenticated) {
         console.log(`🔐 User ${phoneNumber} not authenticated, processing authentication`);
-        
+
         // Check if this is a login attempt
         const credentials = this.parseLoginCredentials(messageText);
-        
+
         if (credentials.email && credentials.password) {
           console.log(`🔐 Processing login attempt from ${phoneNumber} with email: ${credentials.email}`);
           const authResult = await this.authenticateUser(phoneNumber, credentials.email, credentials.password);
-          
+
           if (authResult.success) {
             // Send success message with continue button
             const successButtons = [
@@ -984,15 +984,15 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
           }
           return;
         }
-        
+
         // For any other message from unauthenticated user, send login prompt
         console.log(`📧 Sending login prompt to unauthenticated user: ${phoneNumber}`);
         await this.sendLoginPrompt(phoneNumber);
         return;
       }
-      
+
       console.log(`✅ User ${phoneNumber} is authenticated, processing command: ${command}`);
-      
+
       // Get or create user for existing flow
       let user = await this.getUserByPhone(phoneNumber);
       if (!user) {
@@ -1003,7 +1003,7 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
       // Process command - Get complete user information for personalized responses
       const userInfo = await this.getCompleteUserInfo(phoneNumber);
       console.log(`🎯 Processing command "${command}" for authenticated user: ${userInfo.name} (${userInfo.userId})`);
-      
+
       const userName = userInfo.name;
 
       // Check if user is in Bible Study session
@@ -1039,7 +1039,7 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
 
       } else if (command === 'back' || command === 'menu') {
         await this.handleStartCommand(phoneNumber, userName);
-      
+
       // Handle specific button interactions
       } else if (command === 'todays_word' || command === 'daily_declarations' || command === 'bible_study') {
         await this.handleDevotionalContent(phoneNumber, userName, command);
@@ -1081,7 +1081,7 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
 
     // Get complete user information from database
     const userInfo = await this.getCompleteUserInfo(phoneNumber);
-    
+
     const welcomeMessage = `🙏 Hello, ${userInfo.name}!
 Welcome to Global Intercessors Prayer Bot! 🙌
 ${userInfo.slotInfo}
@@ -1313,9 +1313,7 @@ Hello ${userName}!
 
 ⚔️ **Declaration:** "Lord, I position my heart in complete loyalty to You. Use my prayers to demonstrate Your strength in every nation!"
 
-🌍 **Intercession Focus:** Pray for spiritual awakening in unreached nations and for God's strength to be revealed through global intercession.
-
-Reply **/devotional** for fresh content anytime!`;
+🌍 **Intercession Focus:** Pray for spiritual awakening in unreached nations and for God's strength to be revealed through global intercession.`;
 
     await this.sendWhatsAppMessage(phoneNumber, devotionalMessage);
   }
@@ -1380,7 +1378,7 @@ Global Intercessors is a worldwide prayer movement that maintains 24/7 prayer co
   // New devotional menu handler
   private async handleDevotionalsMenuCommand(phoneNumber: string, userName: string): Promise<void> {
     await this.logInteraction(phoneNumber, 'command', 'devotionals_menu');
-    
+
     const welcomeMessage = `🕊️ *${userName}, Welcome to Devotions* 🕊️
 
 *"Your word is a lamp for my feet, a light on my path."* - Psalm 119:105
@@ -1418,7 +1416,7 @@ Choose your spiritual nourishment for today:`;
       const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
       const dayOfWeek = today.getDay(); // 0-6
       const weekOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
-      
+
       // Create varied topics based on date
       const topicSeeds = [
         "Divine Authority", "Unshakeable Faith", "Spiritual Breakthrough", "Heavenly Wisdom",
@@ -1427,9 +1425,9 @@ Choose your spiritual nourishment for today:`;
         "Covenant Promises", "Healing Touch", "Restoration Hope", "Mountain-Moving Faith",
         "Supernatural Peace", "Divine Protection", "Abundant Life", "Eternal Glory"
       ];
-      
+
       const dailyTopic = topicSeeds[(dayOfWeek + weekOfYear) % topicSeeds.length];
-      
+
       const prompt = `Generate a detailed "Today's Word" devotional for WhatsApp on ${dateString}. Focus specifically on the theme of "${dailyTopic}" but make it fresh and unique for today. Structure exactly as follows:
 
 **Topic:** [Create a compelling spiritual theme around "${dailyTopic}" - make it specific and unique for ${dateString}]
@@ -1448,9 +1446,9 @@ Make it spiritually rich, encouraging, practical for prayer warriors, and ensure
       // Get user's language preference
       const userLanguage = this.userLanguagePreferences.get(phoneNumber) || 'english';
       const content = await this.generateAIContent(prompt, userLanguage);
-      
+
       const firstName = userName.split(' ')[0];
-      
+
       const todaysWordMessage = userLanguage === 'shona' 
         ? `📖 *Shoko reZuva* 📖
 
@@ -1478,7 +1476,7 @@ ${content}
 
     } catch (error) {
       console.error('Error generating Today\'s Word:', error);
-      
+
       // Enhanced fallback message with full verse
       const firstName = userName.split(' ')[0];
       const fallbackMessage = `📖 *Today's Word* 📖
@@ -1536,9 +1534,9 @@ Keep each declaration under 60 characters. Only reference, no full verse text.`;
       // Get user's language preference
       const userLanguage = this.userLanguagePreferences.get(phoneNumber) || 'english';
       const content = await this.generateAIContent(prompt, userLanguage);
-      
+
       const firstName = userName.split(' ')[0];
-      
+
       const declarationsMessage = userLanguage === 'shona' 
         ? `🔥 *Zviparidzo zveZuva* 🔥
 
@@ -1577,7 +1575,7 @@ ${content}
     } catch (error) {
       console.error('Error generating Daily Declarations:', error);
       console.error('Error details:', error.message);
-      
+
       // Concise fallback message
       const firstName = userName.split(' ')[0];
       const fallbackMessage = `🔥 *Daily Declarations* 🔥
@@ -1612,7 +1610,7 @@ ${content}
       ];
 
       console.log(`📏 Fallback declarations length: ${fallbackMessage.length} characters`);
-      
+
       try {
         await this.sendInteractiveMessage(phoneNumber, fallbackMessage, buttons);
         console.log('✅ Fallback declarations sent successfully');
@@ -1736,7 +1734,7 @@ Deep dive, ${userName}!
 
     let question = '';
     let answers = [];
-    
+
     if (level === 'easy_quiz') {
       question = `⭐ *Beginner Bible Quiz* ⭐
 
@@ -1786,7 +1784,7 @@ Choose your answer:`;
 
     let message = '';
     let timing = '30min';
-    
+
     if (setting === 'reminder_30min') {
       timing = '30min';
       message = `⏰ *30-Minute Reminders Set!* ⏰
@@ -2008,7 +2006,7 @@ Celebrating progress, ${userName}:
     await this.logInteraction(phoneNumber, 'button_action', 'language_settings');
 
     const currentLanguage = this.userLanguagePreferences.get(phoneNumber) || 'english';
-    
+
     const languageMessage = `🌍 *Language Settings / Mutauro* 🌍
 
 Current language: ${currentLanguage === 'shona' ? 'Shona' : 'English'}
@@ -2091,7 +2089,7 @@ Let me help you get back on track! Here are your options:`;
     });
 
     const firstName = userName.split(' ')[0];
-    
+
     const welcomeMessage = userLanguage === 'shona'
       ? `📚 *Mauya kuKudzidza Bhaibheri, ${firstName}!* 📚
 
@@ -2169,7 +2167,7 @@ Type */endstudy* anytime to end the session.`;
         'Obedience', 'Trust', 'Salvation', 'Righteousness',
         'Mercy', 'Patience', 'Courage', 'Divine Purpose'
       ];
-      
+
       const randomTopic = topics[Math.floor(Math.random() * topics.length)];
       session.topic = randomTopic;
       session.waitingForTopic = false;
@@ -2191,7 +2189,7 @@ Type */endstudy* anytime to end the session.`;
         session.topic = userTopic;
         session.waitingForTopic = false;
         this.bibleStudySessions.set(phoneNumber, session);
-        
+
         // Start the Bible study with the user's chosen topic
         await this.startBibleStudyWithTopic(phoneNumber, userName, userTopic);
         return;
@@ -2246,7 +2244,7 @@ Type */endstudy* anytime to end the session.`;
 
   private buildBibleStudyPrompt(session: any, userName: string): string {
     const firstName = userName.split(' ')[0];
-    
+
     return `You are a Professional, Knowledgeable, and Spiritually Discerning Bible Study Instructor conducting a WhatsApp Bible study session with ${firstName} on the topic of "${session.topic}". 
 
 **Core Directives:**
@@ -2325,7 +2323,7 @@ Remember: You're guiding ${firstName} through an enriching Bible study experienc
 
     try {
       const firstName = userName.split(' ')[0];
-      
+
       // Generate opening Bible study content for the topic
       const prompt = `Generate an engaging opening for a Bible study session on "${topic}". Include:
 
@@ -2337,7 +2335,7 @@ Remember: You're guiding ${firstName} through an enriching Bible study experienc
 Format for WhatsApp (under 1000 characters). Use emojis appropriately (📖🙏✨💝🌟) and keep it conversational and inspiring.`;
 
       const openingContent = await this.generateBibleStudyResponse(prompt, []);
-      
+
       // Send the opening content
       await this.sendWhatsAppMessage(phoneNumber, openingContent);
 
@@ -2351,7 +2349,7 @@ Format for WhatsApp (under 1000 characters). Use emojis appropriately (📖🙏�
 
     } catch (error) {
       console.error('Error starting Bible study with topic:', error);
-      
+
       // Fallback message
       const fallbackMessage = `📚 *Welcome to our Bible Study on ${topic}!* 📚
 
@@ -2366,7 +2364,7 @@ This topic is foundational to our Christian walk. Through studying ${topic}, we 
 *Feel free to share your thoughts, ask questions, or request specific verses about this topic!*`;
 
       await this.sendWhatsAppMessage(phoneNumber, fallbackMessage);
-      
+
       session.conversationHistory.push({
         role: 'assistant',
         content: fallbackMessage
@@ -2404,7 +2402,7 @@ Remember, the journey of faith is continuous. Feel free to start another study s
   // Webhook verification for Meta WhatsApp Business API
   public verifyWebhook(mode: string, token: string, challenge: string): string | null {
     const verifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || 'GI_PRAYER_BOT_VERIFY_2024';
-    
+
     if (mode === 'subscribe' && token === verifyToken) {
       console.log('✅ Webhook verified successfully');
       return challenge;
@@ -2417,7 +2415,7 @@ Remember, the journey of faith is continuous. Feel free to start another study s
   // Process webhook data from Meta WhatsApp Business API
   public async processWebhookData(body: any): Promise<void> {
     console.log('📥 Processing webhook data...');
-    
+
     try {
       if (body.object === 'whatsapp_business_account') {
         for (const entry of body.entry || []) {
