@@ -836,6 +836,46 @@ Provide only the summarized content without any formatting.`;
           await this.sendFreshDeclarations(phoneNumber, messageText);
           break;
 
+        case 'bible_quiz':
+        case 'quiz':
+          console.log(`🧠 Starting Bible Quiz for ${phoneNumber}`);
+          await this.sendBibleQuizMenu(phoneNumber);
+          break;
+
+        case 'daily_challenge':
+          console.log(`📅 Starting daily challenge for ${phoneNumber}`);
+          await this.startBibleQuiz(phoneNumber, 'daily_challenge');
+          break;
+
+        case 'smart_quiz':
+        case 'adaptive_quiz':
+          console.log(`🎯 Starting smart quiz for ${phoneNumber}`);
+          await this.startBibleQuiz(phoneNumber, 'smart_quiz');
+          break;
+
+        case 'topic_quiz':
+          console.log(`📖 Starting topic quiz for ${phoneNumber}`);
+          await this.startBibleQuiz(phoneNumber, 'topic_quiz');
+          break;
+
+        case 'next_question':
+          console.log(`▶️ Next question for ${phoneNumber}`);
+          await this.handleNextQuestion(phoneNumber);
+          break;
+
+        case 'end_quiz':
+          console.log(`🏁 Ending quiz for ${phoneNumber}`);
+          await this.endBibleQuiz(phoneNumber);
+          break;
+
+        case 'quiz_a':
+        case 'quiz_b':
+        case 'quiz_c':
+        case 'quiz_d':
+          console.log(`✅ Processing quiz answer ${command} for ${phoneNumber}`);
+          await this.handleQuizAnswer(phoneNumber, command);
+          break;
+
         case 'back_menu':
           console.log(`🔙 Back to main menu for ${phoneNumber}`);
           await this.sendHelpMenu(phoneNumber);
@@ -942,6 +982,7 @@ Ready to transform your prayer life? Choose an option below to begin your spirit
     try {
       await this.sendInteractiveMessage(phoneNumber, welcomeMessage, [
         { id: 'devotional', title: '📖 Get Today\'s Word' },
+        { id: 'bible_quiz', title: '🧠 Bible Quiz' },
         { id: 'remind', title: '⏰ Setup Reminders' },
         { id: 'help', title: '📋 Full Menu' }
       ]);
@@ -964,6 +1005,7 @@ Choose any option below to continue your spiritual journey:`;
     // Send interactive menu with essential buttons
     await this.sendInteractiveMessage(phoneNumber, helpMessage, [
       { id: 'devotional', title: '📖 Daily Word' },
+      { id: 'bible_quiz', title: '🧠 Bible Quiz' },
       { id: 'remind', title: '⏰ Prayer Alerts' },
       { id: 'status', title: '📊 My Dashboard' }
     ]);
@@ -2663,6 +2705,434 @@ Global Intercessors Team`;
       { id: 'pause', title: '⏸️ Pause Reminders' }
     ]);
   }
+
+  // Bible Quiz Game Implementation with Gemini AI Integration
+  private bibleQuizSessions = new Map<string, BibleQuizSession>();
+
+  // Bible Quiz Menu
+  private async sendBibleQuizMenu(phoneNumber: string): Promise<void> {
+    const userName = await this.getUserName(phoneNumber);
+    
+    const quizMenuMessage = `🧠 ${userName}, Welcome to Bible Quiz Game!
+
+**Test your biblical knowledge with AI-powered questions!**
+
+🎯 **Quiz Modes Available:**
+
+🌟 **Daily Challenge** - Limited once per day, earn bonus rewards
+🧠 **Smart Quiz** - Adaptive difficulty that grows with you  
+📖 **Topic Quiz** - Focus on specific biblical themes
+
+🤖 **Powered by Gemini AI** - Dynamic questions with biblical accuracy!
+
+Choose your challenge level and let's begin your spiritual knowledge journey!`;
+
+    await this.sendInteractiveMessage(phoneNumber, quizMenuMessage, [
+      { id: 'daily_challenge', title: '🌟 Daily Challenge' },
+      { id: 'smart_quiz', title: '🧠 Smart Quiz' },
+      { id: 'topic_quiz', title: '📖 Topic Quiz' },
+      { id: 'back_menu', title: '🔙 Main Menu' }
+    ]);
+  }
+
+  // Start Bible Quiz Session
+  private async startBibleQuiz(phoneNumber: string, quizType: 'daily_challenge' | 'smart_quiz' | 'topic_quiz'): Promise<void> {
+    try {
+      const userName = await this.getUserName(phoneNumber);
+      const userId = await this.getUserId(phoneNumber);
+      
+      if (!userId) {
+        await this.sendMessage(phoneNumber, `Sorry ${userName}, please login first to start the quiz!`);
+        return;
+      }
+
+      // Check for existing session
+      if (this.bibleQuizSessions.has(phoneNumber)) {
+        await this.endBibleQuiz(phoneNumber);
+      }
+
+      // Create new quiz session
+      const session: BibleQuizSession = {
+        phoneNumber,
+        userId,
+        userName,
+        quizType,
+        score: 0,
+        correctAnswers: 0,
+        questionsAnswered: 0,
+        currentStreak: 0,
+        startTime: new Date(),
+        difficulty: 'easy',
+        currentQuestion: null
+      };
+
+      this.bibleQuizSessions.set(phoneNumber, session);
+
+      // Send first question
+      await this.sendNextBibleQuestion(phoneNumber);
+
+    } catch (error) {
+      console.error('Error starting Bible quiz:', error);
+      const userName = await this.getUserName(phoneNumber);
+      await this.sendMessage(phoneNumber, `Sorry ${userName}, I couldn't start the quiz right now. Please try again later! 🙏`);
+    }
+  }
+
+  // Generate Bible Question with Gemini AI
+  private async generateBibleQuestionWithGemini(difficulty: 'easy' | 'medium' | 'hard' = 'easy', topic?: string): Promise<BibleQuestion | null> {
+    try {
+      const geminiApiKey = process.env.GEMINI_API_KEY;
+      if (!geminiApiKey) {
+        console.error('Gemini API key not found');
+        return this.getFallbackBibleQuestion();
+      }
+
+      const topicPrompt = topic ? `focusing on the topic of ${topic}` : 'on any biblical topic';
+      const difficultyPrompt = difficulty === 'easy' ? 'for beginners' : difficulty === 'medium' ? 'for intermediate learners' : 'for advanced biblical scholars';
+
+      const prompt = `Generate a Bible quiz question ${topicPrompt} ${difficultyPrompt}. 
+
+REQUIREMENTS:
+1. Question must be biblically accurate and directly supported by scripture
+2. Provide exactly 4 multiple choice options (A, B, C, D)
+3. Include a clear explanation with biblical context
+4. Provide the specific Bible verse reference
+5. Make the question engaging and educational
+
+FORMAT YOUR RESPONSE AS JSON:
+{
+  "question": "The actual question text",
+  "options": ["Option A", "Option B", "Option C", "Option D"],
+  "correctAnswer": "The correct option text",
+  "explanation": "Brief explanation with biblical context",
+  "verseReference": "Book Chapter:Verse format",
+  "difficulty": "${difficulty}",
+  "category": "Biblical category (Old Testament, New Testament, etc.)"
+}
+
+Make the question appropriate for Christian intercessors and spiritually enriching.`;
+
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': geminiApiKey
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024
+          }
+        })
+      });
+
+      if (!response.ok) {
+        console.error(`Gemini API error: ${response.status} ${response.statusText}`);
+        return this.getFallbackBibleQuestion();
+      }
+
+      const data = await response.json();
+      const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (!aiResponse) {
+        return this.getFallbackBibleQuestion();
+      }
+
+      // Parse JSON response
+      const cleanResponse = aiResponse.replace(/```json\n?|\n?```/g, '').trim();
+      const questionData = JSON.parse(cleanResponse);
+
+      return {
+        question: questionData.question,
+        options: questionData.options,
+        correctAnswer: questionData.correctAnswer,
+        explanation: questionData.explanation,
+        verseReference: questionData.verseReference,
+        difficulty: questionData.difficulty || difficulty,
+        category: questionData.category || 'General'
+      };
+
+    } catch (error) {
+      console.error('Error generating Bible question with Gemini:', error);
+      return this.getFallbackBibleQuestion();
+    }
+  }
+
+  // Fallback Bible Questions
+  private getFallbackBibleQuestion(): BibleQuestion {
+    const fallbackQuestions: BibleQuestion[] = [
+      {
+        question: "Who led the Israelites out of Egypt?",
+        options: ["Abraham", "Moses", "David", "Noah"],
+        correctAnswer: "Moses",
+        explanation: "Moses was chosen by God to lead the Israelites out of slavery in Egypt during the Exodus.",
+        verseReference: "Exodus 3:10",
+        difficulty: "easy",
+        category: "Old Testament"
+      },
+      {
+        question: "What did Jesus turn water into at the wedding in Cana?",
+        options: ["Wine", "Bread", "Fish", "Oil"],
+        correctAnswer: "Wine",
+        explanation: "Jesus performed His first miracle by turning water into wine at a wedding in Cana.",
+        verseReference: "John 2:9",
+        difficulty: "easy",
+        category: "New Testament"
+      },
+      {
+        question: "How many disciples did Jesus choose?",
+        options: ["10", "12", "7", "15"],
+        correctAnswer: "12",
+        explanation: "Jesus chose twelve disciples to be His closest followers and apostles.",
+        verseReference: "Matthew 10:1-4",
+        difficulty: "easy",
+        category: "New Testament"
+      },
+      {
+        question: "In which city was Jesus born?",
+        options: ["Nazareth", "Jerusalem", "Bethlehem", "Capernaum"],
+        correctAnswer: "Bethlehem",
+        explanation: "Jesus was born in Bethlehem, fulfilling the prophecy about the Messiah's birthplace.",
+        verseReference: "Luke 2:4-7",
+        difficulty: "easy",
+        category: "New Testament"
+      }
+    ];
+
+    return fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)];
+  }
+
+  // Send Next Bible Question
+  private async sendNextBibleQuestion(phoneNumber: string): Promise<void> {
+    try {
+      const session = this.bibleQuizSessions.get(phoneNumber);
+      if (!session) return;
+
+      // Generate question with Gemini AI
+      const question = await this.generateBibleQuestionWithGemini(session.difficulty);
+      if (!question) {
+        await this.endBibleQuiz(phoneNumber);
+        return;
+      }
+
+      session.currentQuestion = question;
+      session.questionStartTime = Date.now();
+
+      const questionMessage = `📖 **Question ${session.questionsAnswered + 1}**
+
+${question.question}
+
+**Choose your answer:**
+A) ${question.options[0]}
+B) ${question.options[1]}
+C) ${question.options[2]}
+D) ${question.options[3]}
+
+⏱️ Take your time to think and choose wisely!`;
+
+      await this.sendInteractiveMessage(phoneNumber, questionMessage, [
+        { id: 'quiz_a', title: `A) ${question.options[0].substring(0, 20)}...` },
+        { id: 'quiz_b', title: `B) ${question.options[1].substring(0, 20)}...` },
+        { id: 'quiz_c', title: `C) ${question.options[2].substring(0, 20)}...` },
+        { id: 'quiz_d', title: `D) ${question.options[3].substring(0, 20)}...` }
+      ]);
+
+    } catch (error) {
+      console.error('Error sending Bible question:', error);
+      await this.endBibleQuiz(phoneNumber);
+    }
+  }
+
+  // Handle Next Question
+  private async handleNextQuestion(phoneNumber: string): Promise<void> {
+    const session = this.bibleQuizSessions.get(phoneNumber);
+    if (!session) {
+      await this.sendMessage(phoneNumber, "No active quiz session found. Please start a new quiz!");
+      return;
+    }
+
+    if (session.questionsAnswered >= 10) {
+      await this.endBibleQuiz(phoneNumber);
+      return;
+    }
+
+    await this.sendNextBibleQuestion(phoneNumber);
+  }
+
+  // Handle Quiz Answer
+  private async handleQuizAnswer(phoneNumber: string, answerButton: string): Promise<void> {
+    const session = this.bibleQuizSessions.get(phoneNumber);
+    if (!session || !session.currentQuestion) return;
+
+    const question = session.currentQuestion;
+    const optionIndex = answerButton.replace('quiz_', '').charCodeAt(0) - 97; // a=0, b=1, c=2, d=3
+    const selectedAnswer = question.options[optionIndex];
+
+    if (!selectedAnswer) return;
+
+    const isCorrect = selectedAnswer === question.correctAnswer;
+    const timeTaken = Math.round((Date.now() - session.questionStartTime!) / 1000);
+
+    // Update session
+    session.questionsAnswered++;
+    if (isCorrect) {
+      session.correctAnswers++;
+      session.currentStreak++;
+      const points = this.calculatePoints(question.difficulty, timeTaken, session.currentStreak);
+      session.score += points;
+    } else {
+      session.currentStreak = 0;
+    }
+
+    // Send feedback
+    const feedbackMessage = isCorrect 
+      ? `✅ **Correct!** Well done ${session.userName}! 
+
+🎯 **Answer:** ${question.correctAnswer}
+📖 **Explanation:** ${question.explanation}
+📜 **Scripture:** ${question.verseReference}
+🔥 **Streak:** ${session.currentStreak}
+⭐ **Score:** ${session.score} points
+
+Great biblical knowledge! 🙌`
+      : `❌ **Not quite right**, ${session.userName}
+
+✅ **Correct Answer:** ${question.correctAnswer}
+📖 **Explanation:** ${question.explanation}
+📜 **Scripture:** ${question.verseReference}
+💪 **Keep Learning:** Every question makes you wiser!
+
+Don't give up - you're growing in wisdom! 🌱`;
+
+    const buttons = session.questionsAnswered >= 10 
+      ? [{ id: 'end_quiz', title: '🏁 View Results' }]
+      : [
+          { id: 'next_question', title: '▶️ Next Question' },
+          { id: 'end_quiz', title: '🏁 End Quiz' }
+        ];
+
+    await this.sendInteractiveMessage(phoneNumber, feedbackMessage, buttons);
+
+    if (session.questionsAnswered >= 10) {
+      setTimeout(() => this.endBibleQuiz(phoneNumber), 5000);
+    }
+  }
+
+  // Calculate Points
+  private calculatePoints(difficulty: string, timeTaken: number, streak: number): number {
+    let basePoints = 10;
+    
+    if (difficulty === 'medium') basePoints = 15;
+    if (difficulty === 'hard') basePoints = 20;
+
+    // Speed bonus (max 5 bonus points)
+    const speedBonus = Math.max(0, 5 - Math.floor(timeTaken / 5));
+    
+    // Streak bonus
+    const streakBonus = Math.min(streak * 2, 10);
+
+    return basePoints + speedBonus + streakBonus;
+  }
+
+  // End Bible Quiz
+  private async endBibleQuiz(phoneNumber: string): Promise<void> {
+    const session = this.bibleQuizSessions.get(phoneNumber);
+    if (!session) return;
+
+    const accuracy = session.questionsAnswered > 0 
+      ? Math.round((session.correctAnswers / session.questionsAnswered) * 100) 
+      : 0;
+
+    const duration = Math.round((Date.now() - session.startTime.getTime()) / 1000 / 60);
+
+    const resultsMessage = `🏁 **Quiz Complete!** ${session.userName}
+
+📊 **Your Results:**
+✅ Correct: ${session.correctAnswers}/${session.questionsAnswered}
+🎯 Accuracy: ${accuracy}%
+⭐ Total Score: ${session.score} points
+🔥 Best Streak: ${session.currentStreak}
+⏱️ Duration: ${duration} minutes
+
+${accuracy >= 80 ? '🌟 Excellent biblical knowledge!' : 
+  accuracy >= 60 ? '👍 Good work, keep studying!' : 
+  '💪 Keep learning, you\'re growing!'}
+
+*"Study to show yourself approved unto God." - 2 Timothy 2:15*
+
+Ready for another challenge?`;
+
+    await this.sendInteractiveMessage(phoneNumber, resultsMessage, [
+      { id: 'bible_quiz', title: '🔄 Play Again' },
+      { id: 'devotional', title: '📖 Get Word' },
+      { id: 'back_menu', title: '🔙 Main Menu' }
+    ]);
+
+    this.bibleQuizSessions.delete(phoneNumber);
+  }
+
+  // Get User ID helper method
+  private async getUserId(phoneNumber: string): Promise<string | null> {
+    try {
+      // Try to get from user profiles table directly using phone number
+      const { data: directProfile, error: directError } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('phone_number', phoneNumber)
+        .single();
+
+      if (!directError && directProfile?.id) {
+        return directProfile.id;
+      }
+
+      // Fallback: try to get user ID from whatsapp_bot_users
+      const { data: botUser, error: botError } = await supabase
+        .from('whatsapp_bot_users')
+        .select('user_id')
+        .eq('whatsapp_number', phoneNumber)
+        .single();
+
+      if (!botError && botUser?.user_id) {
+        return botUser.user_id;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error getting user ID:', error);
+      return null;
+    }
+  }
+}
+
+// Bible Quiz Types
+interface BibleQuizSession {
+  phoneNumber: string;
+  userId: string;
+  userName: string;
+  quizType: 'daily_challenge' | 'smart_quiz' | 'topic_quiz';
+  score: number;
+  correctAnswers: number;
+  questionsAnswered: number;
+  currentStreak: number;
+  startTime: Date;
+  difficulty: 'easy' | 'medium' | 'hard';
+  currentQuestion: BibleQuestion | null;
+  questionStartTime?: number;
+}
+
+interface BibleQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string;
+  verseReference: string;
+  difficulty: string;
+  category: string;
 }
 
 // Export a singleton instance

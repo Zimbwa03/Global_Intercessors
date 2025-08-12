@@ -49,4 +49,4 @@ task = "shell.exec"
 args = "npm run dev"
 
 [agent]
-integrations = ["javascript_supabase==1.0.0"]
+integrations = ["javascript_gemini==1.0.0", "javascript_supabase==1.0.0"]
