@@ -1511,6 +1511,7 @@ ${content}
 
       // Check message length and truncate if needed
       if (declarationsMessage.length > 1000) {
+        console.log(`⚠️ Message too long (${declarationsMessage.length} chars), using fallback`);
         throw new Error('Message too long, using fallback');
       }
 
@@ -1525,6 +1526,7 @@ ${content}
 
     } catch (error) {
       console.error('Error generating Daily Declarations:', error);
+      console.error('Error details:', error.message);
       
       // Concise fallback message
       const firstName = userName.split(' ')[0];
@@ -1560,7 +1562,15 @@ ${content}
       ];
 
       console.log(`📏 Fallback declarations length: ${fallbackMessage.length} characters`);
-      await this.sendInteractiveMessage(phoneNumber, fallbackMessage, buttons);
+      
+      try {
+        await this.sendInteractiveMessage(phoneNumber, fallbackMessage, buttons);
+        console.log('✅ Fallback declarations sent successfully');
+      } catch (sendError) {
+        console.error('❌ Failed to send fallback declarations:', sendError);
+        // Send a simple text message as last resort
+        await this.sendWhatsAppMessage(phoneNumber, `🔥 Daily Declarations ready! Please try again or type "declarations" for your daily spiritual power boost, ${firstName}!`);
+      }
     }
   }
 
