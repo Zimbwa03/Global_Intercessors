@@ -1065,6 +1065,8 @@ Reply with:
 
 Ready to explore God's Word? 📚`);
         }
+      } else if (command === 'more_quiz_types') {
+        await this.handleMoreQuizTypes(phoneNumber, userName);
       } else if (command === 'reminders' || command === '/reminders') {
         await this.handleRemindersCommand(phoneNumber, userName);
       } else if (command === 'updates' || command === '/updates') {
@@ -1262,9 +1264,7 @@ Choose your quiz adventure:`;
       const buttons = [
         { id: 'daily_challenge', title: '🌟 Daily Challenge' },
         { id: 'smart_quiz', title: '🎯 Smart Quiz' },
-        { id: 'memory_verse', title: '📖 Memory Verse' },
-        { id: 'situational_quiz', title: '💡 Life Situations' },
-        { id: 'topic_quiz', title: '📚 Topic Focus' }
+        { id: 'more_quiz_types', title: '📚 More Quiz Types' }
       ];
 
       await this.sendInteractiveMessage(phoneNumber, quizMessage, buttons);
@@ -1283,6 +1283,39 @@ Choose your quiz adventure:
 📚 Type "topic_quiz" for Topic Focus
 
 Let's dive into God's Word together! 📚`);
+    }
+  }
+
+  private async handleMoreQuizTypes(phoneNumber: string, userName: string): Promise<void> {
+    try {
+      await this.logInteraction(phoneNumber, 'command', 'more_quiz_types');
+
+      const moreTypesMessage = `📚 *More Bible Quiz Types* 📚
+
+${userName}, choose your specialized quiz type:
+
+📖 **Memory Verse** - Fill in the missing words from well-known Bible verses
+💡 **Life Situations** - Apply the right Bible verse to real-life intercession scenarios  
+📚 **Topic Focus** - Deep dive into specific biblical themes`;
+
+      const buttons = [
+        { id: 'memory_verse', title: '📖 Memory Verse' },
+        { id: 'situational_quiz', title: '💡 Life Situations' },
+        { id: 'topic_quiz', title: '📚 Topic Focus' }
+      ];
+
+      await this.sendInteractiveMessage(phoneNumber, moreTypesMessage, buttons);
+    } catch (error) {
+      console.error('❌ Error in handleMoreQuizTypes:', error);
+      await this.sendWhatsAppMessage(phoneNumber, `📚 *More Bible Quiz Types* 📚
+
+${userName}, choose your specialized quiz type:
+
+📖 Type "memory_verse" for Memory Verse Quiz
+💡 Type "situational_quiz" for Life Situations Quiz  
+📚 Type "topic_quiz" for Topic Focus
+
+Let's explore God's Word in depth! 🙏`);
     }
   }
 
@@ -1681,7 +1714,7 @@ ${truncatedContent}
 
     } catch (error) {
       console.error('Error generating Daily Declarations:', error);
-      console.error('Error details:', error.message);
+      console.error('Error details:', (error as Error).message || 'Unknown error');
 
       // Concise fallback message
       const firstName = userName.split(' ')[0];
@@ -2792,7 +2825,7 @@ Choose your answer:`;
         'hard': '⭐⭐⭐'
       };
 
-      const questionText = `${difficultyEmoji[session.difficulty]} *Bible Quiz ${session.difficulty.toUpperCase()}* ${difficultyEmoji[session.difficulty]}
+      const questionText = `${difficultyEmoji[session.difficulty as keyof typeof difficultyEmoji]} *Bible Quiz ${session.difficulty.toUpperCase()}* ${difficultyEmoji[session.difficulty as keyof typeof difficultyEmoji]}
 
 ${userName}, here's Question ${session.questionsAnswered + 1}:
 
@@ -2886,8 +2919,7 @@ Choose your answer:`;
 
       const continueButtons = [
         { id: 'next_question', title: '▶️ Next Question' },
-        { id: 'end_quiz', title: '🏁 End Quiz' },
-        { id: 'quiz_help', title: '❓ Help' }
+        { id: 'end_quiz', title: '🏁 End Quiz' }
       ];
 
       await this.sendInteractiveMessage(phoneNumber, feedbackMessage, continueButtons);
@@ -3269,7 +3301,6 @@ ${this.getEncouragementMessage(accuracy)}
 
       const buttons = [
         { id: 'quiz', title: '🔄 Play Again' },
-        { id: 'quiz_stats', title: '📊 View Stats' },
         { id: 'devotionals', title: '📖 Devotionals' },
         { id: 'continue', title: '🏠 Main Menu' }
       ];
