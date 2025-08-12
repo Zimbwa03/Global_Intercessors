@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { supabase } from '../supabase.js';
+import { supabaseAdmin as supabase } from '../supabase.js';
 import fetch from 'node-fetch';
 
 interface WhatsAppAPIConfig {
