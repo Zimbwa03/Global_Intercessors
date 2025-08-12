@@ -61,6 +61,7 @@ export class WhatsAppPrayerBot {
     inSession: boolean;
     topic: string | null;
     conversationHistory: Array<{role: string, content: string}>;
+    waitingForTopic?: boolean;
   }> = new Map();
 
   constructor() {
@@ -1986,11 +1987,17 @@ What topic would you like to explore today? You can choose your own or let me se
     }
 
     if (selection === 'type_topic') {
-      const message = `📝 *Topic Selection* 📝
+      // Set a flag indicating user wants to type their own topic
+      session.topic = null;
+      session.conversationHistory = [];
+      session.waitingForTopic = true;
+      this.bibleStudySessions.set(phoneNumber, session);
+
+      const message = `📝 *Type Your Bible Study Topic* 📝
 
 Please type the Bible topic you'd like to study today.
 
-Examples:
+*Examples:*
 • Faith
 • Love  
 • Prayer
@@ -1998,6 +2005,9 @@ Examples:
 • The Holy Spirit
 • Grace
 • Hope
+• Salvation
+• Obedience
+• Trust
 
 *Simply type your chosen topic and we'll begin our study!*
 
@@ -2009,22 +2019,18 @@ Type */endstudy* anytime to end the session.`;
         'Faith', 'Love', 'Grace', 'Hope', 'Prayer', 'Forgiveness', 
         'The Holy Spirit', 'Discipleship', 'Wisdom', 'Peace', 
         'Joy', 'Redemption', 'Sacrifice', 'The Kingdom of God',
-        'Humility', 'Worship', 'Thanksgiving', 'Perseverance'
+        'Humility', 'Worship', 'Thanksgiving', 'Perseverance',
+        'Obedience', 'Trust', 'Salvation', 'Righteousness',
+        'Mercy', 'Patience', 'Courage', 'Divine Purpose'
       ];
       
       const randomTopic = topics[Math.floor(Math.random() * topics.length)];
       session.topic = randomTopic;
+      session.waitingForTopic = false;
       this.bibleStudySessions.set(phoneNumber, session);
 
-      const message = `🎲 *Random Topic Selected!* 🎲
-
-Today we will be studying: **${randomTopic}**
-
-Are you ready to dive deep into God's Word and explore this topic together?
-
-*Type "yes" to begin, or */endstudy* to end the session.*`;
-
-      await this.sendWhatsAppMessage(phoneNumber, message);
+      // Start the Bible study immediately with the random topic
+      await this.startBibleStudyWithTopic(phoneNumber, userName, randomTopic);
     }
   }
 
@@ -2033,22 +2039,32 @@ Are you ready to dive deep into God's Word and explore this topic together?
     if (!session?.inSession) return;
 
     try {
-      // If no topic set yet, treat this as topic selection
-      if (!session.topic && userMessage.toLowerCase() !== 'yes') {
-        session.topic = userMessage.trim();
+      // If waiting for topic input, set the topic from user message
+      if (session.waitingForTopic && !session.topic) {
+        const userTopic = userMessage.trim();
+        session.topic = userTopic;
+        session.waitingForTopic = false;
         this.bibleStudySessions.set(phoneNumber, session);
         
-        const confirmMessage = `✅ *Topic Confirmed: ${session.topic}* ✅
-
-Excellent choice! Are you ready to begin our Bible study on **${session.topic}**?
-
-*Type "yes" to start, or */endstudy* to end the session.*`;
-
-        await this.sendWhatsAppMessage(phoneNumber, confirmMessage);
+        // Start the Bible study with the user's chosen topic
+        await this.startBibleStudyWithTopic(phoneNumber, userName, userTopic);
         return;
       }
 
-      // Build conversation history
+      // If no topic set yet and user says "yes", this means they're ready to start with a random topic
+      if (!session.topic && userMessage.toLowerCase() === 'yes') {
+        await this.sendWhatsAppMessage(phoneNumber, 
+          `📚 Please first select a topic by clicking "Type a Topic" or "Random Topic" from the menu.`);
+        return;
+      }
+
+      // If topic is set but user says "yes", start the actual study
+      if (session.topic && userMessage.toLowerCase() === 'yes' && session.conversationHistory.length === 0) {
+        await this.startBibleStudyWithTopic(phoneNumber, userName, session.topic);
+        return;
+      }
+
+      // Build conversation history for ongoing study
       session.conversationHistory.push({
         role: 'user',
         content: userMessage
@@ -2154,6 +2170,62 @@ Remember: You're guiding ${firstName} through an enriching Bible study experienc
     } catch (error) {
       console.error('Bible Study AI generation failed:', error);
       throw error;
+    }
+  }
+
+  private async startBibleStudyWithTopic(phoneNumber: string, userName: string, topic: string): Promise<void> {
+    const session = this.bibleStudySessions.get(phoneNumber);
+    if (!session) return;
+
+    try {
+      const firstName = userName.split(' ')[0];
+      
+      // Generate opening Bible study content for the topic
+      const prompt = `Generate an engaging opening for a Bible study session on "${topic}". Include:
+
+1. A warm welcome mentioning the topic
+2. One foundational Bible verse about ${topic} (include the full verse text, not just reference)
+3. A brief introduction to why this topic is important for Christians
+4. An engaging opening question to start the discussion
+
+Format for WhatsApp (under 1000 characters). Use emojis appropriately (📖🙏✨💝🌟) and keep it conversational and inspiring.`;
+
+      const openingContent = await this.generateBibleStudyResponse(prompt, []);
+      
+      // Send the opening content
+      await this.sendWhatsAppMessage(phoneNumber, openingContent);
+
+      // Add the opening to conversation history
+      session.conversationHistory.push({
+        role: 'assistant',
+        content: openingContent
+      });
+
+      this.bibleStudySessions.set(phoneNumber, session);
+
+    } catch (error) {
+      console.error('Error starting Bible study with topic:', error);
+      
+      // Fallback message
+      const fallbackMessage = `📚 *Welcome to our Bible Study on ${topic}!* 📚
+
+${userName.split(' ')[0]}, let's explore what God's Word teaches us about **${topic}**.
+
+📖 *"All Scripture is God-breathed and is useful for teaching, rebuking, correcting and training in righteousness."* - 2 Timothy 3:16
+
+This topic is foundational to our Christian walk. Through studying ${topic}, we can grow closer to God and understand His heart better.
+
+🤔 *Opening Question:* What comes to mind when you think about ${topic}? How have you experienced this in your own life?
+
+*Feel free to share your thoughts, ask questions, or request specific verses about this topic!*`;
+
+      await this.sendWhatsAppMessage(phoneNumber, fallbackMessage);
+      
+      session.conversationHistory.push({
+        role: 'assistant',
+        content: fallbackMessage
+      });
+      this.bibleStudySessions.set(phoneNumber, session);
     }
   }
 
