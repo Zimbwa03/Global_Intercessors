@@ -351,15 +351,6 @@ export function InteractiveLandingPage({ onGetStarted, onLearnMore }: Interactiv
                   Start Your Journey
                   <ArrowRight className="ml-3 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
                 </Button>
-
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="border-3 border-white/40 text-white hover:bg-white/20 px-12 py-6 text-xl rounded-2xl backdrop-blur-sm hover:scale-105 transition-all duration-300"
-                >
-                  <Play className="mr-3 w-6 h-6" />
-                  Watch Demo
-                </Button>
               </motion.div>
             </div>
 
