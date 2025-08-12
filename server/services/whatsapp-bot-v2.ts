@@ -198,6 +198,35 @@ export class WhatsAppPrayerBot {
     }
   }
 
+  // Get user's assigned prayer slot
+  private async getUserPrayerSlot(phoneNumber: string): Promise<string | null> {
+    try {
+      // Get user_id from WhatsApp bot users table
+      const { data: botUser } = await supabase
+        .from('whatsapp_bot_users')
+        .select('user_id')
+        .eq('whatsapp_number', phoneNumber)
+        .single();
+
+      if (!botUser) {
+        return null;
+      }
+
+      // Get prayer slot for this user
+      const { data: prayerSlot } = await supabase
+        .from('prayer_slots')
+        .select('slot_time')
+        .eq('user_id', botUser.user_id)
+        .eq('status', 'active')
+        .single();
+
+      return prayerSlot?.slot_time || null;
+    } catch (error) {
+      console.error('❌ Error getting user prayer slot:', error);
+      return null;
+    }
+  }
+
   // Database operations using Supabase
   private async getUserName(userIdOrPhone: string): Promise<string> {
     try {
@@ -538,12 +567,20 @@ Reply *help* for more options.`;
 
     if (command === 'start' || command === 'hi' || command === 'hello') {
       await this.handleStartCommand(phoneNumber, userName);
+    } else if (command === 'devotionals' || command === '/devotionals') {
+      await this.handleDevotionalsCommand(phoneNumber, userName);
+    } else if (command === 'quiz' || command === '/quiz') {
+      await this.handleQuizCommand(phoneNumber, userName);
+    } else if (command === 'reminders' || command === '/reminders') {
+      await this.handleRemindersCommand(phoneNumber, userName);
+    } else if (command === 'updates' || command === '/updates') {
+      await this.handleUpdatesCommand(phoneNumber, userName);
+    } else if (command === 'messages' || command === '/messages') {
+      await this.handleMessagesCommand(phoneNumber, userName);
+    } else if (command === 'dashboard' || command === '/dashboard') {
+      await this.handleDashboardCommand(phoneNumber, userName);
     } else if (command === 'help' || command === '/help') {
       await this.handleHelpCommand(phoneNumber, userName);
-    } else if (command === 'remind' || command === '/remind') {
-      await this.handleRemindCommand(phoneNumber, userName);
-    } else if (command === 'devotional' || command === '/devotional') {
-      await this.handleDevotionalCommand(phoneNumber, userName);
     } else if (command === 'stop' || command === '/stop') {
       await this.handleStopCommand(phoneNumber, userName);
     } else {
@@ -554,23 +591,31 @@ Reply *help* for more options.`;
   private async handleStartCommand(phoneNumber: string, userName: string): Promise<void> {
     await this.logInteraction(phoneNumber, 'command', 'start');
 
-    const welcomeMessage = `🕊️ *Welcome to Global Intercessors Prayer Bot* 🕊️
+    // Get user's prayer slot information
+    const userPrayerSlot = await this.getUserPrayerSlot(phoneNumber);
+    const slotInfo = userPrayerSlot ? `⏱ Your current prayer slot: ${userPrayerSlot}` : `⏱ Prayer slot: Not assigned yet`;
 
-Hello there, ${userName}! It's wonderful to connect with you. Your simple 'start' speaks volumes about your heart for prayer and intercession.
+    const welcomeMessage = `🙏 Hello, ${userName}!
+Welcome to Global Intercessors Prayer Bot! 🙌
+${slotInfo}
 
-🙏 *I'm here to support your prayer journey with:*
+I'm your personal prayer companion, here to strengthen your walk with God through:
 
-🔔 **Prayer Reminders** - Gentle nudges for your assigned prayer slots
-📖 **Daily Devotionals** - AI-powered spiritual content and fresh prophetic words  
-⚔️ **Spiritual Warfare** - Declarations and intercession guidance
-📱 **Interactive Experience** - Simple commands to access all features
+📖 AI-Powered Devotionals – Daily scriptures with fresh, Spirit-led insights
+🧠 Bible Quiz Challenge – Test and grow your biblical knowledge  
+⏰ Smart Prayer Reminders – Never miss your intercession time
+🌍 Global Prayer Updates – Join intercessors around the world in united prayer
+✨ Fresh Messages – Daily AI-generated declarations & prayer points
+📊 Personal Dashboard – Track and celebrate your spiritual growth
 
-*Ready to begin your intercession journey?*`;
+*"The effective, fervent prayer of a righteous man avails much."* – James 5:16
+
+Choose an option below to begin your spiritual journey:`;
 
     const buttons = [
-      { id: 'help', title: '📋 View Commands' },
-      { id: 'devotional', title: '📖 Get Devotional' },
-      { id: 'remind', title: '🔔 Prayer Reminders' }
+      { id: 'devotionals', title: '📖 Devotionals' },
+      { id: 'quiz', title: '🧠 Bible Quiz' },
+      { id: 'reminders', title: '⏰ Reminders' }
     ];
 
     await this.sendInteractiveMessage(phoneNumber, welcomeMessage, buttons);
@@ -595,25 +640,177 @@ Hello ${userName}! Here are the available commands:
     await this.sendWhatsAppMessage(phoneNumber, helpMessage);
   }
 
-  private async handleRemindCommand(phoneNumber: string, userName: string): Promise<void> {
-    await this.logInteraction(phoneNumber, 'command', 'remind');
+  private async handleDevotionalsCommand(phoneNumber: string, userName: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'command', 'devotionals');
+
+    const devotionalsMessage = `📖 *Daily Devotionals* 📖
+
+Welcome ${userName} to your spiritual growth journey!
+
+🔥 Experience fresh, AI-powered devotionals featuring:
+✨ Daily scripture with Spirit-led insights
+🙏 Personalized prayer points for your intercession
+⚔️ Prophetic declarations for breakthrough
+🌍 Global prayer focuses connecting you with believers worldwide
+
+*"Your word is a lamp to my feet and a light to my path."* - Psalm 119:105
+
+Choose your devotional experience:`;
+
+    const buttons = [
+      { id: 'daily_devotional', title: '📅 Today\'s Devotional' },
+      { id: 'fresh_word', title: '✨ Fresh Prophetic Word' },
+      { id: 'scripture_insight', title: '🔍 Scripture Insight' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, devotionalsMessage, buttons);
+  }
+
+  private async handleQuizCommand(phoneNumber: string, userName: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'command', 'quiz');
+
+    const quizMessage = `🧠 *Bible Quiz Challenge* 🧠
+
+Ready for a spiritual brain workout, ${userName}?
+
+📚 Test and strengthen your biblical knowledge with:
+🎯 Interactive Bible trivia questions
+📖 Scripture memory challenges  
+🏆 Progressive difficulty levels
+📈 Track your spiritual growth
+⭐ Earn badges for achievements
+🌟 Compete with fellow intercessors globally
+
+*"Study to show yourself approved unto God, a workman that needs not to be ashamed."* - 2 Timothy 2:15
+
+Select your challenge level:`;
+
+    const buttons = [
+      { id: 'easy_quiz', title: '⭐ Beginner Level' },
+      { id: 'medium_quiz', title: '⭐⭐ Intermediate' },
+      { id: 'hard_quiz', title: '⭐⭐⭐ Advanced' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, quizMessage, buttons);
+  }
+
+  private async handleRemindersCommand(phoneNumber: string, userName: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'command', 'reminders');
 
     // Update user preferences to enable reminders
     await this.createOrUpdateUser(phoneNumber, {
       reminder_preferences: { reminderTiming: "30min", enabled: true }
     });
 
-    const reminderMessage = `🔔 *Prayer Reminders Activated* 🔔
+    const reminderMessage = `⏰ *Smart Prayer Reminders* ⏰
 
-Thank you ${userName}! 
+Activated for ${userName}! 
 
-✅ You will now receive prayer slot reminders 30 minutes before your assigned time.
+✅ You will receive gentle reminders 30 minutes before your prayer slot
+📱 Customizable notification preferences
+🔔 Never miss your intercession time again
+📊 Track your prayer consistency
+🌍 Join global prayer coverage
 
-🙏 *"Continue earnestly in prayer, being vigilant in it with thanksgiving"* - Colossians 4:2
+*"Continue earnestly in prayer, being vigilant in it with thanksgiving"* - Colossians 4:2
 
-Your commitment to intercession is a blessing to the global church!`;
+Your faithfulness in prayer makes an eternal difference!
 
-    await this.sendWhatsAppMessage(phoneNumber, reminderMessage);
+Choose your reminder settings:`;
+
+    const buttons = [
+      { id: 'reminder_30min', title: '⏰ 30 Min Before' },
+      { id: 'reminder_15min', title: '⏰ 15 Min Before' },
+      { id: 'reminder_custom', title: '⚙️ Custom Settings' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, reminderMessage, buttons);
+  }
+
+  private async handleUpdatesCommand(phoneNumber: string, userName: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'command', 'updates');
+
+    const updatesMessage = `🌍 *Global Prayer Updates* 🌍
+
+Stay connected, ${userName}!
+
+🌎 Join intercessors worldwide in united prayer for:
+🔥 Global revival movements
+🕊️ Peace in nations facing conflict  
+⛪ Church growth in restricted regions
+👨‍👩‍👧‍👦 Family restoration worldwide
+🏥 Healing for the nations
+💼 Economic breakthrough for believers
+
+*"If my people, who are called by my name, will humble themselves and pray..."* - 2 Chronicles 7:14
+
+Choose your prayer focus:`;
+
+    const buttons = [
+      { id: 'urgent_prayer', title: '🚨 Urgent Requests' },
+      { id: 'global_focus', title: '🌍 Global Focus' },
+      { id: 'revival_watch', title: '🔥 Revival Watch' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, updatesMessage, buttons);
+  }
+
+  private async handleMessagesCommand(phoneNumber: string, userName: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'command', 'messages');
+
+    const messagesMessage = `✨ *Fresh Messages* ✨
+
+AI-Generated spiritual content for ${userName}!
+
+🔥 Receive powerful, Spirit-inspired content:
+⚔️ Daily warfare declarations
+🙏 Personalized prayer points
+📜 Prophetic insights and words
+💪 Faith-building affirmations
+🌟 Breakthrough confessions
+🎯 Targeted intercession focuses
+
+*"Death and life are in the power of the tongue."* - Proverbs 18:21
+
+Select your message type:`;
+
+    const buttons = [
+      { id: 'warfare_declaration', title: '⚔️ Warfare Declarations' },
+      { id: 'prophetic_word', title: '📜 Prophetic Insights' },
+      { id: 'prayer_points', title: '🙏 Prayer Points' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, messagesMessage, buttons);
+  }
+
+  private async handleDashboardCommand(phoneNumber: string, userName: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'command', 'dashboard');
+
+    const prayerSlot = await this.getUserPrayerSlot(phoneNumber);
+    const slotDisplay = prayerSlot ? `Your slot: ${prayerSlot}` : 'No slot assigned';
+
+    const dashboardMessage = `📊 *Personal Dashboard* 📊
+
+Spiritual Progress Report for ${userName}
+
+📈 **Your Prayer Journey:**
+⏰ ${slotDisplay}
+🎯 Prayer consistency: Building momentum!
+🏆 Spiritual milestones: Growing in faith
+📚 Bible knowledge: Expanding wisdom
+🌟 Global impact: Making a difference
+
+*"Being confident of this very thing, that He who has begun a good work in you will complete it."* - Philippians 1:6
+
+View your detailed progress:`;
+
+    const buttons = [
+      { id: 'prayer_stats', title: '📈 Prayer Statistics' },
+      { id: 'growth_report', title: '🌱 Growth Report' },
+      { id: 'achievements', title: '🏆 Achievements' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, dashboardMessage, buttons);
   }
 
   private async handleDevotionalCommand(phoneNumber: string, userName: string): Promise<void> {
