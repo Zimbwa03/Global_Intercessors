@@ -603,16 +603,15 @@ export default function AdminDashboard() {
     try {
       console.log('Processing skip request:', { requestId, action, comment });
 
-      const response = await fetch(`/api/admin/skip-requests/${requestId}`, {
-        method: 'PATCH',
+      const response = await fetch(`/api/admin/skip-requests/${requestId}/action`, {
+        method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
         body: JSON.stringify({ 
           action, 
-          comment: comment || '',
-          status: action === 'approve' ? 'approved' : 'rejected'
+          adminComment: comment || ''
         })
       });
 

@@ -35,7 +35,8 @@ const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 export function AnalyticsCharts() {
   const { data: analytics, isLoading } = useQuery<AnalyticsData>({
     queryKey: ['/api/admin/analytics'],
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: false, // Disabled auto-refresh to prevent disruption during typing
+    refetchOnWindowFocus: false
   });
 
   if (isLoading || !analytics) {

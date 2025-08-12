@@ -190,7 +190,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
       return data;
     },
     enabled: !!user?.id,
-    refetchInterval: 10000, // Refetch every 10 seconds (more frequent)
+    refetchInterval: false, // Disabled auto-refresh to prevent disruption during typing
     refetchOnWindowFocus: true,
     staleTime: 0 // Always consider data stale
   });

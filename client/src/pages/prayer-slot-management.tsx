@@ -87,7 +87,7 @@ export default function PrayerSlotManagement() {
       return data.prayerSlot || null;
     },
     enabled: !!user?.id,
-    refetchInterval: 5000, // Poll every 5 seconds for updates
+    refetchInterval: false, // Disabled auto-refresh to prevent disruption during typing
     refetchIntervalInBackground: true
   });
 
@@ -102,7 +102,7 @@ export default function PrayerSlotManagement() {
       const data = await response.json();
       return data.availableSlots || [];
     },
-    refetchInterval: 10000, // Poll every 10 seconds for slot availability
+    refetchInterval: false, // Disabled auto-refresh to prevent disruption during typing
     refetchIntervalInBackground: true
   });
 
