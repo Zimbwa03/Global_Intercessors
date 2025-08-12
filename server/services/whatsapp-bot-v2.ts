@@ -234,71 +234,75 @@ export class WhatsAppPrayerBot {
       let authUser: any = null;
       let userId: string | null = null;
       
-      // For +263785494594, we know it belongs to Ngonidzashe Zimbwa with ID eb399bac-8ae0-42fb-9ee8-ffb46f63a97f
-      if (phoneNumber === '263785494594') {
-        console.log('🎯 Recognized phone +263785494594 - using known user ID eb399bac-8ae0-42fb-9ee8-ffb46f63a97f');
+      // First try to find existing WhatsApp bot user record
+      const { data: existingBotUser, error: botUserError } = await supabase
+        .from('whatsapp_bot_users')
+        .select('user_id')
+        .eq('whatsapp_number', phoneNumber)
+        .single();
+
+      if (existingBotUser) {
+        // Found existing WhatsApp bot user, get their profile
+        userId = existingBotUser.user_id;
+        console.log(`✅ Found existing WhatsApp bot user with ID: ${userId}`);
         
-        // Get Ngonidzashe Zimbwa's profile directly
-        const { data: ngoniProfile, error: profileError } = await supabase
+        const { data: userProfile, error: profileError } = await supabase
           .from('user_profiles')
           .select('*')
-          .eq('id', 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f')
+          .eq('id', userId)
           .single();
 
-        console.log('👤 Ngonidzashe profile lookup:', { 
-          success: !profileError, 
-          profile: ngoniProfile, 
-          error: profileError?.message 
-        });
-
-        if (ngoniProfile) {
-          authUser = ngoniProfile;
-          userId = ngoniProfile.id;
-          console.log(`✅ Found Ngonidzashe Zimbwa: ${ngoniProfile.fullName || ngoniProfile.full_name} (ID: ${userId})`);
-          
-          // Ensure WhatsApp bot record exists
-          const { data: existingBotUser } = await supabase
-            .from('whatsapp_bot_users')
-            .select('*')
-            .eq('user_id', userId)
-            .single();
-
-          if (!existingBotUser) {
-            await supabase
-              .from('whatsapp_bot_users')
-              .insert({
-                whatsapp_number: phoneNumber,
-                user_id: userId,
-                is_active: true,
-                first_interaction: new Date().toISOString()
-              });
-            console.log(`✅ Created WhatsApp bot record for Ngonidzashe Zimbwa`);
-          }
+        if (userProfile) {
+          authUser = userProfile;
+          console.log(`✅ Found user profile: ${userProfile.full_name} (ID: ${userId})`);
         } else {
-          throw new Error('Could not find Ngonidzashe Zimbwa profile');
+          throw new Error(`Could not find user profile for ID: ${userId}`);
         }
       } else {
-        // General phone search for other numbers
-        const { data: profilesByPhone, error: phoneSearchError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .or(`phone.eq.${phoneNumber},phone.eq.+${phoneNumber}`);
+        // Try phone search with multiple formats 
+        const phoneVariants = [
+          phoneNumber,
+          `+${phoneNumber}`,
+          phoneNumber.startsWith('+') ? phoneNumber.slice(1) : `+${phoneNumber}`
+        ];
 
-        console.log('📞 Phone search in user_profiles:', { 
-          success: !phoneSearchError, 
-          count: profilesByPhone?.length || 0,
-          data: profilesByPhone,
-          error: phoneSearchError?.message 
-        });
+        let foundProfile = null;
+        for (const phoneVariant of phoneVariants) {
+          const { data: profilesByPhone, error: phoneSearchError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('phone_number', phoneVariant);
 
-        if (profilesByPhone && profilesByPhone.length > 0) {
-          authUser = profilesByPhone[0];
-          userId = authUser.id;
-          console.log(`✅ Found user by phone: ${authUser.fullName || authUser.full_name} (ID: ${userId})`);
-        } else {
-          console.log('❌ No user found for this phone number');
+          console.log(`📞 Phone search for ${phoneVariant}:`, { 
+            success: !phoneSearchError, 
+            count: profilesByPhone?.length || 0,
+            error: phoneSearchError?.message 
+          });
+
+          if (profilesByPhone && profilesByPhone.length > 0) {
+            foundProfile = profilesByPhone[0];
+            userId = foundProfile.id;
+            authUser = foundProfile;
+            console.log(`✅ Found user by phone variant ${phoneVariant}: ${foundProfile.full_name} (ID: ${userId})`);
+            break;
+          }
+        }
+
+        if (!foundProfile) {
+          console.log('❌ No user found for phone number', phoneNumber);
           throw new Error(`No user found for phone number ${phoneNumber}`);
         }
+
+        // Create WhatsApp bot user record for future lookups
+        await supabase
+          .from('whatsapp_bot_users')
+          .insert({
+            whatsapp_number: phoneNumber,
+            user_id: userId,
+            is_active: true,
+            created_at: new Date().toISOString()
+          });
+        console.log(`✅ Created WhatsApp bot record for user ${userId}`);
       }
 
       // Now get user profile using the userId
