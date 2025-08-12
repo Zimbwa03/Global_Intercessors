@@ -1,0 +1,75 @@
+ User data compiled: {
+  name: 'Ngonidzashe Zimbwa',
+  email: 'neezykidngoni@gmail.com',
+  userId: 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f',
+  slotTime: '08:00–08:30',
+  hasAuthUser: true,
+  hasPrayerSlot: true,
+  phoneNumber: '263785494594'
+}
+🎯 Processing command "daily_declarations" for authenticated user: Ngonidzashe Zimbwa (eb399bac-8ae0-42fb-9ee8-ffb46f63a97f)
+📨 Incoming WhatsApp webhook: {
+  "object": "whatsapp_business_account",
+  "entry": [
+    {
+      "id": "1497486351664717",
+      "changes": [
+        {
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "263782445675",
+              "phone_number_id": "761100597081178"
+            },
+            "contacts": [
+              {
+                "profile": {
+                  "name": "Ngonidzashe Zimbwa"
+                },
+                "wa_id": "263785494594"
+              }
+            ],
+            "messages": [
+              {
+                "context": {
+                  "from": "263782445675",
+                  "id": "wamid.HBgMMjYzNzg1NDk0NTk0FQIAERgSNjQ1QzczRDYxMENGQUZDQkYxAA=="
+                },
+                "from": "263785494594",
+                "id": "wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0EwRDExQkJCNjZENzFDRDMyMkYA",
+                "timestamp": "1754985379",
+                "type": "interactive",
+                "interactive": {
+                  "type": "button_reply",
+                  "button_reply": {
+                    "id": "daily_declarations",
+                    "title": "🔥 Daily Declarations"
+                  }
+                }
+              }
+            ]
+          },
+          "field": "messages"
+        }
+      ]
+    }
+  ]
+}
+🔍 Webhook data analysis:
+📊 Entry: true, Changes: true, Value: true
+📱 Messages: 1, Statuses: 0
+Processing 1 messages...
+
+MESSAGE 1/1:
+From: 263785494594
+Type: interactive
+ID: wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0EwRDExQkJCNjZENzFDRDMyMkYA
+Button: daily_declarations (🔥 Daily Declarations)
+
+📥 INCOMING MESSAGE:
+📱 From: 263785494594
+📝 Text: daily_declarations
+🆔 Message ID: wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0EwRDExQkJCNjZENzFDRDMyMkYA
+⚠️ Message already processed, skipping
+7:56:45 AM [express] POST /api/whatsapp/webhook 200 in 1ms
+🔍 Checking prayer slot reminders using Supabase...
