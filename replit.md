@@ -6,6 +6,9 @@ The Global Intercessors Prayer Management Platform is a comprehensive full-stack
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+- **August 12, 2025**: Added authentication layer to WhatsApp bot - new users must log in with Global Intercessors web app credentials before accessing bot features. Fixed database field mapping to match web application patterns (user_profiles.id instead of user_id). Enhanced security with password deletion instructions and comprehensive authentication flow.
+
 ## System Architecture
 
 ### UI/UX Decisions
@@ -23,7 +26,7 @@ Preferred communication style: Simple, everyday language.
 - **Communication**: Global update system, push notifications via Firebase Cloud Messaging, SMTP-based email alerts, and real-time dashboard updates.
 - **Prayer Management**: System for 48 half-hour prayer slots, attendance tracking, slot transfers, skip requests, and real-time coverage monitoring.
 - **Admin Dashboard**: Comprehensive user management, global updates, analytics, event management, and system monitoring.
-- **WhatsApp Bot**: An interactive WhatsApp Prayer Reminder Bot with comprehensive database integration, personalized greetings using real user names, cross-table data retrieval, command handling, devotional content generation (via DeepSeek AI), and prayer slot reminders with actual slot information.
+- **WhatsApp Bot**: An interactive WhatsApp Prayer Reminder Bot with comprehensive database integration, user authentication (requires Global Intercessors web app login credentials), personalized greetings using real user names, cross-table data retrieval, command handling, devotional content generation (via DeepSeek AI), and prayer slot reminders with actual slot information. New users must authenticate with email/password from web app before accessing bot features.
 
 ### System Design Choices
 - **Data Protection**: Row Level Security (RLS) implemented for data protection, with PostgreSQL functions for complex operations bypassing RLS when needed.

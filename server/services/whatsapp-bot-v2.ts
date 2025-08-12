@@ -666,6 +666,157 @@ Reply *help* for more options.`;
     }
   }
 
+  // Authentication methods
+  private async isUserAuthenticated(phoneNumber: string): Promise<{authenticated: boolean, userId?: string}> {
+    try {
+      // Check if user is authenticated by looking up whatsapp_bot_users table
+      const { data: botUser, error } = await supabase
+        .from('whatsapp_bot_users')
+        .select('user_id, is_active')
+        .eq('whatsapp_number', phoneNumber)
+        .eq('is_active', true)
+        .single();
+
+      if (error || !botUser) {
+        return { authenticated: false };
+      }
+
+      // Verify the user still exists in user_profiles
+      const { data: userProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('id', botUser.user_id)
+        .single();
+
+      if (profileError || !userProfile) {
+        return { authenticated: false };
+      }
+
+      return { authenticated: true, userId: botUser.user_id };
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      return { authenticated: false };
+    }
+  }
+
+  private async authenticateUser(phoneNumber: string, email: string, password: string): Promise<{success: boolean, userId?: string, message: string}> {
+    try {
+      console.log(`🔐 Authenticating user: ${email}`);
+      
+      // Use Supabase auth to verify credentials
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+      if (error || !data.user) {
+        console.log(`❌ Authentication failed for ${email}:`, error?.message);
+        return { 
+          success: false, 
+          message: "Login failed. The email or password you provided was incorrect. Please try again, or visit the Global Intercessors web app if you need to reset your password. Remember to delete your password message after trying again." 
+        };
+      }
+
+      const userId = data.user.id;
+      console.log(`✅ Authentication successful for ${email}, User ID: ${userId}`);
+
+      // Get user profile data
+      const { data: userProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (profileError || !userProfile) {
+        return { 
+          success: false, 
+          message: "Your login was successful, but we couldn't find your profile. Please contact support." 
+        };
+      }
+
+      // Create or update WhatsApp bot user record
+      const { error: upsertError } = await supabase
+        .from('whatsapp_bot_users')
+        .upsert({
+          user_id: userId,
+          whatsapp_number: phoneNumber,
+          is_active: true,
+          timezone: userProfile.timezone || 'UTC',
+          updated_at: new Date().toISOString()
+        });
+
+      if (upsertError) {
+        console.error('Error creating WhatsApp bot user record:', upsertError);
+        return { 
+          success: false, 
+          message: "Authentication was successful, but we couldn't link your WhatsApp account. Please try again." 
+        };
+      }
+
+      // Log the interaction
+      await this.logInteraction(phoneNumber, 'authentication', 'login_success');
+
+      const userName = userProfile.fullName || userProfile.full_name || 'Beloved Intercessor';
+      
+      return { 
+        success: true, 
+        userId: userId,
+        message: `Login successful! Welcome, ${userName}! You are now connected to your Global Intercessors account. You can now access your prayer slot reminders, daily scriptures, and more. Remember to delete your password message for security. How can I assist you today?` 
+      };
+
+    } catch (error) {
+      console.error('Error in authentication process:', error);
+      return { 
+        success: false, 
+        message: "An error occurred during login. Please try again later." 
+      };
+    }
+  }
+
+  private async sendLoginPrompt(phoneNumber: string): Promise<void> {
+    const loginMessage = `Welcome to the Global Intercessors WhatsApp Bot! 🕊️
+
+To access your personalized prayer features and account details, please log in with the same email and password you use for the Global Intercessors web app.
+
+📧 Format your login like this:
+Email: your_email@example.com
+Password: your_secure_password
+
+🔒 *Important: For your security, please delete your message containing your password from our chat immediately after successful login. We will confirm once you are logged in.*
+
+If you don't have an account yet, please sign up at the Global Intercessors web app first.`;
+
+    await this.sendWhatsAppMessage(phoneNumber, loginMessage);
+    await this.logInteraction(phoneNumber, 'authentication', 'login_prompt_sent');
+  }
+
+  private parseLoginCredentials(messageText: string): {email?: string, password?: string} {
+    // Look for email and password in the message
+    const emailMatch = messageText.match(/email:\s*([^\s\n]+)/i);
+    const passwordMatch = messageText.match(/password:\s*([^\s\n]+)/i);
+    
+    if (emailMatch && passwordMatch) {
+      return {
+        email: emailMatch[1].trim(),
+        password: passwordMatch[1].trim()
+      };
+    }
+    
+    // Try alternative format - lines with email and password
+    const lines = messageText.split('\n');
+    let email, password;
+    
+    for (const line of lines) {
+      if (line.toLowerCase().includes('@') && !email) {
+        email = line.trim();
+      } else if (line.length > 5 && !password && !line.includes('@')) {
+        password = line.trim();
+      }
+    }
+    
+    return { email, password };
+  }
+
   // Command handlers
   public async handleIncomingMessage(phoneNumber: string, messageText: string, messageId: string): Promise<void> {
     console.log(`\n📥 INCOMING MESSAGE:`);
@@ -692,42 +843,81 @@ Reply *help* for more options.`;
     // Log incoming message
     await this.logMessage(phoneNumber, messageText, 'inbound');
 
-    // Get or create user
-    let user = await this.getUserByPhone(phoneNumber);
-    if (!user) {
-      await this.createOrUpdateUser(phoneNumber, {});
-      user = await this.getUserByPhone(phoneNumber);
-    }
+    try {
+      // First, check if user is authenticated
+      const authStatus = await this.isUserAuthenticated(phoneNumber);
+      const command = messageText.toLowerCase().trim();
+      
+      // Handle authentication for non-authenticated users
+      if (!authStatus.authenticated) {
+        console.log(`🔐 User ${phoneNumber} not authenticated, processing authentication`);
+        
+        // Check if this is a login attempt
+        const credentials = this.parseLoginCredentials(messageText);
+        
+        if (credentials.email && credentials.password) {
+          console.log(`🔐 Processing login attempt from ${phoneNumber} with email: ${credentials.email}`);
+          const authResult = await this.authenticateUser(phoneNumber, credentials.email, credentials.password);
+          
+          await this.sendWhatsAppMessage(phoneNumber, authResult.message);
+          
+          if (authResult.success) {
+            // After successful login, show welcome message
+            setTimeout(async () => {
+              await this.handleStartCommand(phoneNumber, 'authenticated user');
+            }, 2000);
+          }
+          return;
+        }
+        
+        // For any other message from unauthenticated user, send login prompt
+        console.log(`📧 Sending login prompt to unauthenticated user: ${phoneNumber}`);
+        await this.sendLoginPrompt(phoneNumber);
+        return;
+      }
+      
+      console.log(`✅ User ${phoneNumber} is authenticated, processing command: ${command}`);
+      
+      // Get or create user for existing flow
+      let user = await this.getUserByPhone(phoneNumber);
+      if (!user) {
+        await this.createOrUpdateUser(phoneNumber, {});
+        user = await this.getUserByPhone(phoneNumber);
+      }
 
-    // Process command
-    const command = messageText.toLowerCase().trim();
-    
-    // Get complete user information for personalized responses
-    const userInfo = await this.getCompleteUserInfo(phoneNumber);
-    console.log(`🎯 Processing command "${command}" for user: ${userInfo.name} (${userInfo.userId})`);
-    
-    const userName = userInfo.name;
+      // Process command - Get complete user information for personalized responses
+      const userInfo = await this.getCompleteUserInfo(phoneNumber);
+      console.log(`🎯 Processing command "${command}" for authenticated user: ${userInfo.name} (${userInfo.userId})`);
+      
+      const userName = userInfo.name;
 
-    if (command === 'start' || command === '/start' || command === 'hi' || command === 'hello') {
-      await this.handleStartCommand(phoneNumber, userName);
-    } else if (command === 'devotionals' || command === '/devotionals') {
-      await this.handleDevotionalsCommand(phoneNumber, userName);
-    } else if (command === 'quiz' || command === '/quiz') {
-      await this.handleQuizCommand(phoneNumber, userName);
-    } else if (command === 'reminders' || command === '/reminders') {
-      await this.handleRemindersCommand(phoneNumber, userName);
-    } else if (command === 'updates' || command === '/updates') {
-      await this.handleUpdatesCommand(phoneNumber, userName);
-    } else if (command === 'messages' || command === '/messages') {
-      await this.handleMessagesCommand(phoneNumber, userName);
-    } else if (command === 'dashboard' || command === '/dashboard') {
-      await this.handleDashboardCommand(phoneNumber, userName);
-    } else if (command === 'help' || command === '/help') {
-      await this.handleHelpCommand(phoneNumber, userName);
-    } else if (command === 'stop' || command === '/stop') {
-      await this.handleStopCommand(phoneNumber, userName);
-    } else {
-      await this.handleUnknownCommand(phoneNumber, userName, messageText);
+      // User is authenticated - handle normal commands
+      if (command === 'start' || command === '/start' || command === 'hi' || command === 'hello') {
+        await this.handleStartCommand(phoneNumber, userName);
+      } else if (command === 'devotionals' || command === '/devotionals') {
+        await this.handleDevotionalsCommand(phoneNumber, userName);
+      } else if (command === 'quiz' || command === '/quiz') {
+        await this.handleQuizCommand(phoneNumber, userName);
+      } else if (command === 'reminders' || command === '/reminders') {
+        await this.handleRemindersCommand(phoneNumber, userName);
+      } else if (command === 'updates' || command === '/updates') {
+        await this.handleUpdatesCommand(phoneNumber, userName);
+      } else if (command === 'messages' || command === '/messages') {
+        await this.handleMessagesCommand(phoneNumber, userName);
+      } else if (command === 'dashboard' || command === '/dashboard') {
+        await this.handleDashboardCommand(phoneNumber, userName);
+      } else if (command === 'help' || command === '/help') {
+        await this.handleHelpCommand(phoneNumber, userName);
+      } else if (command === 'stop' || command === '/stop') {
+        await this.handleStopCommand(phoneNumber, userName);
+      } else {
+        await this.handleUnknownCommand(phoneNumber, userName, messageText);
+      }
+    } catch (error) {
+      console.error('❌ Error handling message:', error);
+      await this.sendWhatsAppMessage(phoneNumber, 
+        `🤖 I apologize, but I encountered an error processing your message. Please try again or reply *help* for assistance.`
+      );
     }
   }
 

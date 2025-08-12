@@ -1,0 +1,257 @@
+WhatsApp Bot Prompt for Global Intercessors Prayer Management Platform
+
+This document outlines a prompt for developing a WhatsApp bot that integrates with the existing Global Intercessors Prayer Management Platform. The goal is to provide intercessors with basic yet exciting features directly through WhatsApp, enhancing their engagement and streamlining key interactions.
+
+Bot Persona and Communication Style
+
+The WhatsApp bot should embody a helpful, encouraging, and respectful persona, consistent with the spiritual nature of the Global Intercessors community. Its communication style should be clear, concise, and easy to understand, using simple, everyday language. It should be designed to be intuitive for users of varying technical proficiencies.
+
+Core Features and Interactions
+
+The bot will primarily focus on features that allow intercessors to manage their prayer commitments and access spiritual resources conveniently through WhatsApp. The following are the proposed core features:
+
+1. Prayer Slot Management and Reminders
+
+Description: This feature will allow intercessors to receive reminders for their upcoming prayer slots and confirm their attendance directly via WhatsApp.
+
+User Interaction Flow:
+
+•
+Daily Reminders: The bot will send a customizable reminder message to the intercessor a set time before their assigned prayer slot (e.g., 15 minutes or 1 hour prior).
+
+•
+Example Message: "🙏 Your prayer slot is coming up at [Time] [Timezone]! Reply 'YES' to confirm your attendance or 'SKIP' if you can't make it today."
+
+
+
+•
+Attendance Confirmation: Upon receiving a 'YES' reply, the bot will mark the intercessor as present for that slot in the main platform.
+
+•
+Skip Request: If the intercessor replies 'SKIP', the bot will record this as a skipped session. (Note: This should align with the existing 'Skip Requests' functionality in the main platform, potentially triggering the approval workflow if applicable).
+
+•
+Slot Inquiry: Intercessors can ask the bot about their next assigned prayer slot.
+
+•
+Example Command: "/myprayer"
+
+•
+Bot Response: "Your next prayer slot is scheduled for [Date] at [Time] [Timezone]."
+
+
+
+Integration Points:
+
+•
+Backend API: The bot will need to interact with the platform's backend API to:
+
+•
+Fetch user's assigned prayer slots.
+
+•
+Update attendance records.
+
+•
+Process skip requests.
+
+
+
+•
+Notification System: Leverage the existing notification system (Firebase Cloud Messaging) for sending reminders, or implement a dedicated mechanism for WhatsApp messages.
+
+2. Daily Scripture and Encouragement
+
+Description: The bot will provide daily scripture verses and short encouraging messages to inspire intercessors.
+
+User Interaction Flow:
+
+•
+Daily Devotional: Users can opt-in to receive a daily scripture verse and a brief devotional message at a specified time.
+
+•
+Example Message: "Good morning! Here's your verse for today: 'The Lord is my strength and my shield; in him my heart trusts, and I am helped; my heart exults, and with my song I give thanks to him.' - Psalm 28:7. Have a blessed day of intercession!"
+
+
+
+•
+On-demand Scripture: Intercessors can request a random scripture verse or a verse on a specific topic.
+
+•
+Example Command: "/verse" or "/verse about faith"
+
+•
+Integration Point: This can leverage the existing "Bible Chat" or "Bible Verse Search" features of the main platform.
+
+
+
+Integration Points:
+
+•
+AI-Powered Features: Utilize the existing AI-powered features (Prayer Assistant, Bible Chat) to generate or retrieve relevant scriptures and encouraging words.
+
+•
+Content Management: A mechanism to manage and schedule daily devotional content.
+
+3. Global Updates and Announcements
+
+Description: The bot will serve as a channel for broadcasting important global updates and announcements from the Global Intercessors platform.
+
+User Interaction Flow:
+
+•
+Broadcast Messages: Administrators can send critical announcements or updates through the bot to all subscribed intercessors.
+
+•
+Example Message: "📢 Global Intercessors Update: Join our special prayer meeting on [Date] at [Time] [Timezone] via Zoom. Link: [Zoom Link]"
+
+
+
+•
+Opt-in/Opt-out: Users should have the ability to subscribe or unsubscribe from these broadcast messages.
+
+Integration Points:
+
+•
+Communication System: Integrate with the platform's existing "Global Updates" and "Notifications" system to ensure consistent messaging across all channels.
+
+4. Basic Profile Inquiry
+
+Description: Intercessors can quickly check basic information related to their profile.
+
+User Interaction Flow:
+
+•
+Profile Summary: Users can request a summary of their prayer activity.
+
+•
+Example Command: "/mystats"
+
+•
+Bot Response: "Hello [User Name]! Your current prayer streak is [X] days. Your attendance rate for this month is [Y]%. Keep up the great work!"
+
+
+
+Integration Points:
+
+•
+Backend API: Access user profile data and prayer attendance statistics from the backend.
+
+Technical Considerations
+
+•
+WhatsApp Business API: The bot will require integration with the WhatsApp Business API for sending and receiving messages. This involves setting up a WhatsApp Business Account and obtaining necessary API credentials.
+
+•
+Webhook: A webhook will be needed to receive incoming messages from WhatsApp and process them on the backend.
+
+•
+Backend Logic: The existing Node.js/Express.js backend will need to be extended to handle WhatsApp message parsing, command recognition, and interaction with the database and other platform services.
+
+•
+Authentication/Authorization: A secure method for authenticating WhatsApp users with their existing platform accounts will be crucial. This could involve a one-time linking process (e.g., sending a unique code to the user's registered phone number).
+
+•
+Database: While the core data resides in PostgreSQL via Supabase, the bot might require a small local cache or session management to handle conversational flows.
+
+•
+Error Handling: Robust error handling and user-friendly error messages are essential for a smooth user experience.
+
+•
+Scalability: Design the bot with scalability in mind to handle a growing number of intercessors and message volumes.
+
+Future Enhancements (Beyond Basic)
+
+Once the core features are stable, consider these enhancements:
+
+•
+Interactive Prayer Planner: A simplified version of the Prayer Planner, allowing users to add quick prayer points.
+
+•
+Fasting Program Updates: Information and reminders about ongoing fasting programs.
+
+•
+AI-Powered Prayer Prompts: More advanced AI integration to provide personalized prayer prompts based on user input.
+
+•
+Multilingual Support: Support for multiple languages to cater to the global intercessor community.
+
+This prompt provides a foundation for developing a valuable WhatsApp bot that extends the reach and utility of the Global Intercessors Prayer Management Platform.
+
+New Feature: User Authentication and Account Linking
+
+Description: This critical new feature will enable seamless authentication for new WhatsApp bot users, linking their WhatsApp interaction directly to their existing Global Intercessors web application accounts. This ensures that the bot can access all user-specific details, prayer schedules, and other relevant information from the main web application, providing a unified and personalized experience.
+
+User Interaction Flow (for unauthenticated users):
+
+When a new user initiates a conversation with the bot (e.g., by sending "Hi", "Start", or any unrecognised command), or if an existing user is not logged in, the bot will respond with a clear and concise login prompt:
+
+•
+Initial Login Prompt:
+
+•
+Bot Message: "Welcome to the Global Intercessors WhatsApp Bot! To access your personalized prayer features and account details, please log in with the same email and password you use for the Global Intercessors web app. \n\nExample: \nEmail: your_email@example.com \nPassword: your_secure_password \n\nImportant: For your security, please delete your message containing your password from our chat immediately after successful login. We will confirm once you are logged in."
+
+
+
+•
+User Input: The user will then provide their email and password, ideally in the format specified by the bot.
+
+•
+Authentication Process:
+
+•
+The bot's backend will receive the user's provided credentials.
+
+•
+These credentials will be securely transmitted to the Global Intercessors web app's authentication system (Supabase Auth) for verification.
+
+•
+Upon successful authentication, the bot's system will establish a secure link between the user's WhatsApp number and their authenticated user ID from the web app.
+
+
+
+•
+Successful Login Confirmation:
+
+•
+Bot Message: "Login successful! Welcome, [User's First Name]! You are now connected to your Global Intercessors account. You can now access your prayer slot reminders, daily scriptures, and more. Remember to delete your password message for security. How can I assist you today?"
+
+•
+The bot will then proceed to offer its core features.
+
+
+
+•
+Failed Login Attempt:
+
+•
+Bot Message: "Login failed. The email or password you provided was incorrect. Please try again, or visit the Global Intercessors web app if you need to reset your password. Remember to delete your password message after trying again."
+
+
+
+Technical Considerations for Authentication:
+
+•
+Secure Credential Handling: This is paramount. The bot's backend must handle the email and password securely. It should never store plaintext passwords. Instead, it should immediately pass them to the Supabase authentication API. All communication should be over HTTPS.
+
+•
+One-Time Password Deletion Instruction: Emphasize to the user the importance of deleting their password message from the WhatsApp chat history. While the bot will not store it, this adds an extra layer of user-side security.
+
+•
+Session Management: Once authenticated, the bot's backend should establish a secure session for the WhatsApp user, linking their WhatsApp ID to their Supabase user_id. This session should be persistent but also have a secure expiration and refresh mechanism, similar to how the web app handles JWT tokens.
+
+•
+Supabase Auth Integration: The bot's backend will directly call Supabase authentication APIs (e.g., supabase.auth.signInWithPassword) to verify credentials against the existing user database.
+
+•
+Error Handling: Implement robust error handling for authentication failures (e.g., incorrect credentials, network issues, rate limiting).
+
+•
+User Experience: Keep the login process as simple and guided as possible. Provide clear instructions and helpful feedback.
+
+•
+Security Best Practices: Advise against sending sensitive information like passwords over insecure channels. While WhatsApp offers end-to-end encryption, the bot's handling of credentials on its server-side before passing to Supabase is the critical point. Consider alternative, more secure authentication flows for future iterations (e.g., OAuth, magic links sent to email, or a direct link to the web app for login confirmation).
+
+This authentication mechanism will ensure that the WhatsApp bot provides a personalized and secure experience, leveraging the existing user base and data from the Global Intercessors web application.
+
