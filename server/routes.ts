@@ -4549,5 +4549,251 @@ Make it personal, biblical, and actionable for intercession.`;
     }
   });
 
+  // Intercessor schedule management endpoints
+  
+  // Get intercessor schedule
+  app.get("/api/intercessor/schedule/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      
+      const { data: schedule, error } = await supabaseAdmin
+        .from('intercessor_schedules')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching schedule:', error);
+        return res.status(500).json({ error: "Failed to fetch schedule" });
+      }
+      
+      // Return default schedule if not found
+      if (!schedule) {
+        return res.json({
+          userId,
+          activeDays: [],
+          createdAt: null,
+          updatedAt: null
+        });
+      }
+      
+      res.json({
+        userId: schedule.user_id,
+        activeDays: schedule.active_days || [],
+        createdAt: schedule.created_at,
+        updatedAt: schedule.updated_at
+      });
+    } catch (error) {
+      console.error('Error in schedule endpoint:', error);
+      res.status(500).json({ error: "Failed to fetch schedule" });
+    }
+  });
+  
+  // Update intercessor schedule
+  app.post("/api/intercessor/schedule", async (req: Request, res: Response) => {
+    try {
+      const { userId, activeDays } = req.body;
+      
+      if (!userId || !Array.isArray(activeDays)) {
+        return res.status(400).json({ error: "userId and activeDays array are required" });
+      }
+      
+      const { data: schedule, error } = await supabaseAdmin
+        .from('intercessor_schedules')
+        .upsert({
+          user_id: userId,
+          active_days: activeDays,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating schedule:', error);
+        return res.status(500).json({ error: "Failed to update schedule" });
+      }
+      
+      res.json({
+        success: true,
+        schedule: {
+          userId: schedule.user_id,
+          activeDays: schedule.active_days,
+          updatedAt: schedule.updated_at
+        }
+      });
+    } catch (error) {
+      console.error('Error in schedule update:', error);
+      res.status(500).json({ error: "Failed to update schedule" });
+    }
+  });
+  
+  // Get weekly attendance
+  app.get("/api/intercessor/attendance/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const { week } = req.query;
+      
+      if (!week) {
+        return res.status(400).json({ error: "Week parameter is required (YYYY-MM-DD format)" });
+      }
+      
+      // Calculate week range
+      const weekStart = new Date(week as string);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      
+      const startDate = weekStart.toISOString().split('T')[0];
+      const endDate = weekEnd.toISOString().split('T')[0];
+      
+      const { data: attendance, error } = await supabaseAdmin
+        .from('prayer_attendance')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('prayer_date', startDate)
+        .lte('prayer_date', endDate)
+        .order('prayer_date', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching attendance:', error);
+        return res.status(500).json({ error: "Failed to fetch attendance" });
+      }
+      
+      res.json(attendance || []);
+    } catch (error) {
+      console.error('Error in attendance endpoint:', error);
+      res.status(500).json({ error: "Failed to fetch attendance" });
+    }
+  });
+  
+  // Mark attendance
+  app.post("/api/intercessor/attendance", async (req: Request, res: Response) => {
+    try {
+      const { userId, prayerDate, isAttended, scheduledDayOfWeek } = req.body;
+      
+      if (!userId || !prayerDate || typeof isAttended !== 'boolean' || typeof scheduledDayOfWeek !== 'number') {
+        return res.status(400).json({ error: "userId, prayerDate, isAttended (boolean), and scheduledDayOfWeek (number) are required" });
+      }
+      
+      const { data: attendance, error } = await supabaseAdmin
+        .from('prayer_attendance')
+        .upsert({
+          user_id: userId,
+          prayer_date: prayerDate,
+          is_attended: isAttended,
+          scheduled_day_of_week: scheduledDayOfWeek,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,prayer_date'
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error marking attendance:', error);
+        return res.status(500).json({ error: "Failed to mark attendance" });
+      }
+      
+      res.json({
+        success: true,
+        attendance: {
+          userId: attendance.user_id,
+          prayerDate: attendance.prayer_date,
+          isAttended: attendance.is_attended,
+          scheduledDayOfWeek: attendance.scheduled_day_of_week,
+          updatedAt: attendance.updated_at
+        }
+      });
+    } catch (error) {
+      console.error('Error in attendance marking:', error);
+      res.status(500).json({ error: "Failed to mark attendance" });
+    }
+  });
+  
+  // Get intercessor metrics (streak, attendance rate, etc.)
+  app.get("/api/intercessor/metrics/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      
+      // Get user's schedule
+      const { data: schedule } = await supabaseAdmin
+        .from('intercessor_schedules')
+        .select('active_days')
+        .eq('user_id', userId)
+        .single();
+      
+      const activeDays = schedule?.active_days || [];
+      
+      if (activeDays.length === 0) {
+        return res.json({
+          currentStreak: 0,
+          attendanceRate: 0,
+          daysAttended: 0,
+          totalActiveDays: 0
+        });
+      }
+      
+      // Get all attendance records
+      const { data: attendance } = await supabaseAdmin
+        .from('prayer_attendance')
+        .select('*')
+        .eq('user_id', userId)
+        .order('prayer_date', { ascending: false });
+      
+      if (!attendance || attendance.length === 0) {
+        return res.json({
+          currentStreak: 0,
+          attendanceRate: 0,
+          daysAttended: 0,
+          totalActiveDays: activeDays.length
+        });
+      }
+      
+      // Calculate current streak (consecutive attended days from most recent)
+      let currentStreak = 0;
+      const dayOfWeekMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      
+      // Check streak from today backwards
+      const today = new Date();
+      for (let i = 0; i < 365; i++) { // Check up to a year back
+        const checkDate = new Date(today);
+        checkDate.setDate(today.getDate() - i);
+        const dayName = dayOfWeekMap[checkDate.getDay()];
+        
+        // Skip if not an active day
+        if (!activeDays.includes(dayName)) {
+          continue;
+        }
+        
+        const dateStr = checkDate.toISOString().split('T')[0];
+        const attendanceRecord = attendance.find(a => a.prayer_date === dateStr);
+        
+        if (attendanceRecord && attendanceRecord.is_attended) {
+          currentStreak++;
+        } else if (checkDate < today) {
+          // Only break if this is a past date (not today)
+          break;
+        }
+      }
+      
+      // Calculate attendance rate
+      const attendedCount = attendance.filter(a => a.is_attended).length;
+      const totalCount = attendance.length;
+      const attendanceRate = totalCount > 0 ? (attendedCount / totalCount) * 100 : 0;
+      
+      res.json({
+        currentStreak,
+        attendanceRate,
+        daysAttended: attendedCount,
+        totalActiveDays: activeDays.length,
+        totalRecords: totalCount
+      });
+    } catch (error) {
+      console.error('Error calculating metrics:', error);
+      res.status(500).json({ error: "Failed to calculate metrics" });
+    }
+  });
+
   return httpServer;
 }

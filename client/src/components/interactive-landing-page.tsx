@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
+import { useScrollDirection } from "@/hooks/use-scroll-direction";
 import { 
   Globe, 
   Users, 
@@ -48,6 +49,7 @@ export function InteractiveLandingPage({ onGetStarted, onLearnMore }: Interactiv
   });
   
   const isMobile = useIsMobile();
+  const scrollDirection = useScrollDirection();
   const heroRef = useRef(null);
   const statsRef = useRef(null);
   const featuresRef = useRef(null);
@@ -171,7 +173,11 @@ export function InteractiveLandingPage({ onGetStarted, onLearnMore }: Interactiv
       {/* Navigation */}
       <motion.nav
         initial={{ y: -100 }}
-        animate={{ y: 0 }}
+        animate={{ 
+          y: scrollDirection === 'down' ? -100 : 0,
+          opacity: scrollDirection === 'down' ? 0 : 1
+        }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
         className="fixed top-0 w-full bg-white/95 backdrop-blur-sm border-b border-gi-primary/10 z-50"
       >
         <div className="container mx-auto px-4 py-4">
@@ -190,9 +196,7 @@ export function InteractiveLandingPage({ onGetStarted, onLearnMore }: Interactiv
                 <button onClick={() => scrollToSection('testimonials')} className="text-gi-primary hover:text-gi-gold transition-colors">
                   Testimonials
                 </button>
-                <button onClick={() => scrollToSection('pricing')} className="text-gi-primary hover:text-gi-gold transition-colors">
-                  Pricing
-                </button>
+
                 <button onClick={() => scrollToSection('contact')} className="text-gi-primary hover:text-gi-gold transition-colors">
                   Contact
                 </button>
@@ -231,9 +235,7 @@ export function InteractiveLandingPage({ onGetStarted, onLearnMore }: Interactiv
                 <button onClick={() => scrollToSection('testimonials')} className="text-left text-gi-primary hover:text-gi-gold transition-colors">
                   Testimonials
                 </button>
-                <button onClick={() => scrollToSection('pricing')} className="text-left text-gi-primary hover:text-gi-gold transition-colors">
-                  Pricing
-                </button>
+
                 <button onClick={() => scrollToSection('contact')} className="text-left text-gi-primary hover:text-gi-gold transition-colors">
                   Contact
                 </button>

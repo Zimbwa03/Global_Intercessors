@@ -12,6 +12,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import CreateAdmin from "@/pages/create-admin";
 import BibleChatPage from './pages/bible-chat';
 import PrayerPlanner from './pages/prayer-planner';
+import SchedulePage from './pages/schedule';
 
 function Router() {
   return (
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/create-admin" component={CreateAdmin} />
       <Route path="/bible-chat" component={BibleChatPage} />
       <Route path="/prayer-planner" component={PrayerPlanner} />
+      <Route path="/schedule" component={SchedulePage} />
       <Route component={NotFound} />
     </Switch>
   );

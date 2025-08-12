@@ -303,22 +303,7 @@ export function AuthSection() {
               )}
 
               {/* Admin Access Divider */}
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <div className="text-center">
-                  <p className="text-sm text-gray-500 mb-4">Administrative Access</p>
-                  <Button
-                    onClick={() => navigate("/admin/login")}
-                    variant="outline"
-                    className="w-full border-gi-primary/200 text-gi-primary/600 hover:bg-gi-primary/50 hover:border-gi-primary/300 py-3 rounded-xl font-semibold transition-brand flex items-center justify-center font-poppins"
-                  >
-                    <i className="fas fa-shield-alt mr-2"></i>
-                    Admin Portal
-                  </Button>
-                  <p className="text-xs text-gray-400 mt-2">
-                    Restricted to authorized administrators only
-                  </p>
-                </div>
-              </div>
+
             </CardContent>
           </Card>
         </div>

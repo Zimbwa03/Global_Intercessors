@@ -71,6 +71,26 @@ export const zoomMeetings = pgTable("zoom_meetings", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Intercessor schedules table for flexible prayer scheduling
+export const intercessorSchedules = pgTable("intercessor_schedules", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  activeDays: text("active_days").array().notNull().default([]), // ['monday', 'wednesday', 'friday']
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Prayer attendance table for tracking daily attendance
+export const prayerAttendance = pgTable("prayer_attendance", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  prayerDate: text("prayer_date").notNull(), // YYYY-MM-DD format
+  isAttended: boolean("is_attended").notNull(),
+  scheduledDayOfWeek: integer("scheduled_day_of_week").notNull(), // 0=Sunday, 6=Saturday
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // WhatsApp bot users table for managing bot interactions
 export const whatsAppBotUsers = pgTable("whatsapp_bot_users", {
   id: serial("id").primaryKey(),
@@ -347,6 +367,19 @@ export const spiritualInsights = pgTable("spiritual_insights", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Insert schemas for new tables
+export const insertIntercessorScheduleSchema = createInsertSchema(intercessorSchedules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPrayerAttendanceSchema = createInsertSchema(prayerAttendance).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertPrayerSlotSchema = createInsertSchema(prayerSlots).omit({
   id: true,
   createdAt: true,
@@ -455,6 +488,10 @@ export const insertWhatsAppInteractionSchema = createInsertSchema(whatsAppIntera
   timestamp: true,
 });
 
+export type IntercessorSchedule = typeof intercessorSchedules.$inferSelect;
+export type InsertIntercessorSchedule = z.infer<typeof insertIntercessorScheduleSchema>;
+export type PrayerAttendance = typeof prayerAttendance.$inferSelect;
+export type InsertPrayerAttendance = z.infer<typeof insertPrayerAttendanceSchema>;
 export type PrayerSlot = typeof prayerSlots.$inferSelect;
 export type InsertPrayerSlot = z.infer<typeof insertPrayerSlotSchema>;
 export type AvailableSlot = typeof availableSlots.$inferSelect;

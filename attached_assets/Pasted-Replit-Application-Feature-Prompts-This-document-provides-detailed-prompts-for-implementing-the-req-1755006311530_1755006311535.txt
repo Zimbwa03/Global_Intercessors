@@ -1,0 +1,412 @@
+Replit Application Feature Prompts
+
+This document provides detailed prompts for implementing the requested UI/UX improvements and new features in the Global Intercessors Prayer Management Platform. Each section outlines the requirements, considerations, and suggested implementation approaches for the development team.
+
+1. Dynamic Header and Footer Visibility
+
+Requirement: The header at the top of the application should disappear when the user scrolls up and reappear when the user scrolls down. Conversely, the footer should disappear when the user scrolls down and reappear when the user scrolls up. This behavior should be consistent across all platforms (web, mobile, etc.) where the application is accessed.
+
+Considerations and Implementation Guidance:
+
+Implementing dynamic header and footer visibility requires careful consideration of user experience and performance. The goal is to provide more screen real estate for content when scrolling, while ensuring essential navigation and information remain easily accessible when needed.
+
+•
+Technical Approach: This can typically be achieved by tracking the scroll position and direction. When the user scrolls down, the header's transform property can be used to slide it out of view (e.g., translateY(-100%)), and the footer can be hidden. When scrolling up, they should slide back into view. CSS transitions should be used to ensure smooth animations.
+
+•
+Framework Integration: Given the application uses React with Tailwind CSS and shadcn/ui, the implementation should leverage React hooks (e.g., useState, useEffect, useRef) to manage the visibility state and apply appropriate Tailwind CSS classes or inline styles dynamically. Custom hooks can encapsulate the scroll logic for reusability.
+
+•
+Performance Optimization: Excessive re-renders due to scroll events can impact performance. Debouncing or throttling scroll event listeners is crucial to optimize performance. Using requestAnimationFrame for DOM manipulations related to scroll can also help ensure smooth animations.
+
+•
+Accessibility: Ensure that users who rely on keyboard navigation or assistive technologies can still access the header and footer content. Consider providing an alternative mechanism to reveal these elements, such as a small, persistent indicator or a quick scroll-to-top/bottom button.
+
+•
+Edge Cases: Account for edge cases such as initial page load (header and footer should be visible), very short pages where scrolling doesn't occur, and rapid scrolling. The animation should be fluid and not feel jarring.
+
+•
+Mobile Responsiveness: The behavior should be thoroughly tested on various mobile devices and screen sizes to ensure it functions as expected and enhances the mobile user experience without obstructing content or navigation.
+
+Example Pseudo-code (React/JavaScript):
+
+JavaScript
+
+
+import React, { useState, useEffect, useRef } from 'react';
+
+const useScrollDirection = () => {
+  const [scrollDirection, setScrollDirection] = useState(null);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const updateScrollDirection = () => {
+      const scrollY = window.scrollY;
+      const direction = scrollY > lastScrollY.current ? 'down' : 'up';
+      if (direction !== scrollDirection && (scrollY - lastScrollY.current > 10 || scrollY - lastScrollY.current < -10)) {
+        setScrollDirection(direction);
+      }
+      lastScrollY.current = scrollY > 0 ? scrollY : 0;
+    };
+
+    window.addEventListener('scroll', updateScrollDirection);
+    return () => {
+      window.removeEventListener('scroll', updateScrollDirection);
+    };
+  }, [scrollDirection]);
+
+  return scrollDirection;
+};
+
+// In your Header component:
+const Header = () => {
+  const scrollDirection = useScrollDirection();
+  return (
+    <header
+      className={`fixed top-0 w-full bg-white shadow-md transition-transform duration-300
+        ${scrollDirection === 'down' ? '-translate-y-full' : 'translate-y-0'}`}
+    >
+      {/* Header content */}
+    </header>
+  );
+};
+
+// In your Footer component:
+const Footer = () => {
+  const scrollDirection = useScrollDirection();
+  return (
+    <footer
+      className={`fixed bottom-0 w-full bg-gray-800 text-white transition-transform duration-300
+        ${scrollDirection === 'down' ? 'translate-y-full' : 'translate-y-0'}`}
+    >
+      {/* Footer content */}
+    </footer>
+  );
+};
+
+
+This pseudo-code provides a basic concept. The actual implementation will need to be integrated with the existing component structure and styling of the application. Ensure that the header and footer are positioned correctly (e.g., fixed or sticky) to allow for the translateY property to work effectively.
+
+2. Remove Pricing Button from Landing Page Menu
+
+Requirement: The 'Pricing' button should be removed from the main navigation menu on the landing page.
+
+Considerations and Implementation Guidance:
+
+This is a straightforward UI modification. The primary task involves locating the component responsible for rendering the landing page navigation menu and removing the specific menu item that corresponds to the 'Pricing' button.
+
+•
+Locate the Component: Based on the frontend architecture (React, Tailwind CSS, shadcn/ui), the landing page navigation is likely defined within a React component, possibly in a components or layout directory. Look for files related to Navbar, Header, or LandingPageNav.
+
+•
+Modify the JSX/TSX: Once the relevant component is identified, locate the JSX or TSX code that renders the navigation links. The 'Pricing' button will be represented as a <button>, <a>, or similar element, possibly within a list (<ul>, <li>). Simply remove or comment out this specific element.
+
+•
+Styling and Layout: After removal, ensure that the remaining navigation items maintain proper spacing and alignment. Tailwind CSS classes might need minor adjustments to ensure the menu looks balanced without the removed item.
+
+•
+Testing: Verify that the 'Pricing' button is no longer visible on the landing page menu across different screen sizes and that the navigation functions correctly without it.
+
+Example (Conceptual React Component Snippet):
+
+TypeScript
+
+
+// Before (conceptual)
+<nav>
+  <ul className="flex space-x-4">
+    <li><a href="/features">Features</a></li>
+    <li><a href="/about">About Us</a></li>
+    <li><a href="/pricing">Pricing</a></li> {/* This line to be removed */}
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
+
+// After (conceptual)
+<nav>
+  <ul className="flex space-x-4">
+    <li><a href="/features">Features</a></li>
+    <li><a href="/about">About Us</a></li>
+    <li><a href="/contact">Contact</a></li>
+  </ul>
+</nav>
+
+
+This change should be relatively quick to implement and test.
+
+3. Admin Portal Access via URL Only
+
+Requirement: The 'Admin Portal' button should be removed from the application's user interface. Access to the Admin Portal should exclusively be through direct navigation to the /admin URL, as is currently implemented in the codebase.
+
+Considerations and Implementation Guidance:
+
+This task involves two main parts: removing the UI element and ensuring the existing routing mechanism remains functional and secure.
+
+•
+Remove the UI Element: Similar to the 'Pricing' button, identify the component(s) where the 'Admin Portal' button is rendered. This could be in a header, footer, sidebar, or a user profile dropdown. Remove or comment out the corresponding JSX/TSX code. Ensure that any associated styling or layout adjustments are made to maintain the integrity of the surrounding UI.
+
+•
+Verify Existing Routing: The prompt states that access via /admin is already present. This implies that the routing configuration (using Wouter in this case) and the backend authentication/authorization for the /admin route are already set up. No changes should be required for the routing or backend logic. The focus is solely on removing the visible button.
+
+•
+Security Implications: While removing the button from the UI is a visual change, it's crucial to remember that security for the Admin Portal is primarily enforced at the backend (Supabase Auth, role-based access control). Removing the button does not enhance security; it merely changes the entry point for legitimate administrators. Ensure that the /admin route remains protected and accessible only to authorized users.
+
+•
+User Experience: Administrators will need to be informed that they should now access the portal by directly typing /admin into their browser's address bar or by using a bookmark. This might be a minor change in workflow for them.
+
+Example (Conceptual React Component Snippet):
+
+TypeScript
+
+
+// Before (conceptual - e.g., in a user dropdown or sidebar)
+<nav>
+  <ul>
+    <li><a href="/profile">My Profile</a></li>
+    <li><a href="/settings">Settings</a></li>
+    {user.isAdmin && <li><a href="/admin">Admin Portal</a></li>} {/* This line to be removed */}
+  </ul>
+</nav>
+
+// After (conceptual)
+<nav>
+  <ul>
+    <li><a href="/profile">My Profile</a></li>
+    <li><a href="/settings">Settings</a></li>
+  </ul>
+</nav>
+
+
+This change simplifies the user interface for non-admin users and enforces a direct access method for administrators.
+
+4. Intercessor Prayer Scheduling and Tracking
+
+Requirement: A new feature needs to be added under the user Profile panel for intercessors. This feature will allow intercessors to select specific days of the week when their prayer slot will be active. The system will then use these selected days to calculate the current prayer streak, attendance rate, and other relevant metrics. There should also be check buttons for all weeks, allowing the user to confirm if they prayed in their selected slots on those specific days. This feature should be effective and, if necessary, new tables should be added to Supabase, or appropriate SQL code should be provided for manual addition.
+
+Considerations and Implementation Guidance:
+
+This is a significant new feature that impacts both the frontend and backend, and requires database schema modifications. The goal is to provide flexibility for intercessors who do not pray every day but maintain a consistent schedule on specific days.
+
+Frontend Implementation (User Profile Panel)
+
+•
+Day Selection UI: Under the user profile, a new section should be introduced, allowing intercessors to select their active prayer days. This could be a series of checkboxes (e.g., Monday, Tuesday, Wednesday, etc.) or a more visually appealing calendar-like interface for weekly selection.
+
+•
+Component: A new React component, e.g., IntercessorScheduleSettings.tsx, should be created within the user profile section.
+
+•
+State Management: Use React useState and TanStack Query to manage the selected days and persist them to the backend.
+
+•
+Design: Utilize shadcn/ui components for checkboxes, buttons, and layout to maintain consistency with the existing UI. The design should be intuitive and clearly communicate the purpose of selecting specific days.
+
+
+
+•
+Prayer Confirmation/Attendance UI: For each week, there should be a mechanism for the intercessor to confirm their prayer attendance on their selected active days. This could be:
+
+•
+A weekly view with checkboxes for each active day, allowing the user to mark attendance.
+
+•
+A summary view that highlights missed days and allows for retrospective marking.
+
+•
+Component: A new React component, e.g., WeeklyPrayerAttendance.tsx, to display and manage weekly attendance.
+
+•
+Logic: The frontend will need to fetch the user's selected active days and their historical attendance data to render the correct checkboxes and calculate streaks/attendance rates.
+
+
+
+•
+Display of Metrics: The current streak and attendance rate should be prominently displayed within this new section.
+
+•
+Components: Dedicated display components for PrayerStreakDisplay.tsx and AttendanceRateDisplay.tsx.
+
+•
+Real-time Updates: Consider using TanStack Query's caching and invalidation mechanisms to ensure these metrics update efficiently after attendance is marked.
+
+
+
+Backend Implementation (Node.js/Express.js)
+
+•
+API Endpoints: New API endpoints will be required to:
+
+•
+Save and retrieve an intercessor's selected active prayer days.
+
+•
+Record and retrieve daily prayer attendance for intercessors.
+
+•
+Calculate and expose prayer streak and attendance rate metrics.
+
+•
+Routes: Define new routes in Express.js, e.g., /api/intercessor/schedule (for active days) and /api/intercessor/attendance (for daily attendance).
+
+•
+Controllers/Services: Implement logic to interact with the database using Drizzle ORM.
+
+
+
+•
+Business Logic:
+
+•
+Streak Calculation: The streak should be calculated based only on the selected active prayer days. If an intercessor selects Monday, Wednesday, and Friday, missing a Tuesday should not break their streak. A streak is broken only if an active prayer day is missed.
+
+•
+Attendance Rate: Calculate the attendance rate as (number of attended active prayer days / total number of active prayer days in a period).
+
+•
+Scheduled Tasks: Consider if any backend scheduled tasks are needed to pre-calculate or aggregate data for performance, though initial implementation can be on-demand.
+
+
+
+Database Design (Supabase/PostgreSQL with Drizzle ORM)
+
+New tables will be required to store the intercessor's selected prayer days and their attendance records. Given the existing Supabase/PostgreSQL setup with Drizzle ORM, the following schema additions are recommended:
+
+1.
+intercessor_schedules Table:
+
+•
+Purpose: Stores the active prayer days selected by each intercessor.
+
+•
+Columns:
+
+•
+id: UUID (Primary Key, auto-generated)
+
+•
+user_id: UUID (Foreign Key to auth.users or public.user_profiles table, depending on where the main user ID is stored)
+
+•
+active_days: JSONB (Array of integers representing days of the week, e.g., [0, 2, 5] for Sunday, Tuesday, Friday. Or an array of strings like ['monday', 'wednesday', 'friday'])
+
+•
+created_at: TIMESTAMP WITH TIME ZONE (Defaults to now(), for record creation timestamp)
+
+•
+updated_at: TIMESTAMP WITH TIME ZONE (Defaults to now(), updates on row modification)
+
+
+
+•
+Constraints: user_id should be unique to ensure one schedule per user.
+
+
+
+2.
+prayer_attendance Table:
+
+•
+Purpose: Records the daily attendance of intercessors on their active prayer days.
+
+•
+Columns:
+
+•
+id: UUID (Primary Key, auto-generated)
+
+•
+user_id: UUID (Foreign Key to auth.users or public.user_profiles)
+
+•
+prayer_date: DATE (The specific date the prayer was scheduled for)
+
+•
+is_attended: BOOLEAN (True if attended, False if missed)
+
+•
+scheduled_day_of_week: INTEGER (Day of the week for which this attendance was recorded, 0=Sunday, 6=Saturday. Useful for cross-referencing with intercessor_schedules.active_days)
+
+•
+created_at: TIMESTAMP WITH TIME ZONE (Defaults to now())
+
+•
+updated_at: TIMESTAMP WITH TIME ZONE (Defaults to now())
+
+
+
+•
+Constraints: A unique constraint on (user_id, prayer_date) to prevent duplicate entries for the same user on the same day.
+
+
+
+SQL Code for Supabase (Manual Addition if Drizzle Migration Fails):
+
+SQL
+
+
+-- Table: intercessor_schedules
+CREATE TABLE public.intercessor_schedules (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE, -- Adjust REFERENCES if user_profiles is used
+    active_days JSONB NOT NULL DEFAULT '[]'::jsonb, -- Example: [0, 1, 2] for Sun, Mon, Tue
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Add unique constraint to ensure one schedule per user
+CREATE UNIQUE INDEX ON public.intercessor_schedules (user_id);
+
+-- Enable Row Level Security (RLS) for intercessor_schedules
+ALTER TABLE public.intercessor_schedules ENABLE ROW LEVEL SECURITY;
+
+-- Policy for users to view and update their own schedule
+CREATE POLICY "Users can view and update their own intercessor schedules." ON public.intercessor_schedules
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Table: prayer_attendance
+CREATE TABLE public.prayer_attendance (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE, -- Adjust REFERENCES if user_profiles is used
+    prayer_date DATE NOT NULL,
+    is_attended BOOLEAN NOT NULL,
+    scheduled_day_of_week INTEGER NOT NULL, -- 0 for Sunday, 6 for Saturday
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Add unique constraint to prevent duplicate attendance records for the same user on the same date
+CREATE UNIQUE INDEX ON public.prayer_attendance (user_id, prayer_date);
+
+-- Enable Row Level Security (RLS) for prayer_attendance
+ALTER TABLE public.prayer_attendance ENABLE ROW LEVEL SECURITY;
+
+-- Policy for users to view and insert their own attendance records
+CREATE POLICY "Users can view and insert their own prayer attendance." ON public.prayer_attendance
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Optional: Function to update updated_at column automatically
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Trigger for intercessor_schedules
+CREATE TRIGGER update_intercessor_schedules_updated_at
+BEFORE UPDATE ON public.intercessor_schedules
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger for prayer_attendance
+CREATE TRIGGER update_prayer_attendance_updated_at
+BEFORE UPDATE ON public.prayer_attendance
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+
+Drizzle ORM Integration:
+
+After creating the SQL tables, ensure that Drizzle ORM schema definitions are updated to reflect these new tables. Run Drizzle migrations to apply these changes to your Supabase database. If Drizzle migrations encounter issues, the provided SQL can be run directly in the Supabase SQL editor.
+
+This feature will significantly enhance the flexibility and personalization for intercessors, allowing them to tailor the application to their specific prayer
+
