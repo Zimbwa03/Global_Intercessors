@@ -1,0 +1,45 @@
+-- First, check if constraints exist before adding them
+DO $$
+BEGIN
+    -- Check if prayer_slots constraint exists
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'prayer_slots_user_id_key'
+    ) THEN
+        ALTER TABLE prayer_slots ADD CONSTRAINT prayer_slots_user_id_key UNIQUE (user_id);
+    END IF;
+    
+    -- Check if whatsapp_bot_users constraint exists
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'whatsapp_bot_users_whatsapp_number_key'
+    ) THEN
+        ALTER TABLE whatsapp_bot_users ADD CONSTRAINT whatsapp_bot_users_whatsapp_number_key UNIQUE (whatsapp_number);
+    END IF;
+END $$;
+
+-- Now the data insertion should work:
+-- Insert 6 active prayer slots using authentication IDs
+INSERT INTO prayer_slots (user_id, user_email, slot_time, status) VALUES
+('auth_user_00001', 'sarah.johnson@globalintercessors.org', '00:00', 'active'),
+('auth_user_00002', 'david.chen@globalintercessors.org', '04:00', 'active'),
+('auth_user_00003', 'maria.santos@globalintercessors.org', '08:00', 'active'),
+('auth_user_00004', 'emmanuel.okafor@globalintercessors.org', '12:00', 'active'),
+('auth_user_00005', 'anna.kowalski@globalintercessors.org', '16:00', 'active'),
+('auth_user_00006', 'john.smith@globalintercessors.org', '20:00', 'active')
+ON CONFLICT (user_id) DO UPDATE SET
+  slot_time = EXCLUDED.slot_time,
+  status = EXCLUDED.status,
+  user_email = EXCLUDED.user_email,
+  updated_at = NOW();
+
+-- Insert corresponding WhatsApp bot users
+INSERT INTO whatsapp_bot_users (user_id, whatsapp_number, is_active, reminder_preferences) VALUES
+('auth_user_00001', '263785494594', true, '{"reminderTiming": "30min", "enabled": true}')
+ON CONFLICT (whatsapp_number) DO UPDATE SET
+  user_id = EXCLUDED.user_id,
+  is_active = EXCLUDED.is_active;
+
+-- Verify data was inserted
+SELECT COUNT(*) as prayer_slots_count FROM prayer_slots WHERE status = 'active';
+SELECT user_id, slot_time, status FROM prayer_slots ORDER BY slot_time;

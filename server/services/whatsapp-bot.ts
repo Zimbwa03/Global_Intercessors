@@ -339,12 +339,12 @@ May God bless your day and strengthen your prayers! 🙏`;
       
       // Now query the prayer_slots table directly 
       console.log('🔍 Querying prayer_slots table directly...');
-      const { data: allPrayerSlots, error: allSlotsError } = await supabase
+      const { data: allPrayerSlots, error: allSlotsError, count } = await supabase
         .from('prayer_slots')
-        .select('*');
+        .select('*', { count: 'exact' });
         
       console.log('📊 ALL prayer_slots query result:', { 
-        count: allPrayerSlots?.length || 0, 
+        count: count || allPrayerSlots?.length || 0, 
         error: allSlotsError?.message,
         sample: allPrayerSlots?.[0] 
       });
@@ -358,18 +358,23 @@ May God bless your day and strengthen your prayers! 🙏`;
         return;
       }
 
-      if (!allPrayerSlots?.length) {
+      if (!allPrayerSlots?.length && count === 0) {
         console.log('⚠️ prayer_slots table is empty - no prayer slots available for reminders');
         console.log('💡 Add sample prayer slots using create-whatsapp-bot-tables.sql');
         return;
       }
+      
+      if (count && count > 0) {
+        console.log(`✅ BREAKTHROUGH! Found ${count} total prayer slots in database!`);
+      }
 
       // Filter for active status
-      const prayerSlots = allPrayerSlots.filter(slot => slot.status === 'active');
-      console.log(`✅ Found ${prayerSlots.length} active prayer slots out of ${allPrayerSlots.length} total slots`);
+      const prayerSlots = allPrayerSlots?.filter(slot => slot.status === 'active') || [];
+      console.log(`✅ Found ${prayerSlots.length} active prayer slots out of ${allPrayerSlots?.length || count || 0} total slots`);
       
       if (!prayerSlots.length) {
-        console.log('📋 Available statuses:', [...new Set(allPrayerSlots.map(slot => slot.status))]);
+        const statuses = allPrayerSlots?.map(slot => slot.status) || [];
+        console.log('📋 Available statuses:', Array.from(new Set(statuses)));
         console.log('⚠️ No slots with "active" status found');
         return;
       }
