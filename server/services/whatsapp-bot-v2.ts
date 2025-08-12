@@ -1738,38 +1738,57 @@ ${truncatedContent}
   // AI content generation helper
   private async generateAIContent(prompt: string): Promise<string> {
     try {
+      console.log('🤖 Attempting AI content generation...');
+      
+      // Check if API key is available
+      const apiKey = process.env.DEEPSEEK_API_KEY || process.env.AI_API_KEY;
+      if (!apiKey) {
+        console.error('❌ No AI API key configured');
+        throw new Error('AI service unavailable - no API key');
+      }
+
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY || process.env.AI_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           model: 'deepseek-chat',
           messages: [
             {
               role: 'system',
-              content: 'You are a Christian devotional writer specializing in powerful, biblically-grounded content for intercessors and prayer warriors. Your writing is inspiring, scripturally sound, and spiritually empowering.'
+              content: 'You are a Christian devotional writer specializing in powerful, biblically-grounded content for intercessors and prayer warriors. Your writing is inspiring, scripturally sound, and spiritually empowering. Keep responses concise and formatted for WhatsApp messaging.'
             },
             {
               role: 'user',
               content: prompt
             }
           ],
-          max_tokens: 1200,
-          temperature: 0.9
+          max_tokens: 800,
+          temperature: 0.8
         }),
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ DeepSeek API error: ${response.status} - ${errorText}`);
         throw new Error(`DeepSeek API error: ${response.status}`);
       }
 
       const data = await response.json();
-      return data.choices[0]?.message?.content || '';
+      const content = data.choices[0]?.message?.content;
+      
+      if (!content) {
+        console.error('❌ No content returned from AI');
+        throw new Error('No content returned from AI service');
+      }
+
+      console.log('✅ AI content generated successfully');
+      return content;
 
     } catch (error) {
-      console.error('DeepSeek AI generation failed:', error);
+      console.error('❌ AI content generation failed:', error);
       throw error;
     }
   }
@@ -2439,8 +2458,21 @@ Remember, the journey of faith is continuous. Feel free to start another study s
         .eq('user_id', userId)
         .single();
 
-      if (error) {
-        console.log(`ℹ️ No existing quiz progress found, creating new record:`, error.message);
+      if (error && error.code !== 'PGRST116') {
+        console.error('❌ Database error fetching quiz progress:', error);
+        // Return default progress if database error
+        return {
+          current_level: 1,
+          total_xp: 0,
+          current_streak: 0,
+          total_score: 0,
+          total_questions_answered: 0,
+          total_correct_answers: 0
+        };
+      }
+
+      if (!progress || error?.code === 'PGRST116') {
+        console.log(`ℹ️ No existing quiz progress found, creating new record for user: ${userId}`);
         
         // Create new progress record
         const newProgress = {
@@ -2454,26 +2486,24 @@ Remember, the journey of faith is continuous. Feel free to start another study s
           last_played: new Date().toISOString()
         };
 
-        const { data: created, error: createError } = await supabase
-          .from('bible_quiz_progress')
-          .insert(newProgress)
-          .select()
-          .single();
+        try {
+          const { data: created, error: createError } = await supabase
+            .from('bible_quiz_progress')
+            .insert(newProgress)
+            .select()
+            .single();
 
-        if (createError) {
-          console.error('❌ Error creating quiz progress:', createError);
-          return {
-            current_level: 1,
-            total_xp: 0,
-            current_streak: 0,
-            total_score: 0,
-            total_questions_answered: 0,
-            total_correct_answers: 0
-          };
+          if (createError) {
+            console.error('❌ Error creating quiz progress:', createError);
+            return newProgress; // Return default even if insert fails
+          }
+
+          console.log(`✅ Created new quiz progress for user: ${userId}`);
+          return created || newProgress;
+        } catch (insertError) {
+          console.error('❌ Insert error:', insertError);
+          return newProgress;
         }
-
-        console.log(`✅ Created new quiz progress for user: ${userId}`);
-        return created || newProgress;
       }
 
       console.log(`✅ Found existing quiz progress for user: ${userId}`);
@@ -2616,36 +2646,46 @@ Ready to dive deep into Scripture? Let's begin! 🚀`;
 
   private async startQuizSession(phoneNumber: string, userName: string, userId: string, difficulty: string, sessionType: string): Promise<void> {
     try {
-      // Create new quiz session
-      const sessionData = {
-        user_id: userId,
-        session_type: sessionType,
-        difficulty_level: difficulty,
-        current_question_number: 1,
-        score: 0,
-        correct_answers: 0,
-        questions_answered: 0,
-        streak_count: 0,
-        is_active: true,
-        is_completed: false,
-        created_at: new Date().toISOString()
-      };
+      console.log(`🎮 Starting quiz session for ${userName} - ${difficulty} ${sessionType}`);
 
-      const { data: session, error } = await supabase
-        .from('bible_quiz_sessions')
-        .insert(sessionData)
-        .select()
-        .single();
+      // Try to create database session first
+      let sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      try {
+        // Create new quiz session in database
+        const sessionData = {
+          user_id: userId,
+          session_type: sessionType,
+          difficulty_level: difficulty,
+          current_question_number: 1,
+          score: 0,
+          correct_answers: 0,
+          questions_answered: 0,
+          streak_count: 0,
+          is_active: true,
+          is_completed: false,
+          created_at: new Date().toISOString()
+        };
 
-      if (error) {
-        console.error('Error creating quiz session:', error);
-        await this.sendWhatsAppMessage(phoneNumber, 'Sorry, there was an error starting your quiz. Please try again.');
-        return;
+        const { data: session, error } = await supabase
+          .from('bible_quiz_sessions')
+          .insert(sessionData)
+          .select()
+          .single();
+
+        if (!error && session) {
+          sessionId = session.id;
+          console.log(`✅ Database quiz session created: ${sessionId}`);
+        } else {
+          console.error('⚠️ Database session creation failed, continuing with memory session:', error);
+        }
+      } catch (dbError) {
+        console.error('⚠️ Database session creation error, continuing with memory session:', dbError);
       }
 
-      // Store session in memory
+      // Always store session in memory for operation
       this.bibleQuizSessions.set(phoneNumber, {
-        sessionId: session.id,
+        sessionId: sessionId,
         currentQuestion: null,
         questionStartTime: Date.now(),
         score: 0,
@@ -2657,12 +2697,68 @@ Ready to dive deep into Scripture? Let's begin! 🚀`;
         isActive: true
       });
 
+      console.log(`📝 Memory session stored for ${phoneNumber}`);
+
+      // Send welcome message with first question
+      const welcomeMessage = `🎯 *${sessionType.replace('_', ' ').toUpperCase()}* 🎯
+
+Welcome ${userName}! Ready for your Bible quiz challenge?
+
+📊 **Session Details:**
+🎚️ Difficulty: ${difficulty.toUpperCase()}
+❓ Questions: Up to 10
+⏱️ No time limit - take your time to think!
+
+Let's begin! 🚀`;
+
+      await this.sendWhatsAppMessage(phoneNumber, welcomeMessage);
+
       // Generate and send first question
-      await this.sendNextQuestion(phoneNumber, userName, session.id);
+      await this.sendNextQuestion(phoneNumber, userName, sessionId);
 
     } catch (error) {
-      console.error('Error starting quiz session:', error);
-      await this.sendWhatsAppMessage(phoneNumber, 'Sorry, there was an error starting your quiz. Please try again.');
+      console.error('❌ Critical error starting quiz session:', error);
+      
+      // Clean up if needed
+      this.bibleQuizSessions.delete(phoneNumber);
+      
+      await this.sendWhatsAppMessage(phoneNumber, `🎯 *Bible Quiz* 🎯
+
+Sorry ${userName}, there was a technical issue starting your quiz. 
+
+Let's try a simple approach - I'll send you Bible questions one by one!
+
+🎯 **Ready for your first question?**`);
+
+      // Try to send at least one fallback question
+      setTimeout(async () => {
+        try {
+          const fallbackQuestion = {
+            question: "Who was the first man God created?",
+            options: ["Adam", "Abel", "Cain", "Seth"],
+            correctAnswer: "Adam",
+            scripture: "Genesis 2:7",
+            explanation: "God formed Adam from the dust of the ground and breathed into his nostrils the breath of life."
+          };
+
+          const questionText = `❓ **Bible Question:**
+
+${fallbackQuestion.question}
+
+📖 *Reference: ${fallbackQuestion.scripture}*
+
+Choose your answer:`;
+
+          const buttons = fallbackQuestion.options.map((option: string, index: number) => ({
+            id: `answer_${String.fromCharCode(97 + index)}`,
+            title: `${String.fromCharCode(65 + index)}) ${option}`
+          }));
+
+          await this.sendInteractiveMessage(phoneNumber, questionText, buttons);
+        } catch (fallbackError) {
+          console.error('❌ Even fallback question failed:', fallbackError);
+        }
+      }, 2000);
     }
   }
 
@@ -2801,65 +2897,131 @@ Choose your answer:`;
   }
 
   private async generateQuizQuestion(difficulty: string, sessionType: string, questionNumber: number) {
-    try {
-      const prompt = `Generate a ${difficulty} level Bible quiz question for question ${questionNumber}.
-
-Requirements:
-- Multiple choice with 4 options (A, B, C, D)
-- One correct answer
-- Include Bible verse reference when relevant
-- Provide brief explanation of correct answer
-- Format as JSON: {"question": "...", "options": ["...", "...", "...", "..."], "correctAnswer": "...", "scripture": "...", "explanation": "..."}
-
-Difficulty guidelines:
-- Easy: Basic Bible stories, well-known characters, simple facts
-- Medium: Biblical themes, geography, cultural context, chronology  
-- Hard: Hebrew/Greek meanings, theological concepts, detailed historical context
-
-Keep questions appropriate for Christian intercessors and prayer warriors.`;
-
-      const content = await this.generateAIContent(prompt);
-
-      // Clean and parse JSON response
-      const cleanedContent = content.replace(/```json\s*|\s*```/g, '').trim();
-      const question = JSON.parse(cleanedContent);
-
-      // Validate question structure
-      if (!question.question || !Array.isArray(question.options) || question.options.length !== 4 || !question.correctAnswer) {
-        throw new Error('Invalid question format');
-      }
-
-      return question;
-
-    } catch (error) {
-      console.error('Error generating AI quiz question:', error);
-
-      // Return fallback question based on difficulty
-      const fallbackQuestions = {
-        easy: {
+    console.log(`🎯 Generating ${difficulty} quiz question #${questionNumber} for ${sessionType}`);
+    
+    // Expanded fallback question pools
+    const fallbackQuestions = {
+      easy: [
+        {
           question: "Who built the ark that saved his family from the flood?",
           options: ["Noah", "Moses", "Abraham", "David"],
           correctAnswer: "Noah",
           scripture: "Genesis 6-9",
           explanation: "Noah built the ark according to God's instructions to save his family and the animals from the worldwide flood."
         },
-        medium: {
+        {
+          question: "Who was the first man God created?",
+          options: ["Adam", "Abel", "Cain", "Seth"],
+          correctAnswer: "Adam",
+          scripture: "Genesis 2:7",
+          explanation: "God formed Adam from the dust of the ground and breathed into his nostrils the breath of life."
+        },
+        {
+          question: "What did Jesus turn water into at the wedding?",
+          options: ["Wine", "Bread", "Oil", "Honey"],
+          correctAnswer: "Wine",
+          scripture: "John 2:1-11",
+          explanation: "Jesus performed His first miracle by turning water into wine at the wedding in Cana."
+        }
+      ],
+      medium: [
+        {
           question: "In which city was Jesus born?",
           options: ["Bethlehem", "Nazareth", "Jerusalem", "Capernaum"],
           correctAnswer: "Bethlehem",
           scripture: "Matthew 2:1",
           explanation: "Jesus was born in Bethlehem of Judea, fulfilling the prophecy in Micah 5:2."
         },
-        hard: {
+        {
+          question: "How many disciples did Jesus choose?",
+          options: ["10", "12", "14", "16"],
+          correctAnswer: "12",
+          scripture: "Matthew 10:1-4",
+          explanation: "Jesus chose twelve apostles to be with Him and to preach the gospel."
+        },
+        {
+          question: "What happened on the third day after Jesus' crucifixion?",
+          options: ["He rose from the dead", "He was buried", "He appeared to Pilate", "The temple was rebuilt"],
+          correctAnswer: "He rose from the dead",
+          scripture: "Matthew 28:1-6",
+          explanation: "Jesus rose from the dead on the third day, fulfilling His promise and proving His divinity."
+        }
+      ],
+      hard: [
+        {
           question: "What does the Hebrew word 'Selah' likely mean in the Psalms?",
           options: ["Pause and reflect", "Sing louder", "Repeat the verse", "End of prayer"],
           correctAnswer: "Pause and reflect",
           scripture: "Found throughout Psalms",
           explanation: "Selah is thought to be a musical or liturgical instruction meaning to pause and reflect on what was just sung or said."
+        },
+        {
+          question: "What does 'Emmanuel' mean in Hebrew?",
+          options: ["God with us", "Prince of Peace", "Mighty God", "Wonderful Counselor"],
+          correctAnswer: "God with us",
+          scripture: "Matthew 1:23",
+          explanation: "Emmanuel means 'God with us' and refers to Jesus Christ, God incarnate among humanity."
+        },
+        {
+          question: "In which book do we find the phrase 'Faith is the substance of things hoped for'?",
+          options: ["Romans", "Hebrews", "James", "1 Peter"],
+          correctAnswer: "Hebrews",
+          scripture: "Hebrews 11:1",
+          explanation: "Hebrews 11:1 defines faith as the substance of things hoped for and the evidence of things not seen."
         }
-      };
+      ]
+    };
 
-      return fallbackQuestions[difficulty as keyof typeof fallbackQuestions] || fallbackQuestions.easy;
+    try {
+      const prompt = `Generate a ${difficulty} level Bible quiz question for Christian intercessors (Question ${questionNumber}).
+
+Requirements:
+- Multiple choice with exactly 4 options
+- Include Bible verse reference
+- Brief explanation for correct answer
+- JSON format: {"question": "...", "options": ["A", "B", "C", "D"], "correctAnswer": "...", "scripture": "...", "explanation": "..."}
+
+${difficulty} guidelines:
+- Easy: Basic Bible stories, well-known characters
+- Medium: Biblical themes, geography, disciples, parables  
+- Hard: Original languages, theological concepts, lesser-known details
+
+Example format:
+{"question": "Who was the first king of Israel?", "options": ["Saul", "David", "Solomon", "Samuel"], "correctAnswer": "Saul", "scripture": "1 Samuel 10:1", "explanation": "Saul was anointed by Samuel as the first king of Israel."}`;
+
+      const content = await this.generateAIContent(prompt);
+      console.log('🤖 AI returned content for quiz question');
+
+      // Clean and parse JSON response
+      let cleanedContent = content.replace(/```json\s*|\s*```/g, '').trim();
+      
+      // Handle cases where the AI returns the JSON wrapped in markdown
+      if (cleanedContent.includes('```')) {
+        const jsonMatch = cleanedContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          cleanedContent = jsonMatch[1].trim();
+        }
+      }
+
+      const question = JSON.parse(cleanedContent);
+
+      // Validate question structure
+      if (!question.question || !Array.isArray(question.options) || question.options.length !== 4 || !question.correctAnswer) {
+        throw new Error('Invalid question format from AI');
+      }
+
+      console.log('✅ Successfully generated and validated AI quiz question');
+      return question;
+
+    } catch (error) {
+      console.error('❌ Error generating AI quiz question:', error);
+      console.log('🔄 Using fallback question instead');
+
+      // Use fallback questions with rotation
+      const questionPool = fallbackQuestions[difficulty as keyof typeof fallbackQuestions] || fallbackQuestions.easy;
+      const questionIndex = (questionNumber - 1) % questionPool.length;
+      
+      return questionPool[questionIndex];
     }
   }
 
