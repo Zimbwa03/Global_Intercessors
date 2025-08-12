@@ -1451,9 +1451,14 @@ Choose your spiritual nourishment for today:`;
   // Generate Today's Word using DeepSeek AI
   private async generateTodaysWord(phoneNumber: string, userName: string): Promise<void> {
     try {
-      const prompt = `Generate a detailed "Today's Word" devotional for WhatsApp. Structure exactly as follows:
+      // Add timestamp for truly unique content generation
+      const timestamp = Date.now();
+      const randomTopics = ['Divine Authority', 'Breakthrough Power', 'Spiritual Warfare', 'Intercession Fire', 'Kingdom Victory', 'Prophetic Prayer', 'Heavenly Strategy', 'Miraculous Faith', 'Prayer Shield', 'Revival Fire'];
+      const randomTopic = randomTopics[Math.floor(Math.random() * randomTopics.length)];
+      
+      const prompt = `Generate a unique "Today's Word" devotional (ID: ${timestamp}) with focus on "${randomTopic}" for WhatsApp. Structure exactly as follows:
 
-**Topic:** [Compelling spiritual theme - 3-4 words]
+**Topic:** [Compelling spiritual theme - 3-4 words, different from "${randomTopic}"]
 
 **Scripture:** [Book Chapter:Verse]
 "[Write the COMPLETE Bible verse text - not just reference]"
@@ -1464,7 +1469,7 @@ Choose your spiritual nourishment for today:`;
 **Prayer Declaration:**
 "Father, [specific prayer based on the verse - 2 sentences]. In Jesus' name, Amen."
 
-Make it spiritually rich, encouraging, and practical for prayer warriors.`;
+Make it spiritually rich, encouraging, and practical for prayer warriors. Generate fresh, unique content every time.`;
 
       const content = await this.generateAIContent(prompt);
       
@@ -1519,29 +1524,43 @@ God's kingdom stands firm when everything else crumbles. As intercessors, we pra
     }
   }
 
-  // Generate Daily Declarations using DeepSeek AI - 5 concise declarations
+  // Generate Daily Declarations using DeepSeek AI - Enhanced with more content
   private async generateDailyDeclarations(phoneNumber: string, userName: string): Promise<void> {
     try {
-      const prompt = `Generate 5 concise daily declarations for Christian intercessors. Keep VERY SHORT for WhatsApp (max 800 characters total). Structure:
+      // Add timestamp and variety for unique content
+      const timestamp = Date.now();
+      const focusThemes = ['Kingdom Authority', 'Spiritual Breakthrough', 'Divine Favor', 'Prayer Power', 'Victorious Living', 'Supernatural Strength', 'Heavenly Wisdom', 'Revival Fire', 'Prophetic Authority', 'Divine Protection'];
+      const randomFocus = focusThemes[Math.floor(Math.random() * focusThemes.length)];
+      
+      const prompt = `Generate 8 powerful daily declarations for Christian intercessors (ID: ${timestamp}) with focus on "${randomFocus}". Structure for WhatsApp:
 
-**Focus:** [Short theme]
+**Focus:** [Theme related to "${randomFocus}"]
 
-1️⃣ I DECLARE: [Short powerful statement]
-📖 [Book Ch:V]
+1️⃣ I DECLARE: [Powerful faith statement - be specific and bold]
+📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
 
-2️⃣ I DECLARE: [Short breakthrough statement] 
-📖 [Book Ch:V]
+2️⃣ I DECLARE: [Breakthrough statement - about obstacles breaking]
+📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
 
-3️⃣ I DECLARE: [Short favor statement]
-📖 [Book Ch:V]
+3️⃣ I DECLARE: [Authority statement - about spiritual power]
+📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
 
-4️⃣ I DECLARE: [Short authority statement]
-📖 [Book Ch:V]
+4️⃣ I DECLARE: [Victory statement - about overcoming]
+📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
 
-5️⃣ I DECLARE: [Short purpose statement]
-📖 [Book Ch:V]
+5️⃣ I DECLARE: [Favor statement - about God's blessing]
+📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
 
-Keep each declaration under 60 characters. Only reference, no full verse text.`;
+6️⃣ I DECLARE: [Protection statement - about divine covering]
+📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
+
+7️⃣ I DECLARE: [Purpose statement - about calling and destiny]
+📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
+
+8️⃣ I DECLARE: [Healing statement - about restoration and wholeness]
+📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
+
+Make each declaration powerful, unique, and include the complete short Bible verse text. Focus on empowering intercessors with spiritual authority.`;
 
       const content = await this.generateAIContent(prompt);
       
@@ -1556,10 +1575,33 @@ ${content}
 
 *"Let the redeemed SAY SO!" - Psalm 107:2*`;
 
-      // Check message length and truncate if needed
-      if (declarationsMessage.length > 1000) {
-        console.log(`⚠️ Message too long (${declarationsMessage.length} chars), using fallback`);
-        throw new Error('Message too long, using fallback');
+      // Check message length and truncate if needed - increased limit for enhanced content
+      if (declarationsMessage.length > 1600) {
+        console.log(`⚠️ Message too long (${declarationsMessage.length} chars), truncating content`);
+        // Truncate content but keep structure
+        const lines = content.split('\n');
+        const truncatedLines = lines.slice(0, 25); // Keep first 25 lines to maintain structure
+        const truncatedContent = truncatedLines.join('\n') + '\n\n*[Content truncated - more declarations available]*';
+        const truncatedMessage = `🔥 *Daily Declarations* 🔥
+
+*${firstName}, speak these over your life:*
+
+${truncatedContent}
+
+💪 *Declare with bold faith!*
+
+*"Let the redeemed SAY SO!" - Psalm 107:2*`;
+        
+        if (truncatedMessage.length > 1600) {
+          throw new Error('Message still too long, using fallback');
+        }
+        
+        await this.sendInteractiveMessage(phoneNumber, truncatedMessage, [
+          { id: 'generate_another', title: '🔄 Fresh Declarations' },
+          { id: 'todays_word', title: '📖 Today\'s Word' },
+          { id: 'back', title: '⬅️ Back' }
+        ]);
+        return;
       }
 
       const buttons = [
@@ -1635,7 +1677,7 @@ ${content}
   // AI content generation helper
   private async generateAIContent(prompt: string): Promise<string> {
     try {
-      const response = await fetch('https://api.deepseek.com/chat/completions', {
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1653,8 +1695,8 @@ ${content}
               content: prompt
             }
           ],
-          max_tokens: 800,
-          temperature: 0.8
+          max_tokens: 1200,
+          temperature: 0.9
         }),
       });
 

@@ -4077,5 +4077,477 @@ Make it personal, biblical, and actionable for intercession.`;
     }
   });
 
+  // =============================================================================
+  // BIBLE QUIZ GAME API ENDPOINTS
+  // =============================================================================
+
+  // Get user's quiz progress
+  app.get("/api/quiz/progress/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      
+      const { data: progress, error } = await supabaseAdmin
+        .from('user_quiz_progress')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching quiz progress:', error);
+        return res.status(500).json({ error: 'Failed to fetch quiz progress' });
+      }
+
+      if (!progress) {
+        // Create new progress record
+        const newProgress = {
+          user_id: userId,
+          phone_number: '',
+          total_score: 0,
+          total_xp: 0,
+          current_level: 1,
+          current_streak: 0,
+          longest_streak: 0,
+          total_questions_answered: 0,
+          total_correct_answers: 0,
+          daily_questions_today: 0,
+          last_played_date: new Date().toISOString().split('T')[0],
+          achievements: [],
+          knowledge_gaps: [],
+          preferred_topics: [],
+          adaptive_difficulty: 'Medium'
+        };
+
+        const { data: created, error: createError } = await supabaseAdmin
+          .from('user_quiz_progress')
+          .insert(newProgress)
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating quiz progress:', createError);
+          return res.status(500).json({ error: 'Failed to create quiz progress' });
+        }
+
+        return res.json(created);
+      }
+
+      res.json(progress);
+    } catch (error) {
+      console.error('Quiz progress endpoint error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Generate a quiz question using DeepSeek AI
+  app.post("/api/quiz/generate-question", async (req: Request, res: Response) => {
+    try {
+      const { difficulty, topic, previousQuestions } = req.body;
+
+      if (!difficulty) {
+        return res.status(400).json({ error: 'Difficulty is required' });
+      }
+
+      const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
+      if (!deepSeekApiKey) {
+        // Return fallback question
+        const fallbackQuestions = {
+          easy: {
+            question: "Who built the ark that saved his family from the flood?",
+            options: ["Noah", "Moses", "Abraham", "David"],
+            correctAnswer: "Noah",
+            scripture: "Genesis 6-9",
+            explanation: "Noah built the ark according to God's instructions to save his family and the animals from the worldwide flood."
+          },
+          medium: {
+            question: "In which city was Jesus born?",
+            options: ["Bethlehem", "Nazareth", "Jerusalem", "Capernaum"],
+            correctAnswer: "Bethlehem",
+            scripture: "Matthew 2:1",
+            explanation: "Jesus was born in Bethlehem of Judea, fulfilling the prophecy in Micah 5:2."
+          },
+          hard: {
+            question: "What does the Hebrew word 'Selah' likely mean in the Psalms?",
+            options: ["Pause and reflect", "Sing louder", "Repeat the verse", "End of prayer"],
+            correctAnswer: "Pause and reflect",
+            scripture: "Found throughout Psalms",
+            explanation: "Selah is thought to be a musical or liturgical instruction meaning to pause and reflect on what was just sung or said."
+          }
+        };
+
+        return res.json(fallbackQuestions[difficulty as keyof typeof fallbackQuestions] || fallbackQuestions.easy);
+      }
+
+      // Generate AI question using DeepSeek
+      const topicPrompt = topic ? `focused on ${topic}` : 'from any area of the Bible';
+      const previousQuestionsPrompt = previousQuestions?.length > 0 
+        ? `Avoid these recently asked questions: ${previousQuestions.slice(-5).join(', ')}`
+        : '';
+
+      const prompt = `Generate a ${difficulty} level Bible quiz question ${topicPrompt}. ${previousQuestionsPrompt}
+
+      Respond in this exact format:
+      QUESTION: [Clear, specific Bible question]
+      OPTION_A: [First option]
+      OPTION_B: [Second option]
+      OPTION_C: [Third option]
+      OPTION_D: [Fourth option]
+      CORRECT: [Exactly match one of the options]
+      SCRIPTURE: [Bible reference]
+      EXPLANATION: [Detailed explanation of the answer with biblical context]`;
+
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${deepSeekApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a Biblical scholar creating quiz questions for Christian education. Provide accurate, biblically sound questions with clear correct answers.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 500,
+          temperature: 0.8
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`DeepSeek API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const aiResponse = data.choices?.[0]?.message?.content;
+
+      if (aiResponse) {
+        // Parse the AI response
+        const questionMatch = aiResponse.match(/QUESTION:\s*(.*?)(?=OPTION_A:|$)/s);
+        const optionAMatch = aiResponse.match(/OPTION_A:\s*(.*?)(?=OPTION_B:|$)/s);
+        const optionBMatch = aiResponse.match(/OPTION_B:\s*(.*?)(?=OPTION_C:|$)/s);
+        const optionCMatch = aiResponse.match(/OPTION_C:\s*(.*?)(?=OPTION_D:|$)/s);
+        const optionDMatch = aiResponse.match(/OPTION_D:\s*(.*?)(?=CORRECT:|$)/s);
+        const correctMatch = aiResponse.match(/CORRECT:\s*(.*?)(?=SCRIPTURE:|$)/s);
+        const scriptureMatch = aiResponse.match(/SCRIPTURE:\s*(.*?)(?=EXPLANATION:|$)/s);
+        const explanationMatch = aiResponse.match(/EXPLANATION:\s*(.*?)$/s);
+
+        const question = {
+          question: questionMatch?.[1]?.trim() || "Who was the first man created by God?",
+          options: [
+            optionAMatch?.[1]?.trim() || "Adam",
+            optionBMatch?.[1]?.trim() || "Noah", 
+            optionCMatch?.[1]?.trim() || "Abraham",
+            optionDMatch?.[1]?.trim() || "Moses"
+          ],
+          correctAnswer: correctMatch?.[1]?.trim() || "Adam",
+          scripture: scriptureMatch?.[1]?.trim() || "Genesis 2:7",
+          explanation: explanationMatch?.[1]?.trim() || "Adam was the first human being created by God from the dust of the earth."
+        };
+
+        res.json(question);
+      } else {
+        throw new Error('No AI response received');
+      }
+
+    } catch (error) {
+      console.error('Generate question error:', error);
+      
+      // Return fallback question on error
+      const fallbackQuestions = {
+        easy: {
+          question: "Who was the first man created by God?",
+          options: ["Adam", "Noah", "Abraham", "Moses"],
+          correctAnswer: "Adam",
+          scripture: "Genesis 2:7",
+          explanation: "Adam was the first human being created by God from the dust of the earth."
+        },
+        medium: {
+          question: "How many disciples did Jesus choose?",
+          options: ["10", "12", "14", "16"],
+          correctAnswer: "12",
+          scripture: "Matthew 10:1-4",
+          explanation: "Jesus chose twelve disciples to be His closest followers and apostles."
+        },
+        hard: {
+          question: "In which book of the Bible do we find the suffering servant prophecy?",
+          options: ["Jeremiah", "Ezekiel", "Isaiah", "Daniel"],
+          correctAnswer: "Isaiah",
+          scripture: "Isaiah 53",
+          explanation: "Isaiah 53 contains the famous suffering servant prophecy about the Messiah."
+        }
+      };
+
+      res.json(fallbackQuestions[req.body.difficulty as keyof typeof fallbackQuestions] || fallbackQuestions.easy);
+    }
+  });
+
+  // Start a new quiz session
+  app.post("/api/quiz/start-session", async (req: Request, res: Response) => {
+    try {
+      const { userId, sessionType, difficulty, topic } = req.body;
+
+      if (!userId || !sessionType || !difficulty) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      const sessionId = `quiz_${userId}_${Date.now()}`;
+      
+      const sessionData = {
+        user_id: userId,
+        session_id: sessionId,
+        session_type: sessionType,
+        difficulty,
+        topic: topic || null,
+        start_time: new Date().toISOString(),
+        status: 'active'
+      };
+
+      const { data: session, error } = await supabaseAdmin
+        .from('quiz_sessions')
+        .insert(sessionData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating quiz session:', error);
+        return res.status(500).json({ error: 'Failed to create quiz session' });
+      }
+
+      res.json(session);
+    } catch (error) {
+      console.error('Start quiz session error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Submit quiz answer
+  app.post("/api/quiz/submit-answer", async (req: Request, res: Response) => {
+    try {
+      const { userId, sessionId, questionId, userAnswer, isCorrect, responseTime, pointsEarned, xpEarned, difficulty } = req.body;
+
+      if (!userId || !sessionId || !questionId || userAnswer === undefined || isCorrect === undefined) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      // Record the answer
+      const answerData = {
+        user_id: userId,
+        question_id: questionId,
+        session_id: sessionId,
+        user_answer: userAnswer,
+        is_correct: isCorrect,
+        response_time: responseTime || 0,
+        points_earned: pointsEarned || 0,
+        xp_earned: xpEarned || 0,
+        difficulty_at_time: difficulty
+      };
+
+      const { error: answerError } = await supabaseAdmin
+        .from('user_question_history')
+        .insert(answerData);
+
+      if (answerError) {
+        console.error('Error recording answer:', answerError);
+        return res.status(500).json({ error: 'Failed to record answer' });
+      }
+
+      // Update session stats
+      const { data: currentSession, error: sessionError } = await supabaseAdmin
+        .from('quiz_sessions')
+        .select('*')
+        .eq('session_id', sessionId)
+        .single();
+
+      if (sessionError) {
+        console.error('Error fetching session:', sessionError);
+        return res.status(500).json({ error: 'Failed to fetch session' });
+      }
+
+      const updatedSession = {
+        questions_answered: currentSession.questions_answered + 1,
+        correct_answers: currentSession.correct_answers + (isCorrect ? 1 : 0),
+        total_score: currentSession.total_score + (pointsEarned || 0),
+        xp_earned: currentSession.xp_earned + (xpEarned || 0)
+      };
+
+      const { error: updateError } = await supabaseAdmin
+        .from('quiz_sessions')
+        .update(updatedSession)
+        .eq('session_id', sessionId);
+
+      if (updateError) {
+        console.error('Error updating session:', updateError);
+        return res.status(500).json({ error: 'Failed to update session' });
+      }
+
+      res.json({ success: true, sessionStats: updatedSession });
+    } catch (error) {
+      console.error('Submit answer error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // End quiz session and update user progress
+  app.post("/api/quiz/end-session", async (req: Request, res: Response) => {
+    try {
+      const { userId, sessionId } = req.body;
+
+      if (!userId || !sessionId) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      // Get session data
+      const { data: session, error: sessionError } = await supabaseAdmin
+        .from('quiz_sessions')
+        .select('*')
+        .eq('session_id', sessionId)
+        .single();
+
+      if (sessionError) {
+        console.error('Error fetching session:', sessionError);
+        return res.status(500).json({ error: 'Failed to fetch session' });
+      }
+
+      // Mark session as completed
+      const { error: completeError } = await supabaseAdmin
+        .from('quiz_sessions')
+        .update({
+          status: 'completed',
+          end_time: new Date().toISOString()
+        })
+        .eq('session_id', sessionId);
+
+      if (completeError) {
+        console.error('Error completing session:', completeError);
+        return res.status(500).json({ error: 'Failed to complete session' });
+      }
+
+      // Update user progress
+      const { data: currentProgress, error: progressError } = await supabaseAdmin
+        .from('user_quiz_progress')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (progressError) {
+        console.error('Error fetching user progress:', progressError);
+        return res.status(500).json({ error: 'Failed to fetch user progress' });
+      }
+
+      const newXP = currentProgress.total_xp + session.xp_earned;
+      const newLevel = Math.floor(newXP / 100) + 1;
+      const accuracy = session.questions_answered > 0 ? session.correct_answers / session.questions_answered : 0;
+      
+      const updatedProgress = {
+        total_score: currentProgress.total_score + session.total_score,
+        total_xp: newXP,
+        current_level: newLevel,
+        total_questions_answered: currentProgress.total_questions_answered + session.questions_answered,
+        total_correct_answers: currentProgress.total_correct_answers + session.correct_answers,
+        last_played_date: new Date().toISOString().split('T')[0],
+        updated_at: new Date().toISOString()
+      };
+
+      // Update streak logic
+      if (accuracy >= 0.8) {
+        updatedProgress.current_streak = currentProgress.current_streak + 1;
+        updatedProgress.longest_streak = Math.max(currentProgress.longest_streak, updatedProgress.current_streak);
+      } else if (accuracy < 0.5) {
+        updatedProgress.current_streak = 0;
+      }
+
+      const { error: updateError } = await supabaseAdmin
+        .from('user_quiz_progress')
+        .update(updatedProgress)
+        .eq('user_id', userId);
+
+      if (updateError) {
+        console.error('Error updating user progress:', updateError);
+        return res.status(500).json({ error: 'Failed to update user progress' });
+      }
+
+      // Calculate grade
+      const grade = accuracy >= 0.9 ? "A+ Excellent!" : 
+                   accuracy >= 0.8 ? "A Good Work!" :
+                   accuracy >= 0.7 ? "B Keep Going!" :
+                   accuracy >= 0.6 ? "C Study More!" : "Keep Learning!";
+
+      const summary = {
+        sessionId,
+        finalScore: session.total_score,
+        questionsAnswered: session.questions_answered,
+        correctAnswers: session.correct_answers,
+        accuracy: Math.round(accuracy * 100),
+        grade,
+        xpEarned: session.xp_earned,
+        newLevel,
+        newTotalXP: newXP,
+        currentStreak: updatedProgress.current_streak
+      };
+
+      res.json({ success: true, summary });
+    } catch (error) {
+      console.error('End session error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Get daily challenge
+  app.get("/api/quiz/daily-challenge", async (req: Request, res: Response) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { data: challenge, error } = await supabaseAdmin
+        .from('daily_challenges')
+        .select('*')
+        .eq('challenge_date', today)
+        .eq('is_active', true)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching daily challenge:', error);
+        return res.status(500).json({ error: 'Failed to fetch daily challenge' });
+      }
+
+      if (!challenge) {
+        // Create today's challenge
+        const newChallenge = {
+          challenge_date: today,
+          challenge_type: 'daily_quiz',
+          theme: 'Biblical Knowledge',
+          description: 'Test your knowledge of Bible stories and characters',
+          required_questions: 5,
+          difficulty: 'Mixed',
+          bonus_xp: 50,
+          bonus_points: 100,
+          is_active: true
+        };
+
+        const { data: created, error: createError } = await supabaseAdmin
+          .from('daily_challenges')
+          .insert(newChallenge)
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating daily challenge:', createError);
+          return res.status(500).json({ error: 'Failed to create daily challenge' });
+        }
+
+        return res.json(created);
+      }
+
+      res.json(challenge);
+    } catch (error) {
+      console.error('Daily challenge endpoint error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   return httpServer;
 }
