@@ -734,19 +734,45 @@ Reply *help* for more options.`;
         };
       }
 
-      // Create or update WhatsApp bot user record
-      const { error: upsertError } = await supabase
+      // Create or update WhatsApp bot user record - simplified approach
+      const { data: existingRecord, error: checkError } = await supabase
         .from('whatsapp_bot_users')
-        .upsert({
-          user_id: userId,
-          whatsapp_number: phoneNumber,
-          is_active: true,
-          timezone: userProfile.timezone || 'UTC',
-          updated_at: new Date().toISOString()
-        });
+        .select('*')
+        .eq('whatsapp_number', phoneNumber)
+        .single();
+
+      let upsertError = null;
+      
+      if (existingRecord) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('whatsapp_bot_users')
+          .update({
+            user_id: userId,
+            is_active: true,
+            timezone: userProfile.timezone || 'UTC',
+            updated_at: new Date().toISOString()
+          })
+          .eq('whatsapp_number', phoneNumber);
+        upsertError = updateError;
+      } else {
+        // Insert new record
+        const { error: insertError } = await supabase
+          .from('whatsapp_bot_users')
+          .insert({
+            user_id: userId,
+            whatsapp_number: phoneNumber,
+            is_active: true,
+            timezone: userProfile.timezone || 'UTC',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        upsertError = insertError;
+      }
 
       if (upsertError) {
         console.error('Error creating WhatsApp bot user record:', upsertError);
+        console.error('Error details:', JSON.stringify(upsertError, null, 2));
         return { 
           success: false, 
           message: "Authentication was successful, but we couldn't link your WhatsApp account. Please try again." 
@@ -786,7 +812,13 @@ Password: your_secure_password
 
 If you don't have an account yet, please sign up at the Global Intercessors web app first.`;
 
-    await this.sendWhatsAppMessage(phoneNumber, loginMessage);
+    const buttons = [
+      { id: 'help_login', title: '❓ Need Help?' },
+      { id: 'retry_login', title: '🔄 Try Again' },
+      { id: 'support', title: '💬 Get Support' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, loginMessage, buttons);
     await this.logInteraction(phoneNumber, 'authentication', 'login_prompt_sent');
   }
 
@@ -859,13 +891,21 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
           console.log(`🔐 Processing login attempt from ${phoneNumber} with email: ${credentials.email}`);
           const authResult = await this.authenticateUser(phoneNumber, credentials.email, credentials.password);
           
-          await this.sendWhatsAppMessage(phoneNumber, authResult.message);
-          
           if (authResult.success) {
-            // After successful login, show welcome message
-            setTimeout(async () => {
-              await this.handleStartCommand(phoneNumber, 'authenticated user');
-            }, 2000);
+            // Send success message with continue button
+            const successButtons = [
+              { id: 'continue', title: '✅ Continue' },
+              { id: 'help', title: '❓ Help' }
+            ];
+            await this.sendInteractiveMessage(phoneNumber, authResult.message, successButtons);
+          } else {
+            // Send error message with retry buttons
+            const retryButtons = [
+              { id: 'retry_login', title: '🔄 Try Again' },
+              { id: 'help_login', title: '❓ Need Help?' },
+              { id: 'support', title: '💬 Support' }
+            ];
+            await this.sendInteractiveMessage(phoneNumber, authResult.message, retryButtons);
           }
           return;
         }
@@ -891,8 +931,8 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
       
       const userName = userInfo.name;
 
-      // User is authenticated - handle normal commands
-      if (command === 'start' || command === '/start' || command === 'hi' || command === 'hello') {
+      // Handle button responses and commands
+      if (command === 'continue' || command === 'start' || command === '/start' || command === 'hi' || command === 'hello') {
         await this.handleStartCommand(phoneNumber, userName);
       } else if (command === 'devotionals' || command === '/devotionals') {
         await this.handleDevotionalsCommand(phoneNumber, userName);
@@ -910,6 +950,28 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
         await this.handleHelpCommand(phoneNumber, userName);
       } else if (command === 'stop' || command === '/stop') {
         await this.handleStopCommand(phoneNumber, userName);
+      } else if (command === 'retry_login') {
+        await this.sendLoginPrompt(phoneNumber);
+      } else if (command === 'help_login') {
+        await this.handleLoginHelpCommand(phoneNumber);
+      } else if (command === 'support') {
+        await this.handleSupportCommand(phoneNumber);
+      } else if (command === 'back' || command === 'menu') {
+        await this.handleStartCommand(phoneNumber, userName);
+      
+      // Handle specific button interactions
+      } else if (command === 'daily_devotional' || command === 'fresh_word' || command === 'scripture_insight') {
+        await this.handleSpecificDevotional(phoneNumber, userName, command);
+      } else if (command === 'easy_quiz' || command === 'medium_quiz' || command === 'hard_quiz') {
+        await this.handleSpecificQuiz(phoneNumber, userName, command);
+      } else if (command === 'reminder_30min' || command === 'reminder_15min' || command === 'reminder_custom') {
+        await this.handleReminderSettings(phoneNumber, userName, command);
+      } else if (command === 'global_updates' || command === 'prayer_requests') {
+        await this.handleSpecificUpdates(phoneNumber, userName, command);
+      } else if (command === 'warfare_declaration' || command === 'prophetic_word' || command === 'prayer_points') {
+        await this.handleSpecificMessages(phoneNumber, userName, command);
+      } else if (command === 'prayer_stats' || command === 'growth_report' || command === 'achievements') {
+        await this.handleSpecificDashboard(phoneNumber, userName, command);
       } else {
         await this.handleUnknownCommand(phoneNumber, userName, messageText);
       }
@@ -1079,9 +1141,9 @@ Stay connected, ${userName}!
 Choose your prayer focus:`;
 
     const buttons = [
-      { id: 'urgent_prayer', title: '🚨 Urgent Requests' },
-      { id: 'global_focus', title: '🌍 Global Focus' },
-      { id: 'revival_watch', title: '🔥 Revival Watch' }
+      { id: 'global_updates', title: '🌍 Global Updates' },
+      { id: 'prayer_requests', title: '🙏 Prayer Requests' },
+      { id: 'back', title: '⬅️ Back to Menu' }
     ];
 
     await this.sendInteractiveMessage(phoneNumber, updatesMessage, buttons);
@@ -1187,22 +1249,397 @@ Thank you for your heart for intercession!`;
     await this.sendWhatsAppMessage(phoneNumber, stopMessage);
   }
 
+  // New helper functions for button interactions
+  private async handleLoginHelpCommand(phoneNumber: string): Promise<void> {
+    const helpMessage = `🔒 *Login Help* 🔒
+
+Having trouble logging in? Here's what to do:
+
+✅ Make sure you're using the SAME email and password from the Global Intercessors web app
+✅ Format should be exactly:
+   Email: youremail@example.com
+   Password: yourpassword
+
+❌ Common issues:
+• Wrong email address (check spelling)
+• Incorrect password (case-sensitive)
+• Account not created on web app yet
+
+💡 *Need to create an account?*
+Visit the Global Intercessors web application first to sign up, then return here to log in.
+
+📧 *Contact support if you continue having issues*`;
+
+    const buttons = [
+      { id: 'retry_login', title: '🔄 Try Login Again' },
+      { id: 'support', title: '💬 Contact Support' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, helpMessage, buttons);
+  }
+
+  private async handleSupportCommand(phoneNumber: string): Promise<void> {
+    const supportMessage = `💬 *Global Intercessors Support* 💬
+
+Need assistance? We're here to help!
+
+📧 Contact our support team:
+• Email: support@globalintercessors.org
+• Response time: Within 24 hours
+
+🌐 Visit our help center:
+• Web: globalintercessors.org/help
+• FAQ, tutorials, and guides available
+
+🕊️ *"Cast all your anxiety on him because he cares for you."* - 1 Peter 5:7
+
+Our team is praying for you and ready to assist with any technical or spiritual needs.`;
+
+    const buttons = [
+      { id: 'retry_login', title: '🔄 Try Login Again' },
+      { id: 'back', title: '⬅️ Back to Menu' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, supportMessage, buttons);
+  }
+
+  // Specific button interaction handlers
+  private async handleSpecificDevotional(phoneNumber: string, userName: string, type: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', type);
+
+    let content = '';
+    if (type === 'daily_devotional') {
+      content = `📖 *Today's Devotional* 📖
+
+Hello ${userName}!
+
+🔥 *"For the eyes of the LORD run to and fro throughout the whole earth, to show Himself strong on behalf of those whose heart is loyal to Him."* - 2 Chronicles 16:9
+
+💡 **Reflection:** God is actively seeking hearts completely devoted to Him. Your prayers today are part of His mighty work across the earth.
+
+⚔️ **Declaration:** "Lord, I position my heart in complete loyalty to You. Use my prayers to demonstrate Your strength in every nation!"
+
+🌍 **Intercession Focus:** Pray for spiritual awakening in unreached nations and for God's strength to be revealed through global intercession.`;
+    } else if (type === 'fresh_word') {
+      content = `✨ *Fresh Prophetic Word* ✨
+
+Beloved ${userName},
+
+🔥 **The Spirit speaks:** "I am raising up a generation of intercessors who will not be silent! Your prayers are creating pathways for My glory to flow in dark places."
+
+⚔️ **Prophetic Declaration:** "I decree that every prayer offered in faith is breaking chains and opening prison doors. The sound of intercession is the sound of victory!"
+
+🌟 **Personal Activation:** Step into your calling as a watchman on the walls. Your prayers today will shift atmospheres!`;
+    } else {
+      content = `🔍 *Scripture Insight* 🔍
+
+Deep dive, ${userName}!
+
+📖 *"The effectual fervent prayer of a righteous man availeth much."* - James 5:17
+
+🎯 **Hebrew Insight:** The word "effectual" means "energized by divine power." Your prayers aren't just words - they're spiritual forces!
+
+💪 **Application:** Today, pray with the understanding that each word carries divine energy to accomplish God's purposes.
+
+🔥 **Challenge:** Spend 5 extra minutes in prayer today, knowing your words are charged with heaven's power!`;
+    }
+
+    const buttons = [
+      { id: 'devotionals', title: '📖 More Devotionals' },
+      { id: 'back', title: '⬅️ Back to Menu' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, content, buttons);
+  }
+
+  private async handleSpecificQuiz(phoneNumber: string, userName: string, level: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', level);
+
+    let question = '';
+    let answers = [];
+    
+    if (level === 'easy_quiz') {
+      question = `⭐ *Beginner Bible Quiz* ⭐
+
+Ready ${userName}? Here's your question:
+
+❓ **Question 1:** Who built the ark that saved his family from the flood?
+
+Choose your answer:`;
+      answers = [
+        { id: 'quiz_answer_noah', title: 'A) Noah' },
+        { id: 'quiz_answer_moses', title: 'B) Moses' },
+        { id: 'quiz_answer_abraham', title: 'C) Abraham' }
+      ];
+    } else if (level === 'medium_quiz') {
+      question = `⭐⭐ *Intermediate Bible Quiz* ⭐⭐
+
+Challenge time, ${userName}!
+
+❓ **Question 1:** In which city was Jesus born?
+
+Choose your answer:`;
+      answers = [
+        { id: 'quiz_answer_bethlehem', title: 'A) Bethlehem' },
+        { id: 'quiz_answer_nazareth', title: 'B) Nazareth' },
+        { id: 'quiz_answer_jerusalem', title: 'C) Jerusalem' }
+      ];
+    } else {
+      question = `⭐⭐⭐ *Advanced Bible Quiz* ⭐⭐⭐
+
+Expert level, ${userName}!
+
+❓ **Question 1:** Who was the high priest when David ate the showbread?
+
+Choose your answer:`;
+      answers = [
+        { id: 'quiz_answer_ahimelech', title: 'A) Ahimelech' },
+        { id: 'quiz_answer_zadok', title: 'B) Zadok' },
+        { id: 'quiz_answer_abiathar', title: 'C) Abiathar' }
+      ];
+    }
+
+    await this.sendInteractiveMessage(phoneNumber, question, answers);
+  }
+
+  private async handleReminderSettings(phoneNumber: string, userName: string, setting: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', setting);
+
+    let message = '';
+    let timing = '30min';
+    
+    if (setting === 'reminder_30min') {
+      timing = '30min';
+      message = `⏰ *30-Minute Reminders Set!* ⏰
+
+Perfect choice, ${userName}!
+
+✅ You'll receive prayer reminders 30 minutes before your slot
+📱 Gentle notifications to prepare your heart
+🙏 Time to transition into prayer mindset
+⚔️ Spiritual preparation for powerful intercession`;
+    } else if (setting === 'reminder_15min') {
+      timing = '15min';
+      message = `⏰ *15-Minute Reminders Set!* ⏰
+
+Great timing, ${userName}!
+
+✅ You'll receive prayer reminders 15 minutes before your slot
+⚡ Quick transition into prayer mode
+🎯 Last-minute spiritual focus
+🔥 Immediate intercession readiness`;
+    } else {
+      message = `⚙️ *Custom Reminder Settings* ⚙️
+
+Customize your experience, ${userName}!
+
+🔧 Available options:
+• Reminder timing (5, 10, 15, 30, 60 minutes)
+• Multiple reminders per slot
+• Personalized message content
+• Prayer focus themes
+
+📞 Contact support to set up your custom preferences!`;
+    }
+
+    // Update user reminder preferences
+    await this.createOrUpdateUser(phoneNumber, {
+      reminder_preferences: { reminderTiming: timing, enabled: true }
+    });
+
+    const buttons = [
+      { id: 'reminders', title: '⏰ Reminder Options' },
+      { id: 'back', title: '⬅️ Back to Menu' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, message, buttons);
+  }
+
+  private async handleSpecificUpdates(phoneNumber: string, userName: string, type: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', type);
+
+    let content = '';
+    if (type === 'global_updates') {
+      content = `🌍 *Global Prayer Updates* 🌍
+
+Current prayer focuses, ${userName}:
+
+🚨 **Urgent:** Middle East peace negotiations
+🔥 **Revival:** South Korea experiencing youth awakening
+⛪ **Persecution:** Iranian believers need protection
+🌾 **Harvest:** 10,000 new believers in Nigeria this month
+💼 **Economics:** Pray for job provision in Argentina
+👨‍👩‍👧‍👦 **Families:** Reconciliation movement in Philippines
+
+*"The earth will be filled with the knowledge of the glory of the LORD."* - Habakkuk 2:14`;
+    } else {
+      content = `🙏 *Current Prayer Requests* 🙏
+
+Join in prayer, ${userName}:
+
+💒 **Church Leaders:** Wisdom for pastors navigating cultural challenges
+🏥 **Healing:** Medical missions in remote African villages  
+🎓 **Education:** Christian schools facing financial difficulties
+🌪️ **Disasters:** Recovery efforts in storm-affected regions
+💔 **Broken Hearts:** Emotional healing for trauma survivors
+🕊️ **Peace:** Conflict resolution in divided communities
+
+*"The prayer of a righteous person is powerful and effective."* - James 5:16`;
+    }
+
+    const buttons = [
+      { id: 'updates', title: '🌍 More Updates' },
+      { id: 'back', title: '⬅️ Back to Menu' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, content, buttons);
+  }
+
+  private async handleSpecificMessages(phoneNumber: string, userName: string, type: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', type);
+
+    let content = '';
+    if (type === 'warfare_declaration') {
+      content = `⚔️ *Warfare Declarations* ⚔️
+
+Speak with authority, ${userName}!
+
+💥 **I DECREE:**
+• Every chain of darkness is broken in Jesus' name!
+• The gates of hell shall not prevail against God's church!
+• Divine breakthrough is manifesting in every area of my life!
+
+🔥 **I DECLARE:**
+• God's kingdom advances through my prayers!
+• Angels are released to accomplish His will!
+• Victory belongs to the Lord!
+
+*"No weapon formed against you shall prosper!"* - Isaiah 54:17`;
+    } else if (type === 'prophetic_word') {
+      content = `📜 *Prophetic Insights* 📜
+
+Heaven speaks, ${userName}:
+
+🔮 **The Lord says:** "I am shifting seasons rapidly now. What seemed impossible yesterday becomes your testimony tomorrow."
+
+✨ **Prophetic Vision:** "I see doors opening that man cannot shut. Your faithfulness in prayer has positioned you for divine appointments."
+
+🌟 **Personal Word:** "The intercession flowing through you is creating wells of revival in dry places. Keep digging deeper!"
+
+*"For My thoughts are not your thoughts."* - Isaiah 55:8`;
+    } else {
+      content = `🙏 *Targeted Prayer Points* 🙏
+
+Intercession focus, ${userName}:
+
+🎯 **For Nations:**
+• Pray for governmental leaders to seek godly wisdom
+• Intercede for religious freedom worldwide
+
+🎯 **For Churches:**
+• Unity among believers across denominational lines
+• Fresh outpouring of the Holy Spirit
+
+🎯 **For Families:**
+• Protection over marriages and children
+• Generational curses broken
+
+*"I sought for a man among them who would make a wall."* - Ezekiel 22:30`;
+    }
+
+    const buttons = [
+      { id: 'messages', title: '✨ More Messages' },
+      { id: 'back', title: '⬅️ Back to Menu' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, content, buttons);
+  }
+
+  private async handleSpecificDashboard(phoneNumber: string, userName: string, type: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', type);
+
+    const prayerSlot = await this.getUserPrayerSlot(phoneNumber);
+    let content = '';
+
+    if (type === 'prayer_stats') {
+      content = `📈 *Prayer Statistics* 📈
+
+Your intercession journey, ${userName}:
+
+⏰ **Prayer Slot:** ${prayerSlot || 'Not assigned'}
+📅 **Days Active:** Building consistency!
+🎯 **Prayer Focus:** Global intercession
+⚡ **Impact Level:** Growing stronger
+🌍 **Global Rank:** Rising intercessor
+
+📊 **This Month:**
+• Prayers offered: Countless blessings
+• Breakthrough reports: Testimonies flowing
+• Unity with global intercessors: Connected
+
+*"Pray without ceasing!"* - 1 Thessalonians 5:17`;
+    } else if (type === 'growth_report') {
+      content = `🌱 *Spiritual Growth Report* 🌱
+
+Your development, ${userName}:
+
+📚 **Biblical Knowledge:** Expanding daily
+🔥 **Faith Level:** Stronger than yesterday
+💪 **Prayer Endurance:** Building stamina
+🎯 **Prophetic Sensitivity:** Hearing heaven
+🌟 **Leadership Capacity:** Emerging calling
+
+📈 **Growth Areas:**
+• Intercession intensity: Rising
+• Scriptural insight: Deepening
+• Spiritual authority: Increasing
+
+*"Grow in grace and knowledge of our Lord."* - 2 Peter 3:18`;
+    } else {
+      content = `🏆 *Your Achievements* 🏆
+
+Celebrating progress, ${userName}:
+
+🥇 **Badges Earned:**
+• Faithful Intercessor
+• Prayer Warrior
+• Global Connector
+
+⭐ **Milestones Reached:**
+• 30-day prayer streak: In progress
+• Bible quiz champion: Growing
+• Revival catalyst: Active
+
+🎖️ **Special Recognition:**
+• Part of 24/7 global prayer coverage
+• Contributing to worldwide revival
+
+*"Well done, good and faithful servant!"* - Matthew 25:23`;
+    }
+
+    const buttons = [
+      { id: 'dashboard', title: '📊 Main Dashboard' },
+      { id: 'back', title: '⬅️ Back to Menu' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, content, buttons);
+  }
+
   private async handleUnknownCommand(phoneNumber: string, userName: string, messageText: string): Promise<void> {
     await this.logInteraction(phoneNumber, 'unknown_command', messageText);
 
-    const unknownMessage = `🤔 *Command Not Recognized* 🤔
+    const unknownMessage = `🤖 I didn't understand "${messageText}", ${userName}.
 
-Hello ${userName}! I didn't understand "${messageText}".
+Let me help you get back on track! Here are your options:`;
 
-✨ *Try these commands:*
-• **/help** - View all commands
-• **/remind** - Enable prayer reminders  
-• **/devotional** - Get spiritual content
-• **/stop** - Disable notifications
+    const buttons = [
+      { id: 'devotionals', title: '📖 Devotionals' },
+      { id: 'quiz', title: '🧠 Bible Quiz' },
+      { id: 'reminders', title: '⏰ Reminders' },
+      { id: 'help', title: '❓ Help' }
+    ];
 
-🙏 *"Call to Me, and I will answer you"* - Jeremiah 33:3`;
-
-    await this.sendWhatsAppMessage(phoneNumber, unknownMessage);
+    await this.sendInteractiveMessage(phoneNumber, unknownMessage, buttons);
   }
 
   // Webhook verification for Meta WhatsApp Business API
