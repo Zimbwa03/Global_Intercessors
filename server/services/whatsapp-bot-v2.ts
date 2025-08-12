@@ -65,7 +65,7 @@ export class WhatsAppPrayerBot {
     waitingForTopic?: boolean;
   }> = new Map();
 
-  // Bible Quiz Game Session Management
+  // Bible Quiz Game Session Management - Enhanced with Diverse Question Types
   private bibleQuizSessions: Map<string, {
     sessionId: string;
     currentQuestion: any;
@@ -77,6 +77,7 @@ export class WhatsAppPrayerBot {
     sessionType: string;
     difficulty: string;
     topic?: string;
+    questionType?: 'standard' | 'memory_verse' | 'situational_verse' | 'doctrine' | 'character_study';
     isActive: boolean;
   }> = new Map();
   private reminderSystem: AdvancedReminderSystem;
@@ -1260,8 +1261,10 @@ Choose your quiz adventure:`;
 
       const buttons = [
         { id: 'daily_challenge', title: '🌟 Daily Challenge' },
-        { id: 'adaptive_quiz', title: '🎯 Smart Quiz' },
-        { id: 'topic_quiz', title: '📖 Topic Focus' }
+        { id: 'smart_quiz', title: '🎯 Smart Quiz' },
+        { id: 'memory_verse', title: '📖 Memory Verse' },
+        { id: 'situational_quiz', title: '💡 Life Situations' },
+        { id: 'topic_quiz', title: '📚 Topic Focus' }
       ];
 
       await this.sendInteractiveMessage(phoneNumber, quizMessage, buttons);
@@ -1274,8 +1277,10 @@ Welcome ${userName}! Ready to test your biblical knowledge?
 Choose your quiz adventure:
 
 🌟 Type "daily_challenge" for Daily Challenge
-🎯 Type "adaptive_quiz" for Smart Quiz  
-📖 Type "topic_quiz" for Topic Focus
+🎯 Type "smart_quiz" for Smart Quiz
+📖 Type "memory_verse" for Memory Verse Quiz
+💡 Type "situational_quiz" for Life Situations Quiz
+📚 Type "topic_quiz" for Topic Focus
 
 Let's dive into God's Word together! 📚`);
     }
@@ -2867,7 +2872,7 @@ Choose your answer:`;
         })
         .eq('id', session.sessionId);
 
-      // Send feedback message
+      // Send feedback message with question type context
       const feedbackMessage = this.generateAnswerFeedback(
         isCorrect, 
         selectedAnswer, 
@@ -2875,12 +2880,14 @@ Choose your answer:`;
         question.explanation || '',
         points,
         session.streak,
-        userName
+        userName,
+        question.questionType || 'standard'
       );
 
       const continueButtons = [
         { id: 'next_question', title: '▶️ Next Question' },
-        { id: 'end_quiz', title: '🏁 End Quiz' }
+        { id: 'end_quiz', title: '🏁 End Quiz' },
+        { id: 'quiz_help', title: '❓ Help' }
       ];
 
       await this.sendInteractiveMessage(phoneNumber, feedbackMessage, continueButtons);
@@ -2899,7 +2906,19 @@ Choose your answer:`;
   private async generateQuizQuestion(difficulty: string, sessionType: string, questionNumber: number) {
     console.log(`🎯 Generating ${difficulty} quiz question #${questionNumber} for ${sessionType}`);
     
-    // Expanded fallback question pools
+    // Determine question type based on session type and randomization
+    let questionType = 'standard';
+    if (sessionType === 'memory_verse') {
+      questionType = 'memory_verse';
+    } else if (sessionType === 'situational_quiz') {
+      questionType = 'situational_verse';
+    } else if (sessionType === 'smart_quiz') {
+      // Mix different question types for smart quiz
+      const types = ['standard', 'memory_verse', 'situational_verse', 'doctrine', 'character_study'];
+      questionType = types[Math.floor(Math.random() * types.length)];
+    }
+    
+    // Expanded fallback question pools with diverse question types
     const fallbackQuestions = {
       easy: [
         {
@@ -2907,21 +2926,32 @@ Choose your answer:`;
           options: ["Noah", "Moses", "Abraham", "David"],
           correctAnswer: "Noah",
           scripture: "Genesis 6-9",
-          explanation: "Noah built the ark according to God's instructions to save his family and the animals from the worldwide flood."
+          explanation: "Noah built the ark according to God's instructions to save his family and the animals from the worldwide flood.",
+          questionType: "standard"
         },
         {
-          question: "Who was the first man God created?",
-          options: ["Adam", "Abel", "Cain", "Seth"],
-          correctAnswer: "Adam",
-          scripture: "Genesis 2:7",
-          explanation: "God formed Adam from the dust of the ground and breathed into his nostrils the breath of life."
+          question: "Fill in the missing word: 'For God so _____ the world that He gave His one and only Son'",
+          options: ["blessed", "loved", "created", "saved"],
+          correctAnswer: "loved",
+          scripture: "John 3:16",
+          explanation: "This foundational verse shows God's love as the motivation for salvation through Jesus Christ.",
+          questionType: "memory_verse"
         },
         {
-          question: "What did Jesus turn water into at the wedding?",
-          options: ["Wine", "Bread", "Oil", "Honey"],
-          correctAnswer: "Wine",
-          scripture: "John 2:1-11",
-          explanation: "Jesus performed His first miracle by turning water into wine at the wedding in Cana."
+          question: "An intercessor is feeling fearful about a situation they're praying for. Which verse would best help them?",
+          options: ["Isaiah 41:10 - Do not fear, for I am with you", "Psalm 23:1 - The Lord is my shepherd", "John 3:16 - For God so loved the world", "Matthew 6:9 - Our Father in heaven"],
+          correctAnswer: "Isaiah 41:10 - Do not fear, for I am with you",
+          scripture: "Isaiah 41:10",
+          explanation: "This verse directly addresses fear and reminds believers of God's presence and strength.",
+          questionType: "situational_verse"
+        },
+        {
+          question: "Who was known for his dedication to prayer three times a day?",
+          options: ["David", "Daniel", "Moses", "Abraham"],
+          correctAnswer: "Daniel",
+          scripture: "Daniel 6:10",
+          explanation: "Daniel maintained his prayer routine even when it meant facing the lions' den, showing the importance of consistent prayer.",
+          questionType: "character_study"
         }
       ],
       medium: [
@@ -2930,21 +2960,32 @@ Choose your answer:`;
           options: ["Bethlehem", "Nazareth", "Jerusalem", "Capernaum"],
           correctAnswer: "Bethlehem",
           scripture: "Matthew 2:1",
-          explanation: "Jesus was born in Bethlehem of Judea, fulfilling the prophecy in Micah 5:2."
+          explanation: "Jesus was born in Bethlehem of Judea, fulfilling the prophecy in Micah 5:2.",
+          questionType: "standard"
         },
         {
-          question: "How many disciples did Jesus choose?",
-          options: ["10", "12", "14", "16"],
-          correctAnswer: "12",
-          scripture: "Matthew 10:1-4",
-          explanation: "Jesus chose twelve apostles to be with Him and to preach the gospel."
+          question: "Complete this verse: 'The prayer of a _____ person is powerful and effective'",
+          options: ["faithful", "righteous", "humble", "persistent"],
+          correctAnswer: "righteous",
+          scripture: "James 5:16",
+          explanation: "This verse emphasizes that righteous living enhances the effectiveness of prayer, crucial for intercessors.",
+          questionType: "memory_verse"
         },
         {
-          question: "What happened on the third day after Jesus' crucifixion?",
-          options: ["He rose from the dead", "He was buried", "He appeared to Pilate", "The temple was rebuilt"],
-          correctAnswer: "He rose from the dead",
-          scripture: "Matthew 28:1-6",
-          explanation: "Jesus rose from the dead on the third day, fulfilling His promise and proving His divinity."
+          question: "An intercessor has been praying for someone's salvation for years without seeing results. What would encourage them?",
+          options: ["Galatians 6:9 - Let us not become weary in doing good", "Psalm 23:4 - Even though I walk through the valley", "1 Corinthians 13:4 - Love is patient and kind", "Romans 8:28 - All things work together for good"],
+          correctAnswer: "Galatians 6:9 - Let us not become weary in doing good",
+          scripture: "Galatians 6:9",
+          explanation: "This verse specifically encourages perseverance in spiritual work, especially when results aren't immediately visible.",
+          questionType: "situational_verse"
+        },
+        {
+          question: "What is the primary biblical foundation for intercessory prayer?",
+          options: ["Church tradition", "Jesus' example and commands", "Old Testament practices", "Personal spiritual gifts"],
+          correctAnswer: "Jesus' example and commands",
+          scripture: "1 Timothy 2:1-2, John 17",
+          explanation: "Jesus both modeled intercession (John 17) and commanded believers to pray for others, establishing the biblical foundation.",
+          questionType: "doctrine"
         }
       ],
       hard: [
@@ -2953,41 +2994,103 @@ Choose your answer:`;
           options: ["Pause and reflect", "Sing louder", "Repeat the verse", "End of prayer"],
           correctAnswer: "Pause and reflect",
           scripture: "Found throughout Psalms",
-          explanation: "Selah is thought to be a musical or liturgical instruction meaning to pause and reflect on what was just sung or said."
+          explanation: "Selah is thought to be a musical or liturgical instruction meaning to pause and reflect on what was just sung or said.",
+          questionType: "standard"
         },
         {
-          question: "What does 'Emmanuel' mean in Hebrew?",
-          options: ["God with us", "Prince of Peace", "Mighty God", "Wonderful Counselor"],
-          correctAnswer: "God with us",
-          scripture: "Matthew 1:23",
-          explanation: "Emmanuel means 'God with us' and refers to Jesus Christ, God incarnate among humanity."
-        },
-        {
-          question: "In which book do we find the phrase 'Faith is the substance of things hoped for'?",
-          options: ["Romans", "Hebrews", "James", "1 Peter"],
-          correctAnswer: "Hebrews",
+          question: "Complete this challenging verse: 'Now faith is the _____ of things hoped for, the evidence of things not seen'",
+          options: ["foundation", "substance", "beginning", "promise"],
+          correctAnswer: "substance",
           scripture: "Hebrews 11:1",
-          explanation: "Hebrews 11:1 defines faith as the substance of things hoped for and the evidence of things not seen."
+          explanation: "This verse defines faith as having substance - it's not wishful thinking but a spiritual reality that gives weight to our hopes.",
+          questionType: "memory_verse"
+        },
+        {
+          question: "An intercessor is facing spiritual warfare while praying for a difficult case. Which passage provides the best guidance?",
+          options: ["Ephesians 6:12 - We wrestle not against flesh and blood", "Psalm 23:4 - Yea, though I walk through the valley", "Romans 8:28 - All things work together for good", "Philippians 4:13 - I can do all things through Christ"],
+          correctAnswer: "Ephesians 6:12 - We wrestle not against flesh and blood",
+          scripture: "Ephesians 6:12",
+          explanation: "This verse directly addresses spiritual warfare, reminding intercessors that their battle is spiritual, not physical.",
+          questionType: "situational_verse"
+        },
+        {
+          question: "Who is known as the greatest intercessor in the Old Testament, standing in the gap for Israel's sins?",
+          options: ["Moses", "David", "Samuel", "Jeremiah"],
+          correctAnswer: "Moses",
+          scripture: "Exodus 32:11-14, Numbers 14:13-20",
+          explanation: "Moses repeatedly interceded for Israel, even offering his own life for their forgiveness, exemplifying sacrificial intercession.",
+          questionType: "character_study"
         }
       ]
     };
 
     try {
-      const prompt = `Generate a ${difficulty} level Bible quiz question for Christian intercessors (Question ${questionNumber}).
+      let prompt = '';
+      
+      // Generate different prompts based on question type
+      switch (questionType) {
+        case 'memory_verse':
+          prompt = `Generate a ${difficulty} level memory verse Bible quiz question for Christian intercessors (Question ${questionNumber}).
+
+Requirements:
+- Present a well-known Bible verse with one crucial word missing
+- Provide 4 multiple choice options for the missing word
+- Choose verses meaningful for prayer warriors and intercessors
+- Include explanation of verse significance for prayer life
+- JSON format: {"question": "Fill in the missing word: 'The prayer of a _____ person is powerful and effective.'", "options": ["faithful", "righteous", "humble", "persistent"], "correctAnswer": "righteous", "scripture": "James 5:16", "explanation": "This verse reminds intercessors that righteous living enhances prayer power", "questionType": "memory_verse"}
+
+${difficulty} guidelines:
+- Easy: Well-known verses like John 3:16, Psalm 23:1
+- Medium: Prayer/faith verses like James 5:16, Hebrews 11:1
+- Hard: Deeper theological verses, original language concepts`;
+
+        case 'situational_verse':
+          prompt = `Generate a ${difficulty} level situational verse matching question for Christian intercessors (Question ${questionNumber}).
+
+Requirements:
+- Present a real-life situation that intercessors commonly face
+- Ask which Bible verse best applies to that situation
+- Provide 4 verse options with references and partial text
+- Focus on prayer ministry, spiritual warfare, or intercession scenarios
+- JSON format: {"question": "An intercessor feels discouraged after months of prayer without breakthrough. Which verse would best encourage them?", "options": ["Galatians 6:9 - Let us not become weary...", "Psalm 23:1 - The Lord is my shepherd...", "John 3:16 - For God so loved...", "Proverbs 3:5 - Trust in the Lord..."], "correctAnswer": "Galatians 6:9 - Let us not become weary...", "scripture": "Galatians 6:9", "explanation": "This verse specifically addresses perseverance in prayer when results aren't immediately visible", "questionType": "situational_verse"}
+
+${difficulty} guidelines:
+- Easy: Common struggles like doubt, fear, need for guidance
+- Medium: Ministry challenges, spiritual warfare, difficult prayers
+- Hard: Complex theological situations, cultural challenges, leadership decisions`;
+
+        case 'doctrine':
+          prompt = `Generate a ${difficulty} level biblical doctrine question for mature Christian intercessors (Question ${questionNumber}).
+
+Requirements:
+- Focus on core Christian doctrines, theology, or spiritual principles
+- Relevant to prayer ministry and intercession practices
+- Include scriptural foundation and practical application
+- JSON format: {"question": "What is the biblical foundation for intercessory prayer?", "options": ["Jesus' example and commands", "Old Testament traditions", "Church traditions", "Personal preference"], "correctAnswer": "Jesus' example and commands", "scripture": "1 Timothy 2:1-2, John 17", "explanation": "Jesus modeled intercession and commanded His followers to pray for others", "questionType": "doctrine"}`;
+
+        case 'character_study':
+          prompt = `Generate a ${difficulty} level Bible character study question for intercessors (Question ${questionNumber}).
+
+Requirements:
+- Focus on biblical characters known for prayer or faith
+- Include lessons applicable to modern intercessors
+- Provide insights into their prayer practices or spiritual journey
+- JSON format: {"question": "Which biblical character prayed three times daily despite persecution?", "options": ["David", "Daniel", "Nehemiah", "Elijah"], "correctAnswer": "Daniel", "scripture": "Daniel 6:10", "explanation": "Daniel maintained his prayer routine despite the decree that led to the lions' den", "questionType": "character_study"}`;
+
+        default: // standard
+          prompt = `Generate a ${difficulty} level Bible quiz question for Christian intercessors (Question ${questionNumber}).
 
 Requirements:
 - Multiple choice with exactly 4 options
 - Include Bible verse reference
 - Brief explanation for correct answer
-- JSON format: {"question": "...", "options": ["A", "B", "C", "D"], "correctAnswer": "...", "scripture": "...", "explanation": "..."}
+- JSON format: {"question": "...", "options": ["A", "B", "C", "D"], "correctAnswer": "...", "scripture": "...", "explanation": "...", "questionType": "standard"}
 
 ${difficulty} guidelines:
 - Easy: Basic Bible stories, well-known characters
 - Medium: Biblical themes, geography, disciples, parables  
-- Hard: Original languages, theological concepts, lesser-known details
-
-Example format:
-{"question": "Who was the first king of Israel?", "options": ["Saul", "David", "Solomon", "Samuel"], "correctAnswer": "Saul", "scripture": "1 Samuel 10:1", "explanation": "Saul was anointed by Samuel as the first king of Israel."}`;
+- Hard: Original languages, theological concepts, lesser-known details`;
+      }
 
       const content = await this.generateAIContent(prompt);
       console.log('🤖 AI returned content for quiz question');
@@ -3017,11 +3120,20 @@ Example format:
       console.error('❌ Error generating AI quiz question:', error);
       console.log('🔄 Using fallback question instead');
 
-      // Use fallback questions with rotation
+      // Use fallback questions with rotation based on question type
       const questionPool = fallbackQuestions[difficulty as keyof typeof fallbackQuestions] || fallbackQuestions.easy;
-      const questionIndex = (questionNumber - 1) % questionPool.length;
       
-      return questionPool[questionIndex];
+      // Filter by question type if specified
+      let filteredQuestions = questionPool;
+      if (questionType !== 'standard') {
+        filteredQuestions = questionPool.filter(q => q.questionType === questionType);
+        if (filteredQuestions.length === 0) {
+          filteredQuestions = questionPool; // Fallback to all questions if none of the specified type
+        }
+      }
+      
+      const questionIndex = (questionNumber - 1) % filteredQuestions.length;
+      return filteredQuestions[questionIndex];
     }
   }
 
@@ -3052,10 +3164,48 @@ Example format:
     explanation: string,
     points: number,
     streak: number,
-    userName: string
+    userName: string,
+    questionType: string = 'standard'
   ): string {
+    
+    let feedbackEmoji = '';
+    let encouragement = '';
+    
+    // Customize feedback based on question type
+    switch (questionType) {
+      case 'memory_verse':
+        feedbackEmoji = isCorrect ? '📖✅' : '📖❌';
+        encouragement = isCorrect ? 
+          '🌟 Excellent memory work! Scripture meditation strengthens your prayer life!' :
+          '💡 Memorizing Scripture helps during spiritual battles. Keep studying God\'s Word!';
+        break;
+      case 'situational_verse':
+        feedbackEmoji = isCorrect ? '💡✅' : '💡❌';
+        encouragement = isCorrect ? 
+          '🎯 Perfect application! You know how to apply God\'s Word to real situations!' :
+          '📚 Learning to apply Scripture to life situations enhances your intercession ministry!';
+        break;
+      case 'doctrine':
+        feedbackEmoji = isCorrect ? '⛪✅' : '⛪❌';
+        encouragement = isCorrect ? 
+          '🏛️ Solid biblical foundation! Strong doctrine strengthens effective prayer!' :
+          '📖 Understanding biblical doctrine empowers confident intercession!';
+        break;
+      case 'character_study':
+        feedbackEmoji = isCorrect ? '👑✅' : '👑❌';
+        encouragement = isCorrect ? 
+          '🌟 Great insight! Learning from biblical heroes inspires faithful intercession!' :
+          '💪 Studying biblical characters teaches us perseverance in prayer!';
+        break;
+      default:
+        feedbackEmoji = isCorrect ? '✅' : '❌';
+        encouragement = isCorrect ? 
+          '🌟 Keep up the excellent Bible knowledge!' :
+          '📚 Every question is a learning opportunity! Study God\'s Word daily!';
+    }
+
     if (isCorrect) {
-      return `✅ *Correct, ${userName}!* ✅
+      return `${feedbackEmoji} *Excellent, ${userName}!* ${feedbackEmoji}
 
 Your answer: **${selectedAnswer}**
 
@@ -3064,16 +3214,16 @@ ${streak > 1 ? `🔥 ${streak} question streak!` : ''}
 
 💡 **Explanation:** ${explanation}
 
-🌟 Keep up the excellent Bible knowledge!`;
+${encouragement}`;
     } else {
-      return `❌ *Not quite, ${userName}* ❌
+      return `${feedbackEmoji} *Good try, ${userName}* ${feedbackEmoji}
 
 Your answer: **${selectedAnswer}**
-Correct answer: **${correctAnswer}**
+✅ Correct answer: **${correctAnswer}**
 
 💡 **Explanation:** ${explanation}
 
-📚 Every question is a learning opportunity! Study God's Word daily to grow in wisdom and understanding.`;
+${encouragement}`;
     }
   }
 
@@ -3119,6 +3269,7 @@ ${this.getEncouragementMessage(accuracy)}
 
       const buttons = [
         { id: 'quiz', title: '🔄 Play Again' },
+        { id: 'quiz_stats', title: '📊 View Stats' },
         { id: 'devotionals', title: '📖 Devotionals' },
         { id: 'continue', title: '🏠 Main Menu' }
       ];
