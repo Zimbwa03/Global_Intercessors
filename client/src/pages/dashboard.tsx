@@ -287,6 +287,8 @@ export default function Dashboard() {
     );
   }
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   return (
     <div className="min-h-screen bg-brand-neutral flex">
       {/* Desktop Sidebar */}
@@ -296,10 +298,11 @@ export default function Dashboard() {
         onSignOut={handleSignOut}
         userEmail={user.email}
         userProfile={userProfile || user.user_metadata}
+        onCollapseChange={setSidebarCollapsed}
       />
 
       {/* Desktop Main Content */}
-      <main className="flex-1 p-6 overflow-auto ml-64">
+      <main className={`flex-1 p-6 overflow-auto transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
         {/* Render the greeting section */}
         <div className="flex items-center space-x-4 mb-6">
           <img 

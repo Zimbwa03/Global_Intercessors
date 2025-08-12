@@ -11,10 +11,18 @@ interface SidebarProps {
   userEmail?: string;
   userProfile?: any;
   isMobile?: boolean;
+  onCollapseChange?: (collapsed: boolean) => void;
 }
 
-export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProfile, isMobile = false }: SidebarProps) {
+export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProfile, isMobile = false, onCollapseChange }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Notify parent component when collapse state changes
+  const handleCollapseToggle = () => {
+    const newCollapsedState = !isCollapsed;
+    setIsCollapsed(newCollapsedState);
+    onCollapseChange?.(newCollapsedState);
+  };
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: "fas fa-home" },
@@ -132,7 +140,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
                 className="h-8 w-8"
               />
               <Button
-                onClick={() => setIsCollapsed(!isCollapsed)}
+                onClick={handleCollapseToggle}
                 variant="ghost"
                 size="sm"
                 className="text-white hover:bg-gi-primary/50 transition-brand"
@@ -156,7 +164,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
                 </div>
               </div>
               <Button
-                onClick={() => setIsCollapsed(!isCollapsed)}
+                onClick={handleCollapseToggle}
                 variant="ghost"
                 size="sm"
                 className="text-white hover:bg-gi-primary/50 transition-brand"
