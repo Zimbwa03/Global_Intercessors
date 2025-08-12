@@ -221,7 +221,7 @@ export class WhatsAppPrayerBot {
         const { data: ngoniProfile, error: profileError } = await supabase
           .from('user_profiles')
           .select('*')
-          .eq('user_id', 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f')
+          .eq('id', 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f')
           .single();
 
         console.log('👤 Ngonidzashe profile lookup:', { 
@@ -232,8 +232,8 @@ export class WhatsAppPrayerBot {
 
         if (ngoniProfile) {
           authUser = ngoniProfile;
-          userId = ngoniProfile.user_id;
-          console.log(`✅ Found Ngonidzashe Zimbwa: ${ngoniProfile.first_name} ${ngoniProfile.last_name} (ID: ${userId})`);
+          userId = ngoniProfile.id;
+          console.log(`✅ Found Ngonidzashe Zimbwa: ${ngoniProfile.fullName || ngoniProfile.full_name} (ID: ${userId})`);
           
           // Ensure WhatsApp bot record exists
           const { data: existingBotUser } = await supabase
@@ -272,8 +272,8 @@ export class WhatsAppPrayerBot {
 
         if (profilesByPhone && profilesByPhone.length > 0) {
           authUser = profilesByPhone[0];
-          userId = authUser.user_id;
-          console.log(`✅ Found user by phone: ${authUser.first_name} ${authUser.last_name} (ID: ${userId})`);
+          userId = authUser.id;
+          console.log(`✅ Found user by phone: ${authUser.fullName || authUser.full_name} (ID: ${userId})`);
         } else {
           console.log('❌ No user found for this phone number');
           throw new Error(`No user found for phone number ${phoneNumber}`);
@@ -285,7 +285,7 @@ export class WhatsAppPrayerBot {
         const { data: userProfile, error: profileError } = await supabase
           .from('user_profiles')
           .select('*')
-          .eq('user_id', userId)
+          .eq('id', userId)
           .single();
 
         console.log('👤 User profile lookup:', { 
@@ -307,16 +307,17 @@ export class WhatsAppPrayerBot {
 
       console.log('🕊️ Prayer slot lookup for user:', { 
         userId,
-        userName: authUser ? `${authUser.first_name} ${authUser.last_name}` : 'Unknown',
+        userName: authUser ? (authUser.fullName || authUser.full_name || 'Unknown') : 'Unknown',
         success: !slotError, 
         slot: prayerSlot, 
         error: slotError?.message 
       });
 
-      // Build user information from auth data
-      const firstName = authUser?.first_name || '';
-      const lastName = authUser?.last_name || '';
-      const name = (firstName || lastName) ? `${firstName} ${lastName}`.trim() : 'Beloved Intercessor';
+      // Build user information from auth data  
+      const fullName = authUser?.full_name || authUser?.fullName || '';
+      const firstName = fullName.split(' ')[0] || '';
+      const lastName = fullName.split(' ').slice(1).join(' ') || '';
+      const name = fullName || 'Beloved Intercessor';
       const email = authUser?.email || prayerSlot?.user_email || 'Not registered';
       const slotTime = prayerSlot?.slot_time || null;
       const slotInfo = slotTime ? `⏱ Your current prayer slot: ${slotTime}` : `⏱ Prayer slot: Not assigned yet`;
