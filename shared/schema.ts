@@ -117,6 +117,130 @@ export const whatsAppInteractions = pgTable("whatsapp_interactions", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
+// Bible Quiz Game Tables
+export const bibleQuestions = pgTable("bible_questions", {
+  id: serial("id").primaryKey(),
+  questionId: text("question_id").notNull().unique(),
+  questionText: text("question_text").notNull(),
+  questionType: text("question_type").notNull(), // "MCQ", "True/False", "Fill-in-the-Blank"
+  correctAnswer: text("correct_answer").notNull(),
+  options: text("options").array(), // For MCQ options
+  explanationText: text("explanation_text").notNull(),
+  scriptureReference: text("scripture_reference").notNull(),
+  difficultyLevel: text("difficulty_level").notNull(), // "Easy", "Medium", "Hard"
+  majorCategory: text("major_category").notNull(), // "Old Testament", "New Testament", "Biblical Themes"
+  subcategory: text("subcategory").notNull(),
+  book: text("book").notNull(),
+  chapter: text("chapter"),
+  keywords: text("keywords").array(),
+  creationDate: timestamp("creation_date").defaultNow().notNull(),
+  lastModifiedDate: timestamp("last_modified_date").defaultNow().notNull(),
+  author: text("author").notNull().default("AI Generated"),
+  validationStatus: text("validation_status").notNull().default("Approved"),
+  correctAnswerRate: real("correct_answer_rate").default(0),
+  averageTimeToAnswer: real("average_time_to_answer").default(0),
+  usageCount: integer("usage_count").default(0),
+});
+
+export const userQuizProgress = pgTable("user_quiz_progress", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  phoneNumber: text("phone_number").notNull(),
+  totalScore: integer("total_score").default(0),
+  totalXP: integer("total_xp").default(0),
+  currentLevel: integer("current_level").default(1),
+  currentStreak: integer("current_streak").default(0),
+  longestStreak: integer("longest_streak").default(0),
+  totalQuestionsAnswered: integer("total_questions_answered").default(0),
+  totalCorrectAnswers: integer("total_correct_answers").default(0),
+  dailyQuestionsToday: integer("daily_questions_today").default(0),
+  lastPlayedDate: text("last_played_date"),
+  achievements: text("achievements").array().default([]),
+  knowledgeGaps: text("knowledge_gaps").array().default([]),
+  preferredTopics: text("preferred_topics").array().default([]),
+  adaptiveDifficulty: text("adaptive_difficulty").default("Medium"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const quizSessions = pgTable("quiz_sessions", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  sessionId: text("session_id").notNull().unique(),
+  sessionType: text("session_type").notNull(), // "daily_quiz", "topic_specific", "challenge", "adaptive"
+  startTime: timestamp("start_time").defaultNow().notNull(),
+  endTime: timestamp("end_time"),
+  questionsAnswered: integer("questions_answered").default(0),
+  correctAnswers: integer("correct_answers").default(0),
+  totalScore: integer("total_score").default(0),
+  xpEarned: integer("xp_earned").default(0),
+  averageResponseTime: real("average_response_time").default(0),
+  difficulty: text("difficulty").notNull(),
+  topic: text("topic"),
+  status: text("status").default("active"), // "active", "completed", "abandoned"
+});
+
+export const userQuestionHistory = pgTable("user_question_history", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  questionId: text("question_id").notNull(),
+  sessionId: text("session_id").notNull(),
+  userAnswer: text("user_answer").notNull(),
+  isCorrect: boolean("is_correct").notNull(),
+  responseTime: real("response_time"), // in seconds
+  pointsEarned: integer("points_earned").default(0),
+  xpEarned: integer("xp_earned").default(0),
+  difficultyAtTime: text("difficulty_at_time").notNull(),
+  answeredAt: timestamp("answered_at").defaultNow().notNull(),
+});
+
+export const quizAchievements = pgTable("quiz_achievements", {
+  id: serial("id").primaryKey(),
+  achievementId: text("achievement_id").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(), // "streak", "mastery", "milestone", "special"
+  badgeIcon: text("badge_icon").notNull(),
+  requirements: text("requirements").notNull(), // JSON string of requirements
+  pointsReward: integer("points_reward").default(0),
+  xpReward: integer("xp_reward").default(0),
+  isHidden: boolean("is_hidden").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const userAchievements = pgTable("user_achievements", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  achievementId: text("achievement_id").notNull(),
+  earnedAt: timestamp("earned_at").defaultNow().notNull(),
+  progress: real("progress").default(1.0), // 0.0 to 1.0 for partial achievements
+});
+
+export const dailyChallenges = pgTable("daily_challenges", {
+  id: serial("id").primaryKey(),
+  challengeDate: text("challenge_date").notNull().unique(), // YYYY-MM-DD
+  challengeType: text("challenge_type").notNull(), // "daily_quiz", "themed_challenge", "streak_challenge"
+  theme: text("theme"),
+  description: text("description").notNull(),
+  requiredQuestions: integer("required_questions").default(10),
+  difficulty: text("difficulty").default("Mixed"),
+  bonusXP: integer("bonus_xp").default(50),
+  bonusPoints: integer("bonus_points").default(100),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const userDailyChallenges = pgTable("user_daily_challenges", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  challengeId: integer("challenge_id").notNull(),
+  progress: integer("progress").default(0),
+  completed: boolean("completed").default(false),
+  completedAt: timestamp("completed_at"),
+  pointsEarned: integer("points_earned").default(0),
+  xpEarned: integer("xp_earned").default(0),
+});
+
 // Audio Bible progress table for tracking playback state
 export const audioBibleProgress = pgTable("audio_bible_progress", {
   id: serial("id").primaryKey(),
