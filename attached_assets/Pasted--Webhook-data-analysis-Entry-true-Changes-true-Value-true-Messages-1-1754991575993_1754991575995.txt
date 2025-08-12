@@ -1,0 +1,82 @@
+    }
+  ]
+}
+🔍 Webhook data analysis:
+📊 Entry: true, Changes: true, Value: true
+📱 Messages: 1, Statuses: 0
+Processing 1 messages...
+
+MESSAGE 1/1:
+From: 263785494594
+Type: interactive
+ID: wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0EzMzhENEVGOTZGOEU2NjkxNjMA
+Button: daily_declarations (🔥 Daily Declarations)
+
+📥 INCOMING MESSAGE:
+📱 From: 263785494594
+📝 Text: daily_declarations
+🆔 Message ID: wamid.HBgMMjYzNzg1NDk0NTk0FQIAEhgUM0EzMzhENEVGOTZGOEU2NjkxNjMA
+⚠️ Message already processed, skipping
+9:38:32 AM [express] POST /api/whatsapp/webhook 200 in 1ms
+📏 Enhanced declarations message length: 2111 characters
+
+📤 SENDING INTERACTIVE MESSAGE:
+📱 To: 263785494594
+📝 Text: 🔥 *Daily Declarations* 🔥
+
+*Ngonidzashe, speak these over your life:*
+
+Here are **5 powerful daily ...
+🔘 Buttons: 🔄 Fresh Declarations, 📖 Today's Word, ⬅️ Back
+❌ Failed to send interactive message: {"error":{"message":"(#131009) Parameter value is not valid","type":"OAuthException","code":131009,"error_data":{"messaging_product":"whatsapp","details":"Body text length invalid. Min length: 1, Max length: 1024"},"fbtrace_id":"AVg4S46zh7AgJWUevz5bXLO"}}
+🔍 Checking prayer slot reminders using Supabase...
+🔍 Testing Supabase connection...
+🔗 Supabase URL: https://lmhbvdxainxcjuveisfe.supabase.co...
+⚠️ Invalid slot_time format for slot 14: 12:00
+⚠️ Invalid slot_time format for slot 15: 16:00
+⚠️ Invalid slot_time format for slot 16: 20:00
+⚠️ Invalid slot_time format for slot 13: 08:00
+⚠️ Invalid slot_time format for slot 12: 04:00
+⚠️ Invalid slot_time format for slot 11: 00:00
+🔗 Supabase connection test: { success: true, error: undefined }
+📊 Database connection successful - checking for prayer slots data
+🔍 Querying prayer_slots table directly...
+📊 ALL prayer_slots query result: {
+  count: 12,
+  error: undefined,
+  sample: {
+    id: 4,
+    user_id: '03cad0dc-5f54-41fb-86e3-61800ced0e11',
+    user_email: 'nyaraiseda26@gmail.com',
+    slot_time: '14:30–15:00',
+    status: 'active',
+    missed_count: 306,
+    skip_start_date: null,
+    skip_end_date: null,
+    created_at: '2025-06-07T20:05:18.871147',
+    updated_at: '2025-08-11T23:50:15.877',
+    zoom_meeting_id: null,
+    zoom_join_url: null,
+    zoom_start_url: null,
+    start_time: '2025-07-05T14:30:00',
+    end_time: '2025-07-05T15:00:00'
+  }
+}
+✅ BREAKTHROUGH! Found 12 total prayer slots in database!
+✅ Found 12 active prayer slots out of 12 total slots
+🔍 Extracted user IDs: [
+  '03cad0dc-5f54-41fb-86e3-61800ced0e11',
+  'ec31a08e-965d-49ad-87be-4bda5d8ee124',
+  '18317d7c-8fdf-46ea-8fe8-5b98cdd12086',
+  'auth_user_00004',
+  'auth_user_00005',
+  'auth_user_00006',
+  'auth_user_00003',
+  'auth_user_00002',
+  'e46063d3-0a77-4ae1-938b-d9f1f1ac9464',
+  '3c471913-f3a2-4a18-b6d9-6129547433a1',
+  'auth_user_00001',
+  'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f'
+]
+📱 WhatsApp users found: 2
+👥 User profiles found: 1
