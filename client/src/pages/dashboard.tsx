@@ -299,7 +299,7 @@ export default function Dashboard() {
       />
 
       {/* Desktop Main Content */}
-      <main className="flex-1 p-6 overflow-auto">
+      <main className="flex-1 p-6 overflow-auto ml-64">
         {/* Render the greeting section */}
         <div className="flex items-center space-x-4 mb-6">
           <img 
