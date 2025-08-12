@@ -1,61 +1,66 @@
+#!/usr/bin/env node
 
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+/**
+ * Test WhatsApp Message Length Fix
+ * Debug the actual message content being sent to WhatsApp API
+ */
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Test message length calculation
-console.log('🧪 Testing WhatsApp Message Length Limits');
-console.log('==========================================');
-
-// Test Today's Word message
-const testTodaysWord = `📖 *Today's Word*
-
-**Faith Foundation**
-
-*"Be strong and courageous!"* - Joshua 1:9
-
-Ngonidzashe, God calls you to stand firm. Your prayers have divine authority.
-
-*Lord, strengthen my faith. Amen.*
-
-*Blessings!*`;
-
-console.log(`📏 Today's Word test length: ${testTodaysWord.length} characters`);
-console.log(`✅ Under limit: ${testTodaysWord.length < 1024 ? 'YES' : 'NO'}`);
+console.log('🔧 DEBUGGING WHATSAPP MESSAGE LENGTH ISSUE');
+console.log('===========================================');
 console.log('');
 
-// Test Daily Declarations message
-const testDeclarations = `🔥 *Daily Declarations*
+// Simulate the message construction process
+const userName = "Ngonidzashe Zimbwa";
+const baseMessage = `📖 *Today's Word* 📖\n\n`;
+const footer = `\n\n*May this strengthen your prayer life, ${userName}.*`;
 
-*Ngonidzashe, declare these:*
-
-📌 Focus: 💖 Firm Heart
-
-1️⃣ 🔥 My heart is unshakable!
-📖 Psalm 112:7
-
-2️⃣ 🔥 My heart stays pure!
-📖 Matthew 5:8
-
-3️⃣ 🔥 God's peace guards me!
-📖 Philippians 4:7
-
-*Speak with faith! 🙏*`;
-
-console.log(`📏 Declarations test length: ${testDeclarations.length} characters`);
-console.log(`✅ Under limit: ${testDeclarations.length < 1024 ? 'YES' : 'NO'}`);
+console.log('📏 MESSAGE COMPONENTS ANALYSIS:');
+console.log(`Base message: "${baseMessage}" (${baseMessage.length} chars)`);
+console.log(`Footer: "${footer}" (${footer.length} chars)`);
+console.log(`Available space for content: ${1000 - baseMessage.length - footer.length} chars`);
 console.log('');
 
-// Test rate limiting logic
-const processedMessages = new Set();
-const messageId = 'test_message_123';
+// Test actual AI content simulation
+const mockAIContent = `**Today's Word Topic: The Fire of Persistent Prayer**
 
-console.log('🧪 Testing duplicate message prevention:');
-console.log(`First process: ${!processedMessages.has(messageId) ? 'PROCESS' : 'SKIP'}`);
-processedMessages.add(messageId);
-console.log(`Second process: ${!processedMessages.has(messageId) ? 'PROCESS' : 'SKIP'}`);
+*"And will not God bring about justice for his chosen ones, who cry out to him day and night? Will he keep putting them off?"* - Luke 18:7
+
+Dear intercessor, persistence in prayer is not about wearing God down but about aligning our hearts with His timing. This verse reveals God's heart for those who cry out consistently. When we persist in prayer, we demonstrate faith that believes God hears and will act.
+
+Your persistent prayers create a spiritual atmosphere where breakthrough can occur. Don't give up when answers seem delayed.
+
+**Prayer:** *Father, give me the grace to persist in prayer like the persistent widow. Help me trust Your timing and continue interceding even when I don't see immediate results. Strengthen my faith to keep crying out. In Jesus' name, Amen.*`;
+
+console.log('🤖 MOCK AI CONTENT ANALYSIS:');
+console.log(`Content length: ${mockAIContent.length} chars`);
 console.log('');
 
-console.log('✅ All tests completed successfully!');
+const fullMessage = baseMessage + mockAIContent + footer;
+console.log('📱 FULL MESSAGE ANALYSIS:');
+console.log(`Total message length: ${fullMessage.length} chars`);
+console.log(`WhatsApp limit: 1024 chars`);
+console.log(`Over limit by: ${fullMessage.length > 1024 ? fullMessage.length - 1024 : 0} chars`);
+console.log('');
+
+if (fullMessage.length > 1024) {
+  console.log('❌ MESSAGE TOO LONG - TRUNCATION NEEDED');
+  const availableSpace = 1000 - baseMessage.length - footer.length;
+  const truncatedContent = mockAIContent.length > availableSpace ? 
+    mockAIContent.substring(0, availableSpace - 3) + "..." : mockAIContent;
+  const fixedMessage = baseMessage + truncatedContent + footer;
+  
+  console.log('');
+  console.log('✅ TRUNCATED MESSAGE ANALYSIS:');
+  console.log(`Truncated content length: ${truncatedContent.length} chars`);
+  console.log(`Fixed message length: ${fixedMessage.length} chars`);
+  console.log(`Under limit: ${fixedMessage.length < 1024 ? 'YES' : 'NO'}`);
+} else {
+  console.log('✅ MESSAGE LENGTH OK');
+}
+
+console.log('');
+console.log('🎯 SOLUTION REQUIREMENTS:');
+console.log('• AI prompt must generate shorter content');
+console.log('• Content truncation must work properly');
+console.log('• Character counting must be accurate');
+console.log('• Fallback content must also be under limit');

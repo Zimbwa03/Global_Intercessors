@@ -21,6 +21,8 @@ Preferred communication style: Simple, everyday language.
   - Added AI-powered "Daily Declarations" feature generating 10 faith declarations with supporting Bible verses
   - Included "Get Fresh Word" and "Generate Another" buttons for continuous AI content generation
   - Added fallback devotional content for seamless experience during AI service interruptions
+  - RESOLVED: Fixed WhatsApp API character limit issues (1024 chars) with message truncation and shortened AI prompts
+  - Confirmed working: AI-powered devotional content successfully delivered to WhatsApp with interactive buttons
 
 ## System Architecture
 
