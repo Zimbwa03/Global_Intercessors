@@ -641,7 +641,7 @@ Reply *help* for more options.`;
     
     const userName = userInfo.name;
 
-    if (command === 'start' || command === 'hi' || command === 'hello') {
+    if (command === 'start' || command === '/start' || command === 'hi' || command === 'hello') {
       await this.handleStartCommand(phoneNumber, userName);
     } else if (command === 'devotionals' || command === '/devotionals') {
       await this.handleDevotionalsCommand(phoneNumber, userName);
