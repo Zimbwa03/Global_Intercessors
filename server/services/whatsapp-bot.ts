@@ -13,6 +13,12 @@ interface DevotionalContent {
   verseReference: string;
 }
 
+interface UserLanguagePreference {
+  userId: string;
+  language: 'english' | 'shona' | 'bilingual';
+  phoneNumber: string;
+}
+
 // Placeholder interfaces for the bot service (assuming they exist elsewhere or are defined here)
 interface BotResponse {
   messageId: string;
@@ -42,6 +48,7 @@ export class WhatsAppPrayerBot {
   private userSessions: Map<string, UserSession> = new Map();
   private messageQueue: Map<string, NodeJS.Timeout> = new Map();
   private pendingResponses: Map<string, boolean> = new Map(); // Tracks if a user has a pending response
+  private userLanguagePreferences: Map<string, 'english' | 'shona' | 'bilingual'> = new Map();
 
   constructor() {
     console.log('🤖 Initializing WhatsApp Prayer Bot...');
@@ -139,8 +146,8 @@ export class WhatsAppPrayerBot {
     }
   }
 
-  // AI-powered devotional generation
-  private async generateDailyDevotional(): Promise<DevotionalContent> {
+  // AI-powered devotional generation with multilingual support
+  private async generateDailyDevotional(language: 'english' | 'shona' | 'bilingual' = 'english'): Promise<DevotionalContent> {
     if (!this.deepSeekApiKey) {
       return {
         devotionText: "May God's grace be with you today. Take time to seek Him in prayer and His Word will guide your steps.",
@@ -150,12 +157,33 @@ export class WhatsAppPrayerBot {
     }
 
     try {
-      const prompt = `Generate a brief, inspiring daily devotional for Christian intercessors. Include:
+      let prompt = '';
+      
+      if (language === 'shona') {
+        prompt = `Generate a brief, inspiring daily devotional for Christian intercessors in Shona language. Include:
+1. A short devotional message (2-3 sentences) about prayer, faith, or spiritual growth - IN SHONA
+2. A relevant Bible verse with its reference - IN SHONA  
+3. Keep it encouraging and practical for daily spiritual life
+4. Use proper Shona grammar and professional spiritual language
+
+Format as plain text without formatting. Write everything in Shona (chiShona).`;
+      } else if (language === 'bilingual') {
+        prompt = `Generate a brief, inspiring daily devotional for Christian intercessors in BOTH Shona and English. Include:
+1. A short devotional message (2-3 sentences) about prayer, faith, or spiritual growth - FIRST IN SHONA, THEN IN ENGLISH
+2. A relevant Bible verse with its reference - FIRST IN SHONA, THEN IN ENGLISH
+3. Keep it encouraging and practical for daily spiritual life
+4. Use proper Shona grammar and professional spiritual language
+5. Present it as: [Shona content] followed by [English content]
+
+Format as plain text without formatting. Provide both languages professionally.`;
+      } else {
+        prompt = `Generate a brief, inspiring daily devotional for Christian intercessors. Include:
 1. A short devotional message (2-3 sentences) about prayer, faith, or spiritual growth
 2. A relevant Bible verse with its reference
 3. Keep it encouraging and practical for daily spiritual life
 
 Format as plain text without formatting.`;
+      }
 
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${this.deepSeekApiKey}`, {
         method: 'POST',
@@ -794,7 +822,7 @@ Provide only the summarized content without any formatting.`;
 
         case 'today_devotional':
           console.log(`📅 Sending today's devotional for ${phoneNumber}`);
-          await this.sendTodaysDevotional(phoneNumber);
+          await this.sendTodaysDevotional(phoneNumber, messageText);
           break;
 
         case 'get_fresh_word':
@@ -805,7 +833,7 @@ Provide only the summarized content without any formatting.`;
         case 'fresh_devotional':
         case 'generate_declarations':
           console.log(`🔥 Generating fresh declarations for ${phoneNumber}`);
-          await this.sendFreshDeclarations(phoneNumber);
+          await this.sendFreshDeclarations(phoneNumber, messageText);
           break;
 
         case 'back_menu':
@@ -1129,11 +1157,21 @@ More features to enhance your prayer experience:`;
     await this.handleStartCommand(phoneNumber);
   }
 
-  // Send today's devotional with DeepSeek AI and personalized buttons
-  private async sendTodaysDevotional(phoneNumber: string): Promise<void> {
+  // Send today's devotional with DeepSeek AI and multilingual support
+  private async sendTodaysDevotional(phoneNumber: string, userMessage?: string): Promise<void> {
     try {
       const userName = await this.getUserName(phoneNumber);
-      const devotional = await this.generateStructuredTodaysWord();
+      
+      // Detect language preference from user message or get stored preference
+      let language: 'english' | 'shona' | 'bilingual' = 'english';
+      if (userMessage) {
+        language = this.detectLanguage(userMessage);
+        this.setUserLanguagePreference(phoneNumber, language);
+      } else {
+        language = this.getUserLanguagePreference(phoneNumber);
+      }
+      
+      const devotional = await this.generateStructuredTodaysWord(language);
 
       const devotionalText = `📖 ${userName}, Here's Your Word for Today!
 
@@ -1211,8 +1249,8 @@ ${devotional.prayer}
     }
   }
 
-  // Generate structured Today's Word with DeepSeek AI
-  private async generateStructuredTodaysWord(): Promise<{topic: string, bibleVerse: string, verseReference: string, explanation: string, prayer: string}> {
+  // Generate structured Today's Word with DeepSeek AI and multilingual support  
+  private async generateStructuredTodaysWord(language: 'english' | 'shona' | 'bilingual' = 'english'): Promise<{topic: string, bibleVerse: string, verseReference: string, explanation: string, prayer: string}> {
     if (!this.deepSeekApiKey) {
       console.log('No DeepSeek API key available, using fallback word');
       return this.getFallbackTodaysWord();
@@ -1220,7 +1258,38 @@ ${devotional.prayer}
 
     try {
       const today = new Date().toDateString();
-      const prompt = `Generate a powerful "Today's Word" for Christian intercessors for ${today}. Follow this exact structure:
+      let prompt = '';
+      
+      if (language === 'shona') {
+        prompt = `Generate a powerful "Today's Word" for Christian intercessors for ${today} IN SHONA LANGUAGE. Follow this exact structure:
+
+1. A compelling topic title about prayer, faith, spiritual warfare, or intercession - IN SHONA
+2. A relevant Bible verse that supports the topic - IN SHONA  
+3. A deep, detailed explanation of the topic using the Bible verse, breaking it down for intercessors (3-4 sentences) - IN SHONA
+4. A powerful, focused prayer based on the topic (2-3 sentences) - IN SHONA
+
+Use proper chiShona grammar and spiritual terminology. Respond in this exact format:
+TOPIC: [powerful topic title in Shona]
+VERSE: [complete Bible verse text in Shona]
+REFERENCE: [Book Chapter:Verse in Shona format]
+EXPLANATION: [detailed breakdown in Shona]
+PRAYER: [powerful prayer in Shona]`;
+      } else if (language === 'bilingual') {
+        prompt = `Generate a powerful "Today's Word" for Christian intercessors for ${today} IN BOTH SHONA AND ENGLISH. Follow this exact structure:
+
+1. A compelling topic title about prayer, faith, spiritual warfare, or intercession - FIRST IN SHONA, THEN IN ENGLISH
+2. A relevant Bible verse that supports the topic - FIRST IN SHONA, THEN IN ENGLISH
+3. A deep, detailed explanation of the topic using the Bible verse, breaking it down for intercessors (3-4 sentences) - FIRST IN SHONA, THEN IN ENGLISH
+4. A powerful, focused prayer based on the topic (2-3 sentences) - FIRST IN SHONA, THEN IN ENGLISH
+
+Respond in this exact format with both languages:
+TOPIC: [powerful topic title in Shona] | [same topic in English]
+VERSE: [complete Bible verse in Shona] | [same verse in English]
+REFERENCE: [Book Chapter:Verse in Shona] | [same reference in English]
+EXPLANATION: [detailed breakdown in Shona] | [same explanation in English]
+PRAYER: [powerful prayer in Shona] | [same prayer in English]`;
+      } else {
+        prompt = `Generate a powerful "Today's Word" for Christian intercessors for ${today}. Follow this exact structure:
 
 1. A compelling topic title about prayer, faith, spiritual warfare, or intercession
 2. A relevant Bible verse that supports the topic
@@ -1233,6 +1302,7 @@ VERSE: [complete Bible verse text]
 REFERENCE: [Book Chapter:Verse]
 EXPLANATION: [detailed breakdown of the topic using the verse]
 PRAYER: [powerful prayer focused on the topic]`;
+      }
 
       console.log('Calling DeepSeek API for structured Today\'s Word...');
 
@@ -1261,7 +1331,7 @@ PRAYER: [powerful prayer focused on the topic]`;
 
       if (!response.ok) {
         console.error(`DeepSeek API error: ${response.status} ${response.statusText}`);
-        return this.getFallbackTodaysWord();
+        return this.getFallbackTodaysWord(language);
       }
 
       const data = await response.json();
@@ -1290,18 +1360,36 @@ PRAYER: [powerful prayer focused on the topic]`;
     }
 
     console.log('Using fallback Today\'s Word due to API error');
-    return this.getFallbackTodaysWord();
+    return this.getFallbackTodaysWord(language);
   }
 
-  // Fallback Today's Word content
-  private getFallbackTodaysWord(): {topic: string, bibleVerse: string, verseReference: string, explanation: string, prayer: string} {
-    return {
-      topic: "Divine Authority in Prayer",
-      bibleVerse: "The effective, fervent prayer of a righteous man avails much.",
-      verseReference: "James 5:16",
-      explanation: "When we pray with righteousness and fervency, our prayers carry divine authority that moves heaven and earth. This verse reveals that our prayers are not mere words, but powerful spiritual weapons that accomplish much in the kingdom of God. As intercessors, we must understand that our prayers have the power to change circumstances, heal the sick, and transform nations.",
-      prayer: "Father, I thank You that my prayers are effective and powerful. Fill me with Your righteousness and grant me a fervent spirit as I intercede today. Let my prayers accomplish much for Your kingdom and bring breakthrough in every situation I lift before You."
-    };
+  // Fallback Today's Word content with multilingual support
+  private getFallbackTodaysWord(language: 'english' | 'shona' | 'bilingual' = 'english'): {topic: string, bibleVerse: string, verseReference: string, explanation: string, prayer: string} {
+    if (language === 'shona') {
+      return {
+        topic: "Simba Remwari Mumunamato",
+        bibleVerse: "Munamato womunhu wakarurama unoshanda zvikuru kana uchinyatsokumbirwa.",
+        verseReference: "Jakobho 5:16",
+        explanation: "Kana tichinamata nokururama uye nokushingaira, minamato yedu inotakura simba raMwari rinokwanisa kushandura denga nenyika. Tsamba iyi inoratidza kuti minamato yedu haisi mashoko chete, asi zvombo zvine simba zvoumumweya zvinokwanisa kuitisa zvizhinji muumambo hwaMwari.",
+        prayer: "Baba, ndinokutendai nokuti minamato yangu inoshanda uye ine simba. Ndizadzei nokururama kwenyu uye mugope mweya wokushingaira pakunamata. Rega minamato yangu ikuite zvizhinji muumambo hwenyu uye ikaunze budiriro munzvimbo dzose dzandinosimudza kwamuri."
+      };
+    } else if (language === 'bilingual') {
+      return {
+        topic: "Simba Remwari Mumunamato | Divine Authority in Prayer",
+        bibleVerse: "Munamato womunhu wakarurama unoshanda zvikuru kana uchinyatsokumbirwa.\nThe effective, fervent prayer of a righteous man avails much.",
+        verseReference: "Jakobho 5:16 | James 5:16",
+        explanation: "Kana tichinamata nokururama uye nokushingaira, minamato yedu inotakura simba raMwari rinokwanisa kushandura denga nenyika. Tsamba iyi inoratidza kuti minamato yedu haisi mashoko chete, asi zvombo zvine simba zvoumumweya.\nWhen we pray with righteousness and fervency, our prayers carry divine authority that moves heaven and earth. This verse reveals that our prayers are not mere words, but powerful spiritual weapons.",
+        prayer: "Baba, ndinokutendai nokuti minamato yangu inoshanda uye ine simba. Ndizadzei nokururama kwenyu uye mugope mweya wokushingaira pakunamata.\nFather, I thank You that my prayers are effective and powerful. Fill me with Your righteousness and grant me a fervent spirit as I intercede today."
+      };
+    } else {
+      return {
+        topic: "Divine Authority in Prayer",
+        bibleVerse: "The effective, fervent prayer of a righteous man avails much.",
+        verseReference: "James 5:16",
+        explanation: "When we pray with righteousness and fervency, our prayers carry divine authority that moves heaven and earth. This verse reveals that our prayers are not mere words, but powerful spiritual weapons that accomplish much in the kingdom of God. As intercessors, we must understand that our prayers have the power to change circumstances, heal the sick, and transform nations.",
+        prayer: "Father, I thank You that my prayers are effective and powerful. Fill me with Your righteousness and grant me a fervent spirit as I intercede today. Let my prayers accomplish much for Your kingdom and bring breakthrough in every situation I lift before You."
+      };
+    }
   }
 
   // Fallback devotional content
@@ -1351,11 +1439,21 @@ ${freshWord.prayer}
     }
   }
 
-  // Send fresh declarations generated by DeepSeek AI
-  private async sendFreshDeclarations(phoneNumber: string): Promise<void> {
+  // Send fresh declarations generated by DeepSeek AI with multilingual support
+  private async sendFreshDeclarations(phoneNumber: string, userMessage?: string): Promise<void> {
     try {
       const userName = await this.getUserName(phoneNumber);
-      const declarations = await this.generateFreshDeclarations();
+      
+      // Detect language preference from user message or get stored preference
+      let language: 'english' | 'shona' | 'bilingual' = 'english';
+      if (userMessage) {
+        language = this.detectLanguage(userMessage);
+        this.setUserLanguagePreference(phoneNumber, language);
+      } else {
+        language = this.getUserLanguagePreference(phoneNumber);
+      }
+      
+      const declarations = await this.generateFreshDeclarations(language);
 
       const declarationsText = `🔥 ${userName}, Fresh Declarations from Heaven!
 
@@ -1383,8 +1481,8 @@ ${declarations.declarations.map((decl, index) =>
     }
   }
 
-  // Generate fresh declarations using DeepSeek AI
-  private async generateFreshDeclarations(): Promise<{focus: string, declarations: Array<{declaration: string, verse: string, verseReference: string}>}> {
+  // Generate fresh declarations using DeepSeek AI with multilingual support
+  private async generateFreshDeclarations(language: 'english' | 'shona' | 'bilingual' = 'english'): Promise<{focus: string, declarations: Array<{declaration: string, verse: string, verseReference: string}>}> {
     if (!this.deepSeekApiKey) {
       console.log('No DeepSeek API key available, using fallback declarations');
       return this.getFallbackDeclarations();
@@ -1392,7 +1490,51 @@ ${declarations.declarations.map((decl, index) =>
 
     try {
       const timestamp = Date.now();
-      const prompt = `Generate 10 powerful declarations for Christian intercessors (ID: ${timestamp}). Create:
+      let prompt = '';
+      
+      if (language === 'shona') {
+        prompt = `Generate 10 powerful declarations for Christian intercessors IN SHONA LANGUAGE (ID: ${timestamp}). Create:
+
+1. A compelling focus theme in Shona (e.g., "Moyo Wakamira Mukushe", "Simba Remwari", "Kukunda Mumweya")
+2. 10 numbered declarations with Bible verses, following this format exactly:
+   - Each declaration should be powerful, faith-filled, and in first person ("Ndinodanidzira..." or "Ndinoreva...")
+   - Include relevant emojis naturally in the declarations
+   - Each declaration must have a supporting Bible verse with reference - ALL IN SHONA
+   - Make them unique and spiritually empowering
+   - Use proper chiShona grammar and spiritual terminology
+
+Respond in this exact format:
+FOCUS: [compelling focus theme in Shona]
+DECLARATION1: [powerful "Ndinodanidzira" statement with emojis in Shona]
+VERSE1: [complete Bible verse text in Shona]
+REFERENCE1: [Book Chapter:Verse]
+DECLARATION2: [powerful declaration in Shona with emojis]
+VERSE2: [complete Bible verse text in Shona]
+REFERENCE2: [Book Chapter:Verse]
+[Continue for all 10 declarations in Shona]`;
+      } else if (language === 'bilingual') {
+        prompt = `Generate 10 powerful declarations for Christian intercessors in BOTH SHONA AND ENGLISH (ID: ${timestamp}). Create:
+
+1. A compelling focus theme in both Shona and English
+2. 10 numbered declarations with Bible verses, following this format exactly:
+   - Each declaration should be powerful, faith-filled, and in first person
+   - FIRST in Shona ("Ndinodanidzira..."), THEN in English ("I declare...")
+   - Include relevant emojis naturally in the declarations
+   - Each declaration must have a supporting Bible verse with reference - BOTH languages
+   - Make them unique and spiritually empowering
+   - Use proper chiShona grammar and professional English
+
+Respond in this exact format:
+FOCUS_SHONA: [compelling focus theme in Shona]
+FOCUS_ENGLISH: [compelling focus theme in English]
+DECLARATION1_SHONA: [powerful statement in Shona with emojis]
+DECLARATION1_ENGLISH: [powerful statement in English with emojis]
+VERSE1_SHONA: [Bible verse in Shona]
+VERSE1_ENGLISH: [Bible verse in English]
+REFERENCE1: [Book Chapter:Verse]
+[Continue for all 10 declarations in both languages]`;
+      } else {
+        prompt = `Generate 10 powerful declarations for Christian intercessors (ID: ${timestamp}). Create:
 
 1. A compelling focus theme (e.g., "Heart Standing Firm in the Lord", "Divine Authority", "Spiritual Breakthrough")
 2. 10 numbered declarations with Bible verses, following this format exactly:
@@ -1410,6 +1552,7 @@ DECLARATION2: [powerful "I declare" statement with emojis]
 VERSE2: [complete Bible verse text]
 REFERENCE2: [Book Chapter:Verse]
 [Continue for all 10 declarations]`;
+      }
 
       console.log('Calling DeepSeek API for fresh declarations...');
 
@@ -1438,7 +1581,7 @@ REFERENCE2: [Book Chapter:Verse]
 
       if (!response.ok) {
         console.error(`DeepSeek API error: ${response.status} ${response.statusText}`);
-        return this.getFallbackDeclarations();
+        return this.getFallbackDeclarations(language);
       }
 
       const data = await response.json();
@@ -1468,7 +1611,7 @@ REFERENCE2: [Book Chapter:Verse]
 
         // If we didn't get 10 declarations, fill with fallback
         while (declarations.length < 10) {
-          const fallback = this.getFallbackDeclarations();
+          const fallback = this.getFallbackDeclarations(language);
           declarations.push(fallback.declarations[declarations.length % fallback.declarations.length]);
         }
 
@@ -1479,14 +1622,87 @@ REFERENCE2: [Book Chapter:Verse]
     }
 
     console.log('Using fallback declarations due to API error');
-    return this.getFallbackDeclarations();
+    return this.getFallbackDeclarations(language);
   }
 
-  // Fallback declarations content
-  private getFallbackDeclarations(): {focus: string, declarations: Array<{declaration: string, verse: string, verseReference: string}>} {
-    return {
-      focus: "💖 Heart Standing Firm in the Lord",
-      declarations: [
+  // Language detection method
+  private detectLanguage(message: string): 'english' | 'shona' | 'bilingual' {
+    const shonaWords = ['ndini', 'ndinotenda', 'mufudzi', 'jesu', 'mwari', 'kristu', 'bhaibheri', 'munamato', 'namato', 'chirevo', 'shona', 'ndiyamuke', 'ndanzwe', 'muchishona', 'chiShona', 'rukudzo', 'rwedenga', 'komborero', 'rugare', 'rudo'];
+    const englishWords = ['prayer', 'declare', 'bible', 'jesus', 'christ', 'devotion', 'english', 'word', 'verse', 'god', 'lord', 'faith', 'blessing', 'peace', 'love'];
+    
+    const messageWords = message.toLowerCase().split(/\s+/);
+    let shonaCount = 0;
+    let englishCount = 0;
+    
+    messageWords.forEach(word => {
+      if (shonaWords.some(sw => word.includes(sw))) shonaCount++;
+      if (englishWords.some(ew => word.includes(ew))) englishCount++;
+    });
+
+    // Check for explicit language requests
+    if (message.toLowerCase().includes('shona') || message.toLowerCase().includes('chishona') || message.toLowerCase().includes('muchishona')) {
+      return shonaCount > 0 ? 'bilingual' : 'shona';
+    }
+    
+    if (shonaCount > englishCount) return 'shona';
+    if (englishCount > shonaCount) return 'english';
+    return 'english'; // Default to English
+  }
+
+  // Store user language preference
+  private setUserLanguagePreference(phoneNumber: string, language: 'english' | 'shona' | 'bilingual') {
+    this.userLanguagePreferences.set(phoneNumber, language);
+  }
+
+  // Get user language preference
+  private getUserLanguagePreference(phoneNumber: string): 'english' | 'shona' | 'bilingual' {
+    return this.userLanguagePreferences.get(phoneNumber) || 'english';
+  }
+
+  // Fallback declarations content with multilingual support
+  private getFallbackDeclarations(language: 'english' | 'shona' | 'bilingual' = 'english'): {focus: string, declarations: Array<{declaration: string, verse: string, verseReference: string}>} {
+    
+    if (language === 'shona') {
+      return {
+        focus: "💖 Moyo Wakamira Mukushe",
+        declarations: [
+          {
+            declaration: "Ndinodanidzira kuti moyo wangu haushaike nokuti Ishe ndiwo hwaro hwangu! 🙏💪🏽✨",
+            verse: "Havazotya mashoko akaipa; mwoyo yavo yakasimba, ichivimba naJehovha.",
+            verseReference: "Pisarema 112:7"
+          },
+          {
+            declaration: "Ndinodanidzira kuti moyo wangu unoramba wakachena uye wakatendeka kuShoko raMwari! 💎❤️🙌",
+            verse: "Vakaropafadzwa vanochena pamoyo, nokuti ivo vachaona Mwari.",
+            verseReference: "Mateo 5:8"
+          },
+          {
+            declaration: "Ndinodanidzira kuti moyo wangu unodziviridzwa noRugare rwaKristu! 🕊️💖🛡️",
+            verse: "Uye rugare rwaMwari... ruchadzivira mwoyo yenyu nendangariro dzenyu muna Kristu Jesu.",
+            verseReference: "VaFiripi 4:7"
+          }
+        ]
+      };
+    } else if (language === 'bilingual') {
+      return {
+        focus: "💖 Moyo Wakamira Mukushe | Heart Standing Firm in the Lord",
+        declarations: [
+          {
+            declaration: "Ndinodanidzira kuti moyo wangu haushaike nokuti Ishe ndiwo hwaro hwangu! 🙏💪🏽✨\nI declare my heart is unshakable because the Lord is my foundation! 🙏💪🏽✨",
+            verse: "Havazotya mashoko akaipa; mwoyo yavo yakasimba, ichivimba naJehovha.\nThey will have no fear of bad news; their hearts are steadfast, trusting in the Lord.",
+            verseReference: "Pisarema 112:7 | Psalm 112:7"
+          },
+          {
+            declaration: "Ndinodanidzira kuti moyo wangu unoramba wakachena uye wakatendeka kuShoko raMwari! 💎❤️🙌\nI declare that my heart remains pure and faithful to God's Word! 💎❤️🙌",
+            verse: "Vakaropafadzwa vanochena pamoyo, nokuti ivo vachaona Mwari.\nBlessed are the pure in heart, for they will see God.",
+            verseReference: "Mateo 5:8 | Matthew 5:8"
+          }
+        ]
+      };
+    } else {
+      return {
+        focus: "💖 Heart Standing Firm in the Lord",
+        declarations: [
         {
           declaration: "I declare my heart is unshakable because the Lord is my foundation! 🙏💪🏽✨",
           verse: "They will have no fear of bad news; their hearts are steadfast, trusting in the Lord.",
