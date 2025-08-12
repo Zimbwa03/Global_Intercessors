@@ -54,7 +54,8 @@ export function WhatsAppSettings() {
   // Fetch WhatsApp bot statistics
   const { data: stats } = useQuery({
     queryKey: ['/api/whatsapp/stats'],
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: false, // Disabled auto-refresh to prevent disruption during typing
+    refetchOnWindowFocus: false
   }) as { data: WhatsAppStats };
 
   // Register WhatsApp user mutation

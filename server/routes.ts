@@ -463,7 +463,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Failed to update skip request" });
       }
 
-      // If approved, update the prayer slot
+      // If approved, update the prayer slot and create notification
       if (action === 'approve') {
         const skipEndDate = new Date();
         skipEndDate.setDate(skipEndDate.getDate() + request.skip_days);
@@ -482,6 +482,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error updating prayer slot:", slotError);
           return res.status(500).json({ error: "Failed to update prayer slot" });
         }
+
+        // TODO: Create approval notification for the user
+        // Temporarily disabled due to database schema mismatch
+        // Will implement proper notification system later
       }
 
       console.log(`Skip request ${requestId} ${action} successfully`);

@@ -385,6 +385,10 @@ export default function AdminDashboard() {
       }
     },
     enabled: !!adminUser,
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
   // Mutations for admin actions

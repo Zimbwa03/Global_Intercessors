@@ -161,7 +161,8 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
       };
     },
     enabled: !!user?.id,
-    refetchInterval: 60000, // Refetch every minute
+    refetchInterval: false, // Disabled auto-refresh to prevent disruption during typing
+    refetchOnWindowFocus: false
   });
 
   // Fetch global intercessors count
@@ -176,7 +177,8 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
         totalIntercessors: analyticsData.intercessorStats.totalRegistered
       };
     },
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: false, // Disabled auto-refresh to prevent disruption during typing
+    refetchOnWindowFocus: false
   });
 
   // Fetch user's prayer slot with real-time updates

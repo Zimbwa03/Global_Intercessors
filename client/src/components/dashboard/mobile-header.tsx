@@ -69,7 +69,8 @@ export function MobileHeader({
       if (!response.ok) throw new Error("Failed to fetch updates");
       return response.json();
     },
-    refetchInterval: 30000,
+    refetchInterval: false, // Disabled auto-refresh to prevent disruption during typing
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {

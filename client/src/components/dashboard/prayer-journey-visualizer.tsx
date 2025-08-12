@@ -89,7 +89,8 @@ export function PrayerJourneyVisualizer({ userId }: PrayerJourneyVisualizerProps
       return response.json();
     },
     enabled: !!currentUserId,
-    refetchInterval: 60000
+    refetchInterval: false, // Disabled auto-refresh to prevent disruption during typing
+    refetchOnWindowFocus: false
   });
 
   // Generate 3D prayer landscape data

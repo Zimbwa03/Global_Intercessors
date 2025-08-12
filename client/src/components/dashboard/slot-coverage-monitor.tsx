@@ -15,8 +15,8 @@ export function SlotCoverageMonitor() {
       if (!response.ok) throw new Error('Failed to check slot coverage');
       return response.json();
     },
-    refetchInterval: 60000, // Check every minute
-    refetchOnWindowFocus: true
+    refetchInterval: false, // Disabled auto-refresh to prevent disruption during typing
+    refetchOnWindowFocus: false
   });
 
   useEffect(() => {

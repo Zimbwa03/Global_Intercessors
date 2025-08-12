@@ -51,7 +51,7 @@ export function UpdatesAnnouncements() {
       }
     },
     refetchOnWindowFocus: false,
-    refetchInterval: 30000, // Refresh every 30 seconds to get new admin updates
+    refetchInterval: false, // Disabled auto-refresh to prevent disruption during typing
   });
 
   // Static fasting announcement (always shows first)
