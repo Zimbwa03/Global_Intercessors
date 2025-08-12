@@ -57,6 +57,11 @@ export class WhatsAppPrayerBot {
   private deepSeekApiKey: string;
   private processedMessages: Set<string> = new Set();
   private rateLimitMap: Map<string, number> = new Map();
+  private bibleStudySessions: Map<string, {
+    inSession: boolean;
+    topic: string | null;
+    conversationHistory: Array<{role: string, content: string}>;
+  }> = new Map();
 
   constructor() {
     console.log('🤖 Initializing WhatsApp Prayer Bot v2...');
@@ -996,6 +1001,13 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
       
       const userName = userInfo.name;
 
+      // Check if user is in Bible Study session
+      const bibleStudySession = this.bibleStudySessions.get(phoneNumber);
+      if (bibleStudySession?.inSession && !command.startsWith('/end')) {
+        await this.handleBibleStudyConversation(phoneNumber, userName, messageText);
+        return;
+      }
+
       // Handle button responses and commands
       if (command === 'continue' || command === 'start' || command === '/start' || command === 'hi' || command === 'hello') {
         await this.handleStartCommand(phoneNumber, userName);
@@ -1024,10 +1036,14 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
         await this.handleStartCommand(phoneNumber, userName);
       
       // Handle specific button interactions
-      } else if (command === 'todays_word' || command === 'daily_declarations') {
+      } else if (command === 'todays_word' || command === 'daily_declarations' || command === 'bible_study') {
         await this.handleDevotionalContent(phoneNumber, userName, command);
       } else if (command === 'get_fresh_word' || command === 'generate_another') {
         await this.handleGenerateContent(phoneNumber, userName, command);
+      } else if (command === 'type_topic' || command === 'random_topic') {
+        await this.handleBibleStudyTopicSelection(phoneNumber, userName, command);
+      } else if (command === '/endstudy' || command === '/end bible study') {
+        await this.handleEndBibleStudy(phoneNumber, userName);
       } else if (command === 'daily_devotional' || command === 'fresh_word' || command === 'scripture_insight') {
         await this.handleSpecificDevotional(phoneNumber, userName, command);
       } else if (command === 'easy_quiz' || command === 'medium_quiz' || command === 'hard_quiz') {
@@ -1365,7 +1381,7 @@ Choose your spiritual nourishment for today:`;
     const buttons = [
       { id: 'todays_word', title: "📖 Today's Word" },
       { id: 'daily_declarations', title: '🔥 Daily Declarations' },
-      { id: 'back', title: '⬅️ Back to Menu' }
+      { id: 'bible_study', title: '📚 Bible Study' }
     ];
 
     await this.sendInteractiveMessage(phoneNumber, welcomeMessage, buttons);
@@ -1379,6 +1395,8 @@ Choose your spiritual nourishment for today:`;
       await this.generateTodaysWord(phoneNumber, userName);
     } else if (type === 'daily_declarations') {
       await this.generateDailyDeclarations(phoneNumber, userName);
+    } else if (type === 'bible_study') {
+      await this.initiateBibleStudy(phoneNumber, userName);
     }
   }
 
@@ -1927,6 +1945,242 @@ Let me help you get back on track! Here are your options:`;
     ];
 
     await this.sendInteractiveMessage(phoneNumber, unknownMessage, buttons);
+  }
+
+  // Bible Study Feature Implementation
+  private async initiateBibleStudy(phoneNumber: string, userName: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'bible_study', 'initiate');
+
+    // Initialize session
+    this.bibleStudySessions.set(phoneNumber, {
+      inSession: true,
+      topic: null,
+      conversationHistory: []
+    });
+
+    const firstName = userName.split(' ')[0];
+    const welcomeMessage = `📚 *Welcome to Bible Study, ${firstName}!* 📚
+
+I'm your personal Bible Study Instructor, here to guide you through God's Word with depth and spiritual insight.
+
+*"All Scripture is God-breathed and is useful for teaching, rebuking, correcting and training in righteousness."* - 2 Timothy 3:16
+
+What topic would you like to explore today? You can choose your own or let me select one for you:`;
+
+    const buttons = [
+      { id: 'type_topic', title: '✏️ Type a Topic' },
+      { id: 'random_topic', title: '🎲 Random Topic' },
+      { id: 'back', title: '⬅️ Back to Menu' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, welcomeMessage, buttons);
+  }
+
+  private async handleBibleStudyTopicSelection(phoneNumber: string, userName: string, selection: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'bible_study', 'topic_selection');
+
+    const session = this.bibleStudySessions.get(phoneNumber);
+    if (!session?.inSession) {
+      await this.initiateBibleStudy(phoneNumber, userName);
+      return;
+    }
+
+    if (selection === 'type_topic') {
+      const message = `📝 *Topic Selection* 📝
+
+Please type the Bible topic you'd like to study today.
+
+Examples:
+• Faith
+• Love  
+• Prayer
+• Forgiveness
+• The Holy Spirit
+• Grace
+• Hope
+
+*Simply type your chosen topic and we'll begin our study!*
+
+Type */endstudy* anytime to end the session.`;
+
+      await this.sendWhatsAppMessage(phoneNumber, message);
+    } else if (selection === 'random_topic') {
+      const topics = [
+        'Faith', 'Love', 'Grace', 'Hope', 'Prayer', 'Forgiveness', 
+        'The Holy Spirit', 'Discipleship', 'Wisdom', 'Peace', 
+        'Joy', 'Redemption', 'Sacrifice', 'The Kingdom of God',
+        'Humility', 'Worship', 'Thanksgiving', 'Perseverance'
+      ];
+      
+      const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+      session.topic = randomTopic;
+      this.bibleStudySessions.set(phoneNumber, session);
+
+      const message = `🎲 *Random Topic Selected!* 🎲
+
+Today we will be studying: **${randomTopic}**
+
+Are you ready to dive deep into God's Word and explore this topic together?
+
+*Type "yes" to begin, or */endstudy* to end the session.*`;
+
+      await this.sendWhatsAppMessage(phoneNumber, message);
+    }
+  }
+
+  private async handleBibleStudyConversation(phoneNumber: string, userName: string, userMessage: string): Promise<void> {
+    const session = this.bibleStudySessions.get(phoneNumber);
+    if (!session?.inSession) return;
+
+    try {
+      // If no topic set yet, treat this as topic selection
+      if (!session.topic && userMessage.toLowerCase() !== 'yes') {
+        session.topic = userMessage.trim();
+        this.bibleStudySessions.set(phoneNumber, session);
+        
+        const confirmMessage = `✅ *Topic Confirmed: ${session.topic}* ✅
+
+Excellent choice! Are you ready to begin our Bible study on **${session.topic}**?
+
+*Type "yes" to start, or */endstudy* to end the session.*`;
+
+        await this.sendWhatsAppMessage(phoneNumber, confirmMessage);
+        return;
+      }
+
+      // Build conversation history
+      session.conversationHistory.push({
+        role: 'user',
+        content: userMessage
+      });
+
+      // Generate AI response using DeepSeek with Bible Study Instructor persona
+      const prompt = this.buildBibleStudyPrompt(session, userName);
+      const aiResponse = await this.generateBibleStudyResponse(prompt, session.conversationHistory);
+
+      // Send response
+      await this.sendWhatsAppMessage(phoneNumber, aiResponse);
+
+      // Update conversation history
+      session.conversationHistory.push({
+        role: 'assistant', 
+        content: aiResponse
+      });
+
+      // Keep conversation history manageable (last 10 exchanges)
+      if (session.conversationHistory.length > 20) {
+        session.conversationHistory = session.conversationHistory.slice(-20);
+      }
+
+      this.bibleStudySessions.set(phoneNumber, session);
+
+    } catch (error) {
+      console.error('Error in Bible Study conversation:', error);
+      await this.sendWhatsAppMessage(phoneNumber, 
+        `📚 I apologize, but I encountered a technical issue. Let's continue our study. Please repeat your last message or ask another question about our topic: **${session.topic}**`
+      );
+    }
+  }
+
+  private buildBibleStudyPrompt(session: any, userName: string): string {
+    const firstName = userName.split(' ')[0];
+    
+    return `You are a Professional, Knowledgeable, and Spiritually Discerning Bible Study Instructor conducting a WhatsApp Bible study session with ${firstName} on the topic of "${session.topic}". 
+
+**Core Directives:**
+1. **Persona Adherence:** Maintain a respectful, patient, encouraging, structured, contextual, application-oriented, and theologically neutral tone. Your language should be clear, concise, and accessible for WhatsApp messaging.
+
+2. **Scripture-Centric:** Always ground discussions in biblical text. Encourage reading and referring to specific verses using standard format (e.g., John 3:16).
+
+3. **Methodical Approach:** Use effective Bible study techniques:
+   - **Observation:** Ask what the text says
+   - **Interpretation:** Guide understanding of original context  
+   - **Correlation:** Connect with other relevant scriptures
+   - **Application:** Prompt personal life application
+
+4. **Interactive Dialogue:** Ask open-ended questions. Facilitate discovery rather than just providing answers.
+
+5. **WhatsApp Optimization:** Keep responses concise but meaningful (under 1000 characters when possible). Use emojis appropriately (📖🙏✨💝🌟) and bullet points for clarity.
+
+6. **Session Management:** Remember this is an ongoing conversation. Reference previous points made and build upon them.
+
+7. **Practical Focus:** Always include practical application questions and encourage personal reflection.
+
+**Current Topic:** ${session.topic}
+**Session Stage:** ${session.conversationHistory.length === 0 ? 'Beginning - provide opening question/verse' : 'Ongoing conversation'}
+
+**Instructions:** 
+- If this is the beginning, start with a foundational verse about ${session.topic} and an engaging opening question
+- If ongoing, respond thoughtfully to the user's input and guide them deeper into the topic
+- Include relevant scripture references
+- Ask engaging questions that promote reflection
+- Provide brief contextual information when helpful
+- Encourage practical application
+
+Remember: You're guiding ${firstName} through an enriching Bible study experience via WhatsApp. Be warm, encouraging, and spiritually insightful while maintaining theological integrity.`;
+  }
+
+  private async generateBibleStudyResponse(prompt: string, conversationHistory: any[]): Promise<string> {
+    try {
+      const messages = [
+        {
+          role: 'system',
+          content: prompt
+        },
+        ...conversationHistory.slice(-6) // Include last 6 messages for context
+      ];
+
+      const response = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.deepSeekApiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: messages,
+          max_tokens: 1000,
+          temperature: 0.7
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`DeepSeek API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0]?.message?.content || 'Let me think about that... Could you rephrase your question?';
+
+    } catch (error) {
+      console.error('Bible Study AI generation failed:', error);
+      throw error;
+    }
+  }
+
+  private async handleEndBibleStudy(phoneNumber: string, userName: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'bible_study', 'end_session');
+
+    // Clear session
+    this.bibleStudySessions.delete(phoneNumber);
+
+    const firstName = userName.split(' ')[0];
+    const endMessage = `📚 *Bible Study Session Complete* 📚
+
+Thank you for joining this Bible study session, ${firstName}! I pray that our time in God's Word has been enriching and transformative.
+
+*"But be doers of the word, and not hearers only, deceiving yourselves."* - James 1:22
+
+Remember, the journey of faith is continuous. Feel free to start another study session whenever you're ready to dive deeper into Scripture!
+
+🙏 *God bless you as you apply His Word to your life!*`;
+
+    const buttons = [
+      { id: 'bible_study', title: '📚 New Bible Study' },
+      { id: 'devotionals', title: '📖 More Devotionals' },
+      { id: 'back', title: '⬅️ Back to Menu' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, endMessage, buttons);
   }
 
   // Webhook verification for Meta WhatsApp Business API
