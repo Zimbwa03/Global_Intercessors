@@ -62,7 +62,11 @@ export class WhatsAppPrayerBot {
     topic: string | null;
     conversationHistory: Array<{role: string, content: string}>;
     waitingForTopic?: boolean;
+    language?: string;
   }> = new Map();
+  
+  // Language preferences for users
+  private userLanguagePreferences: Map<string, string> = new Map();
 
   constructor() {
     console.log('🤖 Initializing WhatsApp Prayer Bot v2...');
@@ -1043,6 +1047,10 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
         await this.handleGenerateContent(phoneNumber, userName, command);
       } else if (command === 'type_topic' || command === 'random_topic') {
         await this.handleBibleStudyTopicSelection(phoneNumber, userName, command);
+      } else if (command === 'language_settings') {
+        await this.handleLanguageSettings(phoneNumber, userName);
+      } else if (command === 'select_english' || command === 'select_shona') {
+        await this.handleLanguageSelection(phoneNumber, userName, command);
       } else if (command === '/endstudy' || command === '/end bible study') {
         await this.handleEndBibleStudy(phoneNumber, userName);
       } else if (command === 'daily_devotional' || command === 'fresh_word' || command === 'scripture_insight') {
@@ -1382,7 +1390,8 @@ Choose your spiritual nourishment for today:`;
     const buttons = [
       { id: 'todays_word', title: "📖 Today's Word" },
       { id: 'daily_declarations', title: '🔥 Daily Declarations' },
-      { id: 'bible_study', title: '📚 Bible Study' }
+      { id: 'bible_study', title: '📚 Bible Study' },
+      { id: 'language_settings', title: '🌍 Language / Mutauro' }
     ];
 
     await this.sendInteractiveMessage(phoneNumber, welcomeMessage, buttons);
@@ -1404,25 +1413,53 @@ Choose your spiritual nourishment for today:`;
   // Generate Today's Word using DeepSeek AI
   private async generateTodaysWord(phoneNumber: string, userName: string): Promise<void> {
     try {
-      const prompt = `Generate a detailed "Today's Word" devotional for WhatsApp. Structure exactly as follows:
+      // Add date-based variation to prevent repetition
+      const today = new Date();
+      const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const dayOfWeek = today.getDay(); // 0-6
+      const weekOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+      
+      // Create varied topics based on date
+      const topicSeeds = [
+        "Divine Authority", "Unshakeable Faith", "Spiritual Breakthrough", "Heavenly Wisdom",
+        "Kingdom Power", "Intercession Fire", "Revival Heart", "Prophetic Vision",
+        "God's Grace", "Victory in Christ", "Holy Spirit Power", "Divine Purpose",
+        "Covenant Promises", "Healing Touch", "Restoration Hope", "Mountain-Moving Faith",
+        "Supernatural Peace", "Divine Protection", "Abundant Life", "Eternal Glory"
+      ];
+      
+      const dailyTopic = topicSeeds[(dayOfWeek + weekOfYear) % topicSeeds.length];
+      
+      const prompt = `Generate a detailed "Today's Word" devotional for WhatsApp on ${dateString}. Focus specifically on the theme of "${dailyTopic}" but make it fresh and unique for today. Structure exactly as follows:
 
-**Topic:** [Compelling spiritual theme - 3-4 words]
+**Topic:** [Create a compelling spiritual theme around "${dailyTopic}" - make it specific and unique for ${dateString}]
 
 **Scripture:** [Book Chapter:Verse]
-"[Write the COMPLETE Bible verse text - not just reference]"
+"[Write the COMPLETE Bible verse text that relates to ${dailyTopic} - not just reference]"
 
 **Deep Insight:**
-[2-3 sentences explaining the verse's meaning for today's intercessor, focusing on practical application and spiritual empowerment]
+[2-3 sentences explaining the verse's meaning for today's intercessor, focusing on practical application of ${dailyTopic} and spiritual empowerment]
 
 **Prayer Declaration:**
-"Father, [specific prayer based on the verse - 2 sentences]. In Jesus' name, Amen."
+"Father, [specific prayer based on the verse and ${dailyTopic} theme - 2 sentences]. In Jesus' name, Amen."
 
-Make it spiritually rich, encouraging, and practical for prayer warriors.`;
+Make it spiritually rich, encouraging, practical for prayer warriors, and ensure it's unique for ${dateString}.`;
 
-      const content = await this.generateAIContent(prompt);
+      // Get user's language preference
+      const userLanguage = this.userLanguagePreferences.get(phoneNumber) || 'english';
+      const content = await this.generateAIContent(prompt, userLanguage);
       
       const firstName = userName.split(' ')[0];
-      const todaysWordMessage = `📖 *Today's Word* 📖
+      
+      const todaysWordMessage = userLanguage === 'shona' 
+        ? `📖 *Shoko reZuva* 📖
+
+${content}
+
+🙏 *Ngazvisimbise munamato wenyu nhasi, ${firstName}!*
+
+*"Munamato womunhu akarurama une simba guru." - Jakobho 5:16*`
+        : `📖 *Today's Word* 📖
 
 ${content}
 
@@ -1496,10 +1533,23 @@ God's kingdom stands firm when everything else crumbles. As intercessors, we pra
 
 Keep each declaration under 60 characters. Only reference, no full verse text.`;
 
-      const content = await this.generateAIContent(prompt);
+      // Get user's language preference
+      const userLanguage = this.userLanguagePreferences.get(phoneNumber) || 'english';
+      const content = await this.generateAIContent(prompt, userLanguage);
       
       const firstName = userName.split(' ')[0];
-      const declarationsMessage = `🔥 *Daily Declarations* 🔥
+      
+      const declarationsMessage = userLanguage === 'shona' 
+        ? `🔥 *Zviparidzo zveZuva* 🔥
+
+*${firstName}, taura izvi pamusoro peupenyu hwako:*
+
+${content}
+
+💪 *Paridza neruvesero rukuru!*
+
+*"Ngavataure vakasunungurwa!" - Pisarema 107:2*`
+        : `🔥 *Daily Declarations* 🔥
 
 *${firstName}, speak these over your life:*
 
@@ -1585,9 +1635,17 @@ ${content}
     }
   }
 
-  // AI content generation helper
-  private async generateAIContent(prompt: string): Promise<string> {
+  // AI content generation helper with multilingual support
+  private async generateAIContent(prompt: string, language: string = 'english'): Promise<string> {
     try {
+      const systemContent = language === 'shona' 
+        ? 'You are a Christian devotional writer specializing in powerful, biblically-grounded content for intercessors and prayer warriors in Shona language. Your writing is inspiring, scripturally sound, and spiritually empowering. Write all content in Shona (chiShona) language, including Bible verses when available. Provide English Bible references for clarity.'
+        : 'You are a Christian devotional writer specializing in powerful, biblically-grounded content for intercessors and prayer warriors. Your writing is inspiring, scripturally sound, and spiritually empowering.';
+
+      const languagePrompt = language === 'shona' 
+        ? `${prompt}\n\nIMPORTANT: Write all content in Shona language (chiShona). Include Bible verses in Shona when possible, but provide English references for clarity. Use Shona spiritual terminology and cultural context.`
+        : prompt;
+
       const response = await fetch('https://api.deepseek.com/chat/completions', {
         method: 'POST',
         headers: {
@@ -1599,11 +1657,11 @@ ${content}
           messages: [
             {
               role: 'system',
-              content: 'You are a Christian devotional writer specializing in powerful, biblically-grounded content for intercessors and prayer warriors. Your writing is inspiring, scripturally sound, and spiritually empowering.'
+              content: systemContent
             },
             {
               role: 'user',
-              content: prompt
+              content: languagePrompt
             }
           ],
           max_tokens: 800,
@@ -1946,6 +2004,60 @@ Celebrating progress, ${userName}:
     await this.sendInteractiveMessage(phoneNumber, content, buttons);
   }
 
+  private async handleLanguageSettings(phoneNumber: string, userName: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', 'language_settings');
+
+    const currentLanguage = this.userLanguagePreferences.get(phoneNumber) || 'english';
+    
+    const languageMessage = `🌍 *Language Settings / Mutauro* 🌍
+
+Current language: ${currentLanguage === 'shona' ? 'Shona' : 'English'}
+
+Sarudza mutauro wako / Choose your language:
+
+📖 All devotionals, Bible study, and bot responses will be in your selected language.
+📚 Bible verses will be provided in both languages when available.`;
+
+    const buttons = [
+      { id: 'select_english', title: '🇺🇸 English' },
+      { id: 'select_shona', title: '🇿🇼 Shona' },
+      { id: 'back', title: '⬅️ Back / Dzokera' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, languageMessage, buttons);
+  }
+
+  private async handleLanguageSelection(phoneNumber: string, userName: string, selection: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', selection);
+
+    const language = selection === 'select_shona' ? 'shona' : 'english';
+    this.userLanguagePreferences.set(phoneNumber, language);
+
+    const confirmationMessage = language === 'shona' 
+      ? `✅ *Mutauro wasarudzwa: Shona* ✅
+
+Zvakadaro ${userName}! Zvinhu zvose zvichauyiswa muchiShona kubva zvino.
+
+🙏 *"Shoko rako ndiwo mwenje wetsoka dzangu, nechiedza chenzira yangu."* - Pisarema 119:105
+
+Sarudza zvinoera:` 
+      : `✅ *Language Selected: English* ✅
+
+Great ${userName}! All content will now be delivered in English.
+
+🙏 *"Your word is a lamp for my feet, a light on my path."* - Psalm 119:105
+
+Choose your option:`;
+
+    const buttons = [
+      { id: 'todays_word', title: language === 'shona' ? "📖 Shoko reZuva" : "📖 Today's Word" },
+      { id: 'daily_declarations', title: language === 'shona' ? '🔥 Zviparidzo' : '🔥 Daily Declarations' },
+      { id: 'bible_study', title: language === 'shona' ? '📚 Kudzidza Bhaibheri' : '📚 Bible Study' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, confirmationMessage, buttons);
+  }
+
   private async handleUnknownCommand(phoneNumber: string, userName: string, messageText: string): Promise<void> {
     await this.logInteraction(phoneNumber, 'unknown_command', messageText);
 
@@ -1967,15 +2079,28 @@ Let me help you get back on track! Here are your options:`;
   private async initiateBibleStudy(phoneNumber: string, userName: string): Promise<void> {
     await this.logInteraction(phoneNumber, 'bible_study', 'initiate');
 
-    // Initialize session
+    // Get user's language preference
+    const userLanguage = this.userLanguagePreferences.get(phoneNumber) || 'english';
+
+    // Initialize session with language
     this.bibleStudySessions.set(phoneNumber, {
       inSession: true,
       topic: null,
-      conversationHistory: []
+      conversationHistory: [],
+      language: userLanguage
     });
 
     const firstName = userName.split(' ')[0];
-    const welcomeMessage = `📚 *Welcome to Bible Study, ${firstName}!* 📚
+    
+    const welcomeMessage = userLanguage === 'shona'
+      ? `📚 *Mauya kuKudzidza Bhaibheri, ${firstName}!* 📚
+
+Ndiri mudzidzisi wako weBhaibheri, ndiri pano ndichakuperekedza muShoko raMwari neruvesero rusundruka.
+
+*"Magwaro ose anofuridza Mwari uye anobatsira kudzidzisa, kutsiura, kugadzirisa nokurapa mukukarama."* - 2 Timoteo 3:16
+
+Ndeipi musoro waunoda kudzidza nhasi? Ungagona kusarudza wako kana ndikunyorerawo:`;
+      : `📚 *Welcome to Bible Study, ${firstName}!* 📚
 
 I'm your personal Bible Study Instructor, here to guide you through God's Word with depth and spiritual insight.
 
@@ -1983,11 +2108,17 @@ I'm your personal Bible Study Instructor, here to guide you through God's Word w
 
 What topic would you like to explore today? You can choose your own or let me select one for you:`;
 
-    const buttons = [
-      { id: 'type_topic', title: '✏️ Type a Topic' },
-      { id: 'random_topic', title: '🎲 Random Topic' },
-      { id: 'back', title: '⬅️ Back to Menu' }
-    ];
+    const buttons = userLanguage === 'shona' 
+      ? [
+          { id: 'type_topic', title: '✏️ Nyora Musoro' },
+          { id: 'random_topic', title: '🎲 Musoro Wese' },
+          { id: 'back', title: '⬅️ Dzokera' }
+        ]
+      : [
+          { id: 'type_topic', title: '✏️ Type a Topic' },
+          { id: 'random_topic', title: '🎲 Random Topic' },
+          { id: 'back', title: '⬅️ Back to Menu' }
+        ];
 
     await this.sendInteractiveMessage(phoneNumber, welcomeMessage, buttons);
   }
