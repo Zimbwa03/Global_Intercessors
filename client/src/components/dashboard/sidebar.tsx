@@ -74,7 +74,8 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
             {[
               ...menuItems,
               { id: "ai-assistant", label: "AI Assistant", icon: "fas fa-robot" },
-              { id: "schedule", label: "Prayer Schedule", icon: "fas fa-calendar-alt" }
+              { id: "schedule", label: "Prayer Schedule", icon: "fas fa-calendar-alt" },
+              { id: "whatsapp-updates", label: "WhatsApp Updates", icon: "fab fa-whatsapp" }
             ].map((item) => (
               <li key={item.id}>
                 <Button
@@ -115,7 +116,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
 
   return (
     <div className={cn(
-      "bg-gi-primary text-white h-full flex flex-col transition-brand shadow-brand-lg relative",
+      "bg-gi-primary text-white h-screen flex flex-col transition-brand shadow-brand-lg fixed left-0 top-0 z-30",
       isCollapsed ? "w-16" : "w-64"
     )}>
       <div className="absolute inset-0 bg-gradient-to-b from-gi-primary/30 to-gi-primary/30"></div>
@@ -253,6 +254,23 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
         >
           <i className="fas fa-calendar-alt h-5 w-5"></i>
           {!isCollapsed && <span>Prayer Schedule</span>}
+        </Button>
+        
+        <Button
+          onClick={() => {
+            console.log('Desktop sidebar button clicked: whatsapp-updates');
+            onTabChange('whatsapp-updates');
+          }}
+          variant="ghost"
+          className={`w-full ${isCollapsed ? 'justify-center px-2' : 'justify-start space-x-3 px-3'} py-2 h-auto text-sm font-medium transition-colors ${
+            activeTab === 'whatsapp-updates'
+              ? 'bg-gi-gold text-gi-primary border-r-2 border-gi-gold'
+              : 'text-gi-white hover:bg-gi-gold/10 hover:text-gi-gold'
+          }`}
+          title={isCollapsed ? 'WhatsApp Updates' : undefined}
+        >
+          <i className="fab fa-whatsapp h-5 w-5"></i>
+          {!isCollapsed && <span>WhatsApp Updates</span>}
         </Button>
       </nav>
 
