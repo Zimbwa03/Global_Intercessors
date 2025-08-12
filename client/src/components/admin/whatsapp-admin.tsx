@@ -207,7 +207,12 @@ export function WhatsAppAdmin() {
               type="password"
               placeholder="Enter admin secret key"
               value={adminKey}
-              onChange={(e) => setAdminKey(e.target.value)}
+              onChange={(e) => {
+                e.preventDefault();
+                setAdminKey(e.target.value);
+              }}
+              autoComplete="off"
+              spellCheck={false}
             />
             <p className="text-sm text-gray-500">
               This key is required for all administrative operations
@@ -232,9 +237,15 @@ export function WhatsAppAdmin() {
             <Label htmlFor="update-title">Update Title</Label>
             <Input
               id="update-title"
+              type="text"
               placeholder="Enter update title"
               value={updateTitle}
-              onChange={(e) => setUpdateTitle(e.target.value)}
+              onChange={(e) => {
+                e.preventDefault();
+                setUpdateTitle(e.target.value);
+              }}
+              autoComplete="off"
+              spellCheck={false}
             />
           </div>
           
@@ -245,7 +256,12 @@ export function WhatsAppAdmin() {
               placeholder="Enter the full update content. This will be summarized for WhatsApp delivery."
               rows={6}
               value={updateContent}
-              onChange={(e) => setUpdateContent(e.target.value)}
+              onChange={(e) => {
+                e.preventDefault();
+                setUpdateContent(e.target.value);
+              }}
+              autoComplete="off"
+              spellCheck={false}
             />
             <p className="text-sm text-gray-500">
               Content will be processed by AI to create a concise WhatsApp message (under 150 words)

@@ -169,13 +169,14 @@ export function MobileDashboardOverview({ userEmail, userId, onTabChange }: Mobi
       gradient: "from-blue-500 to-blue-600",
       action: () => onTabChange?.("prayer-planner")
     },
-    {
-      title: "Analytics",
-      description: "View your progress",
-      icon: TrendingUp,
-      gradient: "from-purple-500 to-purple-600",
-      action: () => onTabChange?.("analytics")
-    }
+    // Analytics button removed as per requirement
+    // {
+    //   title: "Analytics",
+    //   description: "View your progress",
+    //   icon: TrendingUp,
+    //   gradient: "from-purple-500 to-purple-600",
+    //   action: () => onTabChange?.("analytics")
+    // }
   ];
 
   const stats = [

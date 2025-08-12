@@ -34,7 +34,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
     { id: "prayer-planner", label: "Prayer Planner", icon: "fas fa-calendar-check" },
   ];
 
-  
+
 
   if (isMobile) {
     return (
@@ -81,7 +81,6 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
           <ul className="space-y-3">
             {[
               ...menuItems,
-              { id: "ai-assistant", label: "AI Assistant", icon: "fas fa-robot" },
               { id: "schedule", label: "Prayer Schedule", icon: "fas fa-calendar-alt" },
               { id: "whatsapp-updates", label: "WhatsApp Updates", icon: "fab fa-whatsapp" }
             ].map((item) => (
@@ -135,7 +134,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
           {isCollapsed ? (
             <div className="flex flex-col items-center space-y-2">
               <img
-                src="/src/assets/GI_Logo_Main_1751586542563.png"
+                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png"
                 alt="Global Intercessors"
                 className="h-8 w-8"
               />
@@ -152,7 +151,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
             <>
               <div className="flex items-center space-x-3">
                 <img
-                  src="/src/assets/GI_Logo_Main_1751586542563.png"
+                  src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png"
                   alt="Global Intercessors"
                   className="h-8 w-8"
                 />
@@ -228,25 +227,8 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
             {!isCollapsed && <span>{item.label}</span>}
           </Button>
         ))}
-        
+
         {/* Additional menu items */}
-        <Button
-          onClick={() => {
-            console.log('Desktop sidebar button clicked: ai-assistant');
-            onTabChange('ai-assistant');
-          }}
-          variant="ghost"
-          className={`w-full ${isCollapsed ? 'justify-center px-2' : 'justify-start space-x-3 px-3'} py-2 h-auto text-sm font-medium transition-colors ${
-            activeTab === 'ai-assistant'
-              ? 'bg-gi-gold text-gi-primary border-r-2 border-gi-gold'
-              : 'text-gi-white hover:bg-gi-gold/10 hover:text-gi-gold'
-          }`}
-          title={isCollapsed ? 'AI Assistant' : undefined}
-        >
-          <i className="fas fa-robot h-5 w-5"></i>
-          {!isCollapsed && <span>AI Assistant</span>}
-        </Button>
-        
         <Button
           onClick={() => {
             console.log('Desktop sidebar button clicked: schedule');
@@ -263,7 +245,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
           <i className="fas fa-calendar-alt h-5 w-5"></i>
           {!isCollapsed && <span>Prayer Schedule</span>}
         </Button>
-        
+
         <Button
           onClick={() => {
             console.log('Desktop sidebar button clicked: whatsapp-updates');

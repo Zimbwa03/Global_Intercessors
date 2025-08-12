@@ -129,6 +129,20 @@ export function MobileHeader({
 
         {/* Right side - Actions */}
         <div className="flex items-center space-x-2">
+          {/* Prayer Schedule Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+            onClick={() => {
+              if (onTabChange) {
+                onTabChange('schedule');
+              }
+            }}
+          >
+            <i className="fas fa-calendar-alt w-5 h-5"></i>
+          </Button>
+
           {/* Updates Button */}
           <Button
             variant="ghost"
