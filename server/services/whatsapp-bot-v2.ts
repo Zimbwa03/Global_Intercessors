@@ -745,6 +745,56 @@ This ensures secure connection between your account and WhatsApp bot access.`
         };
       }
 
+      // CRITICAL SECURITY CHECK: Verify the current phone number matches the registered WhatsApp number
+      const registeredWhatsAppNumber = userProfile.whatsapp_number || userProfile.phone_number;
+      
+      if (!registeredWhatsAppNumber) {
+        console.log(`❌ No WhatsApp number registered for user ${userId}`);
+        return { 
+          success: false, 
+          message: `🔒 Authentication successful, but no WhatsApp number is registered in your Global Intercessors profile.
+
+📱 To continue using the WhatsApp bot:
+
+1️⃣ Open the Global Intercessors web application
+2️⃣ Go to your User Profile settings  
+3️⃣ Add your WhatsApp number: ${phoneNumber}
+4️⃣ Save your profile
+5️⃣ Return here and try logging in again
+
+This ensures secure access to your account.` 
+        };
+      }
+
+      // Normalize phone numbers for comparison (remove spaces, dashes, plus signs)
+      const normalizePhone = (phone: string) => phone.replace(/[\s\-\+\(\)]/g, '');
+      const currentPhoneNormalized = normalizePhone(phoneNumber);
+      const registeredPhoneNormalized = normalizePhone(registeredWhatsAppNumber);
+
+      if (currentPhoneNormalized !== registeredPhoneNormalized) {
+        console.log(`❌ Phone number mismatch for user ${userId}. Current: ${phoneNumber}, Registered: ${registeredWhatsAppNumber}`);
+        return { 
+          success: false, 
+          message: `🚫 **Access Denied - Unregistered Phone Number**
+
+Your login credentials are correct, but this phone number (${phoneNumber}) is not registered in your Global Intercessors account.
+
+**Registered WhatsApp number:** ${registeredWhatsAppNumber}
+
+🔐 **For security reasons, bot access is restricted to registered phone numbers only.**
+
+📱 **To use this phone number:**
+
+1️⃣ Open the Global Intercessors web application
+2️⃣ Go to your User Profile settings
+3️⃣ Update your WhatsApp number to: ${phoneNumber}
+4️⃣ Save your profile
+5️⃣ Return here and login again
+
+**Or use your registered phone number: ${registeredWhatsAppNumber}**` 
+        };
+      }
+
       // Create or update WhatsApp bot user record - simplified approach
       const { data: existingRecord, error: checkError } = await supabase
         .from('whatsapp_bot_users')
