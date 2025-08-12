@@ -1385,148 +1385,157 @@ Choose your spiritual nourishment for today:`;
   // Generate Today's Word using DeepSeek AI
   private async generateTodaysWord(phoneNumber: string, userName: string): Promise<void> {
     try {
-      const prompt = `Generate a very concise "Today's Word" devotional for WhatsApp (MAX 400 characters total). Include:
-1. Topic (2-3 words)
-2. ONE Bible verse reference (book chapter:verse)
-3. ONE sentence explanation 
-4. ONE sentence prayer ending with "Amen."
+      const prompt = `Generate a detailed "Today's Word" devotional for WhatsApp. Structure exactly as follows:
 
-Keep extremely brief for mobile WhatsApp.`;
+**Topic:** [Compelling spiritual theme - 3-4 words]
+
+**Scripture:** [Book Chapter:Verse]
+"[Write the COMPLETE Bible verse text - not just reference]"
+
+**Deep Insight:**
+[2-3 sentences explaining the verse's meaning for today's intercessor, focusing on practical application and spiritual empowerment]
+
+**Prayer Declaration:**
+"Father, [specific prayer based on the verse - 2 sentences]. In Jesus' name, Amen."
+
+Make it spiritually rich, encouraging, and practical for prayer warriors.`;
 
       const content = await this.generateAIContent(prompt);
       
-      // Strict WhatsApp limit enforcement - max 500 chars for content
-      const maxContentLength = 500;
-      const baseMessage = `📖 *Today's Word*\n\n`;
-      const footer = `\n\n*Blessings, ${userName.split(' ')[0]}!*`;
-      
-      // Calculate available space for content
-      const availableSpace = maxContentLength - baseMessage.length - footer.length;
-      
-      let processedContent = content;
-      if (processedContent.length > availableSpace) {
-        // Aggressive truncation
-        processedContent = processedContent.substring(0, availableSpace - 10) + " Amen.";
-      }
-      
-      const todaysWordMessage = baseMessage + processedContent + footer;
+      const firstName = userName.split(' ')[0];
+      const todaysWordMessage = `📖 *Today's Word* 📖
 
-      // Final validation - if still too long, use ultra-compact fallback
-      if (todaysWordMessage.length > 700) {
-        throw new Error('Message still too long, using fallback');
-      }
+${content}
+
+🙏 *May this strengthen your intercession today, ${firstName}!*
+
+*"The effective prayer of the righteous has great power." - James 5:16*`;
 
       const buttons = [
-        { id: 'get_fresh_word', title: '🔄 Get Fresh Word' },
+        { id: 'get_fresh_word', title: '✨ Get Fresh Word' },
+        { id: 'daily_declarations', title: '🔥 Declarations' },
         { id: 'back', title: '⬅️ Back' }
       ];
 
-      console.log(`📏 Today's Word message length: ${todaysWordMessage.length} characters`);
+      console.log(`📏 Enhanced Today's Word message length: ${todaysWordMessage.length} characters`);
       await this.sendInteractiveMessage(phoneNumber, todaysWordMessage, buttons);
 
     } catch (error) {
       console.error('Error generating Today\'s Word:', error);
       
-      // Ultra-compact fallback message
+      // Enhanced fallback message with full verse
       const firstName = userName.split(' ')[0];
-      const fallbackMessage = `📖 *Today's Word*
+      const fallbackMessage = `📖 *Today's Word* 📖
 
-**Faith Foundation**
+**Topic:** Unshakable Faith
 
-*"Be strong and courageous!"* - Joshua 1:9
+**Scripture:** Hebrews 12:28
+"Therefore, since we are receiving a kingdom that cannot be shaken, let us be thankful, and so worship God acceptably with reverence and awe."
 
-${firstName}, God calls you to stand firm. Your prayers have divine authority.
+**Deep Insight:**
+God's kingdom stands firm when everything else crumbles. As intercessors, we pray from this unshakeable foundation. Your prayers today are rooted in eternal victory, not temporary circumstances.
 
-*Lord, strengthen my faith. Amen.*
+**Prayer Declaration:**
+"Father, anchor my heart in Your unchanging kingdom. Let my prayers flow from Your unshakeable throne. In Jesus' name, Amen."
 
-*Blessings!*`;
+🙏 *May this strengthen your intercession today, ${firstName}!*
+
+*"The effective prayer of the righteous has great power." - James 5:16*`;
 
       const buttons = [
-        { id: 'get_fresh_word', title: '🔄 Get Fresh Word' },
+        { id: 'get_fresh_word', title: '✨ Get Fresh Word' },
+        { id: 'daily_declarations', title: '🔥 Declarations' },
         { id: 'back', title: '⬅️ Back' }
       ];
 
-      console.log(`📏 Fallback message length: ${fallbackMessage.length} characters`);
+      console.log(`📏 Enhanced fallback message length: ${fallbackMessage.length} characters`);
       await this.sendInteractiveMessage(phoneNumber, fallbackMessage, buttons);
     }
   }
 
-  // Generate Daily Declarations using DeepSeek AI - Split into multiple messages
+  // Generate Daily Declarations using DeepSeek AI - 5 detailed declarations
   private async generateDailyDeclarations(phoneNumber: string, userName: string): Promise<void> {
     try {
-      const prompt = `Generate 3 brief daily declarations for WhatsApp (MAX 300 characters). Structure:
+      const prompt = `Generate 5 powerful daily declarations for Christian intercessors. Structure exactly:
 
-📌 Focus: [theme]
+**Declaration Focus:** [Compelling spiritual theme]
 
-For each (1️⃣-3️⃣):
-- "🔥 I declare..." (very brief)
-- Bible reference only
+1️⃣ **I DECLARE:** [Powerful first-person faith declaration with spiritual authority]
+*Scripture Foundation:* [Book Chapter:Verse - "Complete verse text here"]*
 
-Keep ultra-short for mobile WhatsApp.`;
+2️⃣ **I DECLARE:** [Second powerful declaration about breakthrough/victory]
+*Scripture Foundation:* [Book Chapter:Verse - "Complete verse text here"]*
+
+3️⃣ **I DECLARE:** [Third declaration about God's favor/blessing]
+*Scripture Foundation:* [Book Chapter:Verse - "Complete verse text here"]*
+
+4️⃣ **I DECLARE:** [Fourth declaration about spiritual warfare/authority]
+*Scripture Foundation:* [Book Chapter:Verse - "Complete verse text here"]*
+
+5️⃣ **I DECLARE:** [Fifth declaration about divine purpose/calling]
+*Scripture Foundation:* [Book Chapter:Verse - "Complete verse text here"]*
+
+Make each declaration bold, faith-filled, and personally empowering for prayer warriors.`;
 
       const content = await this.generateAIContent(prompt);
       
-      // Strict length enforcement
-      const maxLength = 400;
-      let processedContent = content;
-      
-      if (processedContent.length > maxLength) {
-        // Aggressive truncation
-        processedContent = processedContent.substring(0, maxLength);
-        // Try to end at a complete declaration
-        const lastDeclaration = processedContent.lastIndexOf('3️⃣');
-        if (lastDeclaration > maxLength * 0.7) {
-          processedContent = processedContent.substring(0, lastDeclaration - 1);
-        }
-      }
-      
       const firstName = userName.split(' ')[0];
-      const headerMessage = `🔥 *Daily Declarations*\n\n*${firstName}, declare these:*\n\n`;
-      const footerMessage = `\n\n*Speak with faith! 🙏*`;
-      
-      const fullMessage = headerMessage + processedContent + footerMessage;
-      
-      // Final validation - if still too long, use fallback
-      if (fullMessage.length > 650) {
-        throw new Error('Message too long, using fallback');
-      }
+      const declarationsMessage = `🔥 *Daily Declarations* 🔥
+
+*${firstName}, speak these over your life:*
+
+${content}
+
+💪 *Declare these with bold faith and watch God move!*
+
+*"Let the redeemed of the Lord SAY SO!" - Psalm 107:2*`;
 
       const buttons = [
-        { id: 'generate_another', title: '🔄 Generate Another' },
+        { id: 'generate_another', title: '🔄 Fresh Declarations' },
+        { id: 'todays_word', title: '📖 Today\'s Word' },
         { id: 'back', title: '⬅️ Back' }
       ];
 
-      console.log(`📏 Declarations message length: ${fullMessage.length} characters`);
-      await this.sendInteractiveMessage(phoneNumber, fullMessage, buttons);
+      console.log(`📏 Enhanced declarations message length: ${declarationsMessage.length} characters`);
+      await this.sendInteractiveMessage(phoneNumber, declarationsMessage, buttons);
 
     } catch (error) {
       console.error('Error generating Daily Declarations:', error);
       
-      // Ultra-compact fallback message
+      // Enhanced fallback message
       const firstName = userName.split(' ')[0];
-      const fallbackMessage = `🔥 *Daily Declarations*
+      const fallbackMessage = `🔥 *Daily Declarations* 🔥
 
-*${firstName}, declare these:*
+*${firstName}, speak these over your life:*
 
-📌 Focus: 💖 Firm Heart
+**Declaration Focus:** Kingdom Authority
 
-1️⃣ 🔥 My heart is unshakable!
-📖 Psalm 112:7
+1️⃣ **I DECLARE:** God's kingdom power flows through my prayers today!
+*Scripture Foundation:* Matthew 6:13 - "For yours is the kingdom and the power and the glory forever."*
 
-2️⃣ 🔥 My heart stays pure!
-📖 Matthew 5:8
+2️⃣ **I DECLARE:** Every chain of bondage is broken in my life and family!
+*Scripture Foundation:* Isaiah 61:1 - "The Spirit of the Lord GOD is upon me... to proclaim liberty to the captives."*
 
-3️⃣ 🔥 God's peace guards me!
-📖 Philippians 4:7
+3️⃣ **I DECLARE:** Divine favor surrounds me like a shield everywhere I go!
+*Scripture Foundation:* Psalm 5:12 - "For you bless the righteous, O LORD; you cover him with favor as with a shield."*
 
-*Speak with faith! 🙏*`;
+4️⃣ **I DECLARE:** I walk in spiritual authority over every force of darkness!
+*Scripture Foundation:* Luke 10:19 - "Behold, I have given you authority to tread on serpents and scorpions."*
+
+5️⃣ **I DECLARE:** My prayers align with God's perfect will and release His purposes!
+*Scripture Foundation:* 1 John 5:14 - "And this is the confidence that we have toward him, that if we ask anything according to his will he hears us."*
+
+💪 *Declare these with bold faith and watch God move!*
+
+*"Let the redeemed of the Lord SAY SO!" - Psalm 107:2*`;
 
       const buttons = [
-        { id: 'generate_another', title: '🔄 Generate Another' },
+        { id: 'generate_another', title: '🔄 Fresh Declarations' },
+        { id: 'todays_word', title: '📖 Today\'s Word' },
         { id: 'back', title: '⬅️ Back' }
       ];
 
-      console.log(`📏 Fallback declarations length: ${fallbackMessage.length} characters`);
+      console.log(`📏 Enhanced fallback declarations length: ${fallbackMessage.length} characters`);
       await this.sendInteractiveMessage(phoneNumber, fallbackMessage, buttons);
     }
   }
