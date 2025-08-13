@@ -3992,13 +3992,14 @@ Make it personal, biblical, and actionable for intercession.`;
     }
   });
 
-  // WhatsApp webhook for incoming messages - Main webhook endpoint
-  app.get('/webhook', (req: Request, res: Response) => {
+  // Multiple webhook endpoints for production compatibility
+  const webhookHandler = (req: Request, res: Response) => {
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
 
     console.log('🔐 Webhook verification attempt:', {
+      path: req.path,
       mode,
       receivedToken: token,
       expectedToken: process.env.WHATSAPP_VERIFY_TOKEN,
@@ -4013,9 +4014,15 @@ Make it personal, biblical, and actionable for intercession.`;
       console.log('❌ Webhook verification failed');
       res.sendStatus(403);
     }
-  });
+  };
 
-  app.post('/webhook', async (req: Request, res: Response) => {
+  // Primary webhook endpoints
+  app.get('/api/webhook', webhookHandler);
+  app.get('/webhook', webhookHandler);
+  app.get('/api/whatsapp/webhook', webhookHandler);
+
+  // WhatsApp message handler for multiple endpoints
+  const messageHandler = async (req: Request, res: Response) => {
     try {
       const body = req.body;
 
@@ -4077,7 +4084,12 @@ Make it personal, biblical, and actionable for intercession.`;
       console.error('Error processing WhatsApp webhook:', error);
       res.sendStatus(500);
     }
-  });
+  };
+
+  // Register message handlers for multiple endpoints
+  app.post('/api/webhook', messageHandler);
+  app.post('/webhook', messageHandler);
+  app.post('/api/whatsapp/webhook', messageHandler);
 
   // =============================================================================
   // BIBLE QUIZ GAME API ENDPOINTS
