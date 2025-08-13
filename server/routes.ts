@@ -3992,8 +3992,8 @@ Make it personal, biblical, and actionable for intercession.`;
     }
   });
 
-  // WhatsApp webhook for incoming messages (for future interactive features)
-  app.get('/api/whatsapp/webhook', (req: Request, res: Response) => {
+  // WhatsApp webhook for incoming messages - Main webhook endpoint
+  app.get('/webhook', (req: Request, res: Response) => {
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
@@ -4015,7 +4015,7 @@ Make it personal, biblical, and actionable for intercession.`;
     }
   });
 
-  app.post('/api/whatsapp/webhook', async (req: Request, res: Response) => {
+  app.post('/webhook', async (req: Request, res: Response) => {
     try {
       const body = req.body;
 
