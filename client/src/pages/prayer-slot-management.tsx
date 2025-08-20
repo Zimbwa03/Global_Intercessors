@@ -119,68 +119,72 @@ export default function PrayerSlotManagement() {
     enabled: !!user?.id
   });
 
-  // Skip slot mutation
-  const skipSlotMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      const response = await fetch('/api/prayer-slot/skip', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId })
-      });
-      if (!response.ok) throw new Error('Failed to skip prayer slot');
-      return response.json();
-    },
-    onSuccess: () => {
-      // Force immediate refetch instead of just invalidating
-      queryClient.refetchQueries({ queryKey: ['prayer-slot'] });
-      queryClient.refetchQueries({ queryKey: ['available-slots'] });
-      toast({
-        title: "Slot Skipped Successfully",
-        description: "Your prayer slot has been paused for 5 days.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to skip prayer slot. Please try again.",
-        variant: "destructive",
-      });
-    }
-  });
+ // Skip slot mutation
+const skipSlotMutation = useMutation({
+  mutationFn: async (userId: string) => {
+    const response = await fetch('/api/prayer-slot/skip', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    });
+    if (!response.ok) throw new Error('Failed to skip prayer slot');
+    return response.json();
+  },
+  onSuccess: (data) => {
+    // ✅ Optimistically update cache
+    queryClient.setQueryData(['prayer-slot', data.userId], data.updatedSlot);
 
-  // Change slot mutation
-  const changeSlotMutation = useMutation({
-    mutationFn: async ({ userId, newSlotTime, currentSlotTime }: { userId: string; newSlotTime: string; currentSlotTime?: string }) => {
-      const response = await fetch('/api/prayer-slot/change', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId, newSlotTime, currentSlotTime })
-      });
-      if (!response.ok) throw new Error('Failed to change prayer slot');
-      return response.json();
-    },
-    onSuccess: () => {
-      // Force immediate refetch instead of just invalidating
-      queryClient.refetchQueries({ queryKey: ['prayer-slot'] });
-      queryClient.refetchQueries({ queryKey: ['available-slots'] });
-      setIsChangeSlotModalOpen(false);
-      toast({
-        title: "Slot Changed Successfully",
-        description: "Your prayer slot has been updated.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to change prayer slot. Please try again.",
-        variant: "destructive",
-      });
-    }
-  });
+    // Still refetch in background
+    queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
+    queryClient.invalidateQueries({ queryKey: ['available-slots'] });
+
+    toast({
+      title: "Slot Skipped Successfully",
+      description: "Your prayer slot has been paused for 5 days.",
+    });
+  },
+  onError: () => {
+    toast({
+      title: "Error",
+      description: "Failed to skip prayer slot. Please try again.",
+      variant: "destructive",
+    });
+  }
+});
+
+// Change slot mutation
+const changeSlotMutation = useMutation({
+  mutationFn: async ({ userId, newSlotTime, currentSlotTime }: { userId: string; newSlotTime: string; currentSlotTime?: string }) => {
+    const response = await fetch('/api/prayer-slot/change', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, newSlotTime, currentSlotTime })
+    });
+    if (!response.ok) throw new Error('Failed to change prayer slot');
+    return response.json();
+  },
+  onSuccess: (data) => {
+    // ✅ Optimistically update cache
+    queryClient.setQueryData(['prayer-slot', data.userId], data.updatedSlot);
+
+    // Still refetch in background
+    queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
+    queryClient.invalidateQueries({ queryKey: ['available-slots'] });
+
+    setIsChangeSlotModalOpen(false);
+    toast({
+      title: "Slot Changed Successfully",
+      description: "Your prayer slot has been updated.",
+    });
+  },
+  onError: () => {
+    toast({
+      title: "Error",
+      description: "Failed to change prayer slot. Please try again.",
+      variant: "destructive",
+    });
+  }
+});
 
   // Calculate countdown to next prayer session
   useEffect(() => {
