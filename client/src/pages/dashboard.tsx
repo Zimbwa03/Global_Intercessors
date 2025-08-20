@@ -315,7 +315,7 @@ export default function Dashboard() {
         {/* Render the greeting section */}
         <div className="flex items-center space-x-4 mb-6">
           <img 
-            src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+            src="https://lmhbvdxainxcjuveisfe.supabase.co/storage/v1/object/sign/global/WhatsApp%20Image%202025-08-11%20at%2017.00.22_905ceab9.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jMzRkOTk0YS1mMTcxLTRhMDMtYWEzMS0wNDlkNDkwM2I2ZGMiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJnbG9iYWwvV2hhdHNBcHAgSW1hZ2UgMjAyNS0wOC0xMSBhdCAxNy4wMC4yMl85MDVjZWFiOS5wbmciLCJpYXQiOjE3NTU2OTQ5NjUsImV4cCI6NTI1NjE5MDk2NX0.xYv5TPAGb7ylPV_15DASvdV8K0-MpvNOk-3p3Q2Z1Hc" 
             alt="GI Logo" 
             className="w-12 h-12" 
           />
