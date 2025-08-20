@@ -151,7 +151,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
             <>
               <div className="flex items-center space-x-3">
                 <img
-                  src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png"
+                  src="https://lmhbvdxainxcjuveisfe.supabase.co/storage/v1/object/sign/global/WhatsApp%20Image%202025-08-11%20at%2017.00.22_905ceab9.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jMzRkOTk0YS1mMTcxLTRhMDMtYWEzMS0wNDlkNDkwM2I2ZGMiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJnbG9iYWwvV2hhdHNBcHAgSW1hZ2UgMjAyNS0wOC0xMSBhdCAxNy4wMC4yMl85MDVjZWFiOS5wbmciLCJpYXQiOjE3NTU2OTYzMTcsImV4cCI6NTI1NjE5MjMxN30.tlH8qflQvmFV1dN8okIoPLc8NMEa1mbxIsqZo1SZh9k"
                   alt="Global Intercessors"
                   className="h-8 w-8"
                 />
@@ -246,23 +246,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
           {!isCollapsed && <span>Prayer Schedule</span>}
         </Button>
 
-        <Button
-          onClick={() => {
-            console.log('Desktop sidebar button clicked: whatsapp-updates');
-            onTabChange('whatsapp-updates');
-          }}
-          variant="ghost"
-          className={`w-full ${isCollapsed ? 'justify-center px-2' : 'justify-start space-x-3 px-3'} py-2 h-auto text-sm font-medium transition-colors ${
-            activeTab === 'whatsapp-updates'
-              ? 'bg-gi-gold text-gi-primary border-r-2 border-gi-gold'
-              : 'text-gi-white hover:bg-gi-gold/10 hover:text-gi-gold'
-          }`}
-          title={isCollapsed ? 'WhatsApp Updates' : undefined}
-        >
-          <i className="fab fa-whatsapp h-5 w-5"></i>
-          {!isCollapsed && <span>WhatsApp Updates</span>}
-        </Button>
-      </nav>
+  
 
       {/* Logout */}
       <div className="p-4 border-t border-gi-gold/20">
