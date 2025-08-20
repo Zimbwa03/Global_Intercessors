@@ -34,8 +34,6 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
     { id: "prayer-planner", label: "Prayer Planner", icon: "fas fa-calendar-check" },
   ];
 
-
-
   if (isMobile) {
     return (
       <div className="bg-gi-primary text-white h-full flex flex-col">
@@ -134,7 +132,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
           {isCollapsed ? (
             <div className="flex flex-col items-center space-y-2">
               <img
-                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png"
+                src="https://lmhbvdxainxcjuveisfe.supabase.co/storage/v1/object/sign/global/WhatsApp%20Image%202025-08-11%20at%2017.00.22_905ceab9.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jMzRkOTk0YS1mMTcxLTRhMDMtYWEzMS0wNDlkNDkwM2I2ZGMiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJnbG9iYWwvV2hhdHNBcHAgSW1hZ2UgMjAyNS0wOC0xMSBhdCAxNy4wMC4yMl85MDVjZWFiOS5wbmciLCJpYXQiOjE3NTU2OTY5NDYsImV4cCI6NTI1NjE5Mjk0Nn0.mJTv4ZzXodMc_FHqc0Yce3Y8ayIdRsIhYgzXLtSJ11k"
                 alt="Global Intercessors"
                 className="h-8 w-8"
               />
@@ -245,8 +243,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
           <i className="fas fa-calendar-alt h-5 w-5"></i>
           {!isCollapsed && <span>Prayer Schedule</span>}
         </Button>
-
-  
+      </nav>
 
       {/* Logout */}
       <div className="p-4 border-t border-gi-gold/20">
