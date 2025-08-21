@@ -2384,6 +2384,9 @@ Remember, the journey of faith is continuous. Feel free to start another study s
         case 'scripture_review':
           result = await ScriptureCoachCommands.handleDailyReview(userId, userName);
           break;
+        case 'scripture_more':
+          result = await ScriptureCoachCommands.handleMoreOptions(phoneNumber, userName);
+          break;
         case 'scripture_stats':
           result = await ScriptureCoachCommands.handleProgressStats(userId, userName);
           break;

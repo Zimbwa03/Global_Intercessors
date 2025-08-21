@@ -24,10 +24,33 @@ Choose your learning path:
     const buttons = [
       { id: 'scripture_plan', title: '📖 Reading Plans' },
       { id: 'scripture_memorize', title: '🧠 Memorization' },
+      { id: 'scripture_more', title: '➕ More Options' }
+    ];
+
+    return { message, buttons };
+  }
+
+  // === MORE OPTIONS MENU ===
+  
+  static async handleMoreOptions(phoneNumber: string, userName: string): Promise<{
+    message: string;
+    buttons: { id: string; title: string }[];
+  }> {
+    const message = `➕ *ScriptureCoach - More Options* ➕
+
+${userName}, here are additional features to enhance your Bible learning:
+
+🎯 **Memory Quiz** - Test your Scripture knowledge
+🔄 **Daily Review** - Practice due verses
+📊 **Progress Stats** - Track your growth
+❓ **Help** - Learn how to use ScriptureCoach
+
+Choose an option below:`;
+
+    const buttons = [
       { id: 'scripture_quiz', title: '🎯 Memory Quiz' },
       { id: 'scripture_review', title: '🔄 Daily Review' },
-      { id: 'scripture_stats', title: '📊 Progress Stats' },
-      { id: 'back', title: '⬅️ Back to Menu' }
+      { id: 'back', title: '⬅️ Back to ScriptureCoach' }
     ];
 
     return { message, buttons };
@@ -62,11 +85,18 @@ Please check back later or contact support to set up a custom plan for you.
 
 ${userName}, choose a plan to begin your Bible reading journey:`;
 
-      const buttons = plans.map(plan => ({
-        id: `plan_${plan.id}`,
-        title: `${plan.name} (${plan.days} days)`
-      }));
-
+      // Limit to 3 buttons total (1 plan + 2 navigation)
+      const buttons = [];
+      
+      // Add first plan if available
+      if (plans.length > 0) {
+        buttons.push({
+          id: `plan_${plans[0].id}`,
+          title: `${plans[0].name} (${plans[0].days} days)`
+        });
+      }
+      
+      // Add navigation buttons
       buttons.push(
         { id: 'back', title: '⬅️ Back to ScriptureCoach' },
         { id: 'help', title: '❓ Help' }
@@ -110,7 +140,6 @@ ${todayReading.reading.reference_list.join('\n')}
           const buttons = [
             { id: 'mark_complete', title: '✅ Mark Complete' },
             { id: 'get_reflection', title: '💭 Get Reflection' },
-            { id: 'scripture_plan', title: '📖 View Plan' },
             { id: 'back', title: '⬅️ Back to ScriptureCoach' }
           ];
 
@@ -163,7 +192,7 @@ Start a plan to begin your daily Bible reading journey!`,
 ${userName}, here's your reading for today:
 
 📚 **Plan:** ${todayReading.plan.name}
-📅 **Day:** ${todayReading.plan.current_day} of ${todayReading.plan.days}
+📅 **Day:** ${todayReading.reading.day_number} of ${todayReading.plan.days}
 📖 **Passages:**
 ${todayReading.reading.reference_list.join('\n')}
 
@@ -172,7 +201,6 @@ ${todayReading.reading.reference_list.join('\n')}
       const buttons = [
         { id: 'mark_complete', title: '✅ Mark Complete' },
         { id: 'get_reflection', title: '💭 Get Reflection' },
-        { id: 'scripture_plan', title: '📖 View Plan Progress' },
         { id: 'back', title: '⬅️ Back to ScriptureCoach' }
       ];
 
@@ -210,9 +238,7 @@ Choose your approach:
 
     const buttons = [
       { id: 'create_memory_card', title: '📝 Create Card' },
-      { id: 'daily_review', title: '🔄 Daily Review' },
       { id: 'verse_packs', title: '📚 Verse Packs' },
-      { id: 'custom_verse', title: '➕ Custom Verse' },
       { id: 'back', title: '⬅️ Back to ScriptureCoach' }
     ];
 
@@ -239,10 +265,6 @@ ${userName}, choose a pre-made collection of verses to memorize:
     const buttons = [
       { id: 'pack_top_verses', title: '🌟 Top Verses' },
       { id: 'pack_romans_road', title: '🛡️ Romans Road' },
-      { id: 'pack_psalm_23', title: '🐑 Psalm 23' },
-      { id: 'pack_beatitudes', title: '🙏 Beatitudes' },
-      { id: 'pack_faith_strength', title: '💪 Faith & Strength' },
-      { id: 'pack_love_grace', title: '❤️ Love & Grace' },
       { id: 'back', title: '⬅️ Back to Memorization' }
     ];
 
@@ -342,11 +364,8 @@ ${userName}, you have ${dueCards.length} verse(s) due for review.
 
       const buttons = [
         { id: 'get_hint', title: '💡 Get Hint' },
-        { id: 'rate_again', title: '❌ Again (0)' },
-        { id: 'rate_hard', title: '😰 Hard (3)' },
         { id: 'rate_good', title: '😊 Good (4)' },
-        { id: 'rate_easy', title: '😄 Easy (5)' },
-        { id: 'skip_review', title: '⏭️ Skip for Now' }
+        { id: 'back', title: '⬅️ Back to ScriptureCoach' }
       ];
 
       return { message, buttons };
@@ -383,9 +402,6 @@ ${userName}, test your Scripture knowledge with these quiz modes:
     const buttons = [
       { id: 'quiz_cloze', title: '🔤 Cloze Deletion' },
       { id: 'quiz_first_letters', title: '🔤 First Letters' },
-      { id: 'quiz_type_verse', title: '✍️ Type Verse' },
-      { id: 'quiz_ref_to_text', title: '📖 Ref → Text' },
-      { id: 'quiz_text_to_ref', title: '📝 Text → Ref' },
       { id: 'back', title: '⬅️ Back to ScriptureCoach' }
     ];
 
@@ -423,7 +439,6 @@ ${stats.totalCards === 0 ? '🌟 **Get started today!** Create your first memory
       const buttons = [
         { id: 'create_memory_card', title: '📝 Add Verse' },
         { id: 'scripture_plan', title: '📖 Start Plan' },
-        { id: 'daily_review', title: '🔄 Daily Review' },
         { id: 'back', title: '⬅️ Back to ScriptureCoach' }
       ];
 

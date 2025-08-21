@@ -582,7 +582,7 @@ Focus on practical application for Christian living.`;
       let planProgress = 0;
 
       if (!planError && userPlan) {
-        currentPlan = userPlan.plans?.name || null;
+        currentPlan = userPlan.plans?.[0]?.name || null;
         // Calculate progress percentage (simplified)
         planProgress = Math.round((userPlan.current_day / 30) * 100); // Assuming 30-day plan
       }
