@@ -531,8 +531,8 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
         </CardContent>
       </Card>
 
-      {/* Professional Floating WhatsApp Button */}
-      <div className="fixed bottom-6 right-6 z-50">
+      {/* Professional Floating WhatsApp Button (desktop-only) */}
+      <div className="fixed bottom-6 right-6 z-50 hidden lg:block">
         <button
           onClick={() => window.open('https://wa.me/263782445675', '_blank')}
           className="group relative bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 hover:rotate-12"

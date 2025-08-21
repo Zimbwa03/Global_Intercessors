@@ -131,6 +131,19 @@ export function BibleVerseSearch() {
     enabled: !!(selectedBible && selectedChapter)
   });
 
+  // Fetch full chapter meta + verse list (for chapter view)
+  const { data: chapterView, isLoading: chapterLoading } = useQuery({
+    queryKey: ['bible-chapter', selectedBible, selectedChapter],
+    queryFn: async () => {
+      if (!selectedBible || !selectedChapter) return null;
+      const response = await fetch(`/api/bible-verse?action=chapter&bibleId=${selectedBible}&chapterId=${selectedChapter}`);
+      if (!response.ok) throw new Error('Failed to fetch chapter');
+      return response.json();
+    },
+    enabled: !!(selectedBible && selectedChapter),
+    staleTime: 60000,
+  });
+
   // Search verses with auto-search
   const { data: searchResults, isLoading: searchLoading } = useQuery({
     queryKey: ['bible-search', selectedBible, debouncedSearchQuery],
@@ -339,6 +352,88 @@ export function BibleVerseSearch() {
         </CardHeader>
       </Card>
 
+      {/* Full Bible Browse (kept above search) */}
+      {selectedBible && (
+        <Card className="shadow-lg border border-gi-primary/100">
+          <CardHeader>
+            <CardTitle className="text-lg font-poppins">Browse Bible (Books → Chapters → Verses)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Books */}
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">Books</div>
+                <ScrollArea className="h-64">
+                  <div className="space-y-1">
+                    {[...oldTestament, ...newTestament].map((book) => (
+                      <Button
+                        key={book.id}
+                        variant={selectedBook === book.id ? "default" : "ghost"}
+                        onClick={() => { setSelectedBook(book.id); setSelectedChapter(""); setSelectedVerse(""); setSearchMode('browse'); }}
+                        className="w-full justify-start text-left h-auto p-2"
+                      >
+                        <div>
+                          <div className="font-medium">{book.name}</div>
+                          <div className="text-xs text-gray-500">{book.abbreviation}</div>
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+
+              {/* Chapters */}
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">Chapters</div>
+                {selectedBook ? (
+                  <ScrollArea className="h-64">
+                    <div className="grid grid-cols-5 gap-2">
+                      {chapters?.map((chapter) => (
+                        <Button
+                          key={chapter.id}
+                          variant={selectedChapter === chapter.id ? "default" : "outline"}
+                          onClick={() => { setSelectedChapter(chapter.id); setSelectedVerse(""); setSearchMode('browse'); }}
+                          className="h-10"
+                          disabled={chaptersLoading}
+                        >
+                          {chapter.number}
+                        </Button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="text-sm text-gray-500">Select a book to load chapters</div>
+                )}
+              </div>
+
+              {/* Verses */}
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">Verses</div>
+                {selectedChapter ? (
+                  <ScrollArea className="h-64">
+                    <div className="grid grid-cols-6 gap-2">
+                      {verses?.map((verse) => (
+                        <Button
+                          key={verse.id}
+                          variant={selectedVerse === verse.id ? "default" : "outline"}
+                          onClick={() => { setSelectedVerse(verse.id); setSearchMode('browse'); }}
+                          className="h-10"
+                          disabled={versesLoading}
+                        >
+                          {verse.verseNumber}
+                        </Button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="text-sm text-gray-500">Select a chapter to load verses</div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Bible Selection */}
       <Card className="shadow-lg border border-gray-200">
         <CardContent className="p-4">
@@ -537,6 +632,42 @@ export function BibleVerseSearch() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Chapter Reader with highlighted verse */}
+      {selectedChapter && chapterView && (
+        <Card className="shadow-lg border border-gi-primary/100">
+          <CardHeader>
+            <CardTitle className="text-lg font-poppins">{chapterView.chapter?.reference || 'Chapter'}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="prose max-w-none">
+              {chapterView.verses?.map((v: any) => (
+                <div key={v.id} id={v.id} className={`py-1 px-2 rounded ${selectedVerse === v.id ? 'bg-yellow-100' : ''}`}>
+                  <span className="text-xs align-top mr-1 text-gray-500">{v.verseNumber}</span>
+                  <Button
+                    variant="link"
+                    className="p-0 h-auto align-baseline"
+                    onClick={async () => {
+                      setSelectedVerse(v.id);
+                      setSearchMode('browse');
+                      const res = await fetch(`/api/bible-verse?action=verse&bibleId=${selectedBible}&query=${v.id}`);
+                      if (res.ok) {
+                        const data = await res.json();
+                        setCurrentVerse({ ...data.verse, id: v.id, verseNumber: v.verseNumber } as any);
+                        setTimeout(() => {
+                          document.getElementById(v.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 50);
+                      }
+                    }}
+                  >
+                    {selectedVerse === v.id && currentVerse ? getVerseText(currentVerse) : 'Read verse'}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Current Verse Display */}

@@ -426,16 +426,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Action must be 'approve' or 'reject'" });
       }
 
-      // Get the skip request using service function to bypass RLS
+      // Get the skip request (prefer service function; fallback to direct query)
+      let skipRequest: any | null = null;
       const { data: skipRequestArray, error: fetchError } = await supabaseAdmin
         .rpc('get_all_skip_requests_admin');
 
-      if (fetchError) {
-        console.error("Error fetching skip requests:", fetchError);
-        return res.status(500).json({ error: "Failed to fetch skip requests" });
+      if (!fetchError && Array.isArray(skipRequestArray)) {
+        skipRequest = skipRequestArray.find((req: any) => req.id === parseInt(requestId));
       }
 
-      const skipRequest = skipRequestArray?.find((req: any) => req.id === parseInt(requestId));
+      if (!skipRequest) {
+        const { data: directReq, error: directErr } = await supabaseAdmin
+          .from('skip_requests')
+          .select('*')
+          .eq('id', parseInt(requestId))
+          .maybeSingle();
+        if (directErr) {
+          console.error("Error fetching skip request directly:", directErr);
+          return res.status(500).json({ error: "Failed to fetch skip request" });
+        }
+        skipRequest = directReq;
+      }
 
       if (!skipRequest) {
         console.error("Skip request not found:", requestId);
@@ -484,6 +495,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         console.log(`Prayer slot updated for skip request approval: ${request.user_id}`);
+      } else {
+        // Rejection path: nothing to update on prayer_slots
       }
 
       console.log(`Skip request ${requestId} ${action} successfully`);
@@ -1550,6 +1563,45 @@ Guidelines:
           }
           const chaptersData = await chaptersResponse.json();
           return res.json({ chapters: chaptersData.data });
+
+        case 'chapter':
+          // Get full chapter content grouped by verses
+          if (!bibleId || !chapterId) {
+            return res.status(400).json({ error: "bibleId and chapterId parameters are required" });
+          }
+
+          // Fetch chapter with content
+          // API: /bibles/{bibleId}/chapters/{chapterId}?content-type=text
+          {
+            const chapterMetaRes = await fetch(`${baseUrl}/bibles/${bibleId}/chapters/${chapterId}`, { headers });
+            if (!chapterMetaRes.ok) {
+              throw new Error(`API.Bible error: ${chapterMetaRes.status}`);
+            }
+            const chapterMeta = await chapterMetaRes.json();
+
+            const versesRes = await fetch(`${baseUrl}/bibles/${bibleId}/chapters/${chapterId}/verses`, { headers });
+            if (!versesRes.ok) {
+              throw new Error(`API.Bible error: ${versesRes.status}`);
+            }
+            const versesJson = await versesRes.json();
+
+            const verses = (versesJson.data || []).map((v: any) => ({
+              id: v.id,
+              verseNumber: v.id?.split('.')?.pop(),
+              reference: `${v.chapterId?.replace('.', ' ')}:${v.id?.split('.')?.pop()}`
+            }));
+
+            // For performance, do not fetch each verse content individually here; client can fetch per verse if needed.
+            return res.json({
+              chapter: {
+                id: chapterMeta.data?.id || chapterId,
+                reference: chapterMeta.data?.reference || chapterId.replace('.', ' '),
+                number: chapterMeta.data?.number,
+                bookId: chapterMeta.data?.bookId,
+              },
+              verses
+            });
+          }
 
         case 'verses':
           // Get verses for a specific chapter
@@ -2876,100 +2928,201 @@ Respond in JSON format as an array:
 
   // Enhanced Prayer Planner API Endpoints
 
-  // Get daily prayer plan
+  // Get daily prayer plan (real data)
   app.get("/api/prayer-planner/daily", async (req: Request, res: Response) => {
     try {
-      const { date } = req.query;
+      const { date, userId } = req.query as { date?: string; userId?: string };
 
-      if (!date) {
-        return res.status(400).json({ error: "Date parameter is required" });
+      if (!date || !userId) {
+        return res.status(400).json({ error: "date and userId are required" });
       }
 
-      // For now, return mock data structure until database schema is implemented
-      const mockPrayerPlan = {
-        id: `plan-${date}`,
-        date: date as string,
-        prayerPoints: [],
-        totalPoints: 0,
-        completedPoints: 0
-      };
+      // Try to get existing plan for user/date
+      const { data: existingPlan, error: planError } = await supabaseAdmin
+        .from('prayer_plans')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('plan_date', date)
+        .maybeSingle();
 
-      res.json(mockPrayerPlan);
+      if (planError) {
+        console.error('Error fetching plan:', planError);
+      }
+
+      let planId = existingPlan?.id;
+
+      // If no plan, create a minimal one
+      if (!planId) {
+        const { data: created, error: createError } = await supabaseAdmin
+          .from('prayer_plans')
+          .insert({ user_id: userId, title: 'Daily Prayer Plan', plan_date: date, status: 'active' })
+          .select('*')
+          .single();
+
+        if (createError) {
+          console.error('Error creating plan:', createError);
+          return res.status(500).json({ error: 'Failed to initialize prayer plan' });
+        }
+        planId = created.id;
+      }
+
+      // Load points
+      const { data: points, error: pointsError } = await supabaseAdmin
+        .from('prayer_points')
+        .select('*')
+        .eq('prayer_plan_id', planId)
+        .order('order_position', { ascending: true });
+
+      if (pointsError) {
+        console.error('Error loading points:', pointsError);
+        return res.status(500).json({ error: 'Failed to load prayer points' });
+      }
+
+      const completedPoints = (points || []).filter(p => p.is_completed).length;
+      const totalPoints = (points || []).length;
+
+      res.json({
+        id: planId,
+        date,
+        prayerPoints: (points || []).map(p => ({
+          id: p.id,
+          title: p.title,
+          content: p.content,
+          notes: p.notes || '',
+          category: p.category || 'personal',
+          isCompleted: p.is_completed || false,
+          createdAt: p.created_at,
+          order: p.order_position || 1,
+        })),
+        totalPoints,
+        completedPoints,
+      });
     } catch (error) {
       console.error('Error fetching daily prayer plan:', error);
       res.status(500).json({ error: 'Failed to fetch prayer plan' });
     }
   });
 
-  // Create new prayer point
+  // Create new prayer point (real data)
   app.post("/api/prayer-planner/points", async (req: Request, res: Response) => {
     try {
-      const { title, content, notes, category, date } = req.body;
+      const { title, content, notes, category, date, userId } = req.body as any;
 
-      if (!title || !content || !category || !date) {
-        return res.status(400).json({ error: "Title, content, category, and date are required" });
+      if (!title || !content || !category || !date || !userId) {
+        return res.status(400).json({ error: "title, content, category, date, userId are required" });
       }
 
-      // Mock response until database implementation
-      const newPoint = {
-        id: `point-${Date.now()}`,
-        title,
-        content,
-        notes: notes || "",
-        category,
-        isCompleted: false,
-        createdAt: new Date().toISOString(),
-        order: 1
-      };
+      // Ensure plan exists
+      const { data: plan, error: planErr } = await supabaseAdmin
+        .from('prayer_plans')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('plan_date', date)
+        .maybeSingle();
+      if (planErr) {
+        console.error('Error fetching plan:', planErr);
+      }
+      let planId = plan?.id;
+      if (!planId) {
+        const { data: created, error: createErr } = await supabaseAdmin
+          .from('prayer_plans')
+          .insert({ user_id: userId, title: 'Daily Prayer Plan', plan_date: date, status: 'active' })
+          .select('*')
+          .single();
+        if (createErr) {
+          console.error('Error creating plan:', createErr);
+          return res.status(500).json({ error: 'Failed to initialize plan' });
+        }
+        planId = created.id;
+      }
 
-      res.json({ 
-        success: true, 
-        point: newPoint,
-        message: "Prayer point created successfully" 
-      });
+      // Determine order
+      const { data: maxOrder } = await supabaseAdmin
+        .from('prayer_points')
+        .select('order_position')
+        .eq('prayer_plan_id', planId)
+        .order('order_position', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const nextOrder = (maxOrder?.order_position || 0) + 1;
+
+      const { data: inserted, error: insertErr } = await supabaseAdmin
+        .from('prayer_points')
+        .insert({
+          prayer_plan_id: planId,
+          title,
+          content,
+          notes: notes || '',
+          category,
+          is_completed: false,
+          order_position: nextOrder,
+        })
+        .select('*')
+        .single();
+
+      if (insertErr) {
+        console.error('Error inserting point:', insertErr);
+        return res.status(500).json({ error: 'Failed to create prayer point' });
+      }
+
+      res.json({ success: true, point: inserted, message: 'Prayer point created successfully' });
     } catch (error) {
       console.error('Error creating prayer point:', error);
       res.status(500).json({ error: 'Failed to create prayer point' });
     }
   });
 
-  // Update prayer point
+  // Update prayer point (real data)
   app.put("/api/prayer-planner/points/:id", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const updates = req.body;
 
-      // Mock response until database implementation
-      res.json({ 
-        success: true, 
-        message: "Prayer point updated successfully",
-        pointId: id,
-        updates
-      });
+      const { data: updated, error } = await supabaseAdmin
+        .from('prayer_points')
+        .update({
+          title: updates.title,
+          content: updates.content,
+          notes: updates.notes,
+          category: updates.category,
+          is_completed: updates.isCompleted,
+        })
+        .eq('id', id)
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Update error:', error);
+        return res.status(500).json({ error: 'Failed to update prayer point' });
+      }
+
+      res.json({ success: true, point: updated, message: 'Prayer point updated successfully' });
     } catch (error) {
       console.error('Error updating prayer point:', error);
       res.status(500).json({ error: 'Failed to update prayer point' });
     }
   });
 
-  // Delete prayer point
+  // Delete prayer point (real data)
   app.delete("/api/prayer-planner/points/:id", async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-
-      // Mock response until database implementation
-      res.json({ 
-        success: true, 
-        message: "Prayer point deleted successfully",
-        pointId: id
-      });
+      const { error } = await supabaseAdmin
+        .from('prayer_points')
+        .delete()
+        .eq('id', id);
+      if (error) {
+        console.error('Delete error:', error);
+        return res.status(500).json({ error: 'Failed to delete prayer point' });
+      }
+      res.json({ success: true, pointId: id, message: 'Prayer point deleted successfully' });
     } catch (error) {
       console.error('Error deleting prayer point:', error);
       res.status(500).json({ error: 'Failed to delete prayer point' });
     }
   });
 
-  // AI Assistant for prayer point generation
+  // AI Assistant for prayer point generation (DeepSeek preferred)
   app.post("/api/prayer-planner/ai-assist", async (req: Request, res: Response) => {
     try {
       const { prompt, category } = req.body;
@@ -2978,11 +3131,10 @@ Respond in JSON format as an array:
         return res.status(400).json({ error: "Prompt is required" });
       }
 
+      const deepseekKey = process.env.DEEPSEEK_API_KEY;
       const geminiApiKey = process.env.GEMINI_API_KEY;
-      if (!geminiApiKey) {
-        return res.status(500).json({ 
-          error: "Gemini API key not configured. Please add GEMINI_API_KEY to your secrets."
-        });
+      if (!deepseekKey && !geminiApiKey) {
+        return res.status(500).json({ error: "No AI key configured. Set DEEPSEEK_API_KEY or GEMINI_API_KEY." });
       }
 
       console.log('AI Prayer Assistant request:', { prompt, category });
@@ -3005,62 +3157,59 @@ Format your response as JSON:
 
 Make it personal, biblical, and actionable for intercession.`;
 
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `${systemPrompt}\n\nUser request: ${prompt}`
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            topK: 1,
-            topP: 1,
-            maxOutputTokens: 1000,
+      let aiResponseText: string | null = null;
+
+      if (deepseekKey) {
+        const ds = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${deepseekKey}`
           },
-          safetySettings: [
-            {
-              category: "HARM_CATEGORY_HARASSMENT",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE"
-            },
-            {
-              category: "HARM_CATEGORY_HATE_SPEECH",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE"
-            },
-            {
-              category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE"
-            },
-            {
-              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE"
-            }
-          ]
-        })
-      });
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: `User request: ${prompt}${category ? `\nCategory: ${category}` : ''}` }
+            ],
+            temperature: 0.9,
+            max_tokens: 600
+          })
+        });
+        if (!ds.ok) throw new Error(`DeepSeek API error: ${ds.status}`);
+        const dsJson = await ds.json();
+        aiResponseText = dsJson.choices?.[0]?.message?.content || null;
+      }
+
+      if (!aiResponseText && geminiApiKey) {
+        const gm = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `${systemPrompt}\n\nUser request: ${prompt}` }] }],
+            generationConfig: { temperature: 0.7, topK: 1, topP: 1, maxOutputTokens: 1000 }
+          })
+        });
+        if (!gm.ok) throw new Error(`Gemini API error: ${gm.status}`);
+        const gmJson = await gm.json();
+        aiResponseText = gmJson.candidates?.[0]?.content?.parts?.[0]?.text || null;
+      }
+
+      if (!aiResponseText) {
+        throw new Error('No AI response');
+      }
 
       if (!response.ok) {
         throw new Error(`Gemini API error: ${response.status}`);
       }
 
-      const data = await response.json();
-      const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!aiResponse) {
-        throw new Error('No response from Gemini API');
-      }
-
       try {
-        const parsedResponse = JSON.parse(aiResponse);
-        res.json(parsedResponse);
+        const parsedResponse = JSON.parse(aiResponseText);
+        res.json(parsedResponse); // { prayer, scripture, explanation }
       } catch (parseError) {
         // Fallback response if JSON parsing fails
         res.json({
-          prayer: aiResponse,
+          prayer: aiResponseText,
           scripture: "The Lord is near to all who call on him, to all who call on him in truth.",
           explanation: "This prayer was generated to help guide your intercession time with specific focus and biblical foundation."
         });

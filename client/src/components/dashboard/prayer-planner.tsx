@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -115,6 +116,7 @@ const prayerGuideData: PrayerGuideSection[] = [
 export function PrayerPlanner() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [userId, setUserId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [newPointTitle, setNewPointTitle] = useState("");
   const [newPointContent, setNewPointContent] = useState("");
@@ -125,14 +127,23 @@ export function PrayerPlanner() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [showGuide, setShowGuide] = useState(false);
 
+  // Load current user id
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    })();
+  }, []);
+
   // Fetch daily prayer plan
   const { data: dailyPlan, refetch } = useQuery({
-    queryKey: ['daily-prayer-plan', selectedDate],
+    queryKey: ['daily-prayer-plan', userId, selectedDate],
     queryFn: async () => {
-      const response = await fetch(`/api/prayer-planner/daily?date=${selectedDate}`);
+      const response = await fetch(`/api/prayer-planner/daily?date=${selectedDate}&userId=${userId}`);
       if (!response.ok) throw new Error('Failed to fetch prayer plan');
       return response.json() as Promise<DailyPrayerPlan>;
-    }
+    },
+    enabled: !!userId
   });
 
   // Create new prayer point
@@ -141,7 +152,7 @@ export function PrayerPlanner() {
       const response = await fetch('/api/prayer-planner/points', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...pointData, date: selectedDate })
+        body: JSON.stringify({ ...pointData, date: selectedDate, userId })
       });
       if (!response.ok) throw new Error('Failed to create prayer point');
       return response.json();

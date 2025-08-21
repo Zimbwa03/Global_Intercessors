@@ -182,7 +182,7 @@ export function WeeklyPrayerAttendance({ userId }: WeeklyPrayerAttendanceProps) 
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-7 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2 sm:gap-3">
           {weekDays.map((day) => {
             const attendanceRecord = getAttendanceForDate(day.date);
             const isActive = isActiveDay(day.id);
@@ -193,7 +193,7 @@ export function WeeklyPrayerAttendance({ userId }: WeeklyPrayerAttendanceProps) 
               <div
                 key={day.id}
                 className={cn(
-                  "border rounded-lg p-3 text-center space-y-2",
+                  "border rounded-lg p-2 sm:p-3 text-center space-y-2",
                   isActive 
                     ? "border-gi-primary/50 bg-gi-primary/5" 
                     : "border-gray-200 bg-gray-50",
@@ -202,8 +202,8 @@ export function WeeklyPrayerAttendance({ userId }: WeeklyPrayerAttendanceProps) 
               >
                 {/* Day Header */}
                 <div>
-                  <div className="font-semibold text-sm">{day.short}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="font-semibold text-[10px] sm:text-xs">{day.short}</div>
+                  <div className="text-[10px] sm:text-xs text-gray-500">
                     {format(day.date, 'd')}
                   </div>
                   {isToday && (

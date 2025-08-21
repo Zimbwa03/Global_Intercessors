@@ -256,15 +256,7 @@ export default function Dashboard() {
           </div>
         </main>
 
-        {/* Floating WhatsApp Bot Button */}
-        <div className="fixed bottom-20 right-4 z-30 lg:hidden">
-          <button
-            onClick={() => setActiveTab('whatsapp-updates')}
-            className="bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 animate-pulse"
-          >
-            <i className="fab fa-whatsapp text-2xl"></i>
-          </button>
-        </div>
+
 
         {/* Mobile Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t-2 border-gi-primary/20 lg:hidden z-20 shadow-lg">

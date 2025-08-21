@@ -1,6 +1,10 @@
 import { scriptureCoach } from './scriptureCoach.js';
 
 export class ScriptureCoachCommands {
+  private static safeTitle(title: string): string {
+    const t = (title || '').trim();
+    return t.length <= 20 ? t : t.slice(0, 19) + '…';
+  }
   
   // === MAIN SCRIPTURECOACH MENU ===
   
@@ -22,9 +26,9 @@ Choose your learning path:
 *"Your word is a lamp to my feet and a light to my path."* - Psalm 119:105`;
 
     const buttons = [
-      { id: 'scripture_plan', title: '📖 Reading Plans' },
-      { id: 'scripture_memorize', title: '🧠 Memorization' },
-      { id: 'scripture_more', title: '➕ More Options' }
+      { id: 'scripture_plan', title: ScriptureCoachCommands.safeTitle('📖 Reading Plans') },
+      { id: 'scripture_memorize', title: ScriptureCoachCommands.safeTitle('🧠 Memorization') },
+      { id: 'scripture_more', title: ScriptureCoachCommands.safeTitle('➕ More Options') }
     ];
 
     return { message, buttons };
@@ -48,9 +52,9 @@ ${userName}, here are additional features to enhance your Bible learning:
 Choose an option below:`;
 
     const buttons = [
-      { id: 'scripture_quiz', title: '🎯 Memory Quiz' },
-      { id: 'scripture_review', title: '🔄 Daily Review' },
-      { id: 'back', title: '⬅️ Back to ScriptureCoach' }
+      { id: 'scripture_quiz', title: ScriptureCoachCommands.safeTitle('🎯 Memory Quiz') },
+      { id: 'scripture_review', title: ScriptureCoachCommands.safeTitle('🔄 Daily Review') },
+      { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
     ];
 
     return { message, buttons };
@@ -90,16 +94,19 @@ ${userName}, choose a plan to begin your Bible reading journey:`;
       
       // Add first plan if available
       if (plans.length > 0) {
+        const planName = (plans[0].name || 'Plan').replace('Proverbs', 'Prov').replace('Romans', 'Rom').replace('Testament', 'Test');
+        const days = typeof plans[0].days === 'number' ? `${plans[0].days}d` : '';
+        const raw = days ? `${planName} ${days}` : planName;
         buttons.push({
           id: `plan_${plans[0].id}`,
-          title: `${plans[0].name} (${plans[0].days} days)`
+          title: ScriptureCoachCommands.safeTitle(raw)
         });
       }
       
       // Add navigation buttons
       buttons.push(
-        { id: 'back', title: '⬅️ Back to ScriptureCoach' },
-        { id: 'help', title: '❓ Help' }
+        { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') },
+        { id: 'help', title: ScriptureCoachCommands.safeTitle('❓ Help') }
       );
 
       return { message, buttons };
@@ -138,9 +145,9 @@ ${todayReading.reading.reference_list.join('\n')}
 *"The unfolding of your words gives light; it gives understanding to the simple."* - Psalm 119:130`;
 
           const buttons = [
-            { id: 'mark_complete', title: '✅ Mark Complete' },
-            { id: 'get_reflection', title: '💭 Get Reflection' },
-            { id: 'back', title: '⬅️ Back to ScriptureCoach' }
+            { id: 'mark_complete', title: ScriptureCoachCommands.safeTitle('✅ Mark Complete') },
+            { id: 'get_reflection', title: ScriptureCoachCommands.safeTitle('💭 Reflection') },
+            { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
           ];
 
           return { message, buttons };
@@ -150,8 +157,8 @@ ${todayReading.reading.reference_list.join('\n')}
       return {
         message: `❌ Sorry ${userName}, I couldn't start the reading plan. Please try again.`,
         buttons: [
-          { id: 'scripture_plan', title: '📖 Try Again' },
-          { id: 'back', title: '⬅️ Back to ScriptureCoach' }
+          { id: 'scripture_plan', title: ScriptureCoachCommands.safeTitle('📖 Try Again') },
+          { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
         ]
       };
     } catch (error) {
@@ -159,8 +166,8 @@ ${todayReading.reading.reference_list.join('\n')}
       return {
         message: `❌ Sorry ${userName}, I encountered an error starting the reading plan. Please try again.`,
         buttons: [
-          { id: 'scripture_plan', title: '📖 Try Again' },
-          { id: 'back', title: '⬅️ Back to ScriptureCoach' }
+          { id: 'scripture_plan', title: ScriptureCoachCommands.safeTitle('📖 Try Again') },
+          { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
         ]
       };
     }
@@ -181,8 +188,8 @@ ${userName}, you don't have an active reading plan.
 
 Start a plan to begin your daily Bible reading journey!`,
           buttons: [
-            { id: 'scripture_plan', title: '📖 Start Reading Plan' },
-            { id: 'back', title: '⬅️ Back to ScriptureCoach' }
+            { id: 'scripture_plan', title: ScriptureCoachCommands.safeTitle('📖 Start Plan') },
+            { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
           ]
         };
       }
@@ -199,9 +206,9 @@ ${todayReading.reading.reference_list.join('\n')}
 💡 **Tip:** Take time to read, reflect, and pray over these passages.`;
 
       const buttons = [
-        { id: 'mark_complete', title: '✅ Mark Complete' },
-        { id: 'get_reflection', title: '💭 Get Reflection' },
-        { id: 'back', title: '⬅️ Back to ScriptureCoach' }
+        { id: 'mark_complete', title: ScriptureCoachCommands.safeTitle('✅ Mark Complete') },
+        { id: 'get_reflection', title: ScriptureCoachCommands.safeTitle('💭 Reflection') },
+        { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
       ];
 
       return { message, buttons };
@@ -210,8 +217,8 @@ ${todayReading.reading.reference_list.join('\n')}
       return {
         message: `❌ Sorry ${userName}, I encountered an error loading today's reading. Please try again.`,
         buttons: [
-          { id: 'back', title: '⬅️ Back to ScriptureCoach' },
-          { id: 'help', title: '❓ Help' }
+          { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') },
+          { id: 'help', title: ScriptureCoachCommands.safeTitle('❓ Help') }
         ]
       };
     }
@@ -237,9 +244,9 @@ Choose your approach:
 *"I have hidden your word in my heart that I might not sin against you."* - Psalm 119:11`;
 
     const buttons = [
-      { id: 'create_memory_card', title: '📝 Create Card' },
-      { id: 'verse_packs', title: '📚 Verse Packs' },
-      { id: 'back', title: '⬅️ Back to ScriptureCoach' }
+      { id: 'create_memory_card', title: ScriptureCoachCommands.safeTitle('📝 Create Card') },
+      { id: 'verse_packs', title: ScriptureCoachCommands.safeTitle('📚 Verse Packs') },
+      { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
     ];
 
     return { message, buttons };
@@ -293,9 +300,9 @@ ${userName}, "${reference}" has been added to your memorization list.
 *"Your word is a lamp to my feet and a light to my path."* - Psalm 119:105`;
 
         const buttons = [
-          { id: 'daily_review', title: '🔄 Start Review' },
-          { id: 'create_memory_card', title: '📝 Add Another' },
-          { id: 'back', title: '⬅️ Back to Memorization' }
+          { id: 'daily_review', title: ScriptureCoachCommands.safeTitle('🔄 Start Review') },
+          { id: 'create_memory_card', title: ScriptureCoachCommands.safeTitle('📝 Add Another') },
+          { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
         ];
 
         return { message, buttons };
@@ -304,8 +311,8 @@ ${userName}, "${reference}" has been added to your memorization list.
       return {
         message: `❌ Sorry ${userName}, I couldn't create the memory card. Please try again.`,
         buttons: [
-          { id: 'create_memory_card', title: '📝 Try Again' },
-          { id: 'back', title: '⬅️ Back to Memorization' }
+          { id: 'create_memory_card', title: ScriptureCoachCommands.safeTitle('📝 Try Again') },
+          { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
         ]
       };
     } catch (error) {
@@ -313,8 +320,8 @@ ${userName}, "${reference}" has been added to your memorization list.
       return {
         message: `❌ Sorry ${userName}, I encountered an error creating the memory card. Please try again.`,
         buttons: [
-          { id: 'create_memory_card', title: '📝 Try Again' },
-          { id: 'back', title: '⬅️ Back to Memorization' }
+          { id: 'create_memory_card', title: ScriptureCoachCommands.safeTitle('📝 Try Again') },
+          { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
         ]
       };
     }
@@ -363,9 +370,9 @@ ${userName}, you have ${dueCards.length} verse(s) due for review.
 💡 **Need a hint?** Click "Get Hint" for help without giving away the answer.`;
 
       const buttons = [
-        { id: 'get_hint', title: '💡 Get Hint' },
-        { id: 'rate_good', title: '😊 Good (4)' },
-        { id: 'back', title: '⬅️ Back to ScriptureCoach' }
+        { id: 'get_hint', title: ScriptureCoachCommands.safeTitle('💡 Get Hint') },
+        { id: 'rate_good', title: ScriptureCoachCommands.safeTitle('😊 Good (4)') },
+        { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
       ];
 
       return { message, buttons };
@@ -400,9 +407,9 @@ ${userName}, test your Scripture knowledge with these quiz modes:
 *"Study to show yourself approved unto God, a workman that needs not to be ashamed."* - 2 Timothy 2:15`;
 
     const buttons = [
-      { id: 'quiz_cloze', title: '🔤 Cloze Deletion' },
-      { id: 'quiz_first_letters', title: '🔤 First Letters' },
-      { id: 'back', title: '⬅️ Back to ScriptureCoach' }
+      { id: 'quiz_cloze', title: ScriptureCoachCommands.safeTitle('🔤 Cloze Deletion') },
+      { id: 'quiz_first_letters', title: ScriptureCoachCommands.safeTitle('🔤 First Letters') },
+      { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
     ];
 
     return { message, buttons };
@@ -437,9 +444,9 @@ ${stats.totalCards === 0 ? '🌟 **Get started today!** Create your first memory
 *"Being confident of this very thing, that He who has begun a good work in you will complete it."* - Philippians 1:6`;
 
       const buttons = [
-        { id: 'create_memory_card', title: '📝 Add Verse' },
-        { id: 'scripture_plan', title: '📖 Start Plan' },
-        { id: 'back', title: '⬅️ Back to ScriptureCoach' }
+        { id: 'create_memory_card', title: ScriptureCoachCommands.safeTitle('📝 Add Verse') },
+        { id: 'scripture_plan', title: ScriptureCoachCommands.safeTitle('📖 Start Plan') },
+        { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
       ];
 
       return { message, buttons };

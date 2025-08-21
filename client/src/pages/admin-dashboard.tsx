@@ -139,6 +139,9 @@ const MobileNavButton = ({ icon: Icon, label, isActive, onClick }: {
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [hideMobileFooter, setHideMobileFooter] = useState(false);
+  const [hideDesktopHeaderButtons, setHideDesktopHeaderButtons] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   // Fetch skip requests for admin
   const { data: skipRequests = [], refetch: refetchSkipRequests } = useQuery({
@@ -1483,6 +1486,23 @@ export default function AdminDashboard() {
     }
   };
 
+  useEffect(() => {
+    const onScroll = () => {
+      const currentY = window.scrollY;
+      const goingDown = currentY > lastScrollY;
+      setLastScrollY(currentY);
+      if (isMobile) {
+        // Hide footer when user scrolls up (content moves downwards => lastScrollY > currentY)
+        setHideMobileFooter(lastScrollY > currentY && currentY > 20);
+      } else {
+        // Hide desktop header buttons when scrolling down
+        setHideDesktopHeaderButtons(goingDown && currentY > 60);
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [isMobile, lastScrollY]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
@@ -1549,7 +1569,7 @@ export default function AdminDashboard() {
                 <p className="text-gi-primary/100 text-sm">Management Dashboard</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className={`flex items-center space-x-4 transition-opacity duration-200 ${hideDesktopHeaderButtons ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
               <span className="text-sm">Welcome, {adminUser.email}</span>
               <Button
                 onClick={refreshAllData}
@@ -1579,7 +1599,7 @@ export default function AdminDashboard() {
         {isMobile && (
           <div className="mb-6">
             {/* Mobile Footer Navigation */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gi-primary/20 z-20 shadow-lg">
+            <div className={`fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gi-primary/20 z-20 shadow-lg transition-transform duration-200 ${hideMobileFooter ? 'translate-y-full' : 'translate-y-0'}`}>
               <div className="grid grid-cols-3 gap-1 p-2">
                 <MobileNavButton
                   icon={BarChart3}

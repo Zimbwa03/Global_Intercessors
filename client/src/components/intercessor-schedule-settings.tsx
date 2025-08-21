@@ -166,7 +166,7 @@ export function IntercessorScheduleSettings({ userId }: IntercessorScheduleSetti
             <Calendar className="w-4 h-4" />
             Select Your Prayer Days
           </h3>
-          <div className="grid grid-cols-7 gap-2 sm:gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2 sm:gap-3">
             {DAYS_OF_WEEK.map((day) => {
               const isActive = activeDays.includes(day.id);
               return (
@@ -174,15 +174,15 @@ export function IntercessorScheduleSettings({ userId }: IntercessorScheduleSetti
                   key={day.id}
                   onClick={() => toggleDay(day.id)}
                   className={cn(
-                    "p-2 sm:p-4 rounded-lg border-2 transition-all duration-200 text-center min-h-[60px] sm:min-h-[80px]",
+                    "p-2 sm:p-3 md:p-4 rounded-lg border-2 transition-all duration-200 text-center min-h-[56px] sm:min-h-[70px] md:min-h-[80px]",
                     "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gi-primary/50",
                     isActive
                       ? "border-gi-primary bg-gi-primary text-white shadow-lg"
                       : "border-gray-200 bg-white text-gray-700 hover:border-gi-primary/50"
                   )}
                 >
-                  <div className="font-semibold text-xs sm:text-sm mb-1">{day.short}</div>
-                  <div className="text-xs opacity-75">{day.label.slice(0, 3)}</div>
+                  <div className="font-semibold text-[10px] sm:text-xs md:text-sm mb-1">{day.short}</div>
+                  <div className="text-[10px] sm:text-xs opacity-75">{day.label.slice(0, 3)}</div>
                   {isActive && (
                     <div className="mt-1 sm:mt-2">
                       <Clock className="w-3 h-3 mx-auto" />

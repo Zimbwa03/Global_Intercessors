@@ -99,6 +99,26 @@ export class WhatsAppPrayerBot {
     this.initializeScheduledJobs();
   }
 
+  private sanitizeForWhatsApp(input: string, isButton: boolean = false): string {
+    if (!input) return '';
+    let text = input;
+    // Remove markdown bold/italic markers **, __, * around words
+    text = text.replace(/\*\*(.*?)\*\*/g, '$1');
+    text = text.replace(/__(.*?)__/g, '$1');
+    text = text.replace(/\*(.*?)\*/g, '$1');
+    // Strip stray backticks and underscores commonly used in markdown
+    text = text.replace(/[`_]/g, '');
+    // Collapse multiple spaces/newlines for button titles
+    if (isButton) {
+      text = text.replace(/\s+/g, ' ').trim();
+      // Enforce WhatsApp button max 20 chars (server-side guard; titles already trimmed elsewhere)
+      if (text.length > 20) text = text.slice(0, 19) + '…';
+    }
+    // Replace smart quotes/emojis if needed (keep emojis, normalize quotes)
+    text = text.replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
+    return text;
+  }
+
   private initializeScheduledJobs() {
     // Prayer slot reminders - check every minute for upcoming slots
     cron.schedule('* * * * *', () => {
@@ -115,17 +135,19 @@ export class WhatsAppPrayerBot {
 
   // Core messaging functionality
   private async sendWhatsAppMessage(phoneNumber: string, message: string): Promise<boolean> {
+    // Sanitize markdown that WhatsApp doesn't support (e.g., **bold**)
+    const sanitizedBody = this.sanitizeForWhatsApp(message);
     console.log(`\n📤 SENDING MESSAGE:`);
     console.log(`📱 To: ${phoneNumber}`);
-    console.log(`📝 Length: ${message.length} characters`);
+    console.log(`📝 Length: ${sanitizedBody.length} characters`);
 
     if (!this.config.phoneNumberId || !this.config.accessToken) {
       console.log(`❌ WhatsApp credentials missing - SIMULATION MODE`);
-      console.log(`📄 Message Preview: ${message.substring(0, 100)}...`);
+      console.log(`📄 Message Preview: ${sanitizedBody.substring(0, 100)}...`);
       return false;
     }
 
-    console.log(`📄 Message Preview: ${message.substring(0, 100)}...`);
+    console.log(`📄 Message Preview: ${sanitizedBody.substring(0, 100)}...`);
 
     try {
       const response = await fetch(`https://graph.facebook.com/${this.config.apiVersion}/${this.config.phoneNumberId}/messages`, {
@@ -139,14 +161,14 @@ export class WhatsAppPrayerBot {
           to: phoneNumber,
           type: 'text',
           text: {
-            body: message
+            body: sanitizedBody
           }
         })
       });
 
       if (response.ok) {
         console.log('✅ Message sent successfully');
-        await this.logMessage(phoneNumber, message, 'outbound');
+        await this.logMessage(phoneNumber, sanitizedBody, 'outbound');
         return true;
       } else {
         const errorData = await response.text();
@@ -161,10 +183,12 @@ export class WhatsAppPrayerBot {
 
   // Send interactive message with buttons
   private async sendInteractiveMessage(phoneNumber: string, text: string, buttons: { id: string, title: string }[]): Promise<boolean> {
+    const sanitizedText = this.sanitizeForWhatsApp(text);
+    const sanitizedButtons = buttons.map(b => ({ id: b.id, title: this.sanitizeForWhatsApp(b.title, true) }));
     console.log(`\n📤 SENDING INTERACTIVE MESSAGE:`);
     console.log(`📱 To: ${phoneNumber}`);
-    console.log(`📝 Text: ${text.substring(0, 100)}...`);
-    console.log(`🔘 Buttons: ${buttons.map(b => b.title).join(', ')}`);
+    console.log(`📝 Text: ${sanitizedText.substring(0, 100)}...`);
+    console.log(`🔘 Buttons: ${sanitizedButtons.map(b => b.title).join(', ')}`);
 
     if (!this.config.phoneNumberId || !this.config.accessToken) {
       console.log(`❌ WhatsApp credentials missing - SIMULATION MODE`);
@@ -185,10 +209,10 @@ export class WhatsAppPrayerBot {
           interactive: {
             type: 'button',
             body: {
-              text: text
+              text: sanitizedText
             },
             action: {
-              buttons: buttons.map(button => ({
+              buttons: sanitizedButtons.map(button => ({
                 type: 'reply',
                 reply: {
                   id: button.id,
@@ -2466,8 +2490,8 @@ Remember, the journey of faith is continuous. Feel free to start another study s
   }
 
   // Helper to send messages, used by reminder system
-  public async sendMessage(phoneNumber: string, message: string): Promise<void> {
-    await this.sendWhatsAppMessage(phoneNumber, message);
+  public async sendMessage(phoneNumber: string, message: string): Promise<boolean> {
+    return await this.sendWhatsAppMessage(phoneNumber, message);
   }
 }
 
