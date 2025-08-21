@@ -138,6 +138,7 @@ const MobileNavButton = ({ icon: Icon, label, isActive, onClick }: {
 );
 
 export default function AdminDashboard() {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('overview');
   const [hideMobileFooter, setHideMobileFooter] = useState(false);
   const [hideDesktopHeaderButtons, setHideDesktopHeaderButtons] = useState(false);
@@ -180,7 +181,6 @@ export default function AdminDashboard() {
   const [dataAllocationFilter, setDataAllocationFilter] = useState({ min: 0, max: 100 });
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const isMobile = useIsMobile();
   const [, setLocation] = useLocation();
 
   // Fetch data allocation

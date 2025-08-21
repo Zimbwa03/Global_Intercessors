@@ -1535,35 +1535,33 @@ God's kingdom stands firm when everything else crumbles. As intercessors, we pra
       const focusThemes = ['Kingdom Authority', 'Spiritual Breakthrough', 'Divine Favor', 'Prayer Power', 'Victorious Living', 'Supernatural Strength', 'Heavenly Wisdom', 'Revival Fire', 'Prophetic Authority', 'Divine Protection'];
       const randomFocus = focusThemes[Math.floor(Math.random() * focusThemes.length)];
 
-      const prompt = `Generate 8 powerful daily declarations for Christian intercessors (ID: ${timestamp}) with focus on "${randomFocus}". Structure for WhatsApp:
+      // Ask for fewer, tighter declarations to keep message size small
+      const prompt = `Generate 5 powerful daily declarations for Christian intercessors (ID: ${timestamp}) with focus on "${randomFocus}".
+Keep it very concise and optimized for WhatsApp. HARD LENGTH LIMITS:
+- Each declaration line <= 120 characters total
+- Verse snippet <= 12 words (or provide reference only)
+- Total output <= 1100 characters
+
+Structure:
 
 **Focus:** [Theme related to "${randomFocus}"]
 
-1️⃣ I DECLARE: [Powerful faith statement - be specific and bold]
-📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
+1️⃣ I DECLARE: [Short, specific statement]
+📖 [Book Chapter:Verse] - "[very short verse snippet (<= 12 words)]" OR just [Book Chapter:Verse]
 
-2️⃣ I DECLARE: [Breakthrough statement - about obstacles breaking]
-📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
+2️⃣ I DECLARE: [Short statement]
+📖 [Reference OR very short snippet]
 
-3️⃣ I DECLARE: [Authority statement - about spiritual power]
-📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
+3️⃣ I DECLARE: [Short statement]
+📖 [Reference OR very short snippet]
 
-4️⃣ I DECLARE: [Victory statement - about overcoming]
-📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
+4️⃣ I DECLARE: [Short statement]
+📖 [Reference OR very short snippet]
 
-5️⃣ I DECLARE: [Favor statement - about God's blessing]
-📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
+5️⃣ I DECLARE: [Short statement]
+📖 [Reference OR very short snippet]
 
-6️⃣ I DECLARE: [Protection statement - about divine covering]
-📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
-
-7️⃣ I DECLARE: [Purpose statement - about calling and destiny]
-📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
-
-8️⃣ I DECLARE: [Healing statement - about restoration and wholeness]
-📖 [Book Chapter:Verse] - "[Complete short Bible verse]"
-
-Make each declaration powerful, unique, and include the complete short Bible verse text. Focus on empowering intercessors with spiritual authority.`;
+Make each declaration powerful and unique. If output exceeds limits, shorten further.`;
 
       const content = await this.generateAIContentDevotional(prompt);
 
@@ -1578,28 +1576,36 @@ ${content}
 
 *"Let the redeemed SAY SO!" - Psalm 107:2*`;
 
-      // Check message length and truncate if needed - increased limit for enhanced content
-      if (declarationsMessage.length > 1600) {
-        console.log(`⚠️ Message too long (${declarationsMessage.length} chars), truncating content`);
-        // Truncate content but keep structure
-        const lines = content.split('\n');
-        const truncatedLines = lines.slice(0, 25); // Keep first 25 lines to maintain structure
-        const truncatedContent = truncatedLines.join('\n') + '\n\n*[Content truncated - more declarations available]*';
-        const truncatedMessage = `🔥 *Daily Declarations* 🔥
+      // If message is too long for an interactive body, chunk into multiple text messages and then send a small interactive menu
+      const MAX_LEN = 1400; // conservative limit for interactive body
+      if (declarationsMessage.length > MAX_LEN) {
+        console.log(`⚠️ Declarations too long (${declarationsMessage.length}), chunking into parts`);
+        const header = `🔥 Daily Declarations 🔥\n\n${firstName}, speak these over your life:\n\n`;
+        const footer = `\n\n💪 Declare with bold faith!\n\n"Let the redeemed SAY SO!" - Psalm 107:2`;
 
-*${firstName}, speak these over your life:*
+        // Split on blank lines to keep declarations intact
+        const blocks = content.split(/\n\s*\n/).filter(Boolean);
+        const parts: string[] = [];
+        let current = header;
+        for (const b of blocks) {
+          if ((current + b + '\n\n').length > 900) { // keep parts comfortably small
+            parts.push(current.trim());
+            current = b + '\n\n';
+          } else {
+            current += b + '\n\n';
+          }
+        }
+        if (current.trim().length) parts.push((current + footer).trim());
 
-${truncatedContent}
-
-💪 *Declare with bold faith!*
-
-*"Let the redeemed SAY SO!" - Psalm 107:2*`;
-
-        if (truncatedMessage.length > 1600) {
-          throw new Error('Message still too long, using fallback');
+        // Send parts as text messages
+        for (const [idx, part] of parts.entries()) {
+          const label = parts.length > 1 ? ` (Part ${idx + 1}/${parts.length})` : '';
+          const body = idx === parts.length - 1 ? part : part + `\n${label}`;
+          await this.sendWhatsAppMessage(phoneNumber, body);
         }
 
-        await this.sendInteractiveMessage(phoneNumber, truncatedMessage, [
+        // Send a small interactive menu after the content
+        await this.sendInteractiveMessage(phoneNumber, 'Select an option:', [
           { id: 'generate_another', title: '🔄 Fresh Declarations' },
           { id: 'todays_word', title: '📖 Today\'s Word' },
           { id: 'back', title: '⬅️ Back' }
@@ -1845,9 +1851,11 @@ Deep dive, ${userName}!
 
     let message = '';
     let timing = '30min';
+    let minutes = 30;
 
     if (setting === 'reminder_30min') {
       timing = '30min';
+      minutes = 30;
       message = `⏰ *30-Minute Reminders Set!* ⏰
 
 Perfect choice, ${userName}!
@@ -1858,6 +1866,7 @@ Perfect choice, ${userName}!
 ⚔️ Spiritual preparation for powerful intercession`;
     } else if (setting === 'reminder_15min') {
       timing = '15min';
+      minutes = 15;
       message = `⏰ *15-Minute Reminders Set!* ⏰
 
 Great timing, ${userName}!
@@ -1880,10 +1889,20 @@ Customize your experience, ${userName}!
 📞 Contact support to set up your custom preferences!`;
     }
 
-    // Update user reminder preferences
-    await this.createOrUpdateUser(phoneNumber, {
-      reminder_preferences: { reminderTiming: timing, enabled: true }
-    });
+    // Apply reminder timing via AdvancedReminderSystem against the user's active slot
+    try {
+      const userInfo = await this.getCompleteUserInfo(phoneNumber);
+      if (setting === 'reminder_custom') {
+        // For now, keep the informational message only for custom
+      } else {
+        const ok = await this.reminderSystem.updateReminderSettings(userInfo.userId, minutes);
+        if (!ok) {
+          message = `❌ Failed to update reminder settings. Please try again or use "remind ${minutes}".`;
+        }
+      }
+    } catch (e) {
+      message = `❌ Error updating reminder settings. Please try again.`;
+    }
 
     const buttons = [
       { id: 'reminders', title: '⏰ Reminder Options' },
@@ -2493,6 +2512,9 @@ Remember, the journey of faith is continuous. Feel free to start another study s
           break;
         case 'daily_review':
           result = await ScriptureCoachCommands.handleDailyReview(scriptureCoachUserId, userName);
+          break;
+        case 'get_hint':
+          result = await ScriptureCoachCommands.handleGetHint(scriptureCoachUserId, userName);
           break;
         case 'verse_packs':
           result = await ScriptureCoachCommands.handleVersePacks(phoneNumber, userName);

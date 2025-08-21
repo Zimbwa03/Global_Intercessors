@@ -388,6 +388,58 @@ ${userName}, you have ${dueCards.length} verse(s) due for review.
     }
   }
 
+  // === HINT FOR CURRENT DUE VERSE ===
+  static async handleGetHint(userId: string, userName: string): Promise<{
+    message: string;
+    buttons: { id: string; title: string }[];
+  }> {
+    try {
+      const dueCards = await scriptureCoach.getDueMemoryCards(userId);
+      if (!dueCards || dueCards.length === 0) {
+        return {
+          message: `💡 No verses due right now, ${userName}.
+
+Add a memory card to begin, or come back later for your daily review.`,
+          buttons: [
+            { id: 'create_memory_card', title: ScriptureCoachCommands.safeTitle('📝 Add Verse') },
+            { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
+          ]
+        };
+      }
+
+      const current = dueCards[0];
+      // Try to fetch the verse text (optional)
+      let verseText: string | null = null;
+      try {
+        verseText = await scriptureCoach.fetchVerseText(current.reference);
+      } catch {}
+
+      const hint = await scriptureCoach.generateHint(current.reference, verseText || '');
+
+      const message = `💡 Hint for ${current.reference}
+
+${hint}
+
+Try recalling the verse again, then continue your review.`;
+
+      const buttons = [
+        { id: 'daily_review', title: ScriptureCoachCommands.safeTitle('🔄 Continue Review') },
+        { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
+      ];
+
+      return { message, buttons };
+    } catch (error) {
+      console.error('Error generating hint:', error);
+      return {
+        message: `❌ Sorry ${userName}, I couldn’t generate a hint right now. Please try again.`,
+        buttons: [
+          { id: 'daily_review', title: ScriptureCoachCommands.safeTitle('🔄 Continue Review') },
+          { id: 'back', title: ScriptureCoachCommands.safeTitle('⬅️ Back') }
+        ]
+      };
+    }
+  }
+
   // === MEMORY QUIZ ===
 
   static async handleMemoryQuizMenu(phoneNumber: string, userName: string): Promise<{
