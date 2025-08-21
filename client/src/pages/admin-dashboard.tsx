@@ -144,6 +144,34 @@ export default function AdminDashboard() {
   const [hideDesktopHeaderButtons, setHideDesktopHeaderButtons] = useState(false);
   const lastScrollYRef = useRef(0);
   const isMobileRef = useRef(isMobile);
+  // Keep mobile flag in a ref to avoid re-subscribing listeners unnecessarily
+  useEffect(() => { isMobileRef.current = isMobile; }, [isMobile]);
+
+  // Scroll hide/show handlers (run regardless of adminUser presence to keep hooks stable)
+  useEffect(() => {
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentY = window.scrollY;
+          const goingDown = currentY > lastScrollYRef.current;
+          const was = lastScrollYRef.current;
+          lastScrollYRef.current = currentY;
+          if (isMobileRef.current) {
+            // Hide footer when user scrolls up
+            setHideMobileFooter(was > currentY && currentY > 20);
+          } else {
+            // Hide desktop header buttons when scrolling down
+            setHideDesktopHeaderButtons(goingDown && currentY > 60);
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Fetch skip requests for admin
   const { data: skipRequests = [], refetch: refetchSkipRequests } = useQuery({
@@ -1495,32 +1523,7 @@ export default function AdminDashboard() {
     }
   };
 
-  useEffect(() => { isMobileRef.current = isMobile; }, [isMobile]);
-
-  useEffect(() => {
-    let ticking = false;
-    const onScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const currentY = window.scrollY;
-          const goingDown = currentY > lastScrollYRef.current;
-          const was = lastScrollYRef.current;
-          lastScrollYRef.current = currentY;
-          if (isMobileRef.current) {
-            // Hide footer when user scrolls up
-            setHideMobileFooter(was > currentY && currentY > 20);
-          } else {
-            // Hide desktop header buttons when scrolling down
-            setHideDesktopHeaderButtons(goingDown && currentY > 60);
-          }
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  
 
   class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }> {
     constructor(props: any) {
