@@ -149,9 +149,17 @@ export default function AdminDashboard() {
   const { data: skipRequests = [], refetch: refetchSkipRequests } = useQuery({
     queryKey: ['admin-skip-requests'],
     queryFn: async () => {
-      const response = await fetch('/api/admin/skip-requests');
-      if (!response.ok) throw new Error('Failed to fetch skip requests');
-      return response.json();
+      try {
+        const response = await fetch('/api/admin/skip-requests');
+        if (!response.ok) {
+          // Treat as empty to avoid UI crash; server logs contain details
+          return [] as any[];
+        }
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+      } catch {
+        return [] as any[];
+      }
     },
     refetchOnWindowFocus: false,
     refetchInterval: 30000, // Fixed interval to prevent flickering
