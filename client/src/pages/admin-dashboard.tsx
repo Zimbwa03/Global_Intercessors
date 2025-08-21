@@ -1719,16 +1719,9 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Tab Content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-          >
-            {activeTab === 'skip-requests' ? (
+        {/* Tab Content (animations disabled to avoid React error 310) */}
+        <div>
+          {activeTab === 'skip-requests' ? (
               <Card className="shadow-brand-lg border border-gi-primary/100">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
@@ -1837,7 +1830,7 @@ export default function AdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
-            ) : activeTab === 'data-allocation' ? (
+          ) : activeTab === 'data-allocation' ? (
               <Card className="shadow-brand-lg border border-gi-primary/100">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
@@ -2000,13 +1993,12 @@ export default function AdminDashboard() {
                   )}
                 </CardContent>
               </Card>
-            ) : (
-              <Suspense fallback={<div className="p-6 text-center text-sm text-gray-600">Loading…</div>}>
-                {renderTabContent()}
-              </Suspense>
-            )}
-          </motion.div>
-        </AnimatePresence>
+          ) : (
+            <Suspense fallback={<div className="p-6 text-center text-sm text-gray-600">Loading…</div>}>
+              {renderTabContent()}
+            </Suspense>
+          )}
+        </div>
       </div>
     </div>
   );
