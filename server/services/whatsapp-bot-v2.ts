@@ -1450,7 +1450,7 @@ Choose your spiritual nourishment for today:`;
     }
   }
 
-  // Generate Today's Word using DeepSeek AI
+  // Generate Today's Word using Gemini (preferred) with DeepSeek fallback
   private async generateTodaysWord(phoneNumber: string, userName: string): Promise<void> {
     try {
       // Add timestamp for truly unique content generation
@@ -1473,7 +1473,8 @@ Choose your spiritual nourishment for today:`;
 
 Make it spiritually rich, encouraging, and practical for prayer warriors. Generate fresh, unique content every time.`;
 
-      const content = await this.generateAIContent(prompt);
+      // Prefer Gemini for more variety and uniqueness
+      const content = await this.generateAIContentDevotional(prompt);
 
       const firstName = userName.split(' ')[0];
       const todaysWordMessage = `📖 *Today's Word* 📖
@@ -1526,7 +1527,7 @@ God's kingdom stands firm when everything else crumbles. As intercessors, we pra
     }
   }
 
-  // Generate Daily Declarations using DeepSeek AI - Enhanced with more content
+  // Generate Daily Declarations using Gemini (preferred) with DeepSeek fallback
   private async generateDailyDeclarations(phoneNumber: string, userName: string): Promise<void> {
     try {
       // Add timestamp and variety for unique content
@@ -1564,7 +1565,7 @@ God's kingdom stands firm when everything else crumbles. As intercessors, we pra
 
 Make each declaration powerful, unique, and include the complete short Bible verse text. Focus on empowering intercessors with spiritual authority.`;
 
-      const content = await this.generateAIContent(prompt);
+      const content = await this.generateAIContentDevotional(prompt);
 
       const firstName = userName.split(' ')[0];
       const declarationsMessage = `🔥 *Daily Declarations* 🔥
@@ -1732,6 +1733,60 @@ ${truncatedContent}
       console.error('❌ AI content generation failed:', error);
       throw error;
     }
+  }
+
+  // Prefer Gemini for Devotions/Declarations; fallback to DeepSeek
+  private async generateAIContentDevotional(prompt: string): Promise<string> {
+    // Try Gemini first if available
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (geminiKey) {
+      try {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+        const body = {
+          contents: [
+            {
+              role: 'system',
+              parts: [
+                {
+                  text:
+                    'You are a Christian devotional writer for WhatsApp. Write concise, biblically grounded, inspiring content for prayer warriors. Avoid markdown symbols like ** or _; keep text clean. Keep under 1400 characters.'
+                }
+              ]
+            },
+            {
+              role: 'user',
+              parts: [{ text: prompt }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.9,
+            topP: 0.95,
+            maxOutputTokens: 800
+          }
+        } as any;
+
+        const resp = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        if (resp.ok) {
+          const data: any = await resp.json();
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text && typeof text === 'string') return text;
+          throw new Error('Gemini returned no text');
+        } else {
+          const t = await resp.text();
+          throw new Error(`Gemini error ${resp.status}: ${t}`);
+        }
+      } catch (e) {
+        console.error('❌ Gemini generation failed, falling back to DeepSeek:', e);
+      }
+    }
+
+    // Fallback to DeepSeek
+    return await this.generateAIContent(prompt);
   }
 
   // Specific button interaction handlers
@@ -2018,7 +2073,6 @@ Let me help you get back on track! Here are your options:`;
     const buttons = [
       { id: 'devotionals', title: '📖 Devotionals' },
       { id: 'scripture_coach', title: '📚 ScriptureCoach' },
-      { id: 'reminders', title: '⏰ Reminders' },
       { id: 'help', title: '❓ Help' }
     ];
 
@@ -2373,9 +2427,32 @@ Remember, the journey of faith is continuous. Feel free to start another study s
   }
 
   // === ScriptureCoach Command Handlers ===
+  // Ensure a ScriptureCoach user exists in the ScriptureCoach `users` table and return its id
+  private async ensureScriptureCoachUser(waPhone: string, userName: string): Promise<string> {
+    const { data: existing } = await supabase
+      .from('users')
+      .select('id')
+      .eq('wa_id', waPhone)
+      .single();
+
+    if (existing?.id) return existing.id;
+
+    const { data: inserted, error: insertErr } = await supabase
+      .from('users')
+      .insert({ wa_id: waPhone, username: userName || 'Intercessor', tz: 'Africa/Harare' })
+      .select('id')
+      .single();
+
+    if (insertErr || !inserted?.id) {
+      throw new Error(`Failed ensuring ScriptureCoach user: ${insertErr?.message || 'unknown'}`);
+    }
+
+    return inserted.id;
+  }
 
   private async handleScriptureCoachCommand(phoneNumber: string, userName: string): Promise<void> {
     try {
+      await this.ensureScriptureCoachUser(phoneNumber, userName);
       const { message, buttons } = await ScriptureCoachCommands.handleScriptureCoachMenu(phoneNumber, userName);
       await this.sendInteractiveMessage(phoneNumber, message, buttons);
     } catch (error) {
@@ -2391,7 +2468,7 @@ Remember, the journey of faith is continuous. Feel free to start another study s
   private async handleScriptureCoachButton(phoneNumber: string, userName: string, buttonId: string): Promise<void> {
     try {
       const userInfo = await this.getCompleteUserInfo(phoneNumber);
-      const userId = userInfo.userId;
+      const scriptureCoachUserId = await this.ensureScriptureCoachUser(phoneNumber, userName);
 
       let result: { message: string; buttons: { id: string; title: string }[] };
 
@@ -2406,32 +2483,32 @@ Remember, the journey of faith is continuous. Feel free to start another study s
           result = await ScriptureCoachCommands.handleMemoryQuizMenu(phoneNumber, userName);
           break;
         case 'scripture_review':
-          result = await ScriptureCoachCommands.handleDailyReview(userId, userName);
+          result = await ScriptureCoachCommands.handleDailyReview(scriptureCoachUserId, userName);
           break;
         case 'scripture_more':
           result = await ScriptureCoachCommands.handleMoreOptions(phoneNumber, userName);
           break;
         case 'scripture_stats':
-          result = await ScriptureCoachCommands.handleProgressStats(userId, userName);
+          result = await ScriptureCoachCommands.handleProgressStats(scriptureCoachUserId, userName);
           break;
         case 'daily_review':
-          result = await ScriptureCoachCommands.handleDailyReview(userId, userName);
+          result = await ScriptureCoachCommands.handleDailyReview(scriptureCoachUserId, userName);
           break;
         case 'verse_packs':
           result = await ScriptureCoachCommands.handleVersePacks(phoneNumber, userName);
           break;
         case 'create_memory_card':
           // For now, create a sample memory card - in full implementation, you'd prompt for reference
-          result = await ScriptureCoachCommands.handleCreateMemoryCard(userId, 'John 3:16', userName);
+          result = await ScriptureCoachCommands.handleCreateMemoryCard(scriptureCoachUserId, 'John 3:16', userName);
           break;
         case 'todays_reading':
-          result = await ScriptureCoachCommands.handleTodaysReading(userId, userName);
+          result = await ScriptureCoachCommands.handleTodaysReading(scriptureCoachUserId, userName);
           break;
         default:
           // Handle plan selection (e.g., plan_123)
           if (buttonId.startsWith('plan_')) {
             const planId = buttonId.replace('plan_', '');
-            result = await ScriptureCoachCommands.handleStartReadingPlan(userId, planId, userName);
+            result = await ScriptureCoachCommands.handleStartReadingPlan(scriptureCoachUserId, planId, userName);
           } else {
             result = await ScriptureCoachCommands.handleScriptureCoachHelp(phoneNumber, userName);
           }

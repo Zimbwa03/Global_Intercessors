@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -141,7 +141,8 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [hideMobileFooter, setHideMobileFooter] = useState(false);
   const [hideDesktopHeaderButtons, setHideDesktopHeaderButtons] = useState(false);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const lastScrollYRef = useRef(0);
+  const isMobileRef = useRef(isMobile);
 
   // Fetch skip requests for admin
   const { data: skipRequests = [], refetch: refetchSkipRequests } = useQuery({
@@ -1486,22 +1487,32 @@ export default function AdminDashboard() {
     }
   };
 
+  useEffect(() => { isMobileRef.current = isMobile; }, [isMobile]);
+
   useEffect(() => {
+    let ticking = false;
     const onScroll = () => {
-      const currentY = window.scrollY;
-      const goingDown = currentY > lastScrollY;
-      setLastScrollY(currentY);
-      if (isMobile) {
-        // Hide footer when user scrolls up (content moves downwards => lastScrollY > currentY)
-        setHideMobileFooter(lastScrollY > currentY && currentY > 20);
-      } else {
-        // Hide desktop header buttons when scrolling down
-        setHideDesktopHeaderButtons(goingDown && currentY > 60);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentY = window.scrollY;
+          const goingDown = currentY > lastScrollYRef.current;
+          const was = lastScrollYRef.current;
+          lastScrollYRef.current = currentY;
+          if (isMobileRef.current) {
+            // Hide footer when user scrolls up
+            setHideMobileFooter(was > currentY && currentY > 20);
+          } else {
+            // Hide desktop header buttons when scrolling down
+            setHideDesktopHeaderButtons(goingDown && currentY > 60);
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, [isMobile, lastScrollY]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
