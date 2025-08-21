@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1522,7 +1522,35 @@ export default function AdminDashboard() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }> {
+    constructor(props: any) {
+      super(props);
+      this.state = { hasError: false };
+    }
+    static getDerivedStateFromError(error: any) {
+      return { hasError: true, error };
+    }
+    componentDidCatch(error: any, info: any) {
+      // Log for debugging in console
+      console.error('AdminDashboard render error boundary caught:', error, info);
+    }
+    render() {
+      if (this.state.hasError) {
+        return (
+          <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+            <div className="max-w-lg text-center">
+              <h2 className="text-xl font-semibold mb-2">Admin dashboard failed to load</h2>
+              <p className="text-gray-600 mb-4">Please refresh the page. If it persists, share the first error line from the Console.</p>
+            </div>
+          </div>
+        );
+      }
+      return <>{this.props.children}</>;
+    }
+  }
+
   return (
+    <ErrorBoundary>
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
       {isMobile && (
@@ -2009,5 +2037,6 @@ export default function AdminDashboard() {
         </div>
       </div>
     </div>
+    </ErrorBoundary>
   );
 }
