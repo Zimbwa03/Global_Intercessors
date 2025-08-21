@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +43,7 @@ import { PrayerSlotManagement } from '../components/dashboard/prayer-slot-manage
 import { SlotCoverageMonitor } from '../components/dashboard/slot-coverage-monitor';
 import { FastingProgramManagement } from '../components/dashboard/fasting-program-management';
 import { AnalyticsCharts } from '../components/dashboard/analytics-charts';
-import { WeeklyReportAnalytics } from '../components/admin/weekly-report-analytics';
+const WeeklyReportAnalytics = lazy(() => import('../components/admin/weekly-report-analytics').then(m => ({ default: m.WeeklyReportAnalytics })));
 
 interface AdminUser {
   id: string;
@@ -2001,7 +2001,9 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              renderTabContent()
+              <Suspense fallback={<div className="p-6 text-center text-sm text-gray-600">Loading…</div>}>
+                {renderTabContent()}
+              </Suspense>
             )}
           </motion.div>
         </AnimatePresence>
