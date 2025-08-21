@@ -17,7 +17,7 @@ import { PrayerPlanner } from "@/components/dashboard/prayer-planner";
 import { AudioBiblePlayer } from "@/components/dashboard/audio-bible-player";
 import { NotificationSetup } from "@/components/dashboard/notification-setup";
 import { UserProfile } from "@/components/dashboard/user-profile";
-import { PrayerJourneyVisualizer } from "@/components/dashboard/prayer-journey-visualizer";
+
 import { BibleVerseSearch } from "@/components/dashboard/bible-verse-search";
 import { WhatsAppSettings } from "@/components/dashboard/whatsapp-settings";
 import { IntercessorScheduleSettings } from "@/components/intercessor-schedule-settings";
@@ -156,8 +156,7 @@ export default function Dashboard() {
         return <PrayerPlanner />;
       case "bible-search":
         return <BibleVerseSearch />;
-      case "prayer-journey":
-        return <PrayerJourneyVisualizer userId={user.id} />;
+
       case "audio-bible":
         return (
           <AudioBiblePlayer

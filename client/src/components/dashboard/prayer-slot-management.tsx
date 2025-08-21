@@ -669,7 +669,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                       <Button
                         onClick={() => window.open(zoomLinkData.zoomLink, '_blank')}
                         className={`bg-green-600 hover:bg-green-700 text-white font-poppins ${
-                          isMobile ? 'h-12 text-sm' : ''
+                          isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
                         }`}
                       >
                         <Users className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
@@ -682,7 +682,9 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                       <Button
                         onClick={() => logAttendanceMutation.mutate({ duration: 20 })}
                         disabled={logAttendanceMutation.isPending}
-                        className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 px-4 py-2 hover:bg-gi-primary/700 text-white font-poppins h-12 text-sm bg-[#0a481d]"
+                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-gi-primary/700 text-white font-poppins bg-[#0a481d] ${
+                          isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
+                        }`}
                       >
                         <CheckCircle2 className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
                         {logAttendanceMutation.isPending ? 'Logging...' : (isMobile ? 'Log Prayer' : 'Log Prayer Attendance')}
@@ -695,7 +697,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                           <Button
                             variant="outline"
                             className={`border-gi-primary/accent text-gi-gold hover:bg-gi-gold hover:text-gi-primary transition-brand font-poppins ${
-                              isMobile ? 'h-12 text-sm' : ''
+                              isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
                             }`}
                           >
                             <RotateCcw className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
@@ -756,7 +758,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                         <Button
                           variant="outline"
                           className={`border-gi-primary/primary text-gi-primary hover:bg-gi-primary/50 transition-brand font-poppins ${
-                            isMobile ? 'h-12 text-sm' : ''
+                            isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
                           }`}
                         >
                           <Edit3 className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />

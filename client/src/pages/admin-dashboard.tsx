@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useTypingDetector } from "@/hooks/use-typing-detector";
+
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { supabase } from "@/lib/supabase";
@@ -139,7 +139,6 @@ const MobileNavButton = ({ icon: Icon, label, isActive, onClick }: {
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
-  const isTyping = useTypingDetector();
 
   // Fetch skip requests for admin
   const { data: skipRequests = [], refetch: refetchSkipRequests } = useQuery({
@@ -150,8 +149,8 @@ export default function AdminDashboard() {
       return response.json();
     },
     refetchOnWindowFocus: false,
-    refetchInterval: isTyping ? false : 10000,
-    staleTime: isTyping ? Infinity : 5000
+    refetchInterval: 30000, // Fixed interval to prevent flickering
+    staleTime: 10000
   });
 
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
@@ -166,6 +165,11 @@ export default function AdminDashboard() {
     sendEmail: false,
     pinToTop: false
   });
+
+  // Debounced update handler to prevent excessive re-renders
+  const handleUpdateChange = useCallback((field: string, value: any) => {
+    setNewUpdate(prev => ({ ...prev, [field]: value }));
+  }, []);
   const [zoomLink, setZoomLink] = useState("");
   const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'excellent' | 'good' | 'needs-improvement'>('all');
   const [sortOrder, setSortOrder] = useState<'highest' | 'lowest' | 'alphabetical'>('highest');
@@ -185,8 +189,8 @@ export default function AdminDashboard() {
     },
     enabled: !!adminUser && activeTab === 'data-allocation',
     refetchOnWindowFocus: false,
-    refetchInterval: isTyping ? false : 15000,
-    staleTime: isTyping ? Infinity : 10000
+    refetchInterval: 30000, // Fixed interval to prevent flickering
+    staleTime: 15000
   });
 
   // Check admin authentication
@@ -239,11 +243,12 @@ export default function AdminDashboard() {
     },
     enabled: !!adminUser,
     refetchOnWindowFocus: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    refetchInterval: 30000, // Fixed interval to prevent flickering
+    staleTime: 20000,
+    gcTime: 300000, // 5 minutes
   });
 
-  const prayerSlots = prayerSlotsResponse || [];
+  const prayerSlots = useMemo(() => prayerSlotsResponse || [], [prayerSlotsResponse]);
 
   // Fetch fasting registrations with location conversion from API
   const { data: fastingRegistrationsResponse, isLoading: fastingLoading, refetch: refetchFasting } = useQuery({
@@ -266,11 +271,15 @@ export default function AdminDashboard() {
     },
     enabled: !!adminUser,
     refetchOnWindowFocus: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    refetchInterval: 30000, // Fixed interval to prevent flickering
+    staleTime: 20000,
+    gcTime: 300000, // 5 minutes
   });
 
-  const fastingRegistrations = Array.isArray(fastingRegistrationsResponse) ? fastingRegistrationsResponse : [];
+  const fastingRegistrations = useMemo(() => 
+    Array.isArray(fastingRegistrationsResponse) ? fastingRegistrationsResponse : [], 
+    [fastingRegistrationsResponse]
+  );
 
   // Fetch admin updates from Supabase
   const { data: updatesResponse, isLoading: updatesLoading, refetch: refetchUpdates } = useQuery({
@@ -287,11 +296,12 @@ export default function AdminDashboard() {
     },
     enabled: !!adminUser,
     refetchOnWindowFocus: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    refetchInterval: 30000, // Fixed interval to prevent flickering
+    staleTime: 20000,
+    gcTime: 300000, // 5 minutes
   });
 
-  const updates = updatesResponse || [];
+  const updates = useMemo(() => updatesResponse || [], [updatesResponse]);
 
   // Fetch user activities for intercessor tracking
   const { data: userActivitiesResponse, isLoading: activitiesLoading, refetch: refetchActivities } = useQuery({
@@ -314,11 +324,15 @@ export default function AdminDashboard() {
     },
     enabled: !!adminUser,
     refetchOnWindowFocus: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    refetchInterval: 30000, // Fixed interval to prevent flickering
+    staleTime: 20000,
+    gcTime: 300000, // 5 minutes
   });
 
-  const userActivities: UserActivity[] = Array.isArray(userActivitiesResponse) ? userActivitiesResponse : [];
+  const userActivities: UserActivity[] = useMemo(() => 
+    Array.isArray(userActivitiesResponse) ? userActivitiesResponse : [], 
+    [userActivitiesResponse]
+  );
 
   // Fetch attendance statistics
   const { data: attendanceStatsResponse, isLoading: attendanceLoading } = useQuery({
@@ -340,11 +354,12 @@ export default function AdminDashboard() {
     },
     enabled: !!adminUser,
     refetchOnWindowFocus: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    refetchInterval: 30000, // Fixed interval to prevent flickering
+    staleTime: 20000,
+    gcTime: 300000, // 5 minutes
   });
 
-  const attendanceStats = attendanceStatsResponse || {};
+  const attendanceStats = useMemo(() => attendanceStatsResponse || {}, [attendanceStatsResponse]);
 
   // Fetch prayer sessions
   const { data: prayerSessionsResponse, isLoading: sessionsLoading } = useQuery({
@@ -366,11 +381,15 @@ export default function AdminDashboard() {
     },
     enabled: !!adminUser,
     refetchOnWindowFocus: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    refetchInterval: 30000, // Fixed interval to prevent flickering
+    staleTime: 20000,
+    gcTime: 300000, // 5 minutes
   });
 
-  const prayerSessions = Array.isArray(prayerSessionsResponse) ? prayerSessionsResponse : [];
+  const prayerSessions = useMemo(() => 
+    Array.isArray(prayerSessionsResponse) ? prayerSessionsResponse : [], 
+    [prayerSessionsResponse]
+  );
 
   // Get current Zoom link
   const { data: currentZoomLink } = useQuery({
@@ -393,8 +412,8 @@ export default function AdminDashboard() {
     enabled: !!adminUser,
     refetchOnWindowFocus: false,
     refetchInterval: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: 300000, // 5 minutes
+    gcTime: 600000, // 10 minutes
   });
 
   // Mutations for admin actions
@@ -416,7 +435,7 @@ export default function AdminDashboard() {
 
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: useCallback(() => {
       toast({
         title: "Global Update Posted",
         description: "Your update is now live on all user dashboards",
@@ -435,14 +454,14 @@ export default function AdminDashboard() {
       });
 
       queryClient.invalidateQueries({ queryKey: ['/api/admin/updates'] });
-    },
-    onError: (error: Error) => {
+    }, [toast, queryClient]),
+    onError: useCallback((error: Error) => {
       toast({
         title: "Failed to Post Update",
         description: error.message || "Please try again",
         variant: "destructive",
       });
-    },
+    }, [toast]),
   });
 
   const updateZoomLinkMutation = useMutation({
@@ -474,23 +493,23 @@ export default function AdminDashboard() {
     setLocation("/admin/login");
   };
 
-  const handleCreateUpdate = (e: React.FormEvent) => {
+  const handleCreateUpdate = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (!newUpdate.title.trim() || !newUpdate.description.trim()) {
       toast({ title: "Error", description: "Please fill in all fields", variant: "destructive" });
       return;
     }
     createUpdateMutation.mutate(newUpdate);
-  };
+  }, [newUpdate, createUpdateMutation, toast]);
 
-  const handleUpdateZoomLink = (e: React.FormEvent) => {
+  const handleUpdateZoomLink = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (!zoomLink.trim()) {
       toast({ title: "Error", description: "Please enter a valid Zoom link", variant: "destructive" });
       return;
     }
     updateZoomLinkMutation.mutate(zoomLink);
-  };
+  }, [zoomLink, updateZoomLinkMutation, toast]);
 
   const exportToCSV = (data: any[], filename: string) => {
     if (data.length === 0) {
@@ -529,7 +548,7 @@ export default function AdminDashboard() {
   };
 
   // Filter and sort intercessor activities
-  const filteredAndSortedActivities = userActivities
+  const filteredAndSortedActivities = useMemo(() => userActivities
     .filter(activity => {
       if (attendanceFilter === 'all') return true;
       if (attendanceFilter === 'excellent') return activity.attendance_rate >= 0.9;
@@ -542,7 +561,7 @@ export default function AdminDashboard() {
       if (sortOrder === 'lowest') return a.attendance_rate - b.attendance_rate;
       if (sortOrder === 'alphabetical') return (a.user_name || '').localeCompare(b.user_name || '');
       return 0;
-    });
+    }), [userActivities, attendanceFilter, sortOrder]);
 
   const generateAttendanceCSV = (activities: UserActivity[]) => {
     return activities.map(activity => ({
@@ -1126,7 +1145,7 @@ export default function AdminDashboard() {
                 <Input
                   id="updateTitle"
                   value={newUpdate.title}
-                  onChange={(e) => setNewUpdate({ ...newUpdate, title: e.target.value })}
+                  onChange={(e) => handleUpdateChange('title', e.target.value)}
                   placeholder="e.g., Prayer Meeting Schedule Update, Fasting Program Announcement..."
                   className="mt-1"
                   required
@@ -1138,7 +1157,7 @@ export default function AdminDashboard() {
                 <select
                   id="updateType"
                   value={newUpdate.type || 'general'}
-                  onChange={(e) => setNewUpdate({ ...newUpdate, type: e.target.value })}
+                  onChange={(e) => handleUpdateChange('type', e.target.value)}
                   className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                 >
                   <option value="general">General Announcement</option>
@@ -1154,7 +1173,7 @@ export default function AdminDashboard() {
                 <select
                   id="updatePriority"
                   value={newUpdate.priority || 'normal'}
-                  onChange={(e) => setNewUpdate({ ...newUpdate, priority: e.target.value })}
+                  onChange={(e) => handleUpdateChange('priority', e.target.value)}
                   className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                 >
                   <option value="low">Low Priority</option>
@@ -1169,7 +1188,7 @@ export default function AdminDashboard() {
                 <Textarea
                   id="updateDescription"
                   value={newUpdate.description}
-                  onChange={(e) => setNewUpdate({ ...newUpdate, description: e.target.value })}
+                  onChange={(e) => handleUpdateChange('description', e.target.value)}
                   placeholder="Enter your message for all users. This will appear on their dashboard immediately after posting..."
                   rows={6}
                   className="mt-1"
@@ -1186,7 +1205,7 @@ export default function AdminDashboard() {
                   <select
                     id="updateSchedule"
                     value={newUpdate.schedule || 'immediate'}
-                    onChange={(e) => setNewUpdate({ ...newUpdate, schedule: e.target.value })}
+                    onChange={(e) => handleUpdateChange('schedule', e.target.value)}
                     className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                   >
                     <option value="immediate">Post Immediately</option>
@@ -1199,7 +1218,7 @@ export default function AdminDashboard() {
                   <select
                     id="updateExpiry"
                     value={newUpdate.expiry || 'never'}
-                    onChange={(e) => setNewUpdate({ ...newUpdate, expiry: e.target.value })}
+                    onChange={(e) => handleUpdateChange('expiry', e.target.value)}
                     className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                   >
                     <option value="never">Never Hide</option>
@@ -1218,7 +1237,7 @@ export default function AdminDashboard() {
                     <input
                       type="checkbox"
                       checked={newUpdate.sendNotification || false}
-                      onChange={(e) => setNewUpdate({ ...newUpdate, sendNotification: e.target.checked })}
+                      onChange={(e) => handleUpdateChange('sendNotification', e.target.checked)}
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">Send push notification to all users</span>
@@ -1227,7 +1246,7 @@ export default function AdminDashboard() {
                     <input
                       type="checkbox"
                       checked={newUpdate.sendEmail || false}
-                      onChange={(e) => setNewUpdate({ ...newUpdate, sendEmail: e.target.checked })}
+                      onChange={(e) => handleUpdateChange('sendEmail', e.target.checked)}
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">Send email notification to subscribers</span>
@@ -1236,7 +1255,7 @@ export default function AdminDashboard() {
                     <input
                       type="checkbox"
                       checked={newUpdate.pinToTop || false}
-                      onChange={(e) => setNewUpdate({ ...newUpdate, pinToTop: e.target.checked })}
+                      onChange={(e) => handleUpdateChange('pinToTop', e.target.checked)}
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">Pin to top of user dashboard</span>

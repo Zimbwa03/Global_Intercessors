@@ -27,7 +27,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: "fas fa-home" },
     { id: "prayer-slot", label: "Prayer Slot", icon: "fas fa-clock" },
-    { id: "prayer-journey", label: "Prayer Journey", icon: "fas fa-route" },
+
     { id: "updates", label: "Updates", icon: "fas fa-bullhorn" },
     { id: "bible-chatbook", label: "Bible Chatbook", icon: "fas fa-book" },
     { id: "bible-search", label: "Bible Search", icon: "fas fa-search" },

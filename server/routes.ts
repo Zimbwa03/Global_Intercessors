@@ -2795,62 +2795,7 @@ Respond in JSON format as an array:
     }
   });
 
-  // Prayer Journey Visualizer API endpoints
 
-  // Get user's prayer journey timeline
-  app.get("/api/prayer-journey/:userId", async (req: Request, res: Response) => {
-    try {
-      const { userId } = req.params;
-      const { timeframe = '30' } = req.query; // days
-
-      console.log('Fetching prayer journey for user:', userId, 'timeframe:', timeframe);
-
-      // For now, always provide sample data since tables don't exist yet
-      // In production, this would check for real data first
-      console.log('Generating sample prayer journey data for visualization');
-      const sampleJourney = await generateSampleJourneyData(userId, parseInt(timeframe as string));
-      return res.json(sampleJourney);
-
-
-    } catch (error) {
-      console.error("Error in prayer journey endpoint:", error);
-      res.status(500).json({ error: "Failed to fetch prayer journey data" });
-    }
-  });
-
-  // Create prayer journey entry
-  app.post("/api/prayer-journey", async (req: Request, res: Response) => {
-    try {
-      const { userId, journeyType, title, description, emotionalState, prayerFocus, scriptureMeditation, personalNotes, tags } = req.body;
-
-      const { data: newEntry, error } = await supabaseAdmin
-        .from('prayer_journey')
-        .insert({
-          userId,
-          journeyType,
-          title,
-          description,
-          emotionalState,
-          prayerFocus,
-          scriptureMeditation,
-          personalNotes,
-          tags: tags || [],
-          isPrivate: true
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error creating prayer journey entry:", error);
-        return res.status(500).json({ error: "Failed to create prayer journey entry" });
-      }
-
-      res.json({ success: true, entry: newEntry });
-    } catch (error) {
-      console.error("Error in prayer journey creation:", error);
-      res.status(500).json({ error: "Failed to create prayer journey entry" });
-    }
-  });
 
   // Create or update prayer goal
   app.post("/api/prayer-goals", async (req: Request, res: Response) => {
@@ -2918,80 +2863,16 @@ Respond in JSON format as an array:
     }
   });
 
-  // Generate sample journey data for visualization
-  async function generateSampleJourneyData(userId: string, timeframeDays: number) {
-    const sampleJourney = [];
-    const sampleGoals = [];
-    const sampleInsights = [];
 
-    const journeyTypes = ['milestone', 'reflection', 'insight', 'breakthrough'];
-    const emotionalStates = ['joyful', 'peaceful', 'grateful', 'seeking', 'hopeful'];
-    const prayerFocuses = ['thanksgiving', 'petition', 'intercession', 'praise'];
-    const growthAreas = ['faith', 'patience', 'love', 'wisdom', 'forgiveness'];
 
-    // Generate journey entries over the timeframe
-    for (let i = 0; i < Math.min(timeframeDays / 3, 10); i++) {
-      const entryDate = new Date();
-      entryDate.setDate(entryDate.getDate() - (i * 3));
 
-      sampleJourney.push({
-        id: `sample_journey_${i}`,
-        userId,
-        journeyType: journeyTypes[Math.floor(Math.random() * journeyTypes.length)],
-        title: `Prayer Journey Day ${timeframeDays - (i * 3)}`,
-        description: `Meaningful spiritual moment during prayer time`,
-        emotionalState: emotionalStates[Math.floor(Math.random() * emotionalStates.length)],
-        prayerFocus: prayerFocuses[Math.floor(Math.random() * prayerFocuses.length)],
-        scriptureMeditation: i % 2 === 0 ? "Psalm 23:1-6" : "1 Thessalonians 5:16-18",
-        personalNotes: "Personal reflection on God's goodness and guidance",
-        isPrivate: true,
-        tags: ['growth', 'guidance'],
-        createdAt: entryDate.toISOString()
-      });
-    }
 
-    // Generate prayer goals
-    sampleGoals.push({
-      id: 'sample_goal_1',
-      userId,
-      goalType: 'attendance',
-      title: '30 Days of Consistent Prayer',
-      description: 'Attend prayer sessions consistently for 30 days',
-      targetValue: 30,
-      currentValue: Math.floor(Math.random() * 25) + 5,
-      status: 'active',
-      isCompleted: false,
-      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
-    });
 
-    // Generate spiritual insights
-    for (let i = 0; i < Math.min(timeframeDays / 7, 4); i++) {
-      const insightDate = new Date();
-      insightDate.setDate(insightDate.getDate() - (i * 7));
 
-      sampleInsights.push({
-        id: `sample_insight_${i}`,
-        userId,
-        insightDate: insightDate.toISOString(),
-        gratitudeNote: "Grateful for God's faithfulness and provision",
-        prayerRequest: "Guidance in ministry and family decisions",
-        spiritualGrowthArea: growthAreas[Math.floor(Math.random() * growthAreas.length)],
-        bibleVerse: "For I know the plans I have for you - Jeremiah 29:11",
-        personalReflection: "Experiencing deeper trust and peace in prayer",
-        moodRating: Math.floor(Math.random() * 3) + 7, // 7-10 range
-        faithLevel: Math.floor(Math.random() * 2) + 8, // 8-10 range
-        createdAt: insightDate.toISOString()
-      });
-    }
 
-    return {
-      journey: sampleJourney,
-      goals: sampleGoals,
-      insights: sampleInsights,
-      attendance: [], // This will be filled by existing attendance mock data
-      timeframe: timeframeDays
-    };
-  }
+
+
+
 
   // Enhanced Prayer Planner API Endpoints
 

@@ -132,7 +132,7 @@ export default function SchedulePage() {
                 <p className="text-sm text-gray-600">
                   Life changes? No problem. Update your schedule anytime to reflect your current capacity. 
                   Your metrics will adjust accordingly, always giving you an encouraging and accurate view 
-                  of your prayer journey.
+                  of your spiritual growth.
                 </p>
               </div>
             </div>

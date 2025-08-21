@@ -29,7 +29,7 @@ export function MobileSidebar({
     { id: "bible-chatbook", label: "Bible Chat", icon: Book, description: "AI-Powered Bible Study" },
     { id: "prayer-planner", label: "Prayer Planner", icon: MessageCircle, description: "Plan Your Prayers" },
     { id: "bible-search", label: "Bible Verse Search", icon: Search, description: "Find Scripture" },
-    { id: "prayer-journey", label: "Prayer Journey", icon: TrendingUp, description: "Track Your Growth" },
+
     { id: "whatsapp-updates", label: "WhatsApp Updates", icon: Smartphone, description: "Send Updates via WhatsApp" },
   ];
 

@@ -85,16 +85,7 @@ async function activateDatabase() {
       ('🌍 Regional Prayer Coordinators Needed', 'We are expanding! Seeking passionate intercessors to lead prayer initiatives in underrepresented regions. Special leadership training provided.', 'opportunity', 'medium', 'ongoing', NOW() + INTERVAL '60 days', false, true, false, true)
     `);
 
-    // 6. Prayer Journey Data
-    console.log('📔 Setting up prayer journey tracking...');
-    await pool.query(`
-      INSERT INTO prayer_journey (user_id, date, prayer_points_completed, scripture_meditated, insights_gained, gratitude_items, total_time_minutes) VALUES
-      ('eb399bac-8ae0-42fb-9ee8-ffb46f63a97f', CURRENT_DATE - 1, 5, 'Isaiah 55:11 - God''s word accomplishes His purpose', 'Learned to trust God''s timing in difficult seasons', 3, 45),
-      ('eb399bac-8ae0-42fb-9ee8-ffb46f63a97f', CURRENT_DATE - 2, 7, 'Philippians 4:19 - God supplies all needs', 'God''s provision extends beyond material needs to emotional and spiritual', 4, 60),
-      ('eb399bac-8ae0-42fb-9ee8-ffb46f63a97f', CURRENT_DATE - 3, 4, 'Jeremiah 29:11 - Plans for hope and future', 'Even in uncertainty, God has a perfect plan unfolding', 5, 30),
-      ('eb399bac-8ae0-42fb-9ee8-ffb46f63a97f', CURRENT_DATE - 4, 6, 'Romans 8:28 - All things work for good', 'Challenges are opportunities for character development and faith growth', 2, 50),
-      ('eb399bac-8ae0-42fb-9ee8-ffb46f63a97f', CURRENT_DATE - 5, 8, 'Ephesians 3:20 - Exceeding abundantly', 'God''s plans are always bigger and better than our limited vision', 6, 75)
-    `);
+
 
     // Verification queries
     console.log('✅ Verifying data activation...');
@@ -109,7 +100,7 @@ async function activateDatabase() {
       UNION ALL
       SELECT 'Global Updates', COUNT(*) FROM global_updates
       UNION ALL
-      SELECT 'Prayer Journey', COUNT(*) FROM prayer_journey
+
     `);
 
     console.log('📊 Database Activation Summary:');

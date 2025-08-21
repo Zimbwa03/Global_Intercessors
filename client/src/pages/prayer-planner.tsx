@@ -15,7 +15,7 @@ export default function PrayerPlannerPage() {
             AI-Powered Prayer Planner
           </h1>
           <p className="text-gray-600 max-w-3xl mx-auto">
-            Create personalized prayer plans with AI assistance, track your prayer journey, 
+            Create personalized prayer plans with AI assistance, track your spiritual growth, 
             and receive intelligent suggestions for deeper spiritual growth and intercession.
           </p>
         </div>

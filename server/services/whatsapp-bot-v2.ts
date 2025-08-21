@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import { supabaseAdmin as supabase } from '../supabase.js';
 import fetch from 'node-fetch';
 import { AdvancedReminderSystem } from './advancedReminderSystem';
+import { ScriptureCoachCommands } from './scriptureCoachCommands.js';
 
 interface WhatsAppAPIConfig {
   phoneNumberId: string;
@@ -65,21 +66,7 @@ export class WhatsAppPrayerBot {
     waitingForTopic?: boolean;
   }> = new Map();
 
-  // Bible Quiz Game Session Management - Enhanced with Diverse Question Types
-  private bibleQuizSessions: Map<string, {
-    sessionId: string;
-    currentQuestion: any;
-    questionStartTime: number;
-    score: number;
-    streak: number;
-    questionsAnswered: number;
-    correctAnswers: number;
-    sessionType: string;
-    difficulty: string;
-    topic?: string;
-    questionType?: 'standard' | 'memory_verse' | 'situational_verse' | 'doctrine' | 'character_study';
-    isActive: boolean;
-  }> = new Map();
+  // Bible Quiz functionality removed - replaced with ScriptureCoach system
   private reminderSystem: AdvancedReminderSystem;
 
 
@@ -1037,38 +1024,15 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
         return;
       }
 
-      // Check if user is in Bible Quiz session
-      const quizSession = this.bibleQuizSessions.get(phoneNumber);
-      if (quizSession?.isActive && !['quiz_menu', 'end_quiz', 'main_menu'].includes(command)) {
-        await this.handleQuizAnswer(phoneNumber, userName, messageText);
-        return;
-      }
+      // Bible Quiz functionality removed - replaced with ScriptureCoach system
 
       // Handle button responses and commands
       if (command === 'continue' || command === 'start' || command === '/start' || command === 'hi' || command === 'hello') {
         await this.handleStartCommand(phoneNumber, userName);
       } else if (command === 'devotionals' || command === '/devotionals') {
         await this.handleDevotionalsMenuCommand(phoneNumber, userName);
-      } else if (command === 'quiz' || command === '/quiz') {
-        try {
-          await this.handleQuizCommand(phoneNumber, userName);
-        } catch (error) {
-          console.error('❌ Error in quiz command:', error);
-          await this.sendWhatsAppMessage(phoneNumber, `🧠 *Bible Quiz* 🧠
-
-Welcome ${userName}! Let's test your biblical knowledge!
-
-Reply with:
-• "daily" for Daily Challenge
-• "smart" for Smart Quiz
-• "topic" for Topic Quiz
-
-Ready to explore God's Word? 📚`);
-        }
-      } else if (command === 'more_quiz_types') {
-        await this.handleMoreQuizTypes(phoneNumber, userName);
-      } else if (command === 'daily_challenge' || command === 'smart_quiz' || command === 'memory_verse' || command === 'situational_quiz' || command === 'topic_quiz') {
-        await this.startQuizSession(phoneNumber, userName, command);
+      } else if (command === 'scripture_coach' || command === '/scripture') {
+        await this.handleScriptureCoachCommand(phoneNumber, userName);
       } else if (command === 'reminders' || command === '/reminders') {
         await this.handleRemindersCommand(phoneNumber, userName);
       } else if (command === 'updates' || command === '/updates') {
@@ -1100,12 +1064,13 @@ Ready to explore God's Word? 📚`);
         await this.handleEndBibleStudy(phoneNumber, userName);
       } else if (command === 'daily_devotional' || command === 'fresh_word' || command === 'scripture_insight') {
         await this.handleSpecificDevotional(phoneNumber, userName, command);
-      } else if (command === 'easy_quiz' || command === 'medium_quiz' || command === 'hard_quiz' || 
-                 command === 'daily_challenge' || command === 'topic_quiz' || command === 'adaptive_quiz') {
-        await this.handleSpecificQuiz(phoneNumber, userName, command);
-      } else if (['1', '2', '3', '4', 'a', 'b', 'c', 'd', 'true', 'false'].includes(command) && 
-                 this.bibleQuizSessions.has(phoneNumber)) {
-        await this.handleQuizAnswer(phoneNumber, userName, messageText);
+      } else if (command === 'scripture_plan' || command === 'scripture_memorize' || command === 'scripture_quiz' || 
+                 command === 'scripture_review' || command === 'scripture_stats' || command === 'daily_review' ||
+                 command === 'verse_packs' || command === 'create_memory_card' || command === 'todays_reading' ||
+                 command.startsWith('plan_') || command.startsWith('pack_') || command.startsWith('quiz_') ||
+                 command.startsWith('rate_') || command === 'get_hint' || command === 'mark_complete' ||
+                 command === 'get_reflection' || command === 'skip_review') {
+        await this.handleScriptureCoachButton(phoneNumber, userName, command);
       } else if (command === 'reminder_30min' || command === 'reminder_15min' || command === 'reminder_custom') {
         await this.handleReminderSettings(phoneNumber, userName, command);
       } else if (command === 'global_updates' || command === 'prayer_requests') {
@@ -1114,23 +1079,7 @@ Ready to explore God's Word? 📚`);
         await this.handleSpecificMessages(phoneNumber, userName, command);
       } else if (command === 'prayer_stats' || command === 'growth_report' || command === 'achievements') {
         await this.handleSpecificDashboard(phoneNumber, userName, command);
-      } else if (command === 'next_question') {
-        // Continue quiz with next question
-        const session = this.bibleQuizSessions.get(phoneNumber);
-        if (session) {
-          await this.sendNextQuestion(phoneNumber, userName, session.sessionId);
-        } else {
-          await this.sendWhatsAppMessage(phoneNumber, 'No active quiz session. Please start a new quiz.');
-        }
-      } else if (command === 'end_quiz') {
-        await this.endQuizSession(phoneNumber, userName, 'user_ended');
-      } else if (command === 'start_adaptive') {
-        const userInfo = await this.getCompleteUserInfo(phoneNumber);
-        await this.startAdaptiveQuiz(phoneNumber, userName, userInfo.userId);
-      } else if (command.startsWith('topic_')) {
-        const topicType = command.replace('topic_', '');
-        const userInfo = await this.getCompleteUserInfo(phoneNumber);
-        await this.startTopicQuiz(phoneNumber, userName, userInfo.userId, topicType);
+      // Bible Quiz functionality removed - replaced with ScriptureCoach system
       } else if (command.startsWith('remind ')) { // Handle reminder commands
         await this.handleReminderCommand(phoneNumber, messageText, userInfo.userDetails);
       } else {
@@ -1157,7 +1106,7 @@ ${userInfo.slotInfo}
 I'm your personal prayer companion, here to strengthen your walk with God through:
 
 📖 AI-Powered Devotionals – Daily scriptures with fresh, Spirit-led insights
-🧠 Bible Quiz Challenge – Test and grow your biblical knowledge  
+// Bible Quiz functionality removed - replaced with ScriptureCoach system  
 ⏰ Smart Prayer Reminders – Never miss your intercession time
 🌍 Global Prayer Updates – Join intercessors around the world in united prayer
 ✨ Fresh Messages – Daily AI-generated declarations & prayer points
@@ -1167,11 +1116,11 @@ I'm your personal prayer companion, here to strengthen your walk with God throug
 
 Choose an option below to begin your spiritual journey:`;
 
-    const buttons = [
-      { id: 'devotionals', title: '📖 Devotionals' },
-      { id: 'quiz', title: '🧠 Bible Quiz' },
-      { id: 'reminders', title: '⏰ Reminders' }
-    ];
+          const buttons = [
+        { id: 'devotionals', title: '📖 Devotionals' },
+        { id: 'scripture_coach', title: '📚 ScriptureCoach' },
+        { id: 'reminders', title: '⏰ Reminders' }
+      ];
 
     await this.sendInteractiveMessage(phoneNumber, welcomeMessage, buttons);
   }
@@ -1196,8 +1145,12 @@ Hello ${userName}! Here are the available commands:
 📖 *DAILY DEVOTIONAL*
 • *devotionals* - Get devotional options
 
-🧠 *BIBLE QUIZ*
-• *quiz* - Start a Bible quiz challenge
+📚 *SCRIPTURECOACH*
+• *scripture* - Bible learning & memorization
+• *scripture plan* - Daily reading plans
+• *scripture memorize* - Verse memorization
+• *scripture quiz* - Memory challenges
+• *scripture review* - Daily verse review
 
 🌍 *GLOBAL UPDATES*
 • *updates* - View global prayer focuses
@@ -1243,83 +1196,7 @@ Choose your devotional experience:`;
     await this.sendInteractiveMessage(phoneNumber, devotionalsMessage, buttons);
   }
 
-  private async handleQuizCommand(phoneNumber: string, userName: string): Promise<void> {
-    try {
-      await this.logInteraction(phoneNumber, 'command', 'quiz');
-
-      // Get user's quiz progress
-      const userInfo = await this.getCompleteUserInfo(phoneNumber);
-      const quizProgress = await this.getUserQuizProgress(userInfo.userId);
-
-      const quizMessage = `🧠 *Bible Quiz Challenge* 🧠
-
-Welcome back, ${userName}! 🎯
-
-📊 **Your Quiz Stats:**
-📈 Level: ${quizProgress?.current_level || 1} (${quizProgress?.total_xp || 0} XP)
-🔥 Current Streak: ${quizProgress?.current_streak || 0}
-🎯 Accuracy: ${quizProgress?.total_questions_answered > 0 ? Math.round((quizProgress.total_correct_answers / quizProgress.total_questions_answered) * 100) : 0}%
-🏆 Total Score: ${quizProgress?.total_score || 0}
-
-Choose your quiz adventure:`;
-
-      const buttons = [
-        { id: 'daily_challenge', title: '🌟 Daily Challenge' },
-        { id: 'smart_quiz', title: '🎯 Smart Quiz' },
-        { id: 'more_quiz_types', title: '📚 More Quiz Types' }
-      ];
-
-      await this.sendInteractiveMessage(phoneNumber, quizMessage, buttons);
-    } catch (error) {
-      console.error('❌ Error in handleQuizCommand:', error);
-      await this.sendWhatsAppMessage(phoneNumber, `🧠 *Bible Quiz Challenge* 🧠
-
-Welcome ${userName}! Ready to test your biblical knowledge?
-
-Choose your quiz adventure:
-
-🌟 Type "daily_challenge" for Daily Challenge
-🎯 Type "smart_quiz" for Smart Quiz
-📖 Type "memory_verse" for Memory Verse Quiz
-💡 Type "situational_quiz" for Life Situations Quiz
-📚 Type "topic_quiz" for Topic Focus
-
-Let's dive into God's Word together! 📚`);
-    }
-  }
-
-  private async handleMoreQuizTypes(phoneNumber: string, userName: string): Promise<void> {
-    try {
-      await this.logInteraction(phoneNumber, 'command', 'more_quiz_types');
-
-      const moreTypesMessage = `📚 *More Bible Quiz Types* 📚
-
-${userName}, choose your specialized quiz type:
-
-📖 **Memory Verse** - Fill in the missing words from well-known Bible verses
-💡 **Life Situations** - Apply the right Bible verse to real-life intercession scenarios  
-📚 **Topic Focus** - Deep dive into specific biblical themes`;
-
-      const buttons = [
-        { id: 'memory_verse', title: '📖 Memory Verse' },
-        { id: 'situational_quiz', title: '💡 Life Situations' },
-        { id: 'topic_quiz', title: '📚 Topic Focus' }
-      ];
-
-      await this.sendInteractiveMessage(phoneNumber, moreTypesMessage, buttons);
-    } catch (error) {
-      console.error('❌ Error in handleMoreQuizTypes:', error);
-      await this.sendWhatsAppMessage(phoneNumber, `📚 *More Bible Quiz Types* 📚
-
-${userName}, choose your specialized quiz type:
-
-📖 Type "memory_verse" for Memory Verse Quiz
-💡 Type "situational_quiz" for Life Situations Quiz  
-📚 Type "topic_quiz" for Topic Focus
-
-Let's explore God's Word in depth! 🙏`);
-    }
-  }
+  // Bible Quiz functionality removed - replaced with ScriptureCoach system
 
   private async handleRemindersCommand(phoneNumber: string, userName: string): Promise<void> {
     await this.logInteraction(phoneNumber, 'command', 'reminders');
@@ -1420,7 +1297,7 @@ Select your message type:`;
 
 Spiritual Progress Report for ${userName}
 
-📈 **Your Prayer Journey:**
+📈 **Your Spiritual Growth:**
 ⏰ ${slotDisplay}
 🎯 Prayer consistency: Building momentum!
 🏆 Spiritual milestones: Growing in faith
@@ -1504,9 +1381,9 @@ Global Intercessors is a worldwide prayer movement that maintains 24/7 prayer co
 
 🙏 *Bot Features After Login:*
 • Daily AI-powered devotionals and prophetic words
-• Interactive Bible quizzes and spiritual challenges
+// Bible Quiz functionality removed - replaced with ScriptureCoach system
 • Prayer slot reminders and global updates
-• Personal dashboard tracking your prayer journey
+• Personal dashboard tracking your spiritual growth
 
 *Ready to join the global prayer movement?*`;
 
@@ -1882,23 +1759,7 @@ Deep dive, ${userName}!
     await this.sendInteractiveMessage(phoneNumber, content, buttons);
   }
 
-  private async handleSpecificQuiz(phoneNumber: string, userName: string, quizType: string): Promise<void> {
-    await this.logInteraction(phoneNumber, 'button_action', quizType);
-
-    const userInfo = await this.getCompleteUserInfo(phoneNumber);
-
-    if (quizType === 'daily_challenge') {
-      await this.startQuizSession(phoneNumber, userName, 'daily_challenge');
-    } else if (quizType === 'adaptive_quiz') {
-      await this.startQuizSession(phoneNumber, userName, 'smart_quiz');
-    } else if (quizType === 'topic_quiz') {
-      await this.showTopicSelection(phoneNumber, userName);
-    } else {
-      // Legacy difficulty-based quiz
-      const difficulty = quizType.replace('_quiz', '');
-      await this.startQuizSession(phoneNumber, userName, 'smart_quiz', difficulty);
-    }
-  }
+  // Bible Quiz functionality removed - replaced with ScriptureCoach system
 
   private async handleReminderSettings(phoneNumber: string, userName: string, setting: string): Promise<void> {
     await this.logInteraction(phoneNumber, 'button_action', setting);
@@ -2105,7 +1966,7 @@ Celebrating progress, ${userName}:
 
 ⭐ **Milestones Reached:**
 • 30-day prayer streak: In progress
-• Bible quiz champion: Growing
+// Bible Quiz functionality removed - replaced with ScriptureCoach system
 • Revival catalyst: Active
 
 🎖️ **Special Recognition:**
@@ -2132,7 +1993,7 @@ Let me help you get back on track! Here are your options:`;
 
     const buttons = [
       { id: 'devotionals', title: '📖 Devotionals' },
-      { id: 'quiz', title: '🧠 Bible Quiz' },
+      { id: 'scripture_coach', title: '📚 ScriptureCoach' },
       { id: 'reminders', title: '⏰ Reminders' },
       { id: 'help', title: '❓ Help' }
     ];
@@ -2487,1005 +2348,78 @@ Remember, the journey of faith is continuous. Feel free to start another study s
     }
   }
 
-  // Bible Quiz Game Methods
-  private async getUserQuizProgress(userId: string) {
+  // === ScriptureCoach Command Handlers ===
+
+  private async handleScriptureCoachCommand(phoneNumber: string, userName: string): Promise<void> {
     try {
-      console.log(`📊 Fetching quiz progress for user: ${userId}`);
-      
-      const { data: progress, error } = await supabase
-        .from('bible_quiz_progress')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('❌ Database error fetching quiz progress:', error);
-        // Return default progress if database error
-        return {
-          current_level: 1,
-          total_xp: 0,
-          current_streak: 0,
-          total_score: 0,
-          total_questions_answered: 0,
-          total_correct_answers: 0
-        };
-      }
-
-      if (!progress || error?.code === 'PGRST116') {
-        console.log(`ℹ️ No existing quiz progress found, creating new record for user: ${userId}`);
-        
-        // Create new progress record
-        const newProgress = {
-          user_id: userId,
-          current_level: 1,
-          total_xp: 0,
-          current_streak: 0,
-          total_score: 0,
-          total_questions_answered: 0,
-          total_correct_answers: 0,
-          last_played: new Date().toISOString()
-        };
-
-        try {
-          const { data: created, error: createError } = await supabase
-            .from('bible_quiz_progress')
-            .insert(newProgress)
-            .select()
-            .single();
-
-          if (createError) {
-            console.error('❌ Error creating quiz progress:', createError);
-            return newProgress; // Return default even if insert fails
-          }
-
-          console.log(`✅ Created new quiz progress for user: ${userId}`);
-          return created || newProgress;
-        } catch (insertError) {
-          console.error('❌ Insert error:', insertError);
-          return newProgress;
-        }
-      }
-
-      console.log(`✅ Found existing quiz progress for user: ${userId}`);
-      return progress;
-    } catch (error) {
-      console.error('❌ Error getting quiz progress:', error);
-      return {
-        current_level: 1,
-        total_xp: 0,
-        current_streak: 0,
-        total_score: 0,
-        total_questions_answered: 0,
-        total_correct_answers: 0
-      };
-    }
-  }
-
-  private async startDailyChallenge(phoneNumber: string, userName: string, userId: string): Promise<void> {
-    const today = new Date().toISOString().split('T')[0];
-
-    // Check if user has already completed today's challenge
-    const { data: existingChallenge } = await supabase
-      .from('bible_quiz_sessions')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('session_type', 'daily_challenge')
-      .gte('created_at', `${today}T00:00:00`)
-      .lt('created_at', `${today}T23:59:59`)
-      .single();
-
-    if (existingChallenge && existingChallenge.is_completed) {
-      const message = `🌟 *Daily Challenge Complete!* 🌟
-
-You've already completed today's challenge, ${userName}!
-
-🎯 Today's Score: ${existingChallenge.final_score}
-⏱️ Completion Time: ${Math.round(existingChallenge.duration_seconds / 60)} minutes
-🔥 Streak: ${existingChallenge.streak_count}
-
-Come back tomorrow for a fresh challenge! 💪`;
-
-      const buttons = [
-        { id: 'adaptive_quiz', title: '🎯 Smart Quiz' },
-        { id: 'topic_quiz', title: '📖 Topic Quiz' },
-        { id: 'quiz', title: '🔙 Quiz Menu' }
-      ];
-
+      const { message, buttons } = await ScriptureCoachCommands.handleScriptureCoachMenu(phoneNumber, userName);
       await this.sendInteractiveMessage(phoneNumber, message, buttons);
-      return;
-    }
-
-    await this.startQuizSession(phoneNumber, userName, userId, 'adaptive', 'daily_challenge');
-  }
-
-  private async startAdaptiveQuiz(phoneNumber: string, userName: string, userId: string): Promise<void> {
-    const progress = await this.getUserQuizProgress(userId);
-
-    // Determine difficulty based on user performance
-    let difficulty = 'easy';
-    if (progress.total_questions_answered > 0) {
-      const accuracy = progress.total_correct_answers / progress.total_questions_answered;
-      if (accuracy >= 0.8 && progress.current_level >= 5) {
-        difficulty = 'hard';
-      } else if (accuracy >= 0.6 && progress.current_level >= 3) {
-        difficulty = 'medium';
-      }
-    }
-
-    const message = `🎯 *Smart Quiz Mode* 🎯
-
-Based on your performance, ${userName}, I've selected ${difficulty} difficulty for you!
-
-🧠 **Adaptive Learning:**
-• Questions adjust to your skill level
-• Progressive difficulty increases
-• Personalized learning path
-• Real-time performance tracking
-
-Ready to challenge yourself? Let's go! 🚀`;
-
-    const buttons = [
-      { id: 'start_adaptive', title: '🚀 Start Quiz' },
-      { id: 'quiz', title: '🔙 Choose Different' }
-    ];
-
-    await this.sendInteractiveMessage(phoneNumber, message, buttons);
-
-    // Start the quiz immediately
-    await this.startQuizSession(phoneNumber, userName, userId, difficulty, 'adaptive');
-  }
-
-  private async showTopicSelection(phoneNumber: string, userName: string): Promise<void> {
-    const message = `📖 *Topic-Based Quiz* 📖
-
-Choose your Bible study focus, ${userName}:
-
-🎯 Test your knowledge in specific areas of Scripture and deepen your understanding through focused questions.
-
-Select your topic:`;
-
-    const buttons = [
-      { id: 'topic_ot', title: '📜 Old Testament' },
-      { id: 'topic_nt', title: '✝️ New Testament' },
-      { id: 'topic_jesus', title: '🙏 Life of Jesus' }
-    ];
-
-    await this.sendInteractiveMessage(phoneNumber, message, buttons);
-  }
-
-  private async startTopicQuiz(phoneNumber: string, userName: string, userId: string, topicType: string): Promise<void> {
-    const topicNames = {
-      'ot': 'Old Testament',
-      'nt': 'New Testament', 
-      'jesus': 'Life of Jesus'
-    };
-
-    const topicName = topicNames[topicType as keyof typeof topicNames] || 'Bible Study';
-
-    const message = `📖 *${topicName} Quiz* 📖
-
-Excellent choice, ${userName}! 
-
-🎯 **Topic Focus:** ${topicName}
-📚 Questions will cover key themes, stories, and teachings
-⭐ Difficulty will adapt to your performance
-🏆 Earn bonus points for topic expertise
-
-Ready to dive deep into Scripture? Let's begin! 🚀`;
-
-    const buttons = [
-      { id: 'start_topic_quiz', title: '🚀 Start Quiz' },
-      { id: 'quiz', title: '🔙 Choose Different' }
-    ];
-
-    await this.sendInteractiveMessage(phoneNumber, message, buttons);
-
-    // Start the quiz with topic focus
-    await this.startQuizSession(phoneNumber, userName, `topic_${topicType}`, 'medium');
-  }
-
-  private async startQuizSession(phoneNumber: string, userName: string, sessionType: string, difficulty: string = 'easy'): Promise<void> {
-    // Get user info for database operations
-    const userInfo = await this.getCompleteUserInfo(phoneNumber);
-    const userId = userInfo.userId;
-    try {
-      console.log(`🎮 Starting quiz session for ${userName} - ${difficulty} ${sessionType}`);
-
-      // Try to create database session first
-      let sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      try {
-        // Create new quiz session in database
-        const sessionData = {
-          user_id: userId,
-          session_type: sessionType,
-          difficulty_level: difficulty,
-          current_question_number: 1,
-          score: 0,
-          correct_answers: 0,
-          questions_answered: 0,
-          streak_count: 0,
-          is_active: true,
-          is_completed: false,
-          created_at: new Date().toISOString()
-        };
-
-        const { data: session, error } = await supabase
-          .from('bible_quiz_sessions')
-          .insert(sessionData)
-          .select()
-          .single();
-
-        if (!error && session) {
-          sessionId = session.id;
-          console.log(`✅ Database quiz session created: ${sessionId}`);
-        } else {
-          console.error('⚠️ Database session creation failed, continuing with memory session:', error);
-        }
-      } catch (dbError) {
-        console.error('⚠️ Database session creation error, continuing with memory session:', dbError);
-      }
-
-      // Always store session in memory for operation
-      this.bibleQuizSessions.set(phoneNumber, {
-        sessionId: sessionId,
-        currentQuestion: null,
-        questionStartTime: Date.now(),
-        score: 0,
-        streak: 0,
-        questionsAnswered: 0,
-        correctAnswers: 0,
-        sessionType: sessionType,
-        difficulty: difficulty,
-        isActive: true
-      });
-
-      console.log(`📝 Memory session stored for ${phoneNumber}`);
-
-      // Send welcome message with session-specific details
-      let welcomeMessage = '';
-      let maxQuestions = 10;
-      
-      switch (sessionType) {
-        case 'daily_challenge':
-          maxQuestions = 5;
-          welcomeMessage = `🌟 *DAILY CHALLENGE* 🌟
-
-Welcome ${userName}! Ready for today's Bible challenge?
-
-📊 **Challenge Details:**
-📅 Limited: Once per day
-❓ Questions: 5 questions
-🎯 Mixed question types for complete learning
-⏱️ No time limit - reflect on God's Word!
-
-Let's begin today's spiritual journey! 🚀`;
-          break;
-          
-        case 'memory_verse':
-          welcomeMessage = `📖 *MEMORY VERSE CHALLENGE* 📖
-
-Welcome ${userName}! Time to test your Scripture memory!
-
-📊 **Challenge Details:**
-🧠 Type: Fill-in-the-blank Bible verses
-❓ Questions: Up to 10
-📝 Focus: Memorizing God's Word
-⏱️ Take your time to recall the verses!
-
-Let's strengthen your biblical foundation! 🚀`;
-          break;
-          
-        case 'situational_quiz':
-          welcomeMessage = `💡 *LIFE SITUATIONS QUIZ* 💡
-
-Welcome ${userName}! Apply God's Word to real life!
-
-📊 **Challenge Details:**
-🎯 Type: Real intercession scenarios
-❓ Questions: Up to 10
-💪 Focus: Practical Bible application
-⏱️ Consider each situation carefully!
-
-Let's connect Scripture to ministry! 🚀`;
-          break;
-          
-        default:
-          welcomeMessage = `🎯 *SMART QUIZ* 🎯
-
-Welcome ${userName}! Ready for your adaptive Bible challenge?
-
-📊 **Session Details:**
-🎚️ Difficulty: ${difficulty.toUpperCase()}
-❓ Questions: Up to ${maxQuestions}
-🔄 Mixed question types
-⏱️ No time limit - take your time to think!
-
-Let's begin! 🚀`;
-      }
-
-      await this.sendWhatsAppMessage(phoneNumber, welcomeMessage);
-
-      // Generate and send first question
-      await this.sendNextQuestion(phoneNumber, userName, sessionId);
-
     } catch (error) {
-      console.error('❌ Critical error starting quiz session:', error);
-      
-      // Clean up if needed
-      this.bibleQuizSessions.delete(phoneNumber);
-      
-      await this.sendWhatsAppMessage(phoneNumber, `🎯 *Bible Quiz* 🎯
-
-Sorry ${userName}, there was a technical issue starting your quiz. 
-
-Let's try a simple approach - I'll send you Bible questions one by one!
-
-🎯 **Ready for your first question?**`);
-
-      // Try to send at least one fallback question
-      setTimeout(async () => {
-        try {
-          const fallbackQuestion = {
-            question: "Who was the first man God created?",
-            options: ["Adam", "Abel", "Cain", "Seth"],
-            correctAnswer: "Adam",
-            scripture: "Genesis 2:7",
-            explanation: "God formed Adam from the dust of the ground and breathed into his nostrils the breath of life."
-          };
-
-          const questionText = `❓ **Bible Question:**
-
-${fallbackQuestion.question}
-
-📖 *Reference: ${fallbackQuestion.scripture}*
-
-Choose your answer:`;
-
-          const buttons = fallbackQuestion.options.map((option: string, index: number) => ({
-            id: `answer_${String.fromCharCode(97 + index)}`,
-            title: `${String.fromCharCode(65 + index)}) ${option}`
-          }));
-
-          await this.sendInteractiveMessage(phoneNumber, questionText, buttons);
-        } catch (fallbackError) {
-          console.error('❌ Even fallback question failed:', fallbackError);
-        }
-      }, 2000);
-    }
-  }
-
-  private async sendNextQuestion(phoneNumber: string, userName: string, sessionId: string): Promise<void> {
-    try {
-      const session = this.bibleQuizSessions.get(phoneNumber);
-      if (!session) return;
-
-      // Generate AI question
-      const question = await this.generateQuizQuestion(session.difficulty, session.sessionType, session.questionsAnswered + 1);
-
-      if (!question) {
-        await this.endQuizSession(phoneNumber, userName, 'AI service unavailable');
-        return;
-      }
-
-      // Store current question
-      session.currentQuestion = question;
-      session.questionStartTime = Date.now();
-      this.bibleQuizSessions.set(phoneNumber, session);
-
-      // Format question message
-      const difficultyEmoji = {
-        'easy': '⭐',
-        'medium': '⭐⭐', 
-        'hard': '⭐⭐⭐'
-      };
-
-      const questionText = `${difficultyEmoji[session.difficulty as keyof typeof difficultyEmoji]} *Bible Quiz ${session.difficulty.toUpperCase()}* ${difficultyEmoji[session.difficulty as keyof typeof difficultyEmoji]}
-
-${userName}, here's Question ${session.questionsAnswered + 1}:
-
-❓ **${question.question}**
-
-${question.scripture ? `📖 *Reference: ${question.scripture}*\n` : ''}
-
-Choose your answer:`;
-
-      const answerButtons = question.options.map((option: string, index: number) => ({
-        id: `quiz_${String.fromCharCode(97 + index)}`, // a, b, c, d
-        title: `${String.fromCharCode(65 + index)}) ${option}` // A) option, B) option, etc.
-      }));
-
-      await this.sendInteractiveMessage(phoneNumber, questionText, answerButtons);
-
-    } catch (error) {
-      console.error('Error sending next question:', error);
-      await this.endQuizSession(phoneNumber, userName, 'Error generating question');
-    }
-  }
-
-  private async handleQuizAnswer(phoneNumber: string, userName: string, answer: string): Promise<void> {
-    try {
-      const session = this.bibleQuizSessions.get(phoneNumber);
-      if (!session || !session.currentQuestion) return;
-
-      const question = session.currentQuestion;
-      let selectedAnswer = '';
-
-      // Parse answer from button or text
-      if (answer.startsWith('quiz_')) {
-        const optionIndex = answer.replace('quiz_', '').charCodeAt(0) - 97; // a=0, b=1, c=2, d=3
-        selectedAnswer = question.options[optionIndex] || '';
-      } else {
-        // Handle text answers like "a", "b", "1", "2", etc.
-        const cleanAnswer = answer.toLowerCase().trim();
-        if (['a', 'b', 'c', 'd'].includes(cleanAnswer)) {
-          const optionIndex = cleanAnswer.charCodeAt(0) - 97;
-          selectedAnswer = question.options[optionIndex] || '';
-        } else if (['1', '2', '3', '4'].includes(cleanAnswer)) {
-          const optionIndex = parseInt(cleanAnswer) - 1;
-          selectedAnswer = question.options[optionIndex] || '';
-        }
-      }
-
-      if (!selectedAnswer) {
-        await this.sendWhatsAppMessage(phoneNumber, 'Please select a valid answer option (A, B, C, or D).');
-        return;
-      }
-
-      // Check if answer is correct
-      const isCorrect = selectedAnswer === question.correctAnswer;
-      const timeTaken = Math.round((Date.now() - session.questionStartTime) / 1000);
-
-      // Calculate points
-      let points = 0;
-      if (isCorrect) {
-        points = this.calculateQuizPoints(session.difficulty, timeTaken, session.streak);
-        session.correctAnswers++;
-        session.streak++;
-      } else {
-        session.streak = 0;
-      }
-
-      session.score += points;
-      session.questionsAnswered++;
-
-      // Update session in database
-      await supabase
-        .from('bible_quiz_sessions')
-        .update({
-          score: session.score,
-          correct_answers: session.correctAnswers,
-          questions_answered: session.questionsAnswered,
-          streak_count: session.streak
-        })
-        .eq('id', session.sessionId);
-
-      // Send feedback message with question type context
-      const feedbackMessage = this.generateAnswerFeedback(
-        isCorrect, 
-        selectedAnswer, 
-        question.correctAnswer,
-        question.explanation || '',
-        points,
-        session.streak,
-        userName,
-        question.questionType || 'standard'
+      console.error('Error handling ScriptureCoach command:', error);
+      await this.sendWhatsAppMessage(phoneNumber, 
+        `❌ Sorry ${userName}, I encountered an error with ScriptureCoach. Please try again.`
       );
-
-      const continueButtons = [
-        { id: 'next_question', title: '▶️ Next Question' },
-        { id: 'end_quiz', title: '🏁 End Quiz' }
-      ];
-
-      await this.sendInteractiveMessage(phoneNumber, feedbackMessage, continueButtons);
-
-      // Check if quiz should continue
-      if (session.questionsAnswered >= 10 || session.sessionType === 'daily_challenge' && session.questionsAnswered >= 5) {
-        await this.endQuizSession(phoneNumber, userName, 'completed');
-      }
-
-    } catch (error) {
-      console.error('Error handling quiz answer:', error);
-      await this.sendWhatsAppMessage(phoneNumber, 'Sorry, there was an error processing your answer. Please try again.');
     }
   }
 
-  private async generateQuizQuestion(difficulty: string, sessionType: string, questionNumber: number) {
-    console.log(`🎯 Generating ${difficulty} quiz question #${questionNumber} for ${sessionType}`);
-    
-    // Determine question type based on session type and randomization
-    let questionType = 'standard';
-    if (sessionType === 'memory_verse') {
-      questionType = 'memory_verse';
-    } else if (sessionType === 'situational_quiz') {
-      questionType = 'situational_verse';
-    } else if (sessionType === 'smart_quiz') {
-      // Mix different question types for smart quiz
-      const types = ['standard', 'memory_verse', 'situational_verse', 'doctrine', 'character_study'];
-      questionType = types[Math.floor(Math.random() * types.length)];
-    }
-    
-    // Expanded fallback question pools with diverse question types
-    const fallbackQuestions = {
-      easy: [
-        {
-          question: "Who built the ark that saved his family from the flood?",
-          options: ["Noah", "Moses", "Abraham", "David"],
-          correctAnswer: "Noah",
-          scripture: "Genesis 6-9",
-          explanation: "Noah built the ark according to God's instructions to save his family and the animals from the worldwide flood.",
-          questionType: "standard"
-        },
-        {
-          question: "Fill in the missing word: 'For God so _____ the world that He gave His one and only Son'",
-          options: ["blessed", "loved", "created", "saved"],
-          correctAnswer: "loved",
-          scripture: "John 3:16",
-          explanation: "This foundational verse shows God's love as the motivation for salvation through Jesus Christ.",
-          questionType: "memory_verse"
-        },
-        {
-          question: "An intercessor is feeling fearful about a situation they're praying for. Which verse would best help them?",
-          options: ["Isaiah 41:10 - Do not fear, for I am with you", "Psalm 23:1 - The Lord is my shepherd", "John 3:16 - For God so loved the world", "Matthew 6:9 - Our Father in heaven"],
-          correctAnswer: "Isaiah 41:10 - Do not fear, for I am with you",
-          scripture: "Isaiah 41:10",
-          explanation: "This verse directly addresses fear and reminds believers of God's presence and strength.",
-          questionType: "situational_verse"
-        },
-        {
-          question: "Who was known for his dedication to prayer three times a day?",
-          options: ["David", "Daniel", "Moses", "Abraham"],
-          correctAnswer: "Daniel",
-          scripture: "Daniel 6:10",
-          explanation: "Daniel maintained his prayer routine even when it meant facing the lions' den, showing the importance of consistent prayer.",
-          questionType: "character_study"
-        }
-      ],
-      medium: [
-        {
-          question: "In which city was Jesus born?",
-          options: ["Bethlehem", "Nazareth", "Jerusalem", "Capernaum"],
-          correctAnswer: "Bethlehem",
-          scripture: "Matthew 2:1",
-          explanation: "Jesus was born in Bethlehem of Judea, fulfilling the prophecy in Micah 5:2.",
-          questionType: "standard"
-        },
-        {
-          question: "Complete this verse: 'The prayer of a _____ person is powerful and effective'",
-          options: ["faithful", "righteous", "humble", "persistent"],
-          correctAnswer: "righteous",
-          scripture: "James 5:16",
-          explanation: "This verse emphasizes that righteous living enhances the effectiveness of prayer, crucial for intercessors.",
-          questionType: "memory_verse"
-        },
-        {
-          question: "An intercessor has been praying for someone's salvation for years without seeing results. What would encourage them?",
-          options: ["Galatians 6:9 - Let us not become weary in doing good", "Psalm 23:4 - Even though I walk through the valley", "1 Corinthians 13:4 - Love is patient and kind", "Romans 8:28 - All things work together for good"],
-          correctAnswer: "Galatians 6:9 - Let us not become weary in doing good",
-          scripture: "Galatians 6:9",
-          explanation: "This verse specifically encourages perseverance in spiritual work, especially when results aren't immediately visible.",
-          questionType: "situational_verse"
-        },
-        {
-          question: "What is the primary biblical foundation for intercessory prayer?",
-          options: ["Church tradition", "Jesus' example and commands", "Old Testament practices", "Personal spiritual gifts"],
-          correctAnswer: "Jesus' example and commands",
-          scripture: "1 Timothy 2:1-2, John 17",
-          explanation: "Jesus both modeled intercession (John 17) and commanded believers to pray for others, establishing the biblical foundation.",
-          questionType: "doctrine"
-        }
-      ],
-      hard: [
-        {
-          question: "What does the Hebrew word 'Selah' likely mean in the Psalms?",
-          options: ["Pause and reflect", "Sing louder", "Repeat the verse", "End of prayer"],
-          correctAnswer: "Pause and reflect",
-          scripture: "Found throughout Psalms",
-          explanation: "Selah is thought to be a musical or liturgical instruction meaning to pause and reflect on what was just sung or said.",
-          questionType: "standard"
-        },
-        {
-          question: "Complete this challenging verse: 'Now faith is the _____ of things hoped for, the evidence of things not seen'",
-          options: ["foundation", "substance", "beginning", "promise"],
-          correctAnswer: "substance",
-          scripture: "Hebrews 11:1",
-          explanation: "This verse defines faith as having substance - it's not wishful thinking but a spiritual reality that gives weight to our hopes.",
-          questionType: "memory_verse"
-        },
-        {
-          question: "An intercessor is facing spiritual warfare while praying for a difficult case. Which passage provides the best guidance?",
-          options: ["Ephesians 6:12 - We wrestle not against flesh and blood", "Psalm 23:4 - Yea, though I walk through the valley", "Romans 8:28 - All things work together for good", "Philippians 4:13 - I can do all things through Christ"],
-          correctAnswer: "Ephesians 6:12 - We wrestle not against flesh and blood",
-          scripture: "Ephesians 6:12",
-          explanation: "This verse directly addresses spiritual warfare, reminding intercessors that their battle is spiritual, not physical.",
-          questionType: "situational_verse"
-        },
-        {
-          question: "Who is known as the greatest intercessor in the Old Testament, standing in the gap for Israel's sins?",
-          options: ["Moses", "David", "Samuel", "Jeremiah"],
-          correctAnswer: "Moses",
-          scripture: "Exodus 32:11-14, Numbers 14:13-20",
-          explanation: "Moses repeatedly interceded for Israel, even offering his own life for their forgiveness, exemplifying sacrificial intercession.",
-          questionType: "character_study"
-        }
-      ]
-    };
+  // === ScriptureCoach Button Handlers ===
 
-    try {
-      // Use Gemini AI to generate diverse question types
-      const aiQuestion = await this.generateAIQuestion(difficulty, questionType, questionNumber);
-      
-      if (aiQuestion) {
-        console.log(`✅ Generated ${questionType} question via Gemini AI`);
-        return aiQuestion;
-      } else {
-        console.log('⚠️ AI generation failed, using fallback questions');
-      }
-    } catch (error) {
-      console.log('❌ Error generating AI question:', error);
-    }
-    
-    // Enhanced fallback system - select appropriate question based on type and difficulty
-    const difficultyQuestions = fallbackQuestions[difficulty] || fallbackQuestions.easy;
-    const typeSpecificQuestions = difficultyQuestions.filter(q => q.questionType === questionType);
-    
-    let selectedQuestion;
-    if (typeSpecificQuestions.length > 0) {
-      // Use questions matching the requested type
-      selectedQuestion = typeSpecificQuestions[Math.floor(Math.random() * typeSpecificQuestions.length)];
-    } else {
-      // Use any question from the difficulty level
-      selectedQuestion = difficultyQuestions[Math.floor(Math.random() * difficultyQuestions.length)];
-    }
-    
-    console.log(`📚 Using ${selectedQuestion.questionType} fallback question for ${difficulty} level`);
-    return selectedQuestion;
-  }
-
-  private async generateAIQuestion(difficulty: string, questionType: string, questionNumber: number) {
-    try {
-      let prompt = '';
-      
-      // Generate different prompts based on question type
-      switch (questionType) {
-        case 'memory_verse':
-          prompt = `Generate a ${difficulty} level memory verse Bible quiz question for Christian intercessors (Question ${questionNumber}).
-
-Requirements:
-- Present a well-known Bible verse with one crucial word missing
-- Provide 4 multiple choice options for the missing word
-- Choose verses meaningful for prayer warriors and intercessors
-- Include explanation of verse significance for prayer life
-- JSON format: {"question": "Fill in the missing word: 'The prayer of a _____ person is powerful and effective.'", "options": ["faithful", "righteous", "humble", "persistent"], "correctAnswer": "righteous", "scripture": "James 5:16", "explanation": "This verse reminds intercessors that righteous living enhances prayer power", "questionType": "memory_verse"}
-
-${difficulty} guidelines:
-- Easy: Well-known verses like John 3:16, Psalm 23:1
-- Medium: Prayer/faith verses like James 5:16, Hebrews 11:1
-- Hard: Deeper theological verses, original language concepts`;
-
-        case 'situational_verse':
-          prompt = `Generate a ${difficulty} level situational verse matching question for Christian intercessors (Question ${questionNumber}).
-
-Requirements:
-- Present a real-life situation that intercessors commonly face
-- Ask which Bible verse best applies to that situation
-- Provide 4 verse options with references and partial text
-- Focus on prayer ministry, spiritual warfare, or intercession scenarios
-- JSON format: {"question": "An intercessor feels discouraged after months of prayer without breakthrough. Which verse would best encourage them?", "options": ["Galatians 6:9 - Let us not become weary...", "Psalm 23:1 - The Lord is my shepherd...", "John 3:16 - For God so loved...", "Proverbs 3:5 - Trust in the Lord..."], "correctAnswer": "Galatians 6:9 - Let us not become weary...", "scripture": "Galatians 6:9", "explanation": "This verse specifically addresses perseverance in prayer when results aren't immediately visible", "questionType": "situational_verse"}
-
-${difficulty} guidelines:
-- Easy: Common struggles like doubt, fear, need for guidance
-- Medium: Ministry challenges, spiritual warfare, difficult prayers
-- Hard: Complex theological situations, cultural challenges, leadership decisions`;
-
-        case 'doctrine':
-          prompt = `Generate a ${difficulty} level biblical doctrine question for mature Christian intercessors (Question ${questionNumber}).
-
-Requirements:
-- Focus on core Christian doctrines, theology, or spiritual principles
-- Relevant to prayer ministry and intercession practices
-- Include scriptural foundation and practical application
-- JSON format: {"question": "What is the biblical foundation for intercessory prayer?", "options": ["Jesus' example and commands", "Old Testament traditions", "Church traditions", "Personal preference"], "correctAnswer": "Jesus' example and commands", "scripture": "1 Timothy 2:1-2, John 17", "explanation": "Jesus modeled intercession and commanded His followers to pray for others", "questionType": "doctrine"}`;
-
-        case 'character_study':
-          prompt = `Generate a ${difficulty} level Bible character study question for intercessors (Question ${questionNumber}).
-
-Requirements:
-- Focus on biblical characters known for prayer or faith
-- Include lessons applicable to modern intercessors
-- Provide insights into their prayer practices or spiritual journey
-- JSON format: {"question": "Which biblical character prayed three times daily despite persecution?", "options": ["David", "Daniel", "Nehemiah", "Elijah"], "correctAnswer": "Daniel", "scripture": "Daniel 6:10", "explanation": "Daniel maintained his prayer routine despite the decree that led to the lions' den", "questionType": "character_study"}`;
-
-        default: // standard
-          prompt = `Generate a ${difficulty} level Bible quiz question for Christian intercessors (Question ${questionNumber}).
-
-Requirements:
-- Multiple choice with exactly 4 options
-- Include Bible verse reference
-- Brief explanation for correct answer
-- JSON format: {"question": "...", "options": ["A", "B", "C", "D"], "correctAnswer": "...", "scripture": "...", "explanation": "...", "questionType": "standard"}
-
-${difficulty} guidelines:
-- Easy: Basic Bible stories, well-known characters
-- Medium: Biblical themes, geography, disciples, parables  
-- Hard: Original languages, theological concepts, lesser-known details`;
-      }
-
-      const content = await this.generateAIContent(prompt);
-      console.log('🤖 AI returned content for quiz question');
-
-      // Clean and parse JSON response
-      let cleanedContent = content.replace(/```json\s*|\s*```/g, '').trim();
-      
-      // Handle cases where the AI returns the JSON wrapped in markdown
-      if (cleanedContent.includes('```')) {
-        const jsonMatch = cleanedContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-        if (jsonMatch) {
-          cleanedContent = jsonMatch[1].trim();
-        }
-      }
-
-      const question = JSON.parse(cleanedContent);
-
-      // Validate question structure
-      if (!question.question || !Array.isArray(question.options) || question.options.length !== 4 || !question.correctAnswer) {
-        throw new Error('Invalid question format from AI');
-      }
-
-      // Ensure questionType is set
-      question.questionType = questionType;
-      
-      console.log(`✅ Generated valid ${questionType} question: "${question.question.substring(0, 50)}..."`);
-      return question;
-
-    } catch (error) {
-      console.log(`❌ Error generating AI question: ${error}`);
-      return null;
-    }
-  }
-
-  private async generateAIContent(prompt: string): Promise<string> {
-    try {
-      if (!process.env.GEMINI_API_KEY) {
-        throw new Error('Gemini API key not configured');
-      }
-
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=' + process.env.GEMINI_API_KEY, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 1024,
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Gemini API request failed: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
-        throw new Error('Invalid response structure from Gemini API');
-      }
-
-      return data.candidates[0].content.parts[0].text;
-
-    } catch (error) {
-      console.error('Error generating AI content:', error);
-      throw error;
-    }
-  }
-
-  private calculateQuizPoints(difficulty: string, timeTaken: number, streak: number): number {
-    let basePoints = 0;
-
-    // Base points by difficulty
-    switch (difficulty) {
-      case 'easy': basePoints = 10; break;
-      case 'medium': basePoints = 20; break;
-      case 'hard': basePoints = 30; break;
-      default: basePoints = 10;
-    }
-
-    // Time bonus (up to 50% bonus for quick answers)
-    const timeBonus = Math.max(0, 1.5 - (timeTaken / 30));
-
-    // Streak bonus (up to 100% bonus)
-    const streakBonus = Math.min(1, streak * 0.1);
-
-    return Math.round(basePoints * (1 + timeBonus + streakBonus));
-  }
-
-  private generateAnswerFeedback(
-    isCorrect: boolean,
-    selectedAnswer: string,
-    correctAnswer: string,
-    explanation: string,
-    points: number,
-    streak: number,
-    userName: string,
-    questionType: string = 'standard'
-  ): string {
-    
-    let feedbackEmoji = '';
-    let encouragement = '';
-    
-    // Customize feedback based on question type
-    switch (questionType) {
-      case 'memory_verse':
-        feedbackEmoji = isCorrect ? '📖✅' : '📖❌';
-        encouragement = isCorrect ? 
-          '🌟 Excellent memory work! Scripture meditation strengthens your prayer life!' :
-          '💡 Memorizing Scripture helps during spiritual battles. Keep studying God\'s Word!';
-        break;
-      case 'situational_verse':
-        feedbackEmoji = isCorrect ? '💡✅' : '💡❌';
-        encouragement = isCorrect ? 
-          '🎯 Perfect application! You know how to apply God\'s Word to real situations!' :
-          '📚 Learning to apply Scripture to life situations enhances your intercession ministry!';
-        break;
-      case 'doctrine':
-        feedbackEmoji = isCorrect ? '⛪✅' : '⛪❌';
-        encouragement = isCorrect ? 
-          '🏛️ Solid biblical foundation! Strong doctrine strengthens effective prayer!' :
-          '📖 Understanding biblical doctrine empowers confident intercession!';
-        break;
-      case 'character_study':
-        feedbackEmoji = isCorrect ? '👑✅' : '👑❌';
-        encouragement = isCorrect ? 
-          '🌟 Great insight! Learning from biblical heroes inspires faithful intercession!' :
-          '💪 Studying biblical characters teaches us perseverance in prayer!';
-        break;
-      default:
-        feedbackEmoji = isCorrect ? '✅' : '❌';
-        encouragement = isCorrect ? 
-          '🌟 Keep up the excellent Bible knowledge!' :
-          '📚 Every question is a learning opportunity! Study God\'s Word daily!';
-    }
-
-    if (isCorrect) {
-      return `${feedbackEmoji} *Excellent, ${userName}!* ${feedbackEmoji}
-
-Your answer: **${selectedAnswer}**
-
-🎯 +${points} points earned!
-${streak > 1 ? `🔥 ${streak} question streak!` : ''}
-
-💡 **Explanation:** ${explanation}
-
-${encouragement}`;
-    } else {
-      return `${feedbackEmoji} *Good try, ${userName}* ${feedbackEmoji}
-
-Your answer: **${selectedAnswer}**
-✅ Correct answer: **${correctAnswer}**
-
-💡 **Explanation:** ${explanation}
-
-${encouragement}`;
-    }
-  }
-
-  private async endQuizSession(phoneNumber: string, userName: string, reason: string): Promise<void> {
-    try {
-      const session = this.bibleQuizSessions.get(phoneNumber);
-      if (!session) return;
-
-      // Update session as completed
-      const { data: updatedSession } = await supabase
-        .from('bible_quiz_sessions')
-        .update({
-          is_completed: true,
-          is_active: false,
-          final_score: session.score,
-          duration_seconds: Math.round((Date.now() - session.questionStartTime) / 1000)
-        })
-        .eq('id', session.sessionId)
-        .select()
-        .single();
-
-      // Update user progress
-      await this.updateQuizProgress(phoneNumber, session);
-
-      // Calculate performance metrics
-      const accuracy = session.questionsAnswered > 0 ? (session.correctAnswers / session.questionsAnswered) * 100 : 0;
-      const grade = this.calculateQuizGrade(accuracy);
-
-      const summaryMessage = `🎓 *Quiz Complete!* 🎓
-
-Great job, ${userName}! Here's your summary:
-
-📊 **Final Results:**
-🎯 Score: ${session.score} points
-✅ Correct: ${session.correctAnswers}/${session.questionsAnswered}
-📈 Accuracy: ${Math.round(accuracy)}%
-🏆 Grade: ${grade}
-🔥 Best Streak: ${session.streak}
-
-${this.getEncouragementMessage(accuracy)}
-
-*"Study to show yourself approved unto God, a workman that needs not to be ashamed, rightly dividing the word of truth."* - 2 Timothy 2:15`;
-
-      const buttons = [
-        { id: 'quiz', title: '🔄 Play Again' },
-        { id: 'devotionals', title: '📖 Devotionals' },
-        { id: 'continue', title: '🏠 Main Menu' }
-      ];
-
-      await this.sendInteractiveMessage(phoneNumber, summaryMessage, buttons);
-
-      // Clean up session
-      this.bibleQuizSessions.delete(phoneNumber);
-
-    } catch (error) {
-      console.error('Error ending quiz session:', error);
-      this.bibleQuizSessions.delete(phoneNumber);
-    }
-  }
-
-  private async updateQuizProgress(phoneNumber: string, session: any): Promise<void> {
+  private async handleScriptureCoachButton(phoneNumber: string, userName: string, buttonId: string): Promise<void> {
     try {
       const userInfo = await this.getCompleteUserInfo(phoneNumber);
-      const currentProgress = await this.getUserQuizProgress(userInfo.userId);
+      const userId = userInfo.userId;
 
-      const newXP = this.calculateXPGain(session.score, session.correctAnswers);
-      const newLevel = this.calculateLevel(currentProgress.total_xp + newXP);
+      let result: { message: string; buttons: { id: string; title: string }[] };
 
-      await supabase
-        .from('bible_quiz_progress')
-        .update({
-          total_xp: currentProgress.total_xp + newXP,
-          current_level: newLevel,
-          total_score: currentProgress.total_score + session.score,
-          total_questions_answered: currentProgress.total_questions_answered + session.questionsAnswered,
-          total_correct_answers: currentProgress.total_correct_answers + session.correctAnswers,
-          current_streak: session.streak > currentProgress.current_streak ? session.streak : currentProgress.current_streak,
-          last_played: new Date().toISOString()
-        })
-        .eq('user_id', userInfo.userId);
+      switch (buttonId) {
+        case 'scripture_plan':
+          result = await ScriptureCoachCommands.handleReadingPlans(phoneNumber, userName);
+          break;
+        case 'scripture_memorize':
+          result = await ScriptureCoachCommands.handleMemorizationMenu(phoneNumber, userName);
+          break;
+        case 'scripture_quiz':
+          result = await ScriptureCoachCommands.handleMemoryQuizMenu(phoneNumber, userName);
+          break;
+        case 'scripture_review':
+          result = await ScriptureCoachCommands.handleDailyReview(userId, userName);
+          break;
+        case 'scripture_stats':
+          result = await ScriptureCoachCommands.handleProgressStats(userId, userName);
+          break;
+        case 'daily_review':
+          result = await ScriptureCoachCommands.handleDailyReview(userId, userName);
+          break;
+        case 'verse_packs':
+          result = await ScriptureCoachCommands.handleVersePacks(phoneNumber, userName);
+          break;
+        case 'create_memory_card':
+          // For now, create a sample memory card - in full implementation, you'd prompt for reference
+          result = await ScriptureCoachCommands.handleCreateMemoryCard(userId, 'John 3:16', userName);
+          break;
+        case 'todays_reading':
+          result = await ScriptureCoachCommands.handleTodaysReading(userId, userName);
+          break;
+        default:
+          // Handle plan selection (e.g., plan_123)
+          if (buttonId.startsWith('plan_')) {
+            const planId = buttonId.replace('plan_', '');
+            result = await ScriptureCoachCommands.handleStartReadingPlan(userId, planId, userName);
+          } else {
+            result = await ScriptureCoachCommands.handleScriptureCoachHelp(phoneNumber, userName);
+          }
+      }
 
+      await this.sendInteractiveMessage(phoneNumber, result.message, result.buttons);
     } catch (error) {
-      console.error('Error updating quiz progress:', error);
+      console.error('Error handling ScriptureCoach button:', error);
+      await this.sendWhatsAppMessage(phoneNumber, 
+        `❌ Sorry ${userName}, I encountered an error. Please try again.`
+      );
     }
   }
 
-  private calculateXPGain(score: number, correctAnswers: number): number {
-    return score + (correctAnswers * 5); // Base XP plus bonus for correct answers
-  }
-
-  private calculateLevel(totalXP: number): number {
-    return Math.floor(totalXP / 100) + 1; // Level up every 100 XP
-  }
-
-  private calculateQuizGrade(accuracy: number): string {
-    if (accuracy >= 90) return "A+ Excellent! 🌟";
-    if (accuracy >= 80) return "A Good Work! 👍";
-    if (accuracy >= 70) return "B Keep Going! 📚";
-    if (accuracy >= 60) return "C Study More! 💪";
-    return "Keep Learning! 🙏";
-  }
-
-  private getEncouragementMessage(accuracy: number): string {
-    if (accuracy >= 80) {
-      return "🌟 Outstanding biblical knowledge! Your dedication to God's Word is evident.";
-    } else if (accuracy >= 60) {
-      return "📚 Good effort! Continue studying Scripture to grow in wisdom and understanding.";
-    } else {
-      return "💪 Every step in learning God's Word matters. Keep studying and growing in faith!";
-    }
-  }
+  // Bible Quiz functionality removed - replaced with ScriptureCoach system
 
   // --- Reminder Command Handlers ---
   private async handleReminderCommand(phoneNumber: string, messageText: string, userData: any) {
@@ -3501,9 +2435,9 @@ ${this.getEncouragementMessage(accuracy)}
       if (parts[1] === 'off' || parts[1] === 'disable') {
         const success = await this.reminderSystem.disableReminders(userData.userId);
         if (success) {
-          await this.sendMessage(phoneNumber, `🔕 *Reminders Disabled*\n\n✅ You will no longer receive prayer slot reminders.\n\n🔔 To re-enable, use: *remind [minutes]*\nExample: "remind 30"\n\n💡 You'll still receive daily morning messages with verses.`);
+          await this.sendWhatsAppMessage(phoneNumber, `🔕 *Reminders Disabled*\n\n✅ You will no longer receive prayer slot reminders.\n\n🔔 To re-enable, use: *remind [minutes]*\nExample: "remind 30"\n\n💡 You'll still receive daily morning messages with verses.`);
         } else {
-          await this.sendMessage(phoneNumber, `❌ Failed to disable reminders. Please try again.`);
+          await this.sendWhatsAppMessage(phoneNumber, `❌ Failed to disable reminders. Please try again.`);
         }
         return;
       }
@@ -3511,15 +2445,15 @@ ${this.getEncouragementMessage(accuracy)}
       // Handle "remind [minutes]" command
       const minutes = parseInt(parts[1]);
       if (isNaN(minutes) || minutes < 5 || minutes > 120) {
-        await this.sendMessage(phoneNumber, `❌ Invalid reminder time: ${parts[1]}\n\n✅ Please specify 5-120 minutes\n\n🔔 *Examples:*\n• "remind 15" - 15 minutes before\n• "remind 30" - 30 minutes before\n• "remind 60" - 1 hour before\n• "remind off" - disable reminders`);
+        await this.sendWhatsAppMessage(phoneNumber, `❌ Invalid reminder time: ${parts[1]}\n\n✅ Please specify 5-120 minutes\n\n🔔 *Examples:*\n• "remind 15" - 15 minutes before\n• "remind 30" - 30 minutes before\n• "remind 60" - 1 hour before\n• "remind off" - disable reminders`);
         return;
       }
 
       const success = await this.reminderSystem.updateReminderSettings(userData.userId, minutes);
       if (success) {
-        await this.sendMessage(phoneNumber, `🔔 *Reminder Settings Updated!*\n\n⏰ *New Setting:* ${minutes} minutes before your slot\n\n📋 *What happens next:*\n• You'll receive a reminder ${minutes} minutes before your prayer slot\n• Daily morning messages will continue at 6:00 AM\n• Professional preparation tips included\n\n🛠️ *Change anytime:*\n• "remind [5-120]" - adjust timing\n• "remind off" - disable reminders\n\n_Standing strong in intercession! 💪_`);
+        await this.sendWhatsAppMessage(phoneNumber, `🔔 *Reminder Settings Updated!*\n\n⏰ *New Setting:* ${minutes} minutes before your slot\n\n📋 *What happens next:*\n• You'll receive a reminder ${minutes} minutes before your prayer slot\n• Daily morning messages will continue at 6:00 AM\n• Professional preparation tips included\n\n🛠️ *Change anytime:*\n• "remind [5-120]" - adjust timing\n• "remind off" - disable reminders\n\n_Standing strong in intercession! 💪_`);
       } else {
-        await this.sendMessage(phoneNumber, `❌ Failed to update reminder settings. Please try again.`);
+        await this.sendWhatsAppMessage(phoneNumber, `❌ Failed to update reminder settings. Please try again.`);
       }
 
     } catch (error) {

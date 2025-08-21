@@ -439,7 +439,7 @@ export function PrayerPlanner() {
                     <Button 
                       onClick={handleAIAssist}
                       disabled={aiAssistantMutation.isPending}
-                      className="w-full"
+                      className="w-full md:w-auto px-6 py-3 text-sm md:text-base"
                     >
                       {aiAssistantMutation.isPending ? (
                         <>
@@ -468,7 +468,7 @@ export function PrayerPlanner() {
           <Button 
             onClick={handleCreatePoint}
             disabled={createPointMutation.isPending}
-            className="w-full"
+            className="w-full md:w-auto px-6 py-3 text-sm md:text-base"
           >
             {createPointMutation.isPending ? (
               <>

@@ -143,7 +143,7 @@ export function AIPrayerPlanner() {
 
           <Button 
             onClick={handleGeneratePlan}
-            className="w-full"
+            className="w-full md:w-auto px-6 py-3 text-sm md:text-base"
             disabled={plannerMutation.isPending || !selectedCategory}
           >
             {plannerMutation.isPending ? (

@@ -60,7 +60,7 @@ export function EnhancedHeroSection({ onGetStarted, onLearnMore }: EnhancedHeroS
     {
       icon: <Heart className="w-6 h-6" />,
       title: "Spiritual Growth",
-      description: "Track your prayer journey and spiritual insights"
+              description: "Track your spiritual growth and insights"
     }
   ];
 

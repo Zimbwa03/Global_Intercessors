@@ -16,7 +16,7 @@ Here is a clear prompt for the feature you want to add to your Intercession App,
     *   **Prayer Frameworks:** Examples of prayer structures (e.g., ACTS - Adoration, Confession, Thanksgiving, Supplication).
     *   **Scriptural Prompts:** Relevant Bible verses that can inspire and inform prayer points.
     *   **Intercession Principles:** Short, actionable tips on effective intercession.
-5.  **Daily Storage & Retrieval:** Ensure all planned prayer points and associated notes are securely stored and easily retrievable by date, topic, or keyword, allowing intercessors to track their prayer journey over time."
+5.  **Daily Storage & Retrieval:** Ensure all planned prayer points and associated notes are securely stored and easily retrievable by date, topic, or keyword, allowing intercessors to track their spiritual growth over time."
 
 ---
 

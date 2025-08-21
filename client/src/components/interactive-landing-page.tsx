@@ -111,7 +111,7 @@ export function InteractiveLandingPage({ onGetStarted, onLearnMore }: Interactiv
     {
       icon: <Heart className="w-8 h-8" />,
       title: "Spiritual Growth",
-      description: "Track your prayer journey with AI-powered insights and guidance",
+              description: "Get AI-powered insights and guidance for your spiritual growth",
       color: "from-red-500 to-pink-500"
     },
     {

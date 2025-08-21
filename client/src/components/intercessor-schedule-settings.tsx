@@ -140,22 +140,22 @@ export function IntercessorScheduleSettings({ userId }: IntercessorScheduleSetti
       <CardContent className="space-y-6">
         {/* Current Metrics Display */}
         {metrics && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
             <div className="text-center">
-              <div className="text-2xl font-bold text-gi-primary">{metrics.currentStreak}</div>
-              <div className="text-sm text-gray-600">Current Streak</div>
+              <div className="text-xl sm:text-2xl font-bold text-gi-primary">{metrics.currentStreak}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Current Streak</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-gi-gold">{Math.round(metrics.attendanceRate)}%</div>
-              <div className="text-sm text-gray-600">Attendance Rate</div>
+              <div className="text-xl sm:text-2xl font-bold text-gi-gold">{Math.round(metrics.attendanceRate)}%</div>
+              <div className="text-xs sm:text-sm text-gray-600">Attendance Rate</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{metrics.daysAttended}</div>
-              <div className="text-sm text-gray-600">Days Attended</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-600">{metrics.daysAttended}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Days Attended</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{metrics.totalActiveDays}</div>
-              <div className="text-sm text-gray-600">Active Days/Week</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{metrics.totalActiveDays}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Active Days/Week</div>
             </div>
           </div>
         )}
@@ -166,7 +166,7 @@ export function IntercessorScheduleSettings({ userId }: IntercessorScheduleSetti
             <Calendar className="w-4 h-4" />
             Select Your Prayer Days
           </h3>
-          <div className="grid grid-cols-7 gap-3">
+          <div className="grid grid-cols-7 gap-2 sm:gap-3">
             {DAYS_OF_WEEK.map((day) => {
               const isActive = activeDays.includes(day.id);
               return (
@@ -174,17 +174,17 @@ export function IntercessorScheduleSettings({ userId }: IntercessorScheduleSetti
                   key={day.id}
                   onClick={() => toggleDay(day.id)}
                   className={cn(
-                    "p-4 rounded-lg border-2 transition-all duration-200 text-center",
+                    "p-2 sm:p-4 rounded-lg border-2 transition-all duration-200 text-center min-h-[60px] sm:min-h-[80px]",
                     "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gi-primary/50",
                     isActive
                       ? "border-gi-primary bg-gi-primary text-white shadow-lg"
                       : "border-gray-200 bg-white text-gray-700 hover:border-gi-primary/50"
                   )}
                 >
-                  <div className="font-semibold text-sm mb-1">{day.short}</div>
+                  <div className="font-semibold text-xs sm:text-sm mb-1">{day.short}</div>
                   <div className="text-xs opacity-75">{day.label.slice(0, 3)}</div>
                   {isActive && (
-                    <div className="mt-2">
+                    <div className="mt-1 sm:mt-2">
                       <Clock className="w-3 h-3 mx-auto" />
                     </div>
                   )}
@@ -196,11 +196,11 @@ export function IntercessorScheduleSettings({ userId }: IntercessorScheduleSetti
 
         {/* Action Buttons */}
         {hasChanges && (
-          <div className="flex gap-3 pt-4 border-t">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
             <Button 
               onClick={saveSchedule}
               disabled={updateScheduleMutation.isPending}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto px-6 py-3 text-sm md:text-base"
             >
               <Save className="w-4 h-4" />
               {updateScheduleMutation.isPending ? 'Saving...' : 'Save Schedule'}
@@ -209,6 +209,7 @@ export function IntercessorScheduleSettings({ userId }: IntercessorScheduleSetti
               variant="outline" 
               onClick={resetSchedule}
               disabled={updateScheduleMutation.isPending}
+              className="w-full sm:w-auto px-6 py-3 text-sm md:text-base"
             >
               Cancel
             </Button>
