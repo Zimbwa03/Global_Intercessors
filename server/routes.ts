@@ -281,6 +281,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Remove user's active prayer slot
+  app.post("/api/prayer-slot/remove", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: "Missing required field: userId" });
+      }
+
+      // Find the user's active slot
+      const { data: currentSlot, error: findError } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('id, slot_time')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (findError && findError.code !== 'PGRST116') {
+        console.error('Error locating active slot:', findError);
+        return res.status(500).json({ error: 'Failed to locate active slot' });
+      }
+
+      if (!currentSlot) {
+        return res.json({ removed: false, message: 'No active slot found for user' });
+      }
+
+      // Remove the slot record so the time becomes available immediately
+      const { error: deleteError } = await supabaseAdmin
+        .from('prayer_slots')
+        .delete()
+        .eq('id', currentSlot.id);
+
+      if (deleteError) {
+        console.error('Error removing prayer slot:', deleteError);
+        return res.status(500).json({ error: 'Failed to remove prayer slot' });
+      }
+
+      return res.json({ removed: true, slotTime: currentSlot.slot_time });
+    } catch (error) {
+      console.error('Unhandled error removing prayer slot:', error);
+      return res.status(500).json({ error: 'Failed to remove prayer slot' });
+    }
+  });
+
   // Submit skip request
   app.post("/api/prayer-slot/skip-request", async (req: Request, res: Response) => {
     try {

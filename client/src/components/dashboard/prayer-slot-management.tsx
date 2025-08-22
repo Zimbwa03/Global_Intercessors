@@ -361,6 +361,40 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     },
   });
 
+  // Remove (release) prayer slot mutation
+  const removeSlotMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const response = await fetch('/api/prayer-slot/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to remove prayer slot');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Prayer Slot Removed',
+        description: 'Your prayer slot has been released and is now available to others.'
+      });
+      // Refresh all relevant data
+      queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
+      queryClient.invalidateQueries({ queryKey: ['available-slots'] });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Remove Failed', description: error.message, variant: 'destructive' });
+    }
+  });
+
   // Calculate attendance statistics
   const calculateAttendanceStats = () => {
     if (!attendanceRecords.length) return { rate: 0, streak: 0, total: 0, attended: 0 };
@@ -687,36 +721,63 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                   )}
 
                   <div className={`flex ${isMobile ? 'flex-col gap-2' : 'gap-4'} justify-center`}>
-                    {/* Join Zoom Meeting Button */}
+                    {/* 1. Join Zoom Meeting */}
                     <Button
-                        onClick={() => window.open(ZOOM_JOIN_LINK || zoomLinkData?.zoomLink, '_blank')}
-                        className={`bg-green-600 hover:bg-green-700 text-white font-poppins ${
-                          isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
-                        }`}
-                      >
-                        <Users className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                        {isMobile ? 'Join Zoom' : 'Join Zoom Meeting'}
-                      </Button>
+                      onClick={() => window.open(ZOOM_JOIN_LINK || zoomLinkData?.zoomLink, '_blank')}
+                      className={`bg-green-600 hover:bg-green-700 text-white font-poppins ${
+                        isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
+                      }`}
+                    >
+                      <Users className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                      {isMobile ? 'Join Zoom' : 'Join Zoom Meeting'}
+                    </Button>
 
-                    {/* Manual Attendance Logging Button */}
-                    {prayerSlot.status === 'active' && (
-                      <Button
-                        onClick={() => logAttendanceMutation.mutate({ duration: 20 })}
-                        disabled={logAttendanceMutation.isPending}
-                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-gi-primary/700 text-white font-poppins bg-[#0a481d] ${
-                          isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
-                        }`}
-                      >
-                        <CheckCircle2 className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                        {logAttendanceMutation.isPending ? 'Logging...' : (isMobile ? 'Log Prayer' : 'Log Prayer Attendance')}
-                      </Button>
-                    )}
+                    {/* 2. Change Prayer Slot */}
+                    <Dialog open={isChangeSlotModalOpen} onOpenChange={setIsChangeSlotModalOpen}>
+                      <DialogTrigger asChild>
+                        <Button
+                          className={`bg-gi-primary text-white hover:bg-gi-primary/80 transition-brand font-poppins ${
+                            isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
+                          }`}
+                        >
+                          <Edit3 className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                          {isMobile ? 'Change Slot' : 'Change Prayer Slot'}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle className="font-poppins">Change Your Prayer Slot</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <Select onValueChange={handleChangeSlot}>
+                            <SelectTrigger className="border-gi-primary/200 focus:ring-brand-primary focus:border-gi-primary/primary">
+                              <SelectValue placeholder="Choose your new time slot" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {isLoadingSlots ? (
+                                <SelectItem value="loading" disabled>Loading slots...</SelectItem>
+                              ) : (
+                                availableSlotsData.map((slot: any, index: number) => (
+                                  <SelectItem key={`change-slot-${slot.id}-${index}`} value={slot.slotTime}>
+                                    {slot.slotTime}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                          {changeSlotMutation.isPending && (
+                            <p className="text-sm text-gi-primary">Updating your slot...</p>
+                          )}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
 
+                    {/* 3. Request Skip Days */}
                     {prayerSlot.status === 'active' && (
                       <Dialog open={isSkipRequestModalOpen} onOpenChange={setIsSkipRequestModalOpen}>
                         <DialogTrigger asChild>
                           <Button
-                            className={`border-gi-primary/accent text-gi-gold hover:bg-gi-gold hover:text-gi-primary transition-brand font-poppins ${
+                            className={`bg-gi-gold text-gi-primary hover:bg-gi-gold/90 transition-brand font-poppins ${
                               isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
                             }`}
                           >
@@ -772,44 +833,19 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                       </Dialog>
                     )}
 
-                    <Dialog open={isChangeSlotModalOpen} onOpenChange={setIsChangeSlotModalOpen}>
-                      <DialogTrigger asChild>
-                        <Button
-                          className={`border-gi-primary/primary text-gi-primary hover:bg-gi-primary/50 transition-brand font-poppins ${
-                            isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
-                          }`}
-                        >
-                          <Edit3 className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                          {isMobile ? 'Change Slot' : 'Change Time Slot'}
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle className="font-poppins">Change Your Prayer Slot</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <Select onValueChange={handleChangeSlot}>
-                            <SelectTrigger className="border-gi-primary/200 focus:ring-brand-primary focus:border-gi-primary/primary">
-                              <SelectValue placeholder="Choose your new time slot" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-60">
-                              {isLoadingSlots ? (
-                                <SelectItem value="loading" disabled>Loading slots...</SelectItem>
-                              ) : (
-                                availableSlotsData.map((slot: any, index: number) => (
-                                  <SelectItem key={`change-slot-${slot.id}-${index}`} value={slot.slotTime}>
-                                    {slot.slotTime}
-                                  </SelectItem>
-                                ))
-                              )}
-                            </SelectContent>
-                          </Select>
-                          {changeSlotMutation.isPending && (
-                            <p className="text-sm text-gi-primary">Updating your slot...</p>
-                          )}
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    {/* 4. Remove Prayer Slot */}
+                    {prayerSlot.status === 'active' && (
+                      <Button
+                        onClick={() => removeSlotMutation.mutate()}
+                        disabled={removeSlotMutation.isPending}
+                        className={`bg-red-600 hover:bg-red-700 text-white font-poppins ${
+                          isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
+                        }`}
+                      >
+                        <XCircle className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                        {removeSlotMutation.isPending ? 'Removing...' : (isMobile ? 'Remove Slot' : 'Remove Prayer Slot')}
+                      </Button>
+                    )}
                   </div>
                 </motion.div>
               ) : (
@@ -1045,7 +1081,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                     </div>
                     {notification.pin_to_top && (
                       <div className="ml-2">
-                        <Badge className={`text-xs ${badgeVariantClass('outline')}`}>
+                        <Badge className="text-xs bg-black/40 text-white px-2 py-0.5 rounded">
                           Pinned
                         </Badge>
                       </div>
