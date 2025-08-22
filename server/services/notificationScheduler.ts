@@ -13,24 +13,28 @@ class NotificationScheduler {
     // Check for upcoming prayer slots every minute
     cron.schedule('* * * * *', async () => {
       await this.checkUpcomingPrayerSlots();
-    });
+    }, { timezone: 'Africa/Harare' });
 
     // Check for missed slots every 5 minutes
     cron.schedule('*/5 * * * *', async () => {
       await this.checkMissedSlots();
-    });
+    }, { timezone: 'Africa/Harare' });
 
     // Send daily reminders at 6 AM
     cron.schedule('0 6 * * *', async () => {
       await this.sendDailyReminders();
-    });
+    }, { timezone: 'Africa/Harare' });
   }
 
   private async checkUpcomingPrayerSlots() {
     try {
+      // Compute times in Africa/Harare local time
       const now = new Date();
-      const fifteenMinutesFromNow = new Date(now.getTime() + 15 * 60 * 1000);
-      const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+      const fmt = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Africa/Harare' });
+      const partsNow = fmt.formatToParts(now);
+      const currentHours = Number(partsNow.find(p => p.type === 'hour')?.value || '0');
+      const currentMinutes = Number(partsNow.find(p => p.type === 'minute')?.value || '0');
+      const currentTotalMinutes = currentHours * 60 + currentMinutes;
 
       // Get active prayer slots
       const { data: slots, error } = await supabaseAdmin
@@ -47,27 +51,23 @@ class NotificationScheduler {
         const slotTime = this.parseSlotTime(slot.slot_time);
         if (!slotTime) continue;
 
-        const todaySlotTime = new Date();
-        todaySlotTime.setHours(slotTime.hours, slotTime.minutes, 0, 0);
+        // Minutes since midnight for slot
+        const slotTotalMinutes = slotTime.hours * 60 + slotTime.minutes;
 
-        // If slot time has passed today, check tomorrow
-        if (todaySlotTime <= now) {
-          todaySlotTime.setDate(todaySlotTime.getDate() + 1);
-        }
+        // Targets: start, 15-min before, 5-min before
+        const reminders: Array<{ label: 'start' | 15 | 5; minutes: number }> = [
+          { label: 'start', minutes: slotTotalMinutes },
+          { label: 15, minutes: (slotTotalMinutes - 15 + 1440) % 1440 },
+          { label: 5, minutes: (slotTotalMinutes - 5 + 1440) % 1440 },
+        ];
 
-        // Check for 15-minute reminder
-        if (Math.abs(todaySlotTime.getTime() - fifteenMinutesFromNow.getTime()) < 60000) {
-          await this.sendPrayerReminder(slot, 15);
-        }
-
-        // Check for 5-minute reminder
-        if (Math.abs(todaySlotTime.getTime() - fiveMinutesFromNow.getTime()) < 60000) {
-          await this.sendPrayerReminder(slot, 5);
-        }
-
-        // Check for start notification
-        if (Math.abs(todaySlotTime.getTime() - now.getTime()) < 60000) {
-          await this.sendPrayerStartNotification(slot);
+        for (const r of reminders) {
+          const diff = Math.abs(currentTotalMinutes - r.minutes);
+          const minDiff = Math.min(diff, 1440 - diff);
+          if (minDiff <= 1) {
+            if (r.label === 'start') await this.sendPrayerStartNotification(slot);
+            else await this.sendPrayerReminder(slot, r.label);
+          }
         }
       }
     } catch (error) {

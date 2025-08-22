@@ -147,6 +147,27 @@ export default function AdminDashboard() {
   // Keep mobile flag in a ref to avoid re-subscribing listeners unnecessarily
   useEffect(() => { isMobileRef.current = isMobile; }, [isMobile]);
 
+  // Avoid layout changes (which can blur inputs/close keyboard) while typing on mobile
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const isInputFocusedRef = useRef(false);
+  useEffect(() => { isInputFocusedRef.current = isInputFocused; }, [isInputFocused]);
+  useEffect(() => {
+    const onFocusIn = (e: Event) => {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.getAttribute('contenteditable') === 'true') {
+        setIsInputFocused(true);
+      }
+    };
+    const onFocusOut = () => setIsInputFocused(false);
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
+    return () => {
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
+    };
+  }, []);
+
   // Scroll hide/show handlers (run regardless of adminUser presence to keep hooks stable)
   useEffect(() => {
     let ticking = false;
@@ -157,6 +178,11 @@ export default function AdminDashboard() {
           const goingDown = currentY > lastScrollYRef.current;
           const was = lastScrollYRef.current;
           lastScrollYRef.current = currentY;
+          // Suppress UI hide/show while typing on mobile to prevent input blur/keyboard closing
+          if (isMobileRef.current && isInputFocusedRef.current) {
+            ticking = false;
+            return;
+          }
           if (isMobileRef.current) {
             // Hide footer when user scrolls up
             setHideMobileFooter(was > currentY && currentY > 20);

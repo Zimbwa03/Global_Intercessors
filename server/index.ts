@@ -4,6 +4,11 @@ import { zoomAttendanceTracker } from "./services/zoomAttendanceTracker";
 import { registerRoutes } from "./routes";
 import { notificationScheduler } from "./services/notificationScheduler";
 
+// Set default server timezone to Africa/Harare to align with majority of intercessors
+if (!process.env.TZ) {
+  process.env.TZ = "Africa/Harare";
+}
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

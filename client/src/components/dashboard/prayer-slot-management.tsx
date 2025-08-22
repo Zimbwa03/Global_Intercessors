@@ -158,6 +158,9 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     refetchOnWindowFocus: false
   });
 
+  // Fixed Zoom join link as requested
+  const ZOOM_JOIN_LINK = 'https://us06web.zoom.us/j/83923875995?pwd=QmVJcGpmRys1aWlvWCtZdzZKLzFRQT09';
+
   // Extract the prayer slot from the response
   const prayerSlot = prayerSlotResponse?.prayerSlot;
 
@@ -342,6 +345,9 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       });
 
       setIsChangeSlotModalOpen(false);
+      // Auto-refresh current slot and available slots
+      queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
+      queryClient.invalidateQueries({ queryKey: ['available-slots'] });
     },
     onError: (error: Error) => {
       toast({
@@ -437,6 +443,23 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     if (rate >= 70) return 'text-yellow-600';
     return 'text-red-600';
   };
+
+  // UI helpers for styling (avoid variant props for stricter typing)
+  const badgeVariantClass = (variant: 'default' | 'secondary' | 'destructive' | 'outline') => {
+    switch (variant) {
+      case 'default':
+        return 'border-transparent bg-primary text-primary-foreground hover:bg-primary/80';
+      case 'secondary':
+        return 'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80';
+      case 'destructive':
+        return 'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80';
+      case 'outline':
+      default:
+        return 'text-foreground';
+    }
+  };
+
+  const outlineButtonClasses = 'border border-input bg-background hover:bg-accent hover:text-accent-foreground';
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -588,7 +611,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                     </h3>
                     <div className="flex items-center justify-center gap-2">
                       {getStatusIcon(prayerSlot.status)}
-                      <Badge variant={getStatusBadgeVariant(prayerSlot.status)} className="font-poppins">
+                      <Badge className={`font-poppins ${badgeVariantClass(getStatusBadgeVariant(prayerSlot.status))}`}>
                         {getStatusText(prayerSlot.status)}
                       </Badge>
                     </div>
@@ -665,9 +688,8 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
 
                   <div className={`flex ${isMobile ? 'flex-col gap-2' : 'gap-4'} justify-center`}>
                     {/* Join Zoom Meeting Button */}
-                    {zoomLinkData?.zoomLink && (
-                      <Button
-                        onClick={() => window.open(zoomLinkData.zoomLink, '_blank')}
+                    <Button
+                        onClick={() => window.open(ZOOM_JOIN_LINK || zoomLinkData?.zoomLink, '_blank')}
                         className={`bg-green-600 hover:bg-green-700 text-white font-poppins ${
                           isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
                         }`}
@@ -675,7 +697,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                         <Users className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
                         {isMobile ? 'Join Zoom' : 'Join Zoom Meeting'}
                       </Button>
-                    )}
 
                     {/* Manual Attendance Logging Button */}
                     {prayerSlot.status === 'active' && (
@@ -695,7 +716,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                       <Dialog open={isSkipRequestModalOpen} onOpenChange={setIsSkipRequestModalOpen}>
                         <DialogTrigger asChild>
                           <Button
-                            variant="outline"
                             className={`border-gi-primary/accent text-gi-gold hover:bg-gi-gold hover:text-gi-primary transition-brand font-poppins ${
                               isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
                             }`}
@@ -741,7 +761,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                                 {submitSkipRequestMutation.isPending ? 'Submitting...' : 'Submit Request'}
                               </Button>
                               <Button
-                                variant="outline"
                                 onClick={() => setIsSkipRequestModalOpen(false)}
                                 className="font-poppins"
                               >
@@ -756,7 +775,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                     <Dialog open={isChangeSlotModalOpen} onOpenChange={setIsChangeSlotModalOpen}>
                       <DialogTrigger asChild>
                         <Button
-                          variant="outline"
                           className={`border-gi-primary/primary text-gi-primary hover:bg-gi-primary/50 transition-brand font-poppins ${
                             isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
                           }`}
@@ -894,11 +912,10 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                     </p>
                   </div>
                   <Badge 
-                    variant={
+                    className={`font-poppins ${badgeVariantClass(
                       request.status === 'approved' ? 'default' : 
                       request.status === 'rejected' ? 'destructive' : 'secondary'
-                    }
-                    className="font-poppins"
+                    )}`}
                   >
                     {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                   </Badge>
@@ -970,8 +987,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                         <XCircle className="w-5 h-5 text-red-500" />
                       )}
                       <Badge 
-                        variant={record.attended ? 'default' : 'destructive'}
-                        className="font-poppins"
+                        className={`font-poppins ${badgeVariantClass(record.attended ? 'default' : 'destructive')}`}
                       >
                         {record.attended ? 'Attended' : 'Missed'}
                       </Badge>
@@ -1015,11 +1031,10 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                       </p>
                       <div className="flex items-center gap-2">
                         <Badge 
-                          variant={
+                          className={`text-xs font-poppins ${badgeVariantClass(
                             notification.priority === 'critical' ? 'destructive' :
                             notification.priority === 'high' ? 'default' : 'secondary'
-                          }
-                          className="text-xs font-poppins"
+                          )}`}
                         >
                           {notification.priority}
                         </Badge>
@@ -1030,7 +1045,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
                     </div>
                     {notification.pin_to_top && (
                       <div className="ml-2">
-                        <Badge variant="outline" className="text-xs">
+                        <Badge className={`text-xs ${badgeVariantClass('outline')}`}>
                           Pinned
                         </Badge>
                       </div>

@@ -85,17 +85,17 @@ export class WhatsAppPrayerBot {
     // Daily devotionals at 6:00 AM
     cron.schedule('0 6 * * *', () => {
       this.sendDailyDevotionals();
-    });
+    }, { timezone: 'Africa/Harare' });
 
     // Prayer slot reminders - check every minute for upcoming slots
     cron.schedule('* * * * *', () => {
       this.checkPrayerSlotReminders();
-    });
+    }, { timezone: 'Africa/Harare' });
 
     // Morning declarations at 6:00 AM daily
     cron.schedule('0 6 * * *', () => {
       this.sendMorningDeclarations();
-    });
+    }, { timezone: 'Africa/Harare' });
 
     console.log('WhatsApp Prayer Bot scheduled jobs initialized');
   }

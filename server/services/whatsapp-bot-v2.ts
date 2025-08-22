@@ -22,6 +22,7 @@ interface WhatsAppBotUser {
   whatsapp_number: string;
   is_active: boolean;
   reminder_preferences: any;
+  timezone?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -123,12 +124,12 @@ export class WhatsAppPrayerBot {
     // Prayer slot reminders - check every minute for upcoming slots
     cron.schedule('* * * * *', () => {
       this.checkPrayerSlotReminders();
-    });
+    }, { timezone: 'Africa/Harare' });
 
     // Morning declarations at 6:00 AM daily
     cron.schedule('0 6 * * *', () => {
       this.sendMorningDeclarations();
-    });
+    }, { timezone: 'Africa/Harare' });
 
     console.log('WhatsApp Prayer Bot v2 scheduled jobs initialized');
   }
@@ -615,26 +616,41 @@ export class WhatsAppPrayerBot {
         return;
       }
 
-      // Process reminders for each active slot
-      const currentTime = new Date();
-      const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
-
+      // Process reminders for each active slot (respect user timezone, default Africa/Harare)
       for (const slot of activeSlots) {
         // Parse slot time (e.g., "04:00" or "14:30–15:00")
         const slotTimeStr = slot.slot_time.split('–')[0] || slot.slot_time;
         const [hours, minutes] = slotTimeStr.split(':').map(Number);
         const slotMinutes = hours * 60 + minutes;
 
-        // Check if reminder should be sent (30 minutes before)
-        const reminderMinutes = slotMinutes - 30;
-        const timeDiff = Math.abs(currentMinutes - reminderMinutes);
+        const whatsappUser = whatsappUsers.find(user => user.user_id === slot.user_id);
+        if (!whatsappUser) continue;
 
-        // Send reminder if within 1 minute of reminder time
+        const userTimezone = (whatsappUser.timezone && whatsappUser.timezone.trim()) || 'Africa/Harare';
+
+        // Current time in user's timezone (minutes since midnight)
+        const parts = new Intl.DateTimeFormat('en-GB', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+          timeZone: userTimezone,
+        }).formatToParts(new Date());
+
+        const currentHoursTz = Number(parts.find(p => p.type === 'hour')?.value || '0');
+        const currentMinutesTz = Number(parts.find(p => p.type === 'minute')?.value || '0');
+        const currentMinutes = currentHoursTz * 60 + currentMinutesTz;
+
+        // Reminder is 30 minutes before slot
+        let reminderMinutes = slotMinutes - 30;
+        if (reminderMinutes < 0) reminderMinutes += 1440; // wrap around midnight
+
+        // Minimal circular difference on 24h clock
+        const diff = Math.abs(currentMinutes - reminderMinutes);
+        const timeDiff = Math.min(diff, 1440 - diff);
+
+        // Send reminder if within 1 minute of the user's local reminder time
         if (timeDiff <= 1) {
-          const whatsappUser = whatsappUsers.find(user => user.user_id === slot.user_id);
-          if (whatsappUser) {
-            await this.sendPrayerSlotReminder(whatsappUser, slot);
-          }
+          await this.sendPrayerSlotReminder(whatsappUser, slot);
         }
       }
 
@@ -1069,6 +1085,12 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
         await this.handleHelpCommand(phoneNumber, userName);
       } else if (command === 'stop' || command === '/stop') {
         await this.handleStopCommand(phoneNumber, userName);
+      } else if (command === 'join_zoom') {
+        await this.handleJoinZoom(phoneNumber);
+      } else if (command === 'gi_app') {
+        await this.handleGiApp(phoneNumber);
+      } else if (command === 'about') {
+        await this.handleAbout(phoneNumber, userName);
       } else if (command === 'retry_login') {
         await this.sendLoginPrompt(phoneNumber);
       } else if (command === 'help_login') {
@@ -1147,6 +1169,16 @@ Choose an option below to begin your spiritual journey:`;
       ];
 
     await this.sendInteractiveMessage(phoneNumber, welcomeMessage, buttons);
+
+    // Send secondary quick-access buttons as a separate interactive message
+    const quickAccessMessage = `🔗 Quick Access`;
+    const quickButtons = [
+      { id: 'join_zoom', title: '🎥 Join Zoom' },
+      { id: 'gi_app', title: '🌐 GI App' },
+      { id: 'about', title: 'ℹ️ About' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, quickAccessMessage, quickButtons);
   }
 
   private async handleHelpCommand(phoneNumber: string, userName: string): Promise<void> {
@@ -1418,6 +1450,36 @@ Global Intercessors is a worldwide prayer movement that maintains 24/7 prayer co
     await this.sendInteractiveMessage(phoneNumber, helpMessage, buttons);
   }
 
+  private async handleJoinZoom(phoneNumber: string): Promise<void> {
+    const url = 'https://us06web.zoom.us/j/83923875995?pwd=QmVJcGpmRys1aWlvWCtZdzZKLzFRQT09';
+    const message = `🎥 *Join Zoom Prayer*\n\nTap to join now:\n${url}`;
+    await this.sendWhatsAppMessage(phoneNumber, message);
+    await this.logInteraction(phoneNumber, 'button_action', 'join_zoom');
+  }
+
+  private async handleGiApp(phoneNumber: string): Promise<void> {
+    const url = 'https://globalintercessors.co.zw/';
+    const message = `🌐 *Global Intercessors Web App*\n\nOpen the app:\n${url}`;
+    await this.sendWhatsAppMessage(phoneNumber, message);
+    await this.logInteraction(phoneNumber, 'button_action', 'gi_app');
+  }
+
+  private async handleAbout(phoneNumber: string, userName: string): Promise<void> {
+    const aboutMessage = `ℹ️ *About Global Intercessors Bot* ℹ️\n\n` +
+`Hello ${userName}! This WhatsApp bot is your personal prayer companion, designed to help you stay consistent and strong in intercession.\n\n` +
+`💠 *What the Bot Does*\n` +
+`• 📖 Provides AI-powered daily devotionals and insights\n` +
+`• ⏰ Sends smart reminders for your prayer slots\n` +
+`• 📚 Offers ScriptureCoach tools for learning and memorization\n` +
+`• 🌍 Shares global prayer updates and declarations\n\n` +
+`🙏 *About Global Intercessors*\n` +
+`We are a worldwide prayer movement committed to 24/7 prayer coverage across nations. Intercessors from around the world stand together in continuous prayer for revival, transformation, and God's Kingdom purposes.\n\n` +
+`"The effective, fervent prayer of a righteous man avails much." — James 5:16`;
+
+    await this.sendWhatsAppMessage(phoneNumber, aboutMessage);
+    await this.logInteraction(phoneNumber, 'button_action', 'about');
+  }
+
   // New devotional menu handler
   private async handleDevotionalsMenuCommand(phoneNumber: string, userName: string): Promise<void> {
     await this.logInteraction(phoneNumber, 'command', 'devotionals_menu');
@@ -1598,7 +1660,8 @@ ${content}
         if (current.trim().length) parts.push((current + footer).trim());
 
         // Send parts as text messages
-        for (const [idx, part] of parts.entries()) {
+        for (let idx = 0; idx < parts.length; idx++) {
+          const part = parts[idx];
           const label = parts.length > 1 ? ` (Part ${idx + 1}/${parts.length})` : '';
           const body = idx === parts.length - 1 ? part : part + `\n${label}`;
           await this.sendWhatsAppMessage(phoneNumber, body);
