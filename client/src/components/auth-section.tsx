@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Eye, EyeOff } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +17,8 @@ export function AuthSection() {
     password: "",
     confirmPassword: ""
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
@@ -210,15 +213,25 @@ export function AuthSection() {
                   </div>
                   <div>
                     <Label className="block text-sm font-semibold text-brand-text mb-2 font-poppins">Password</Label>
-                    <Input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-gi-primary/200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
-                      placeholder="Enter your password"
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-3 border border-gi-primary/200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand pr-12"
+                        placeholder="Enter your password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
                   </div>
                   <Button
                     type="submit"
@@ -263,27 +276,47 @@ export function AuthSection() {
                   </div>
                   <div>
                     <Label className="block text-sm font-semibold text-brand-text mb-2 font-poppins">Password</Label>
-                    <Input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-gi-primary/200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
-                      placeholder="Create a password"
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-3 border border-gi-primary/200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand pr-12"
+                        placeholder="Create a password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <Label className="block text-sm font-semibold text-brand-text mb-2 font-poppins">Confirm Password</Label>
-                    <Input
-                      type="password"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-gi-primary/200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand"
-                      placeholder="Confirm your password"
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showConfirmPassword ? "text" : "password"}
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-3 border border-gi-primary/200 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-brand pr-12"
+                        placeholder="Confirm your password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((v) => !v)}
+                        className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
                   </div>
                   <Button
                     type="submit"

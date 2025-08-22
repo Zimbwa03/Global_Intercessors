@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-import { User } from "lucide-react";
+import { User, LogOut } from "lucide-react";
 
 interface SidebarProps {
   activeTab: string;
@@ -256,6 +256,15 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
             </div>
           )}
         </div>
+        <Button
+          onClick={onSignOut}
+          variant="ghost"
+          className={`w-full ${isCollapsed ? 'justify-center' : 'justify-start space-x-3'} text-gi-white hover:bg-red-600/20`}
+          title="Sign Out"
+        >
+          <LogOut className="h-5 w-5" />
+          {!isCollapsed && <span>Sign Out</span>}
+        </Button>
       </div>
     </div>
   );
