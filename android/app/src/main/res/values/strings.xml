@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Global Intercessors</string>
+    <string name="title_activity_main">Global Intercessors</string>
+    <string name="package_name">com.globalintercessors.app</string>
+    <string name="custom_url_scheme">com.globalintercessors.app</string>
+</resources>
