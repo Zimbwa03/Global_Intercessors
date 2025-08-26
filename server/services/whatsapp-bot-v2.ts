@@ -89,7 +89,13 @@ export class WhatsAppPrayerBot {
     console.log('AI API Key:', this.deepSeekApiKey ? 'Configured' : 'Missing');
 
     if (!this.config.phoneNumberId || !this.config.accessToken) {
-      console.warn('WhatsApp API credentials not configured. Bot functionality will be limited.');
+      console.warn('⚠️ WhatsApp API credentials not configured. Bot will run in SIMULATION MODE.');
+      console.warn('📱 To enable real WhatsApp messaging, configure these environment variables:');
+      console.warn('   - WHATSAPP_PHONE_NUMBER_ID');
+      console.warn('   - WHATSAPP_ACCESS_TOKEN');
+      console.warn('   - WHATSAPP_VERIFY_TOKEN');
+    } else {
+      console.log('✅ WhatsApp API credentials configured. Bot is ready for PRODUCTION messaging.');
     }
 
     // Initialize the advanced reminder system
@@ -145,6 +151,7 @@ export class WhatsAppPrayerBot {
     if (!this.config.phoneNumberId || !this.config.accessToken) {
       console.log(`❌ WhatsApp credentials missing - SIMULATION MODE`);
       console.log(`📄 Message Preview: ${sanitizedBody.substring(0, 100)}...`);
+      console.log(`🔑 Missing: ${!this.config.phoneNumberId ? 'Phone Number ID' : ''}${!this.config.phoneNumberId && !this.config.accessToken ? ' and ' : ''}${!this.config.accessToken ? 'Access Token' : ''}`);
       return false;
     }
 

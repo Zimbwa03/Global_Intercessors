@@ -6,7 +6,7 @@
 CREATE TABLE IF NOT EXISTS fasting_program_details (
   id SERIAL PRIMARY KEY,
   program_title TEXT NOT NULL DEFAULT '3 Days & 3 Nights Fasting Program',
-  program_subtitle TEXT DEFAULT 'June 2025',
+  program_subtitle TEXT DEFAULT 'August 2025',
   program_description TEXT DEFAULT 'Join us for a powerful time of prayer and fasting',
   start_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   end_date TIMESTAMP WITH TIME ZONE DEFAULT NOW() + INTERVAL '3 days',
@@ -37,12 +37,12 @@ INSERT INTO fasting_program_details (
 ) 
 SELECT 
   '3 Days & 3 Nights Fasting Program',
-  'June 2025',
+  'August 2025',
   'Join us for a powerful time of prayer and fasting as we seek God''s face together. This is a global gathering of intercessors united in purpose.',
-  '2025-06-15 18:00:00+00'::timestamp with time zone,
-  '2025-06-18 18:00:00+00'::timestamp with time zone,
-  '2025-06-01 00:00:00+00'::timestamp with time zone,
-  '2025-06-14 23:59:59+00'::timestamp with time zone,
+  '2025-08-28 18:00:00+00'::timestamp with time zone,
+  '2025-08-31 18:00:00+00'::timestamp with time zone,
+  '2025-08-01 00:00:00+00'::timestamp with time zone,
+  '2025-08-27 23:59:59+00'::timestamp with time zone,
   'Begin with prayer and preparation. Fast according to your ability - whether complete, Daniel fast, or partial. Stay hydrated and listen to your body.',
   'Online via Zoom and at Regional Prayer Centers worldwide'
 WHERE NOT EXISTS (SELECT 1 FROM fasting_program_details);

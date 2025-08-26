@@ -914,16 +914,19 @@ May God bless your participation in this special time of prayer and fasting! �
 _Type 'menu' anytime to explore our prayer bot features._`;
 
       console.log(`📤 Sending fasting registration notification to ${formattedPhone} for ${fullName}`);
+      console.log(`🔑 WhatsApp Bot Status: ${process.env.WHATSAPP_PHONE_NUMBER_ID ? 'Configured' : 'Missing Phone ID'}, ${process.env.WHATSAPP_ACCESS_TOKEN ? 'Token Present' : 'Missing Token'}`);
 
       const success = await whatsAppBot.sendMessage(formattedPhone, message);
       
       if (success) {
+        console.log(`✅ WhatsApp notification sent successfully to ${formattedPhone}`);
         res.json({ 
           success: true, 
           message: 'WhatsApp notification sent successfully',
           registrationId: registrationId
         });
       } else {
+        console.error(`❌ Failed to send WhatsApp notification to ${formattedPhone}`);
         res.status(500).json({ 
           error: 'Failed to send WhatsApp notification',
           registrationId: registrationId

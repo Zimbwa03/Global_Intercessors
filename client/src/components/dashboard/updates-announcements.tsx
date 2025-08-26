@@ -57,10 +57,10 @@ export function UpdatesAnnouncements() {
   // Static fasting announcement (always shows first)
   const fastingAnnouncement: Announcement = {
     id: "fasting-program",
-    title: "3 Days & 3 Nights Fasting Program - June",
+    title: "3 Days & 3 Nights Fasting Program - August",
     description: "Join believers worldwide in a powerful 3-day fasting period for breakthrough and revival. Registration includes GPS location tracking for transport reimbursement.",
     type: "fast",
-    date: "June 15-17, 2025",
+    date: "August 28-31, 2025",
     registrationRequired: true,
     priority: "high",
     pin_to_top: true
