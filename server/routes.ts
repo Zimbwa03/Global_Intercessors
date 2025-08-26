@@ -886,6 +886,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Send WhatsApp notification for fasting registration
+  app.post("/api/fasting-registration/whatsapp-notification", async (req: Request, res: Response) => {
+    try {
+      const { phoneNumber, fullName, registrationId } = req.body;
+
+      if (!phoneNumber || !fullName || !registrationId) {
+        return res.status(400).json({ error: 'phoneNumber, fullName, and registrationId are required' });
+      }
+
+      // Format phone number to ensure it starts with +
+      const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
+
+      // Create the WhatsApp message
+      const message = `🙏 *Global Intercessors - Registration Confirmed*
+
+Hello ${fullName}! 
+
+✅ Your registration for the *3 Days & 3 Nights Fasting Program* (August 28-31, 2025) has been successfully completed.
+
+📝 *Registration Number:* ${registrationId}
+
+Your GPS location has been recorded for transport reimbursement verification. You will receive further details about the fasting program soon.
+
+May God bless your participation in this special time of prayer and fasting! 🌟
+
+_Type 'menu' anytime to explore our prayer bot features._`;
+
+      console.log(`📤 Sending fasting registration notification to ${formattedPhone} for ${fullName}`);
+
+      const success = await whatsAppBot.sendMessage(formattedPhone, message);
+      
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: 'WhatsApp notification sent successfully',
+          registrationId: registrationId
+        });
+      } else {
+        res.status(500).json({ 
+          error: 'Failed to send WhatsApp notification',
+          registrationId: registrationId
+        });
+      }
+    } catch (error) {
+      console.error('WhatsApp fasting registration notification error:', error);
+      res.status(500).json({ 
+        error: 'Failed to send WhatsApp notification',
+        details: error.message 
+      });
+    }
+  });
+
   // In-memory storage for admin updates (works immediately)
   const adminUpdates: any[] = [];
 

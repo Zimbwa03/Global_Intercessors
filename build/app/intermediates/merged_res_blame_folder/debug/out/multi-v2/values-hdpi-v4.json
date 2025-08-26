@@ -1,0 +1,20 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.globalintercessors.app-mergeDebugResources-26:/values-hdpi-v4/values-hdpi-v4.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\GWENJE\\.gradle\\caches\\transforms-3\\f53c5c2ced8f9c709268bcea222fdc33\\transformed\\appcompat-1.6.1\\res\\values-hdpi-v4\\values-hdpi-v4.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "6",
+                        "endColumns": "13",
+                        "endOffsets": "327"
+                    }
+                }
+            ]
+        }
+    ]
+}

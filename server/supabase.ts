@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
 // Get Supabase URL and service role key from environment variables

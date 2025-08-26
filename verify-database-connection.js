@@ -1,4 +1,5 @@
 // Verify which database the app is actually connecting to
+import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
 console.log('🔍 Database Connection Verification');

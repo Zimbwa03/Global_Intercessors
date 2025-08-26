@@ -1,0 +1,31 @@
+com.globalintercessors.app-jetified-lifecycle-viewmodel-savedstate-2.6.2-0 C:\Users\GWENJE\.gradle\caches\transforms-3\01c93cd4ec0d19899f7335de20c05972\transformed\jetified-lifecycle-viewmodel-savedstate-2.6.2\res
+com.globalintercessors.app-lifecycle-livedata-2.6.2-1 C:\Users\GWENJE\.gradle\caches\transforms-3\2dfbaffcc29475bfb5c1c095e7af2e36\transformed\lifecycle-livedata-2.6.2\res
+com.globalintercessors.app-jetified-activity-1.8.2-2 C:\Users\GWENJE\.gradle\caches\transforms-3\59695a07a75814e85a58a5df3b7863a6\transformed\jetified-activity-1.8.2\res
+com.globalintercessors.app-fragment-1.6.2-3 C:\Users\GWENJE\.gradle\caches\transforms-3\5d1bf12c048c05b630fcfa9c13b73d43\transformed\fragment-1.6.2\res
+com.globalintercessors.app-core-1.13.1-4 C:\Users\GWENJE\.gradle\caches\transforms-3\67446fac8eb0050170878ad73895ceb3\transformed\core-1.13.1\res
+com.globalintercessors.app-jetified-emoji2-views-helper-1.2.0-5 C:\Users\GWENJE\.gradle\caches\transforms-3\724f2b8941df33e1357ff6f1e1cc832d\transformed\jetified-emoji2-views-helper-1.2.0\res
+com.globalintercessors.app-jetified-annotation-experimental-1.4.0-6 C:\Users\GWENJE\.gradle\caches\transforms-3\752c2d61ec3dbf2ad408131e7d4c0067\transformed\jetified-annotation-experimental-1.4.0\res
+com.globalintercessors.app-jetified-savedstate-1.2.1-7 C:\Users\GWENJE\.gradle\caches\transforms-3\776204771705a6a0477a186db4fb0bcb\transformed\jetified-savedstate-1.2.1\res
+com.globalintercessors.app-lifecycle-runtime-2.6.2-8 C:\Users\GWENJE\.gradle\caches\transforms-3\783a25ca423b4940b5fece382e5fb430\transformed\lifecycle-runtime-2.6.2\res
+com.globalintercessors.app-coordinatorlayout-1.2.0-9 C:\Users\GWENJE\.gradle\caches\transforms-3\865d9fb414871d949563449e8d18ad92\transformed\coordinatorlayout-1.2.0\res
+com.globalintercessors.app-jetified-appcompat-resources-1.6.1-10 C:\Users\GWENJE\.gradle\caches\transforms-3\8d862c0c1dd176ceb0d20ef00f814399\transformed\jetified-appcompat-resources-1.6.1\res
+com.globalintercessors.app-jetified-startup-runtime-1.1.1-11 C:\Users\GWENJE\.gradle\caches\transforms-3\99b7c5ed7f050b47797a8683871f0873\transformed\jetified-startup-runtime-1.1.1\res
+com.globalintercessors.app-jetified-lifecycle-process-2.6.2-12 C:\Users\GWENJE\.gradle\caches\transforms-3\9aecbd63cabf8bd17a75974854b90273\transformed\jetified-lifecycle-process-2.6.2\res
+com.globalintercessors.app-jetified-profileinstaller-1.3.0-13 C:\Users\GWENJE\.gradle\caches\transforms-3\9cc75e9574c6c5197e075badfe505e91\transformed\jetified-profileinstaller-1.3.0\res
+com.globalintercessors.app-lifecycle-viewmodel-2.6.2-14 C:\Users\GWENJE\.gradle\caches\transforms-3\9d6969877b8f972c07dc400f2aca5c85\transformed\lifecycle-viewmodel-2.6.2\res
+com.globalintercessors.app-jetified-core-ktx-1.13.1-15 C:\Users\GWENJE\.gradle\caches\transforms-3\a083dba7cb6efd3bd5953b94dc237ad6\transformed\jetified-core-ktx-1.13.1\res
+com.globalintercessors.app-jetified-emoji2-1.2.0-16 C:\Users\GWENJE\.gradle\caches\transforms-3\a588b92adb8aa14c14ac9dc24d939796\transformed\jetified-emoji2-1.2.0\res
+com.globalintercessors.app-jetified-core-splashscreen-1.0.1-17 C:\Users\GWENJE\.gradle\caches\transforms-3\a8c5c816a8ec879baf5113b39c47c6ba\transformed\jetified-core-splashscreen-1.0.1\res
+com.globalintercessors.app-lifecycle-livedata-core-2.6.2-18 C:\Users\GWENJE\.gradle\caches\transforms-3\b922edf71052eb90ce34a27721ecff30\transformed\lifecycle-livedata-core-2.6.2\res
+com.globalintercessors.app-webkit-1.11.0-19 C:\Users\GWENJE\.gradle\caches\transforms-3\cfcd6724fe5922d0f9dc4223fd5e926c\transformed\webkit-1.11.0\res
+com.globalintercessors.app-core-runtime-2.2.0-20 C:\Users\GWENJE\.gradle\caches\transforms-3\e44c3ea0b5c843225cedff7075025d01\transformed\core-runtime-2.2.0\res
+com.globalintercessors.app-appcompat-1.6.1-21 C:\Users\GWENJE\.gradle\caches\transforms-3\f53c5c2ced8f9c709268bcea222fdc33\transformed\appcompat-1.6.1\res
+com.globalintercessors.app-debug-22 C:\Users\GWENJE\Desktop\GI APP GIT\Global_Intercessors\android\app\src\debug\res
+com.globalintercessors.app-main-23 C:\Users\GWENJE\Desktop\GI APP GIT\Global_Intercessors\android\app\src\main\res
+com.globalintercessors.app-pngs-24 C:\Users\GWENJE\Desktop\GI APP GIT\Global_Intercessors\build\app\generated\res\pngs\debug
+com.globalintercessors.app-resValues-25 C:\Users\GWENJE\Desktop\GI APP GIT\Global_Intercessors\build\app\generated\res\resValues\debug
+com.globalintercessors.app-packageDebugResources-26 C:\Users\GWENJE\Desktop\GI APP GIT\Global_Intercessors\build\app\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.globalintercessors.app-packageDebugResources-27 C:\Users\GWENJE\Desktop\GI APP GIT\Global_Intercessors\build\app\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.globalintercessors.app-merged_res-28 C:\Users\GWENJE\Desktop\GI APP GIT\Global_Intercessors\build\app\intermediates\merged_res\debug
+com.globalintercessors.app-packaged_res-29 C:\Users\GWENJE\Desktop\GI APP GIT\Global_Intercessors\build\capacitor-android\intermediates\packaged_res\debug
+com.globalintercessors.app-packaged_res-30 C:\Users\GWENJE\Desktop\GI APP GIT\Global_Intercessors\build\capacitor-cordova-android-plugins\intermediates\packaged_res\debug

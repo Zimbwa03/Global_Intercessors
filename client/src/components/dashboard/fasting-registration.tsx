@@ -116,12 +116,36 @@ export function FastingRegistration() {
       if (error) throw error;
       return result;
     },
-    onSuccess: () => {
+    onSuccess: async (result) => {
       setIsSubmitted(true);
       toast({
         title: "Registration Complete",
         description: `Thank you, ${formData.fullName}! Your registration is complete. Your location has been recorded.`
       });
+
+      // Send WhatsApp notification
+      try {
+        const response = await fetch('/api/fasting-registration/whatsapp-notification', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            phoneNumber: formData.phoneNumber,
+            fullName: formData.fullName,
+            registrationId: result.id
+          }),
+        });
+
+        if (response.ok) {
+          console.log('WhatsApp notification sent successfully');
+        } else {
+          console.error('Failed to send WhatsApp notification');
+        }
+      } catch (error) {
+        console.error('Error sending WhatsApp notification:', error);
+        // Don't show error to user since registration was successful
+      }
     },
     onError: (error) => {
       toast({
@@ -217,12 +241,12 @@ export function FastingRegistration() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <Card className="shadow-lg border-gi-primary/100">
-        <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-t-lg">
+      <Card className="shadow-lg border-gi-primary/20">
+        <CardHeader className="bg-gradient-to-r from-gi-primary to-gi-primary/90 text-white rounded-t-lg">
           <CardTitle className="text-center text-2xl font-bold">
-            3 Days & 3 Nights Fasting Program – June
+            3 Days & 3 Nights Fasting Program – August 28-31, 2025
           </CardTitle>
-          <p className="text-center text-gi-primary/100 mt-2">
+          <p className="text-center text-white mt-2">
             Join our special fasting and prayer program with transport reimbursement
           </p>
         </CardHeader>
@@ -347,7 +371,7 @@ export function FastingRegistration() {
             </div>
 
             {/* GPS Agreement Checkbox */}
-            <div className="flex items-start space-x-3 p-4 bg-gi-primary/50 dark:bg-gi-primary/900/20 rounded-lg">
+            <div className="flex items-start space-x-3 p-4 bg-gi-primary/10 dark:bg-gi-primary/20 rounded-lg border border-gi-primary/20">
               <Checkbox
                 id="gpsAgreement"
                 checked={formData.agreedToGPS}
@@ -356,7 +380,7 @@ export function FastingRegistration() {
                 }
                 className="mt-1"
               />
-              <Label htmlFor="gpsAgreement" className="text-sm leading-relaxed cursor-pointer">
+              <Label htmlFor="gpsAgreement" className="text-sm leading-relaxed cursor-pointer text-gi-primary">
                 I understand that my GPS location will be verified for transport reimbursement purposes. 
                 This location data will be used solely for verifying attendance at the fasting program venue.
               </Label>
@@ -365,7 +389,7 @@ export function FastingRegistration() {
             {/* Submit Button */}
             <Button 
               type="submit" 
-              className="w-full bg-gi-primary/600 hover:bg-gi-primary/700 text-white py-3 text-lg font-semibold"
+              className="w-full bg-gi-primary hover:bg-gi-primary/90 text-white py-3 text-lg font-semibold border-0"
               disabled={registrationMutation.isPending || locationStatus !== "success"}
             >
               {registrationMutation.isPending ? (
