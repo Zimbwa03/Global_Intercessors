@@ -635,9 +635,18 @@ export class WhatsAppPrayerBot {
 
         let userTimezone = (whatsappUser.timezone && whatsappUser.timezone.trim()) || 'Africa/Harare';
         
-        // Fix invalid timezone values
-        if (userTimezone === 'UTC+0' || userTimezone === 'UTC-0') {
+        // Fix invalid timezone values - normalize common invalid formats
+        if (userTimezone === 'UTC+0' || userTimezone === 'UTC-0' || userTimezone === 'UTC+00:00' || userTimezone === 'UTC-00:00') {
           userTimezone = 'UTC';
+        }
+        
+        // Additional validation - try to use the timezone and fallback if invalid
+        try {
+          // Test if timezone is valid by attempting to format a date with it
+          new Intl.DateTimeFormat('en-GB', { timeZone: userTimezone }).formatToParts(new Date());
+        } catch (error) {
+          console.log(`⚠️ Invalid timezone "${userTimezone}" for user ${whatsappUser.user_id}, falling back to Africa/Harare`);
+          userTimezone = 'Africa/Harare';
         }
 
         // Current time in user's timezone (minutes since midnight)
