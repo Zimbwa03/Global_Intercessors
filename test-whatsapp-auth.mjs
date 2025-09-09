@@ -10,7 +10,7 @@ async function testAuthenticationFlow() {
   console.log('==========================================');
   
   try {
-    const testPhone = '263785494594';
+    const testPhone = '263789117038';
     const testUserId = 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f';
     
     // Test the new simplified upsert approach

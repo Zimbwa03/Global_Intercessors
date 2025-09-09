@@ -2,7 +2,7 @@
 console.log('🧪 Testing User Data Lookup for WhatsApp Number');
 console.log('===============================================');
 
-const testPhoneNumber = '263785494594';
+const testPhoneNumber = '263789117038';
 
 console.log(`📱 Testing with WhatsApp number: +${testPhoneNumber}`);
 console.log('');

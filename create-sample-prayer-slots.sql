@@ -28,7 +28,7 @@ ON CONFLICT (user_id) DO UPDATE SET
 
 -- Insert corresponding WhatsApp bot user for testing
 INSERT INTO whatsapp_bot_users (user_id, whatsapp_number, is_active, reminder_preferences) VALUES
-('test-user-1', '263785494594', true, '{"reminderTiming": "30min", "enabled": true}')
+('test-user-1', '263789117038', true, '{"reminderTiming": "30min", "enabled": true}')
 ON CONFLICT (whatsapp_number) DO UPDATE SET
   user_id = EXCLUDED.user_id,
   is_active = EXCLUDED.is_active,

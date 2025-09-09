@@ -79,7 +79,7 @@ CREATE POLICY "service_role_daily_devotionals" ON daily_devotionals
 
 -- Insert sample WhatsApp bot user for testing
 INSERT INTO whatsapp_bot_users (user_id, whatsapp_number, reminder_preferences) 
-VALUES ('test-user-001', '263785494594', '{"reminderTiming": "30min", "enabled": true}')
+VALUES ('test-user-001', '263789117038', '{"reminderTiming": "30min", "enabled": true}')
 ON CONFLICT (whatsapp_number) DO NOTHING;
 
 -- Verify tables were created

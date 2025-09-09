@@ -1,11 +1,11 @@
-// Direct lookup of user details for +263785494594
+// Direct lookup of user details for +263789117038
 import { supabase } from './server/supabase.js';
 
 async function lookupUserDetails() {
-  console.log('🔍 LOOKING UP USER DETAILS FOR +263785494594');
+  console.log('🔍 LOOKING UP USER DETAILS FOR +263789117038');
   console.log('===============================================');
   
-  const phoneNumber = '263785494594';
+  const phoneNumber = '263789117038';
   
   try {
     // 1. Search user_profiles by phone field

@@ -39,7 +39,7 @@ async function testAuthenticationFlow() {
     
     // Test authentication with known credentials
     console.log('\n🔐 Testing authentication for known user...');
-    const testPhone = '263785494594';
+    const testPhone = '263789117038';
     
     // Check if record exists
     const { data: existingUser, error: checkError } = await supabase

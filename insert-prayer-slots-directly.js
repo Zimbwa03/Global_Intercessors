@@ -35,7 +35,7 @@ async function insertPrayerSlotsDirectly() {
     // Insert WhatsApp bot user
     const whatsappData = {
       user_id: 'auth_user_00001',
-      whatsapp_number: '263785494594',
+      whatsapp_number: '263789117038',
       is_active: true,
       reminder_preferences: { reminderTiming: "30min", enabled: true }
     };

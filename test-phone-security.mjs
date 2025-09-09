@@ -22,7 +22,7 @@ console.log('');
 console.log('✅ 2. PHONE NUMBER NORMALIZATION:');
 console.log('   • Removes spaces, dashes, plus signs, parentheses');
 console.log('   • Ensures accurate comparison regardless of format');
-console.log('   • Example: "+263 78-549-4594" = "263785494594"');
+console.log('   • Example: "+263 78-911-7038" = "263789117038"');
 console.log('');
 
 console.log('✅ 3. COMPREHENSIVE ERROR MESSAGES:');

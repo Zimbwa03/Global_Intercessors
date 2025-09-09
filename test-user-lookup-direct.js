@@ -2,11 +2,11 @@
 import { whatsAppBot } from './server/services/whatsapp-bot-v2.js';
 
 async function testUserLookupDirect() {
-  console.log('🧪 Testing Direct User Lookup for WhatsApp +263785494594');
+  console.log('🧪 Testing Direct User Lookup for WhatsApp +263789117038');
   console.log('===========================================================');
   
   try {
-    const testPhone = '263785494594';
+    const testPhone = '263789117038';
     console.log(`📱 Testing with WhatsApp number: ${testPhone}`);
     console.log('');
     

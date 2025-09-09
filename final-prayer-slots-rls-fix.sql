@@ -3,7 +3,7 @@
 
 -- Step 1: Insert WhatsApp bot users with proper structure
 INSERT INTO "public"."whatsapp_bot_users" (user_id, whatsapp_number, is_active, reminder_preferences) VALUES
-('auth_user_00001', '263785494594', true, '{"reminderTiming": "30min", "enabled": true}'),
+('auth_user_00001', '263789117038', true, '{"reminderTiming": "30min", "enabled": true}'),
 ('auth_user_00002', '263785494595', true, '{"reminderTiming": "30min", "enabled": true}'),
 ('auth_user_00003', '263785494596', true, '{"reminderTiming": "30min", "enabled": true}')
 ON CONFLICT (whatsapp_number) DO UPDATE SET

@@ -1,4 +1,4 @@
-// Test script to trace user lookup process for WhatsApp +263785494594
+// Test script to trace user lookup process for WhatsApp +263789117038
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.DATABASE_URL?.includes('supabase') 
@@ -9,10 +9,10 @@ const supabaseKey = process.env.SUPABASE_ANON_KEY || 'your_anon_key_here';
 const supabase = createClient(`https://${supabaseUrl}`, supabaseKey);
 
 async function traceUserLookup() {
-  console.log('🔍 TRACING USER LOOKUP FOR +263785494594');
+  console.log('🔍 TRACING USER LOOKUP FOR +263789117038');
   console.log('===============================================');
   
-  const phoneNumber = '263785494594';
+  const phoneNumber = '263789117038';
   console.log(`📱 Testing WhatsApp number: ${phoneNumber}`);
   
   try {

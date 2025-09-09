@@ -5,7 +5,7 @@ async function testNgoniData() {
   console.log('🎯 TESTING NGONIDZASHE ZIMBWA DATA RETRIEVAL');
   console.log('===========================================');
   
-  const phoneNumber = '263785494594';
+  const phoneNumber = '263789117038';
   const userId = 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f';
   
   try {

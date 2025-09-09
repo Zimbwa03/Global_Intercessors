@@ -92,7 +92,7 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 -- 9. Create sample prayer slots for testing
 INSERT INTO prayer_slots (user_id, user_email, slot_time, status, missed_count, created_at, updated_at)
 VALUES 
-  ('whatsapp_user_263785494594', 'test@example.com', '06:00–06:30', 'active', 0, NOW(), NOW()),
+  ('whatsapp_user_263789117038', 'test@example.com', '06:00–06:30', 'active', 0, NOW(), NOW()),
   ('whatsapp_user_263785494595', 'test2@example.com', '09:00–09:30', 'active', 0, NOW(), NOW()),
   ('whatsapp_user_263785494596', 'test3@example.com', '15:00–15:30', 'active', 0, NOW(), NOW())
 ON CONFLICT (user_id) DO UPDATE SET

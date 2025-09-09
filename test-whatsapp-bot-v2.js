@@ -19,11 +19,11 @@ async function testWhatsAppBotV2() {
     console.log('\n3️⃣ Testing Command Processing...');
     
     const testCommands = [
-      { phone: '263785494594', message: 'start', id: 'test_1' },
-      { phone: '263785494594', message: 'help', id: 'test_2' },
-      { phone: '263785494594', message: '/remind', id: 'test_3' },
-      { phone: '263785494594', message: '/devotional', id: 'test_4' },
-      { phone: '263785494594', message: 'unknown command', id: 'test_5' }
+      { phone: '263789117038', message: 'start', id: 'test_1' },
+      { phone: '263789117038', message: 'help', id: 'test_2' },
+      { phone: '263789117038', message: '/remind', id: 'test_3' },
+      { phone: '263789117038', message: '/devotional', id: 'test_4' },
+      { phone: '263789117038', message: 'unknown command', id: 'test_5' }
     ];
     
     for (const cmd of testCommands) {
@@ -40,7 +40,7 @@ async function testWhatsAppBotV2() {
         changes: [{
           value: {
             messages: [{
-              from: '263785494594',
+              from: '263789117038',
               id: 'webhook_test_1',
               type: 'text',
               text: { body: '/help' }

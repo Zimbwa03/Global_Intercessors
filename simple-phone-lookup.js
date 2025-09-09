@@ -1,14 +1,14 @@
 // Simple direct phone lookup using Supabase connection from WhatsApp bot
-console.log('🔍 DIRECT PHONE LOOKUP FOR +263785494594');
+console.log('🔍 DIRECT PHONE LOOKUP FOR +263789117038');
 console.log('=========================================');
 
-const phoneNumber = '263785494594';
+const phoneNumber = '263789117038';
 
 // First, let's see what we can access from the running system
 console.log('Phone number to search:', phoneNumber);
 console.log('Variations to try:');
-console.log('  - 263785494594');
-console.log('  - +263785494594');
+console.log('  - 263789117038');
+console.log('  - +263789117038');
 console.log('  - 785494594');
 
 // From the logs, we know there's user data:
@@ -22,7 +22,7 @@ console.log('✅ User profiles found: 1');
 console.log('✅ Sample user email: nyaraiseda26@gmail.com');
 console.log('✅ Sample prayer slot: 14:30–15:00');
 
-console.log('\nThe phone number +263785494594 should be linked to a user in the database.');
+console.log('\nThe phone number +263789117038 should be linked to a user in the database.');
 console.log('When the WhatsApp bot processes /start, it will:');
 console.log('1. Search user_profiles.phone field for this number');
 console.log('2. Find the matching user record');

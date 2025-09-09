@@ -1,11 +1,11 @@
-// Direct database check for user +263785494594
+// Direct database check for user +263789117038
 import { supabase } from './server/supabase.js';
 
 async function checkUserDataDirect() {
-  console.log('🔍 DIRECT DATABASE CHECK FOR +263785494594');
+  console.log('🔍 DIRECT DATABASE CHECK FOR +263789117038');
   console.log('==============================================');
   
-  const phoneNumber = '263785494594';
+  const phoneNumber = '263789117038';
   
   try {
     console.log('\n📱 1. Checking whatsapp_bot_users table...');
