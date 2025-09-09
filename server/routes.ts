@@ -73,6 +73,62 @@ async function getUserEmail(userId: string): Promise<string | null> {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Test Zoom credentials and authentication
+  app.get("/api/admin/test-zoom", async (req: Request, res: Response) => {
+    try {
+      const clientId = process.env.ZOOM_CLIENT_ID || '';
+      const clientSecret = process.env.ZOOM_API_SECRET || '';
+      const accountId = process.env.ZOOM_ACCOUNT_ID || '';
+
+      const testResult: any = {
+        credentials_present: {
+          client_id: !!clientId,
+          client_secret: !!clientSecret,
+          account_id: !!accountId
+        },
+        credential_lengths: {
+          client_id: clientId.length,
+          client_secret: clientSecret.length,
+          account_id: accountId.length
+        },
+        client_id_preview: clientId ? `${clientId.substring(0, 8)}...` : 'MISSING',
+        account_id_preview: accountId ? `${accountId.substring(0, 8)}...` : 'MISSING'
+      };
+
+      // Try to get access token
+      if (clientId && clientSecret && accountId) {
+        try {
+          const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+          const payload = `grant_type=account_credentials&account_id=${accountId}`;
+          
+          const response = await axios.post('https://zoom.us/oauth/token', payload, {
+            headers: {
+              'Authorization': `Basic ${credentials}`,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          });
+
+          testResult.auth_test = {
+            success: true,
+            token_type: response.data.token_type,
+            expires_in: response.data.expires_in
+          };
+        } catch (error: any) {
+          testResult.auth_test = {
+            success: false,
+            error: error.response?.data || error.message,
+            status: error.response?.status
+          };
+        }
+      }
+
+      res.json(testResult);
+    } catch (error) {
+      console.error('Error testing Zoom credentials:', error);
+      res.status(500).json({ error: 'Failed to test Zoom credentials' });
+    }
+  });
+
   // Get user's attendance records
   app.get("/api/attendance/:userId", async (req: Request, res: Response) => {
     try {

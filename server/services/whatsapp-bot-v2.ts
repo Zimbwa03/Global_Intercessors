@@ -633,7 +633,12 @@ export class WhatsAppPrayerBot {
         const whatsappUser = whatsappUsers.find(user => user.user_id === slot.user_id);
         if (!whatsappUser) continue;
 
-        const userTimezone = (whatsappUser.timezone && whatsappUser.timezone.trim()) || 'Africa/Harare';
+        let userTimezone = (whatsappUser.timezone && whatsappUser.timezone.trim()) || 'Africa/Harare';
+        
+        // Fix invalid timezone values
+        if (userTimezone === 'UTC+0' || userTimezone === 'UTC-0') {
+          userTimezone = 'UTC';
+        }
 
         // Current time in user's timezone (minutes since midnight)
         const parts = new Intl.DateTimeFormat('en-GB', {

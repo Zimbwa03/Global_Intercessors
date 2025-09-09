@@ -633,7 +633,7 @@ class ZoomAttendanceTracker {
           const flexEnd = slotEnd.add(15, 'minute');
 
           return now.isBetween(flexStart, flexEnd, null, '[]');
-        } catch (error) {
+        } catch (error: any) {
           console.log(`⚠️ Error parsing slot_time for slot ${slot.id}:`, error.message);
           return false;
         }
