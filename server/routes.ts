@@ -3189,7 +3189,7 @@ Respond in JSON format as an array:
       if (!planId) {
         const { data: created, error: createError } = await supabaseAdmin
           .from('prayer_plans')
-          .insert({ user_id: userId, title: 'Daily Prayer Plan', plan_date: date, status: 'active' })
+          .insert({ user_id: userId, title: 'Daily Prayer Plan', plan_date: date })
           .select('*')
           .single();
 

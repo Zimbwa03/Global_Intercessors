@@ -19,7 +19,8 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
   auth: {
     autoRefreshToken: false,
-    persistSession: false
+    persistSession: false,
+    detectSessionInUrl: false
   },
   db: {
     schema: 'public'
