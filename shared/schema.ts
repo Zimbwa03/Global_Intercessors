@@ -469,6 +469,42 @@ export const insertWhatsAppInteractionSchema = createInsertSchema(whatsAppIntera
   timestamp: true,
 });
 
+// Prayer Planner tables
+export const prayerPlans = pgTable("prayer_plans", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  title: text("title").notNull(),
+  planDate: text("plan_date").notNull(), // Date in YYYY-MM-DD format
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const prayerPoints = pgTable("prayer_points", {
+  id: serial("id").primaryKey(),
+  prayerPlanId: text("prayer_plan_id").notNull().references(() => prayerPlans.id),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  notes: text("notes").default(""),
+  category: text("category").notNull().default("personal"),
+  isCompleted: boolean("is_completed").notNull().default(false),
+  orderPosition: integer("order_position").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertPrayerPlanSchema = createInsertSchema(prayerPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPrayerPointSchema = createInsertSchema(prayerPoints).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type IntercessorSchedule = typeof intercessorSchedules.$inferSelect;
 export type InsertIntercessorSchedule = z.infer<typeof insertIntercessorScheduleSchema>;
 export type PrayerAttendance = typeof prayerAttendance.$inferSelect;
@@ -506,3 +542,7 @@ export type InsertWhatsAppMessage = z.infer<typeof insertWhatsAppMessageSchema>;
 export type InsertWhatsAppInteraction = z.infer<typeof insertWhatsAppInteractionSchema>;
 export type DailyDevotional = typeof dailyDevotionals.$inferSelect;
 export type InsertDailyDevotional = z.infer<typeof insertDailyDevotionalSchema>;
+export type PrayerPlan = typeof prayerPlans.$inferSelect;
+export type InsertPrayerPlan = z.infer<typeof insertPrayerPlanSchema>;
+export type PrayerPoint = typeof prayerPoints.$inferSelect;
+export type InsertPrayerPoint = z.infer<typeof insertPrayerPointSchema>;
