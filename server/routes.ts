@@ -3200,10 +3200,10 @@ Respond in JSON format as an array:
         planId = created.id;
       }
 
-      // Load points
+      // Load points - only select fields we know exist
       const { data: points, error: pointsError } = await supabaseAdmin
         .from('prayer_points')
-        .select('*')
+        .select('id, prayer_plan_id, title, content, category, is_completed, order_position, created_at, updated_at')
         .eq('prayer_plan_id', planId)
         .order('order_position', { ascending: true });
 
@@ -3222,7 +3222,7 @@ Respond in JSON format as an array:
           id: p.id,
           title: p.title,
           content: p.content,
-          notes: p.notes || '',
+          notes: '', // Notes field will be added later
           category: p.category || 'personal',
           isCompleted: p.is_completed || false,
           createdAt: p.created_at,
@@ -3286,12 +3286,11 @@ Respond in JSON format as an array:
           prayer_plan_id: planId,
           title,
           content,
-          notes: notes || '',
           category,
           is_completed: false,
           order_position: nextOrder,
         })
-        .select('*')
+        .select('id, prayer_plan_id, title, content, category, is_completed, order_position, created_at, updated_at')
         .single();
 
       if (insertErr) {
@@ -3317,12 +3316,11 @@ Respond in JSON format as an array:
         .update({
           title: updates.title,
           content: updates.content,
-          notes: updates.notes,
           category: updates.category,
           is_completed: updates.isCompleted,
         })
         .eq('id', id)
-        .select('*')
+        .select('id, prayer_plan_id, title, content, category, is_completed, order_position, created_at, updated_at')
         .single();
 
       if (error) {

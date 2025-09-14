@@ -485,7 +485,6 @@ export const prayerPoints = pgTable("prayer_points", {
   prayerPlanId: text("prayer_plan_id").notNull().references(() => prayerPlans.id),
   title: text("title").notNull(),
   content: text("content").notNull(),
-  notes: text("notes").default(""),
   category: text("category").notNull().default("personal"),
   isCompleted: boolean("is_completed").notNull().default(false),
   orderPosition: integer("order_position").notNull().default(1),

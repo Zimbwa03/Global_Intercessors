@@ -1,0 +1,432 @@
+ message: "Could not find the 'notes' column of 'prayer_points' in the schema cache"
+}
+5:12:36 AM [express] POST /api/prayer-planner/points 500 in 873ms :: {"error":"Failed to create pray…
+🔍 Checking prayer slot reminders using Supabase...
+🔍 Testing Supabase connection...
+🔗 Supabase URL: https://lmhbvdxainxcjuveisfe.supabase.co...
+🔗 Supabase connection test: { success: true, error: undefined }
+📊 Database connection successful - checking for prayer slots data
+🔍 Querying prayer_slots table directly...
+🔴 LIVE: 1 prayer slots are currently active!
+❌ Error fetching prayer slots for reminders: {
+  code: 'PGRST200',
+  details: "Searched for a foreign key relationship between 'prayer_slots' and 'user_profiles' in the schema 'public', but no matches were found.",
+  hint: null,
+  message: "Could not find a relationship between 'prayer_slots' and 'user_profiles' in the schema cache"
+}
+Error checking live meetings: AxiosError: Request failed with status code 400
+    at settle (file:///home/runner/workspace/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///home/runner/workspace/node_modules/axios/lib/adapters/http.js:599:11)
+    at IncomingMessage.emit (node:events:536:35)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+    at Axios.request (file:///home/runner/workspace/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async ZoomAttendanceTracker.checkLiveMeetings (/home/runner/workspace/server/services/zoomAttendanceTracker.ts:662:24)
+    at async ZoomAttendanceTracker.checkActiveSlots (/home/runner/workspace/server/services/zoomAttendanceTracker.ts:646:9)
+    at async <anonymous> (/home/runner/workspace/server/services/zoomAttendanceTracker.ts:124:9)
+    at async Timeout._onTimeout (/home/runner/workspace/node_modules/node-cron/src/scheduler/runner.ts:100:30) {
+  code: 'ERR_BAD_REQUEST',
+  config: {
+    transitional: {
+      silentJSONParsing: true,
+      forcedJSONParsing: true,
+      clarifyTimeoutError: false
+    },
+    adapter: [ 'xhr', 'http', 'fetch' ],
+    transformRequest: [ [Function: transformRequest] ],
+    transformResponse: [ [Function: transformResponse] ],
+    timeout: 0,
+    xsrfCookieName: 'XSRF-TOKEN',
+    xsrfHeaderName: 'X-XSRF-TOKEN',
+    maxContentLength: -1,
+    maxBodyLength: -1,
+    env: { FormData: [Function [FormData]], Blob: [class Blob] },
+    validateStatus: [Function: validateStatus],
+    headers: Object [AxiosHeaders] {
+      Accept: 'application/json, text/plain, */*',
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer eyJzdiI6IjAwMDAwMiIsImFsZyI6IkhTNTEyIiwidiI6IjIuMCIsImtpZCI6IjQ0YjkzYmJiLWY5NjQtNGY5OC1hM2MyLWU5MDVmY2EyYTBmNCJ9.eyJhdWQiOiJodHRwczovL29hdXRoLnpvb20udXMiLCJ1aWQiOiJLODdGYW1BRlNWcUptUlVwYzZGM1l3IiwidmVyIjoxMCwiYXVpZCI6IjhlNzZmNDVkMjhiNzEzMmVjMDc5YTVmMmZkNWEyNzMyOGE3ZDJiYWI4MTI1NDlhMzE2YTExNTRiMDQ3YTE0NmUiLCJuYmYiOjE3NTc4MTk0MDAsImNvZGUiOiJsME5GdlhKRlNwcVh6LTJOdTdIam5BSEQ3YzJ4NTVLamciLCJpc3MiOiJ6bTpjaWQ6OWhmNDBCQ1RSdktqOE9zR1JSdV81USIsImdubyI6MCwiZXhwIjoxNzU3ODIzMDAwLCJ0eXBlIjozLCJpYXQiOjE3NTc4MTk0MDAsImFpZCI6Ilg5UTMyalEyUmt5aTFHUG9ydGtBdVEifQ.6mr4yYVMK8GlpnOgnP4-fw4228oECcJxoZZyKQiG7vjVxJdX8XFsLIIx15MDg8qlXxh2W98ZNInrBPi_bjv2eg',
+      'User-Agent': 'axios/1.9.0',
+      'Accept-Encoding': 'gzip, compress, deflate, br'
+    },
+    params: { type: 'live', page_size: 100 },
+    method: 'get',
+    url: 'https://api.zoom.us/v2/users/me/meetings',
+    allowAbsoluteUrls: true,
+    data: undefined
+  },
+  request: <ref *1> ClientRequest {
+    _events: [Object: null prototype] {
+      abort: [Function (anonymous)],
+      aborted: [Function (anonymous)],
+      connect: [Function (anonymous)],
+      error: [Function (anonymous)],
+      socket: [Function (anonymous)],
+      timeout: [Function (anonymous)],
+      finish: [Function: requestOnFinish]
+    },
+    _eventsCount: 7,
+    _maxListeners: undefined,
+    outputData: [],
+    outputSize: 0,
+    writable: true,
+    destroyed: true,
+    _last: true,
+    chunkedEncoding: false,
+    shouldKeepAlive: true,
+    maxRequestsOnConnectionReached: false,
+    _defaultKeepAlive: true,
+    useChunkedEncodingByDefault: false,
+    sendDate: false,
+    _removedConnection: false,
+    _removedContLen: false,
+    _removedTE: false,
+    strictContentLength: false,
+    _contentLength: 0,
+    _hasBody: true,
+    _trailer: '',
+    finished: true,
+    _headerSent: true,
+    _closed: true,
+    socket: TLSSocket {
+      _tlsOptions: [Object],
+      _secureEstablished: true,
+      _securePending: false,
+      _newSessionPending: false,
+      _controlReleased: true,
+      secureConnecting: false,
+      _SNICallback: null,
+      servername: 'api.zoom.us',
+      alpnProtocol: false,
+      authorized: true,
+      authorizationError: null,
+      encrypted: true,
+      _events: [Object: null prototype],
+      _eventsCount: 9,
+      connecting: false,
+      _hadError: false,
+      _parent: null,
+      _host: 'api.zoom.us',
+      _closeAfterHandlingError: false,
+      _readableState: [ReadableState],
+      _writableState: [WritableState],
+      allowHalfOpen: false,
+      _maxListeners: undefined,
+      _sockname: null,
+      _pendingData: null,
+      _pendingEncoding: '',
+      server: undefined,
+      _server: null,
+      ssl: [TLSWrap],
+      _requestCert: true,
+      _rejectUnauthorized: true,
+      timeout: 5000,
+      parser: null,
+      _httpMessage: null,
+      [Symbol(alpncallback)]: null,
+      [Symbol(res)]: [TLSWrap],
+      [Symbol(verified)]: true,
+      [Symbol(pendingSession)]: null,
+      [Symbol(async_id_symbol)]: -1,
+      [Symbol(kHandle)]: [TLSWrap],
+      [Symbol(lastWriteQueueSize)]: 0,
+      [Symbol(timeout)]: Timeout {
+        _idleTimeout: 5000,
+        _idlePrev: [TimersList],
+        _idleNext: [TimersList],
+        _idleStart: 29710175,
+        _onTimeout: [Function: bound ],
+        _timerArgs: undefined,
+        _repeat: null,
+        _destroyed: false,
+        [Symbol(refed)]: false,
+        [Symbol(kHasPrimitive)]: false,
+        [Symbol(asyncId)]: 356295,
+        [Symbol(triggerId)]: 356293
+      },
+      [Symbol(kBuffer)]: null,
+      [Symbol(kBufferCb)]: null,
+      [Symbol(kBufferGen)]: null,
+      [Symbol(shapeMode)]: true,
+      [Symbol(kCapture)]: false,
+      [Symbol(kSetNoDelay)]: false,
+      [Symbol(kSetKeepAlive)]: true,
+      [Symbol(kSetKeepAliveInitialDelay)]: 1,
+      [Symbol(kBytesRead)]: 0,
+      [Symbol(kBytesWritten)]: 0,
+      [Symbol(connect-options)]: [Object]
+    },
+    _header: 'GET /v2/users/me/meetings?type=live&page_size=100 HTTP/1.1\r\n' +
+      'Accept: application/json, text/plain, */*\r\n' +
+      'Content-Type: application/json\r\n' +
+      'Authorization: Bearer eyJzdiI6IjAwMDAwMiIsImFsZyI6IkhTNTEyIiwidiI6IjIuMCIsImtpZCI6IjQ0YjkzYmJiLWY5NjQtNGY5OC1hM2MyLWU5MDVmY2EyYTBmNCJ9.eyJhdWQiOiJodHRwczovL29hdXRoLnpvb20udXMiLCJ1aWQiOiJLODdGYW1BRlNWcUptUlVwYzZGM1l3IiwidmVyIjoxMCwiYXVpZCI6IjhlNzZmNDVkMjhiNzEzMmVjMDc5YTVmMmZkNWEyNzMyOGE3ZDJiYWI4MTI1NDlhMzE2YTExNTRiMDQ3YTE0NmUiLCJuYmYiOjE3NTc4MTk0MDAsImNvZGUiOiJsME5GdlhKRlNwcVh6LTJOdTdIam5BSEQ3YzJ4NTVLamciLCJpc3MiOiJ6bTpjaWQ6OWhmNDBCQ1RSdktqOE9zR1JSdV81USIsImdubyI6MCwiZXhwIjoxNzU3ODIzMDAwLCJ0eXBlIjozLCJpYXQiOjE3NTc4MTk0MDAsImFpZCI6Ilg5UTMyalEyUmt5aTFHUG9ydGtBdVEifQ.6mr4yYVMK8GlpnOgnP4-fw4228oECcJxoZZyKQiG7vjVxJdX8XFsLIIx15MDg8qlXxh2W98ZNInrBPi_bjv2eg\r\n' +
+      'User-Agent: axios/1.9.0\r\n' +
+      'Accept-Encoding: gzip, compress, deflate, br\r\n' +
+      'Host: api.zoom.us\r\n' +
+      'Connection: keep-alive\r\n' +
+      '\r\n',
+    _keepAliveTimeout: 0,
+    _onPendingData: [Function: nop],
+    agent: Agent {
+      _events: [Object: null prototype],
+      _eventsCount: 2,
+      _maxListeners: undefined,
+      defaultPort: 443,
+      protocol: 'https:',
+      options: [Object: null prototype],
+      requests: [Object: null prototype] {},
+      sockets: [Object: null prototype] {},
+      freeSockets: [Object: null prototype],
+      keepAliveMsecs: 1000,
+      keepAlive: true,
+      maxSockets: Infinity,
+      maxFreeSockets: 256,
+      scheduling: 'lifo',
+      maxTotalSockets: Infinity,
+      totalSocketCount: 1,
+      maxCachedSessions: 100,
+      _sessionCache: [Object],
+      [Symbol(shapeMode)]: false,
+      [Symbol(kCapture)]: false
+    },
+    socketPath: undefined,
+    method: 'GET',
+    maxHeaderSize: undefined,
+    insecureHTTPParser: undefined,
+    joinDuplicateHeaders: undefined,
+    path: '/v2/users/me/meetings?type=live&page_size=100',
+    _ended: true,
+    res: IncomingMessage {
+      _events: [Object],
+      _readableState: [ReadableState],
+      _maxListeners: undefined,
+      socket: null,
+      httpVersionMajor: 1,
+      httpVersionMinor: 1,
+      httpVersion: '1.1',
+      complete: true,
+      rawHeaders: [Array],
+      rawTrailers: [],
+      joinDuplicateHeaders: undefined,
+      aborted: false,
+      upgrade: false,
+      url: '',
+      method: null,
+      statusCode: 400,
+      statusMessage: 'Bad Request',
+      client: [TLSSocket],
+      _consuming: false,
+      _dumped: false,
+      req: [Circular *1],
+      _eventsCount: 4,
+      responseUrl: 'https://api.zoom.us/v2/users/me/meetings?type=live&page_size=100',
+      redirects: [],
+      [Symbol(shapeMode)]: true,
+      [Symbol(kCapture)]: false,
+      [Symbol(kHeaders)]: [Object],
+      [Symbol(kHeadersCount)]: 60,
+      [Symbol(kTrailers)]: null,
+      [Symbol(kTrailersCount)]: 0
+    },
+    aborted: false,
+    timeoutCb: null,
+    upgradeOrConnect: false,
+    parser: null,
+    maxHeadersCount: null,
+    reusedSocket: false,
+    host: 'api.zoom.us',
+    protocol: 'https:',
+    _redirectable: Writable {
+      _events: [Object],
+      _writableState: [WritableState],
+      _maxListeners: undefined,
+      _options: [Object],
+      _ended: true,
+      _ending: true,
+      _redirectCount: 0,
+      _redirects: [],
+      _requestBodyLength: 0,
+      _requestBodyBuffers: [],
+      _eventsCount: 3,
+      _onNativeResponse: [Function (anonymous)],
+      _currentRequest: [Circular *1],
+      _currentUrl: 'https://api.zoom.us/v2/users/me/meetings?type=live&page_size=100',
+      [Symbol(shapeMode)]: true,
+      [Symbol(kCapture)]: false
+    },
+    [Symbol(shapeMode)]: false,
+    [Symbol(kCapture)]: false,
+    [Symbol(kBytesWritten)]: 0,
+    [Symbol(kNeedDrain)]: false,
+    [Symbol(corked)]: 0,
+    [Symbol(kOutHeaders)]: [Object: null prototype] {
+      accept: [Array],
+      'content-type': [Array],
+      authorization: [Array],
+      'user-agent': [Array],
+      'accept-encoding': [Array],
+      host: [Array]
+    },
+    [Symbol(errored)]: null,
+    [Symbol(kHighWaterMark)]: 16384,
+    [Symbol(kRejectNonStandardBodyWrites)]: false,
+    [Symbol(kUniqueHeaders)]: null
+  },
+  response: {
+    status: 400,
+    statusText: 'Bad Request',
+    headers: Object [AxiosHeaders] {
+      date: 'Sun, 14 Sep 2025 03:13:00 GMT',
+      'content-type': 'application/json;charset=UTF-8',
+      'content-length': '135',
+      connection: 'keep-alive',
+      'x-zm-trackingid': 'v=2.0;clid=us06;rid=WEB_375edaf7507810c8810873b08719cece',
+      'x-content-type-options': 'nosniff',
+      'cache-control': 'no-cache, no-store, must-revalidate, no-transform',
+      pragma: 'no-cache',
+      expires: 'Thu, 01 Jan 1970 00:00:00 GMT',
+      'set-cookie': [Array],
+      vary: 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers',
+      'x-ratelimit-category': 'Medium',
+      'x-zm-zoneid': 'VA',
+      'cf-cache-status': 'DYNAMIC',
+      'report-to': '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v4?s=x%2BR6rUn3L4ozAXBWvKQa%2BKa7W5Ums5VLeLwpPc7rRdhoStFwYDU16zuUs8QCcdQBETNZvOKJxT0GxPeXwdvqn7%2FVmgzlF8opPFDIMYIiqvJ0OLC1J%2B8hIJpVbbrl"}],"group":"cf-nel","max_age":604800}',
+      nel: '{"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}',
+      server: 'cloudflare',
+      'cf-ray': '97ecb4b949ba76b4-SEA',
+      'alt-svc': 'h3=":443"; ma=86400'
+    },
+    config: {
+      transitional: [Object],
+      adapter: [Array],
+      transformRequest: [Array],
+      transformResponse: [Array],
+      timeout: 0,
+      xsrfCookieName: 'XSRF-TOKEN',
+      xsrfHeaderName: 'X-XSRF-TOKEN',
+      maxContentLength: -1,
+      maxBodyLength: -1,
+      env: [Object],
+      validateStatus: [Function: validateStatus],
+      headers: [Object [AxiosHeaders]],
+      params: [Object],
+      method: 'get',
+      url: 'https://api.zoom.us/v2/users/me/meetings',
+      allowAbsoluteUrls: true,
+      data: undefined
+    },
+    request: <ref *1> ClientRequest {
+      _events: [Object: null prototype],
+      _eventsCount: 7,
+      _maxListeners: undefined,
+      outputData: [],
+      outputSize: 0,
+      writable: true,
+      destroyed: true,
+      _last: true,
+      chunkedEncoding: false,
+      shouldKeepAlive: true,
+      maxRequestsOnConnectionReached: false,
+      _defaultKeepAlive: true,
+      useChunkedEncodingByDefault: false,
+      sendDate: false,
+      _removedConnection: false,
+      _removedContLen: false,
+      _removedTE: false,
+      strictContentLength: false,
+      _contentLength: 0,
+      _hasBody: true,
+      _trailer: '',
+      finished: true,
+      _headerSent: true,
+      _closed: true,
+      socket: [TLSSocket],
+      _header: 'GET /v2/users/me/meetings?type=live&page_size=100 HTTP/1.1\r\n' +
+        'Accept: application/json, text/plain, */*\r\n' +
+        'Content-Type: application/json\r\n' +
+        'Authorization: Bearer eyJzdiI6IjAwMDAwMiIsImFsZyI6IkhTNTEyIiwidiI6IjIuMCIsImtpZCI6IjQ0YjkzYmJiLWY5NjQtNGY5OC1hM2MyLWU5MDVmY2EyYTBmNCJ9.eyJhdWQiOiJodHRwczovL29hdXRoLnpvb20udXMiLCJ1aWQiOiJLODdGYW1BRlNWcUptUlVwYzZGM1l3IiwidmVyIjoxMCwiYXVpZCI6IjhlNzZmNDVkMjhiNzEzMmVjMDc5YTVmMmZkNWEyNzMyOGE3ZDJiYWI4MTI1NDlhMzE2YTExNTRiMDQ3YTE0NmUiLCJuYmYiOjE3NTc4MTk0MDAsImNvZGUiOiJsME5GdlhKRlNwcVh6LTJOdTdIam5BSEQ3YzJ4NTVLamciLCJpc3MiOiJ6bTpjaWQ6OWhmNDBCQ1RSdktqOE9zR1JSdV81USIsImdubyI6MCwiZXhwIjoxNzU3ODIzMDAwLCJ0eXBlIjozLCJpYXQiOjE3NTc4MTk0MDAsImFpZCI6Ilg5UTMyalEyUmt5aTFHUG9ydGtBdVEifQ.6mr4yYVMK8GlpnOgnP4-fw4228oECcJxoZZyKQiG7vjVxJdX8XFsLIIx15MDg8qlXxh2W98ZNInrBPi_bjv2eg\r\n' +
+        'User-Agent: axios/1.9.0\r\n' +
+        'Accept-Encoding: gzip, compress, deflate, br\r\n' +
+        'Host: api.zoom.us\r\n' +
+        'Connection: keep-alive\r\n' +
+        '\r\n',
+      _keepAliveTimeout: 0,
+      _onPendingData: [Function: nop],
+      agent: [Agent],
+      socketPath: undefined,
+      method: 'GET',
+      maxHeaderSize: undefined,
+      insecureHTTPParser: undefined,
+      joinDuplicateHeaders: undefined,
+      path: '/v2/users/me/meetings?type=live&page_size=100',
+      _ended: true,
+      res: [IncomingMessage],
+      aborted: false,
+      timeoutCb: null,
+      upgradeOrConnect: false,
+      parser: null,
+      maxHeadersCount: null,
+      reusedSocket: false,
+      host: 'api.zoom.us',
+      protocol: 'https:',
+      _redirectable: [Writable],
+      [Symbol(shapeMode)]: false,
+      [Symbol(kCapture)]: false,
+      [Symbol(kBytesWritten)]: 0,
+      [Symbol(kNeedDrain)]: false,
+      [Symbol(corked)]: 0,
+      [Symbol(kOutHeaders)]: [Object: null prototype],
+      [Symbol(errored)]: null,
+      [Symbol(kHighWaterMark)]: 16384,
+      [Symbol(kRejectNonStandardBodyWrites)]: false,
+      [Symbol(kUniqueHeaders)]: null
+    },
+    data: {
+      code: 4711,
+      message: 'Invalid access token, does not contain scopes:[meeting:read:list_meetings, meeting:read:list_meetings:admin].'
+    }
+  },
+  status: 400
+}
+📊 ALL prayer_slots query result: {
+  count: 11,
+  error: undefined,
+  sample: {
+    id: 26,
+    user_id: 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f',
+    user_email: 'neezykidngoni@gmail.com',
+    slot_time: '22:00–22:30',
+    status: 'active',
+    missed_count: 22,
+    skip_start_date: null,
+    skip_end_date: null,
+    created_at: '2025-09-13T17:49:19.561423',
+    updated_at: '2025-09-13T21:55:04.009',
+    zoom_meeting_id: null,
+    zoom_join_url: null,
+    zoom_start_url: null,
+    start_time: null,
+    end_time: null,
+    reminder_time: 30,
+    custom_reminders: true,
+    timezone: 'Africa/Harare',
+    last_reminder_sent: null
+  }
+}
+✅ BREAKTHROUGH! Found 11 total prayer slots in database!
+✅ Found 11 active prayer slots out of 11 total slots
+🔍 Extracted user IDs: [
+  'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f',
+  'ec31a08e-965d-49ad-87be-4bda5d8ee124',
+  '03cad0dc-5f54-41fb-86e3-61800ced0e11',
+  'bc004e92-6e98-4a1f-b3bf-becbbdda712d',
+  '3c471913-f3a2-4a18-b6d9-6129547433a1',
+  '6fbecb7e-26a2-48c0-9075-25b8743d328d',
+  'c89d2b1d-ca41-4801-b297-5107af4ed7e0',
+  'e46063d3-0a77-4ae1-938b-d9f1f1ac9464',
+  'af8a595d-8db8-4b20-b83d-020326d1d235',
+  'f5f56f48-d7cd-4158-9139-d5974ac7ced8',
+  '18317d7c-8fdf-46ea-8fe8-5b98cdd12086'
+]
+📱 WhatsApp users found: 5
