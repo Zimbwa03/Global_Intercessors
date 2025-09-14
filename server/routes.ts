@@ -3433,12 +3433,21 @@ Make it personal, biblical, and actionable for intercession.`;
 
       try {
         const parsedResponse = JSON.parse(aiResponseText);
-        res.json(parsedResponse); // { prayer, scripture, explanation }
+        // Map AI response to frontend expected format
+        res.json({
+          title: `Prayer for ${category || 'Intercession'}`,
+          content: parsedResponse.prayer || parsedResponse.content || aiResponseText,
+          bibleVerse: parsedResponse.scripture || parsedResponse.reference || "",
+          reference: parsedResponse.scripture || parsedResponse.reference || "",
+          explanation: parsedResponse.explanation || ""
+        });
       } catch (parseError) {
         // Fallback response if JSON parsing fails
         res.json({
-          prayer: aiResponseText,
-          scripture: "The Lord is near to all who call on him, to all who call on him in truth.",
+          title: `Prayer for ${category || 'Intercession'}`,
+          content: aiResponseText,
+          bibleVerse: "Psalm 145:18",
+          reference: "The Lord is near to all who call on him, to all who call on him in truth.",
           explanation: "This prayer was generated to help guide your intercession time with specific focus and biblical foundation."
         });
       }
