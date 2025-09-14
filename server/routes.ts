@@ -3433,10 +3433,6 @@ Make it personal, biblical, and actionable for intercession.`;
         throw new Error('No AI response');
       }
 
-      if (!response.ok) {
-        throw new Error(`Gemini API error: ${response.status}`);
-      }
-
       try {
         const parsedResponse = JSON.parse(aiResponseText);
         res.json(parsedResponse); // { prayer, scripture, explanation }
