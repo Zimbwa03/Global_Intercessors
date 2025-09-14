@@ -231,7 +231,7 @@ export function PrayerPlanner() {
   });
 
   const handleCreatePoint = () => {
-    if (!newPointTitle.trim() || !newPointContent.trim() || !newPointCategory) {
+    if (!newPointTitle?.trim() || !newPointContent?.trim() || !newPointCategory) {
       toast({
         title: "Missing Information",
         description: "Please fill in title, content, and category.",
@@ -396,13 +396,14 @@ export function PrayerPlanner() {
               <label className="text-sm font-medium">Title</label>
               <Input
                 placeholder="Enter prayer point title..."
-                value={newPointTitle}
-                onChange={(e) => setNewPointTitle(e.target.value)}
+                value={newPointTitle || ""}
+                onChange={(e) => setNewPointTitle(e.target.value || "")}
+                data-testid="input-title"
               />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Category</label>
-              <Select value={newPointCategory} onValueChange={setNewPointCategory}>
+              <Select value={newPointCategory || ""} onValueChange={(value) => setNewPointCategory(value || "")}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category..." />
                 </SelectTrigger>
@@ -430,27 +431,32 @@ export function PrayerPlanner() {
                     DeepSeek Assistant
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent aria-describedby="ai-assistant-description">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                       <Lightbulb className="w-5 h-5" />
                       AI Prayer Assistant
                     </DialogTitle>
+                    <p id="ai-assistant-description" className="text-sm text-gray-600">
+                      Use AI to generate enhanced prayer content with biblical references
+                    </p>
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
                     <div>
                       <label className="text-sm font-medium">Describe what you'd like to pray for:</label>
                       <Textarea
                         placeholder="e.g., 'healing for my family member', 'breakthrough in finances', 'church revival'..."
-                        value={aiPrompt}
-                        onChange={(e) => setAiPrompt(e.target.value)}
+                        value={aiPrompt || ""}
+                        onChange={(e) => setAiPrompt(e.target.value || "")}
                         className="mt-2"
+                        data-testid="textarea-ai-prompt"
                       />
                     </div>
                     <Button 
                       onClick={handleAIAssist}
                       disabled={aiAssistantMutation.isPending}
                       className="w-full md:w-auto px-6 py-3 text-sm md:text-base"
+                      data-testid="button-generate-prayer"
                     >
                       {aiAssistantMutation.isPending ? (
                         <>
@@ -470,9 +476,10 @@ export function PrayerPlanner() {
             </div>
             <Textarea
               placeholder="Enter detailed prayer content..."
-              value={newPointContent}
-              onChange={(e) => setNewPointContent(e.target.value)}
+              value={newPointContent || ""}
+              onChange={(e) => setNewPointContent(e.target.value || "")}
               rows={4}
+              data-testid="textarea-content"
             />
           </div>
 
@@ -480,6 +487,7 @@ export function PrayerPlanner() {
             onClick={handleCreatePoint}
             disabled={createPointMutation.isPending}
             className="w-full md:w-auto px-6 py-3 text-sm md:text-base"
+            data-testid="button-save-prayer-point"
           >
             {createPointMutation.isPending ? (
               <>
