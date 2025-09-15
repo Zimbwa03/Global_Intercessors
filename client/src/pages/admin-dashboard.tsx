@@ -43,6 +43,7 @@ import { PrayerSlotManagement } from '../components/dashboard/prayer-slot-manage
 import { SlotCoverageMonitor } from '../components/dashboard/slot-coverage-monitor';
 import { FastingProgramManagement } from '../components/dashboard/fasting-program-management';
 import { AnalyticsCharts } from '../components/dashboard/analytics-charts';
+import { EnhancedAnalytics } from '../components/admin/enhanced-analytics';
 const WeeklyReportAnalytics = lazy(() => import('../components/admin/weekly-report-analytics').then(m => ({ default: m.WeeklyReportAnalytics })));
 
 interface AdminUser {
@@ -1543,7 +1544,7 @@ export default function AdminDashboard() {
       case "management":
         return <ManagementTab />;
       case "analytics":
-        return <WeeklyReportAnalytics />;
+        return <EnhancedAnalytics />;
       default:
         return <OverviewTab />;
     }

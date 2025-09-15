@@ -2381,6 +2381,154 @@ Respond in JSON format as an array:
     }
   });
 
+  // Enhanced Analytics endpoints
+  // Real-time dashboard data endpoint
+  app.get("/api/admin/analytics/realtime", async (req: Request, res: Response) => {
+    try {
+      const { data: realtimeData, error } = await supabaseAdmin
+        .rpc('get_realtime_dashboard_data');
+
+      if (error) {
+        console.error('Realtime analytics error:', error);
+        throw error;
+      }
+
+      res.json(realtimeData);
+    } catch (error) {
+      console.error('Error fetching realtime analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch realtime analytics data' });
+    }
+  });
+
+  // Weekly analytics endpoint
+  app.get("/api/admin/analytics/weekly", async (req: Request, res: Response) => {
+    try {
+      const { startDate } = req.query;
+      const { data: weeklyData, error } = await supabaseAdmin
+        .rpc('get_weekly_analytics', { start_date: startDate || null });
+
+      if (error) {
+        console.error('Weekly analytics error:', error);
+        throw error;
+      }
+
+      res.json(weeklyData);
+    } catch (error) {
+      console.error('Error fetching weekly analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch weekly analytics data' });
+    }
+  });
+
+  // User detailed analytics endpoint
+  app.get("/api/admin/analytics/user/:email", async (req: Request, res: Response) => {
+    try {
+      const { email } = req.params;
+      const { data: userData, error } = await supabaseAdmin
+        .rpc('get_user_analytics_detailed', { user_email_param: email });
+
+      if (error) {
+        console.error('User analytics error:', error);
+        throw error;
+      }
+
+      res.json(userData);
+    } catch (error) {
+      console.error('Error fetching user analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch user analytics data' });
+    }
+  });
+
+  // Zoom meeting analytics endpoint
+  app.get("/api/admin/analytics/zoom", async (req: Request, res: Response) => {
+    try {
+      const { data: zoomData, error } = await supabaseAdmin
+        .rpc('get_zoom_meeting_analytics_detailed');
+
+      if (error) {
+        console.error('Zoom analytics error:', error);
+        throw error;
+      }
+
+      res.json(zoomData);
+    } catch (error) {
+      console.error('Error fetching zoom analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch zoom analytics data' });
+    }
+  });
+
+  // Prayer slot coverage analytics endpoint
+  app.get("/api/admin/analytics/slots", async (req: Request, res: Response) => {
+    try {
+      const { data: slotsData, error } = await supabaseAdmin
+        .rpc('get_prayer_slot_coverage_analytics');
+
+      if (error) {
+        console.error('Slots analytics error:', error);
+        throw error;
+      }
+
+      res.json(slotsData);
+    } catch (error) {
+      console.error('Error fetching slots analytics:', error);
+      res.status(500).json({ error: 'Failed to fetch slots analytics data' });
+    }
+  });
+
+  // Analytics export endpoint
+  app.get("/api/admin/analytics/export", async (req: Request, res: Response) => {
+    try {
+      const { type = 'all' } = req.query;
+      const { data: exportData, error } = await supabaseAdmin
+        .rpc('export_analytics_data', { export_type: type as string });
+
+      if (error) {
+        console.error('Export analytics error:', error);
+        throw error;
+      }
+
+      res.json(exportData);
+    } catch (error) {
+      console.error('Error exporting analytics:', error);
+      res.status(500).json({ error: 'Failed to export analytics data' });
+    }
+  });
+
+  // Analytics performance metrics endpoint
+  app.get("/api/admin/analytics/performance", async (req: Request, res: Response) => {
+    try {
+      const { data: performanceData, error } = await supabaseAdmin
+        .rpc('get_analytics_performance_metrics');
+
+      if (error) {
+        console.error('Performance metrics error:', error);
+        throw error;
+      }
+
+      res.json(performanceData);
+    } catch (error) {
+      console.error('Error fetching performance metrics:', error);
+      res.status(500).json({ error: 'Failed to fetch performance metrics' });
+    }
+  });
+
+  // Refresh analytics cache endpoint
+  app.post("/api/admin/analytics/refresh", async (req: Request, res: Response) => {
+    try {
+      const { data, error } = await supabaseAdmin
+        .rpc('refresh_analytics_cache');
+
+      if (error) {
+        console.error('Cache refresh error:', error);
+        throw error;
+      }
+
+      res.json({ success: true, message: 'Analytics cache refreshed successfully' });
+    } catch (error) {
+      console.error('Error refreshing analytics cache:', error);
+      res.status(500).json({ error: 'Failed to refresh analytics cache' });
+    }
+  });
+
   const httpServer = createServer(app);
   // Update Zoom link endpoint
   app.post("/api/admin/zoom-link", async (req: Request, res: Response) => {
