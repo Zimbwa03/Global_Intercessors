@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { zoomAttendanceTracker } from "./services/zoomAttendanceTracker";
 import { registerRoutes } from "./routes";
 import { notificationScheduler } from "./services/notificationScheduler";
+import { whatsAppBot } from "./services/whatsapp-bot-v2";
 
 // Set default server timezone to Africa/Harare to align with majority of intercessors
 if (!process.env.TZ) {
@@ -49,6 +50,11 @@ app.use((req, res, next) => {
   
   // Start notification scheduler
   notificationScheduler.start();
+
+  // Initialize WhatsApp bot (this starts the reminder system)
+  console.log('🤖 Initializing WhatsApp Bot with reminder system...');
+  // The bot is already instantiated when imported, which starts its cron jobs
+  console.log('✅ WhatsApp Bot reminder system is now active');
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

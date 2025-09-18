@@ -2386,7 +2386,7 @@ Respond in JSON format as an array:
   app.get("/api/admin/analytics/realtime", async (req: Request, res: Response) => {
     try {
       const { data: realtimeData, error } = await supabaseAdmin
-        .rpc('get_realtime_dashboard_data');
+        .rpc('get_realtime_analytics_data');
 
       if (error) {
         console.error('Realtime analytics error:', error);
@@ -2405,7 +2405,7 @@ Respond in JSON format as an array:
     try {
       const { startDate } = req.query;
       const { data: weeklyData, error } = await supabaseAdmin
-        .rpc('get_weekly_analytics', { start_date: startDate || null });
+        .rpc('get_weekly_analytics_data', { weeks_back: 4 });
 
       if (error) {
         console.error('Weekly analytics error:', error);
@@ -2424,7 +2424,7 @@ Respond in JSON format as an array:
     try {
       const { email } = req.params;
       const { data: userData, error } = await supabaseAdmin
-        .rpc('get_user_analytics_detailed', { user_email_param: email });
+        .rpc('get_user_analytics_data', { user_email: email });
 
       if (error) {
         console.error('User analytics error:', error);
@@ -2442,7 +2442,7 @@ Respond in JSON format as an array:
   app.get("/api/admin/analytics/zoom", async (req: Request, res: Response) => {
     try {
       const { data: zoomData, error } = await supabaseAdmin
-        .rpc('get_zoom_meeting_analytics_detailed');
+        .rpc('get_zoom_analytics_data');
 
       if (error) {
         console.error('Zoom analytics error:', error);
@@ -2460,7 +2460,7 @@ Respond in JSON format as an array:
   app.get("/api/admin/analytics/slots", async (req: Request, res: Response) => {
     try {
       const { data: slotsData, error } = await supabaseAdmin
-        .rpc('get_prayer_slot_coverage_analytics');
+        .rpc('get_slot_analytics_data');
 
       if (error) {
         console.error('Slots analytics error:', error);
@@ -2497,7 +2497,7 @@ Respond in JSON format as an array:
   app.get("/api/admin/analytics/performance", async (req: Request, res: Response) => {
     try {
       const { data: performanceData, error } = await supabaseAdmin
-        .rpc('get_analytics_performance_metrics');
+        .rpc('get_performance_metrics');
 
       if (error) {
         console.error('Performance metrics error:', error);
@@ -5388,6 +5388,22 @@ Make it personal, biblical, and actionable for intercession.`;
     } catch (error) {
       console.error('Error in attendance marking endpoint:', error);
       res.status(500).json({ error: 'Failed to mark attendance' });
+    }
+  });
+
+  // Test prayer slot reminder system
+  app.post("/api/test-reminders", async (req: Request, res: Response) => {
+    try {
+      console.log("🧪 Testing prayer slot reminder system...");
+      await whatsAppBot.checkPrayerSlotReminders();
+      
+      res.json({ 
+        success: true, 
+        message: "Reminder system test completed. Check server logs for details." 
+      });
+    } catch (error) {
+      console.error("Error testing reminders:", error);
+      res.status(500).json({ error: "Failed to test reminder system" });
     }
   });
 

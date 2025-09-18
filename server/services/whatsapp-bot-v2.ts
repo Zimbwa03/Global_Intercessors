@@ -542,136 +542,110 @@ export class WhatsAppPrayerBot {
 
   // Prayer slot reminders
   public async checkPrayerSlotReminders(): Promise<void> {
-    console.log('🔍 Checking prayer slot reminders using Supabase...');
+    const now = new Date();
+    const currentTime = now.toLocaleTimeString('en-GB', { 
+      hour12: false, 
+      timeZone: 'Africa/Harare' 
+    });
+    
+    console.log(`🔍 [${currentTime}] Checking prayer slot reminders...`);
 
     try {
-      console.log('🔍 Testing Supabase connection...');
-      console.log('🔗 Supabase URL:', process.env.SUPABASE_URL?.substring(0, 50) + '...');
+      // Get current time in Africa/Harare timezone
+      const currentParts = new Intl.DateTimeFormat('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Africa/Harare',
+      }).formatToParts(now);
 
-      // Test basic connection
-      const { data: connectionTest, error: connectionError } = await supabase
+      const currentHour = Number(currentParts.find(p => p.type === 'hour')?.value || '0');
+      const currentMinute = Number(currentParts.find(p => p.type === 'minute')?.value || '0');
+      const currentTotalMinutes = currentHour * 60 + currentMinute;
+
+      console.log(`🕐 Current time: ${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')} (${currentTotalMinutes} minutes)`);
+
+      // Get active prayer slots with WhatsApp users
+      const { data: activeSlots, error: slotsError } = await supabase
         .from('prayer_slots')
-        .select('count', { count: 'exact', head: true });
+        .select(`
+          *,
+          whatsapp_bot_users!inner(
+            user_id,
+            whatsapp_number,
+            is_active,
+            timezone
+          )
+        `)
+        .eq('status', 'active')
+        .eq('whatsapp_bot_users.is_active', true);
 
-      console.log('🔗 Supabase connection test:', { success: !connectionError, error: connectionError?.message });
-
-      if (connectionError) {
-        console.error('❌ Failed to connect to Supabase:', connectionError);
+      if (slotsError) {
+        console.error('❌ Error fetching prayer slots:', slotsError);
         return;
       }
 
-      console.log('📊 Database connection successful - checking for prayer slots data');
-
-      // Query all prayer slots with detailed logging
-      console.log('🔍 Querying prayer_slots table directly...');
-      const { data: allSlots, count: totalCount, error: queryError } = await supabase
-        .from('prayer_slots')
-        .select('*', { count: 'exact' });
-
-      console.log('📊 ALL prayer_slots query result:', { 
-        count: totalCount, 
-        error: queryError?.message, 
-        sample: allSlots?.[0] 
-      });
-
-      if (queryError) {
-        console.error('❌ Error querying prayer slots:', queryError);
+      if (!activeSlots || activeSlots.length === 0) {
+        console.log('⚠️ No active prayer slots with WhatsApp users found');
         return;
       }
 
-      if (!allSlots || allSlots.length === 0) {
-        console.log('⚠️ prayer_slots table is empty - no prayer slots available for reminders');
-        console.log('💡 Add sample prayer slots using create-whatsapp-bot-tables.sql');
-        return;
-      }
+      console.log(`📊 Found ${activeSlots.length} active prayer slots with WhatsApp users`);
 
-      console.log(`✅ BREAKTHROUGH! Found ${totalCount} total prayer slots in database!`);
-
-      // Filter active slots
-      const activeSlots = allSlots.filter(slot => slot.status === 'active');
-      console.log(`✅ Found ${activeSlots.length} active prayer slots out of ${totalCount} total slots`);
-
-      if (activeSlots.length === 0) {
-        console.log('⚠️ No active prayer slots found for reminders');
-        return;
-      }
-
-      // Extract user IDs for debugging
-      const userIds = activeSlots.map(slot => slot.user_id);
-      console.log('🔍 Extracted user IDs:', userIds);
-
-      // Get WhatsApp bot users
-      const { data: whatsappUsers, count: whatsappCount } = await supabase
-        .from('whatsapp_bot_users')
-        .select('*', { count: 'exact' })
-        .eq('is_active', true);
-
-      console.log(`📱 WhatsApp users found: ${whatsappCount || 0}`);
-
-      // Get user profiles for names
-      const { data: userProfiles, count: profilesCount, error: profilesError } = await supabase
-        .from('user_profiles')
-        .select('*', { count: 'exact' });
-
-      console.log(`👥 User profiles found: ${profilesCount || 0}`);
-      if (profilesError) {
-        console.log('Error fetching user profiles:', profilesError);
-      }
-
-      if (!whatsappUsers || whatsappUsers.length === 0) {
-        console.log('⚠️ No WhatsApp bot users found - no one to send reminders to');
-        return;
-      }
-
-      // Process reminders for each active slot (respect user timezone, default Africa/Harare)
+      // Process each slot
       for (const slot of activeSlots) {
-        // Parse slot time (e.g., "04:00" or "14:30–15:00")
-        const slotTimeStr = slot.slot_time.split('–')[0] || slot.slot_time;
-        const [hours, minutes] = slotTimeStr.split(':').map(Number);
-        const slotMinutes = hours * 60 + minutes;
-
-        const whatsappUser = whatsappUsers.find(user => user.user_id === slot.user_id);
-        if (!whatsappUser) continue;
-
-        let userTimezone = (whatsappUser.timezone && whatsappUser.timezone.trim()) || 'Africa/Harare';
-        
-        // Fix invalid timezone values - normalize common invalid formats
-        if (userTimezone === 'UTC+0' || userTimezone === 'UTC-0' || userTimezone === 'UTC+00:00' || userTimezone === 'UTC-00:00') {
-          userTimezone = 'UTC';
-        }
-        
-        // Additional validation - try to use the timezone and fallback if invalid
-        try {
-          // Test if timezone is valid by attempting to format a date with it
-          new Intl.DateTimeFormat('en-GB', { timeZone: userTimezone }).formatToParts(new Date());
-        } catch (error) {
-          console.log(`⚠️ Invalid timezone "${userTimezone}" for user ${whatsappUser.user_id}, falling back to Africa/Harare`);
-          userTimezone = 'Africa/Harare';
+        const whatsappUser = slot.whatsapp_bot_users;
+        if (!whatsappUser || !whatsappUser.whatsapp_number) {
+          console.log(`⚠️ No WhatsApp number for slot ${slot.id}`);
+          continue;
         }
 
-        // Current time in user's timezone (minutes since midnight)
-        const parts = new Intl.DateTimeFormat('en-GB', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-          timeZone: userTimezone,
-        }).formatToParts(new Date());
+        // Parse slot time
+        const slotTimeStr = slot.slot_time?.split('–')[0] || slot.slot_time;
+        if (!slotTimeStr) {
+          console.log(`⚠️ No slot time for slot ${slot.id}`);
+          continue;
+        }
 
-        const currentHoursTz = Number(parts.find(p => p.type === 'hour')?.value || '0');
-        const currentMinutesTz = Number(parts.find(p => p.type === 'minute')?.value || '0');
-        const currentMinutes = currentHoursTz * 60 + currentMinutesTz;
+        const [slotHour, slotMinute] = slotTimeStr.split(':').map(Number);
+        if (isNaN(slotHour) || isNaN(slotMinute)) {
+          console.log(`⚠️ Invalid slot time format: ${slotTimeStr}`);
+          continue;
+        }
 
-        // Reminder is 30 minutes before slot
-        let reminderMinutes = slotMinutes - 30;
-        if (reminderMinutes < 0) reminderMinutes += 1440; // wrap around midnight
+        const slotTotalMinutes = slotHour * 60 + slotMinute;
+        console.log(`⏰ Slot ${slot.id}: ${slotHour.toString().padStart(2, '0')}:${slotMinute.toString().padStart(2, '0')} (${slotTotalMinutes} minutes)`);
 
-        // Minimal circular difference on 24h clock
-        const diff = Math.abs(currentMinutes - reminderMinutes);
-        const timeDiff = Math.min(diff, 1440 - diff);
+        // Check for 30-minute reminder
+        const reminder30Min = (slotTotalMinutes - 30 + 1440) % 1440;
+        const diff30Min = Math.abs(currentTotalMinutes - reminder30Min);
+        const timeDiff30Min = Math.min(diff30Min, 1440 - diff30Min);
 
-        // Send reminder if within 1 minute of the user's local reminder time
-        if (timeDiff <= 1) {
-          await this.sendPrayerSlotReminder(whatsappUser, slot);
+        // Check for 15-minute reminder
+        const reminder15Min = (slotTotalMinutes - 15 + 1440) % 1440;
+        const diff15Min = Math.abs(currentTotalMinutes - reminder15Min);
+        const timeDiff15Min = Math.min(diff15Min, 1440 - diff15Min);
+
+        // Check for 5-minute reminder
+        const reminder5Min = (slotTotalMinutes - 5 + 1440) % 1440;
+        const diff5Min = Math.abs(currentTotalMinutes - reminder5Min);
+        const timeDiff5Min = Math.min(diff5Min, 1440 - diff5Min);
+
+        console.log(`🔍 Slot ${slot.id} timing check:`);
+        console.log(`   - 30min reminder: ${reminder30Min} minutes (diff: ${timeDiff30Min})`);
+        console.log(`   - 15min reminder: ${reminder15Min} minutes (diff: ${timeDiff15Min})`);
+        console.log(`   - 5min reminder: ${reminder5Min} minutes (diff: ${timeDiff5Min})`);
+
+        // Send appropriate reminder
+        if (timeDiff30Min <= 1) {
+          console.log(`🔔 Sending 30-minute reminder for slot ${slot.id}`);
+          await this.sendPrayerSlotReminder(whatsappUser, slot, 30);
+        } else if (timeDiff15Min <= 1) {
+          console.log(`🔔 Sending 15-minute reminder for slot ${slot.id}`);
+          await this.sendPrayerSlotReminder(whatsappUser, slot, 15);
+        } else if (timeDiff5Min <= 1) {
+          console.log(`🔔 Sending 5-minute reminder for slot ${slot.id}`);
+          await this.sendPrayerSlotReminder(whatsappUser, slot, 5);
         }
       }
 
@@ -680,27 +654,53 @@ export class WhatsAppPrayerBot {
     }
   }
 
-  private async sendPrayerSlotReminder(user: WhatsAppBotUser, slot: PrayerSlot): Promise<void> {
+  private async sendPrayerSlotReminder(user: WhatsAppBotUser, slot: PrayerSlot, minutesBefore: number): Promise<void> {
     try {
       const userName = await this.getUserName(user.user_id);
+      const slotTime = slot.slot_time?.split('–')[0] || slot.slot_time;
 
-      const message = `🕊️ *Prayer Reminder* 🕊️
+      let timeText = '';
+      let urgencyEmoji = '';
+      
+      switch (minutesBefore) {
+        case 30:
+          timeText = '30 minutes';
+          urgencyEmoji = '⏰';
+          break;
+        case 15:
+          timeText = '15 minutes';
+          urgencyEmoji = '🔔';
+          break;
+        case 5:
+          timeText = '5 minutes';
+          urgencyEmoji = '🚨';
+          break;
+        default:
+          timeText = `${minutesBefore} minutes`;
+          urgencyEmoji = '⏰';
+      }
+
+      const message = `🕊️ *Prayer Slot Reminder* 🕊️
 
 Hello ${userName}! 
 
-⏰ Your prayer slot (${slot.slot_time}) begins in 30 minutes.
+${urgencyEmoji} Your prayer slot (${slotTime}) begins in ${timeText}.
 
 🙏 *"The effectual fervent prayer of a righteous man availeth much."* - James 5:16
 
-May the Lord strengthen you as you stand in the gap for His people and purposes.
+${minutesBefore <= 5 ? '🚨 *URGENT:* Your prayer slot is starting soon! Please prepare your heart and join your Zoom meeting.' : 'May the Lord strengthen you as you stand in the gap for His people and purposes.'}
+
+${slot.zoom_link ? `🔗 Join Zoom: ${slot.zoom_link}` : ''}
 
 Reply *help* for more options.`;
 
       const success = await this.sendWhatsAppMessage(user.whatsapp_number, message);
 
       if (success) {
-        console.log(`✅ Prayer reminder sent to ${user.whatsapp_number} for slot ${slot.slot_time}`);
+        console.log(`✅ ${timeText} prayer reminder sent to ${user.whatsapp_number} for slot ${slotTime}`);
         await this.logInteraction(user.whatsapp_number, 'reminder', 'prayer_slot');
+      } else {
+        console.log(`❌ Failed to send ${timeText} prayer reminder to ${user.whatsapp_number}`);
       }
     } catch (error) {
       console.error('❌ Error sending prayer slot reminder:', error);

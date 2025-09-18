@@ -88,22 +88,28 @@ LEFT JOIN LATERAL (
              NULLIF(COUNT(*), 0) * 100), 2
         ) as attendance_rate,
         COALESCE((
-            WITH RECURSIVE streak_calc AS (
-                SELECT date, status, 1 as streak
+            SELECT COUNT(*)
+            FROM (
+                SELECT date, status,
+                    ROW_NUMBER() OVER (ORDER BY date DESC) as rn
                 FROM attendance_log 
                 WHERE user_id = ps.user_id 
-                ORDER BY date DESC 
-                LIMIT 1
-                
-                UNION ALL
-                
-                SELECT al.date, al.status, 
-                    CASE WHEN al.status = 'attended' THEN sc.streak + 1 ELSE 0 END
-                FROM attendance_log al
-                JOIN streak_calc sc ON al.date = sc.date - INTERVAL '1 day'
-                WHERE al.user_id = ps.user_id
+                ORDER BY date DESC
+            ) ranked
+            WHERE status = 'attended' 
+            AND rn <= (
+                SELECT COALESCE((
+                    SELECT rn FROM (
+                        SELECT date, status,
+                            ROW_NUMBER() OVER (ORDER BY date DESC) as rn
+                        FROM attendance_log 
+                        WHERE user_id = ps.user_id 
+                        ORDER BY date DESC
+                    ) ranked2
+                    WHERE status != 'attended'
+                    LIMIT 1
+                ), 999)
             )
-            SELECT MAX(streak) FROM streak_calc WHERE status = 'attended'
         ), 0) as current_streak,
         MAX(CASE WHEN status = 'attended' THEN date END) as last_attended_date
     FROM attendance_log 

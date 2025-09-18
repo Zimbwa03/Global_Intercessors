@@ -319,81 +319,187 @@ export function BibleVerseSearch() {
   const { oldTestament, newTestament } = getBookCategories();
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <Card className="shadow-lg border border-gi-primary/100">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center shadow-lg">
-                <BookOpen className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-poppins text-xl">Bible Verse Search</span>
-            </span>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant={searchMode === 'browse' ? "default" : "outline"}
-                onClick={() => setSearchMode('browse')}
-                size="sm"
-              >
-                <Book className="w-4 h-4 mr-1" />
-                Browse
-              </Button>
-              <Button
-                variant={searchMode === 'search' ? "default" : "outline"}
-                onClick={() => setSearchMode('search')}
-                size="sm"
-              >
-                <Search className="w-4 h-4 mr-1" />
-                Search
-              </Button>
-            </div>
-          </CardTitle>
-        </CardHeader>
-      </Card>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-xl mb-4">
+            <BookOpen className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+            Bible Study
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Explore God's Word with our comprehensive Bible search and study tools
+          </p>
+        </div>
 
-      {/* Full Bible Browse (kept above search) */}
-      {selectedBible && (
-        <Card className="shadow-lg border border-gi-primary/100">
-          <CardHeader>
-            <CardTitle className="text-lg font-poppins">Browse Bible (Books → Chapters → Verses)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Books */}
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-2">Books</div>
-                <ScrollArea className="h-64">
-                  <div className="space-y-1">
-                    {[...oldTestament, ...newTestament].map((book) => (
-                      <Button
-                        key={book.id}
-                        variant={selectedBook === book.id ? "default" : "ghost"}
-                        onClick={() => { setSelectedBook(book.id); setSelectedChapter(""); setSelectedVerse(""); setSearchMode('browse'); }}
-                        className="w-full justify-start text-left h-auto p-2"
-                      >
-                        <div>
-                          <div className="font-medium">{book.name}</div>
-                          <div className="text-xs text-gray-500">{book.abbreviation}</div>
+        {/* Mode Toggle */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-white rounded-xl p-1 shadow-lg border border-gray-200">
+            <Button
+              variant={searchMode === 'browse' ? "default" : "ghost"}
+              onClick={() => setSearchMode('browse')}
+              className={`px-6 py-2 rounded-lg transition-all duration-200 ${
+                searchMode === 'browse' 
+                  ? 'bg-blue-600 text-white shadow-md' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <Book className="w-4 h-4 mr-2" />
+              Browse
+            </Button>
+            <Button
+              variant={searchMode === 'search' ? "default" : "ghost"}
+              onClick={() => setSearchMode('search')}
+              className={`px-6 py-2 rounded-lg transition-all duration-200 ${
+                searchMode === 'search' 
+                  ? 'bg-blue-600 text-white shadow-md' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <Search className="w-4 h-4 mr-2" />
+              Search
+            </Button>
+          </div>
+        </div>
+
+        {/* Bible Selection */}
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl rounded-2xl mb-8">
+          <CardContent className="p-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Choose Your Bible Version</h2>
+              <p className="text-gray-600">Select a translation to begin your study</p>
+            </div>
+            <div className="max-w-md mx-auto">
+              <Select value={selectedBible} onValueChange={(value) => {
+                setSelectedBible(value);
+                resetSelections();
+              }}>
+                <SelectTrigger className="h-12 text-lg border-2 border-gray-200 rounded-xl hover:border-blue-300 focus:border-blue-500 transition-colors">
+                  <SelectValue placeholder={biblesLoading ? "Loading versions..." : "Select Bible version"} />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-0 shadow-xl">
+                  {bibles?.map((bible) => (
+                    <SelectItem key={bible.id} value={bible.id} className="py-3">
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-semibold text-gray-900">{bible.abbreviation}</span>
+                        <span className="text-sm text-gray-500 ml-3">{bible.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Browse Interface */}
+        {selectedBible && searchMode === 'browse' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            {/* Books Selection */}
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl rounded-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <Book className="w-5 h-5 text-blue-600" />
+                  Books
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-80">
+                  <div className="space-y-2">
+                    {oldTestament.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-bold text-gray-700 mb-3 px-2">Old Testament</h4>
+                        <div className="space-y-1">
+                          {oldTestament.map((book) => (
+                            <Button
+                              key={book.id}
+                              variant={selectedBook === book.id ? "default" : "ghost"}
+                              onClick={() => { 
+                                setSelectedBook(book.id); 
+                                setSelectedChapter(""); 
+                                setSelectedVerse(""); 
+                                setSearchMode('browse'); 
+                              }}
+                              className={`w-full justify-start text-left h-auto p-3 rounded-xl transition-all duration-200 ${
+                                selectedBook === book.id 
+                                  ? 'bg-blue-600 text-white shadow-md' 
+                                  : 'hover:bg-blue-50 hover:text-blue-700'
+                              }`}
+                            >
+                              <div className="text-left">
+                                <div className="font-semibold text-sm">{book.name}</div>
+                                <div className="text-xs opacity-75">{book.abbreviation}</div>
+                              </div>
+                            </Button>
+                          ))}
                         </div>
-                      </Button>
-                    ))}
+                      </div>
+                    )}
+                    
+                    {newTestament.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-bold text-gray-700 mb-3 px-2">New Testament</h4>
+                        <div className="space-y-1">
+                          {newTestament.map((book) => (
+                            <Button
+                              key={book.id}
+                              variant={selectedBook === book.id ? "default" : "ghost"}
+                              onClick={() => { 
+                                setSelectedBook(book.id); 
+                                setSelectedChapter(""); 
+                                setSelectedVerse(""); 
+                                setSearchMode('browse'); 
+                              }}
+                              className={`w-full justify-start text-left h-auto p-3 rounded-xl transition-all duration-200 ${
+                                selectedBook === book.id 
+                                  ? 'bg-blue-600 text-white shadow-md' 
+                                  : 'hover:bg-blue-50 hover:text-blue-700'
+                              }`}
+                            >
+                              <div className="text-left">
+                                <div className="font-semibold text-sm">{book.name}</div>
+                                <div className="text-xs opacity-75">{book.abbreviation}</div>
+                              </div>
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </ScrollArea>
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* Chapters */}
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-2">Chapters</div>
+            {/* Chapters Selection */}
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl rounded-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-green-600 font-bold text-xs">2</span>
+                  </div>
+                  Chapters
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 {selectedBook ? (
-                  <ScrollArea className="h-64">
-                    <div className="grid grid-cols-5 gap-2">
+                  <ScrollArea className="h-80">
+                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                       {chapters?.map((chapter) => (
                         <Button
                           key={chapter.id}
                           variant={selectedChapter === chapter.id ? "default" : "outline"}
-                          onClick={() => { setSelectedChapter(chapter.id); setSelectedVerse(""); setSearchMode('browse'); }}
-                          className="h-10"
+                          onClick={() => { 
+                            setSelectedChapter(chapter.id); 
+                            setSelectedVerse(""); 
+                            setSearchMode('browse'); 
+                          }}
+                          className={`h-12 rounded-xl font-semibold transition-all duration-200 ${
+                            selectedChapter === chapter.id 
+                              ? 'bg-green-600 text-white shadow-md' 
+                              : 'hover:bg-green-50 hover:text-green-700 hover:border-green-300'
+                          }`}
                           disabled={chaptersLoading}
                         >
                           {chapter.number}
@@ -402,22 +508,43 @@ export function BibleVerseSearch() {
                     </div>
                   </ScrollArea>
                 ) : (
-                  <div className="text-sm text-gray-500">Select a book to load chapters</div>
+                  <div className="h-80 flex items-center justify-center text-center">
+                    <div className="text-gray-500">
+                      <Book className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm">Select a book to view chapters</p>
+                    </div>
+                  </div>
                 )}
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* Verses */}
-              <div>
-                <div className="text-sm font-medium text-gray-700 mb-2">Verses</div>
+            {/* Verses Selection */}
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl rounded-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center">
+                    <span className="text-purple-600 font-bold text-xs">3</span>
+                  </div>
+                  Verses
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 {selectedChapter ? (
-                  <ScrollArea className="h-64">
-                    <div className="grid grid-cols-6 gap-2">
+                  <ScrollArea className="h-80">
+                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                       {verses?.map((verse) => (
                         <Button
                           key={verse.id}
                           variant={selectedVerse === verse.id ? "default" : "outline"}
-                          onClick={() => { setSelectedVerse(verse.id); setSearchMode('browse'); }}
-                          className="h-10"
+                          onClick={() => { 
+                            setSelectedVerse(verse.id); 
+                            setSearchMode('browse'); 
+                          }}
+                          className={`h-10 rounded-lg font-semibold transition-all duration-200 ${
+                            selectedVerse === verse.id 
+                              ? 'bg-purple-600 text-white shadow-md' 
+                              : 'hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300'
+                          }`}
                           disabled={versesLoading}
                         >
                           {verse.verseNumber}
@@ -426,462 +553,374 @@ export function BibleVerseSearch() {
                     </div>
                   </ScrollArea>
                 ) : (
-                  <div className="text-sm text-gray-500">Select a chapter to load verses</div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Bible Selection */}
-      <Card className="shadow-lg border border-gray-200">
-        <CardContent className="p-4">
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Bible Version
-              </label>
-              <Select value={selectedBible} onValueChange={(value) => {
-                setSelectedBible(value);
-                resetSelections();
-              }}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={biblesLoading ? "Loading versions..." : "Select Bible version"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {bibles?.map((bible) => (
-                    <SelectItem key={bible.id} value={bible.id}>
-                      <div className="flex items-center justify-between w-full">
-                        <span className="font-medium">{bible.abbreviation}</span>
-                        <span className="text-sm text-gray-500 ml-2">{bible.name}</span>
+                  <div className="h-80 flex items-center justify-center text-center">
+                    <div className="text-gray-500">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <span className="text-gray-400 font-bold text-sm">3</span>
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {searchMode === 'search' && (
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Search for Word or Phrase
-                </label>
-                <div className="flex space-x-2">
-                  <div className="flex-1 relative">
-                    <Input
-                      placeholder="Start typing to search verses..."
-                      value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        if (!searchMode === 'search') {
-                          setSearchMode('search');
-                        }
-                      }}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                      className="flex-1"
-                    />
-                    {searchLoading && (
-                      <Loader2 className="w-4 h-4 animate-spin absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    )}
+                      <p className="text-sm">Select a chapter to view verses</p>
+                    </div>
                   </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Search Interface */}
+        {searchMode === 'search' && selectedBible && (
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl rounded-2xl mb-8">
+            <CardContent className="p-6">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Search God's Word</h2>
+                <p className="text-gray-600">Find verses by keywords or phrases</p>
+              </div>
+              <div className="max-w-2xl mx-auto">
+                <div className="relative">
+                  <Input
+                    placeholder="Search for words or phrases..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      if (searchMode !== 'search') {
+                        setSearchMode('search');
+                      }
+                    }}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    className="h-14 text-lg border-2 border-gray-200 rounded-xl pl-4 pr-12 hover:border-blue-300 focus:border-blue-500 transition-colors"
+                  />
                   <Button 
                     onClick={handleSearch}
-                    disabled={!selectedBible}
-                    variant="outline"
+                    disabled={!selectedBible || !searchQuery.trim()}
+                    className="absolute right-2 top-2 h-10 px-4 bg-blue-600 hover:bg-blue-700 rounded-lg"
                   >
-                    <Search className="w-4 h-4" />
+                    {searchLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Search className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
                 {searchQuery && searchMode === 'search' && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    {searchLoading ? 'Searching...' : `Search results will appear as you type`}
+                  <p className="text-sm text-gray-500 mt-3 text-center">
+                    {searchLoading ? 'Searching through the Bible...' : `Type to search through ${selectedBible}`}
                   </p>
                 )}
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Browse Mode */}
-      {searchMode === 'browse' && selectedBible && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Book Selection */}
-          <Card className="shadow-lg border border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-lg">Select Book</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-64">
+
+        {/* Chapter Reader */}
+        {selectedChapter && chapterView && (
+          <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-2xl rounded-3xl mb-8 overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
+              <h2 className="text-2xl sm:text-3xl font-bold text-center">
+                {chapterView.chapter?.reference || 'Chapter'}
+              </h2>
+              <p className="text-blue-100 text-center mt-2">
+                {selectedBible} • {chapterView.verses?.length || 0} verses
+              </p>
+            </div>
+            <CardContent className="p-6 sm:p-8">
+              <div className="max-w-4xl mx-auto">
+                <div className="prose prose-lg max-w-none">
+                  {chapterView.verses?.sort((a: any, b: any) => parseInt(a.verseNumber) - parseInt(b.verseNumber)).map((v: any, index: number) => (
+                    <div 
+                      key={v.id} 
+                      id={v.id} 
+                      className={`group py-4 px-6 rounded-2xl mb-3 transition-all duration-300 ${
+                        selectedVerse === v.id 
+                          ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-l-4 border-yellow-500 shadow-lg transform scale-[1.02]' 
+                          : 'hover:bg-gray-50 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="flex items-start gap-4">
+                        <span className={`text-sm font-bold px-3 py-1 rounded-full min-w-[2.5rem] text-center transition-colors duration-200 ${
+                          selectedVerse === v.id 
+                            ? 'bg-yellow-500 text-white' 
+                            : 'bg-gray-200 text-gray-700 group-hover:bg-gray-300'
+                        }`}>
+                          {v.verseNumber}
+                        </span>
+                        <div className="flex-1">
+                          {v.text ? (
+                            <p className="text-gray-900 leading-relaxed text-lg font-medium">
+                              {v.text}
+                            </p>
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              <span className="text-gray-500 italic">Loading verse content...</span>
+                              <Button
+                                variant="link"
+                                className="p-0 h-auto text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                onClick={async () => {
+                                  setSelectedVerse(v.id);
+                                  setSearchMode('browse');
+                                  const res = await fetch(`/api/bible-verse?action=verse&bibleId=${selectedBible}&query=${v.id}`);
+                                  if (res.ok) {
+                                    const data = await res.json();
+                                    setCurrentVerse({ ...data.verse, id: v.id, verseNumber: v.verseNumber } as any);
+                                    setTimeout(() => {
+                                      document.getElementById(v.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    }, 50);
+                                  }
+                                }}
+                              >
+                                Load verse
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Current Verse Display */}
+        {currentVerse && searchMode === 'browse' && (
+          <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-2xl rounded-3xl mb-8 overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6">
+              <h2 className="text-2xl sm:text-3xl font-bold text-center">
+                {currentVerse.reference || `Verse ${currentVerse.verseNumber}`}
+              </h2>
+              <p className="text-purple-100 text-center mt-2">
+                {selectedBible} • Selected Verse
+              </p>
+            </div>
+            <CardContent className="p-6 sm:p-8">
+              <div className="max-w-4xl mx-auto">
+                {verseLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full mb-4">
+                        <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
+                      </div>
+                      <p className="text-gray-600 text-lg">Loading verse content...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-8 border-l-4 border-purple-500">
+                    <blockquote className="text-xl sm:text-2xl leading-relaxed text-gray-800 font-medium text-center">
+                      "{getVerseText(currentVerse)}"
+                    </blockquote>
+                    <div className="flex justify-center mt-6 space-x-3">
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={() => handleCopyVerse(currentVerse)}
+                        className="hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-colors px-6"
+                      >
+                        <Copy className="w-5 h-5 mr-2" />
+                        Copy Verse
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={() => handleShareVerse(currentVerse)}
+                        className="hover:bg-green-50 hover:text-green-700 hover:border-green-300 transition-colors px-6"
+                      >
+                        <Share className="w-5 h-5 mr-2" />
+                        Share
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Search Loading */}
+        {searchMode === 'search' && searchLoading && debouncedSearchQuery && (
+          <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-2xl rounded-3xl mb-8">
+            <CardContent className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-6">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">Searching God's Word</h3>
+              <p className="text-gray-600 text-lg">
+                Looking for verses containing "{debouncedSearchQuery}"
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Search Results */}
+        {searchMode === 'search' && searchResults && !searchLoading && (
+          <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-2xl rounded-3xl mb-8 overflow-hidden">
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6">
+              <h2 className="text-2xl sm:text-3xl font-bold text-center">
+                Search Results
+              </h2>
+              <p className="text-green-100 text-center mt-2">
+                Found {searchResults.verses.length} verse{searchResults.verses.length !== 1 ? 's' : ''} for "{searchQuery}"
+              </p>
+            </div>
+            <CardContent className="p-6 sm:p-8">
+              <ScrollArea className="h-96">
                 <div className="space-y-4">
-                  {oldTestament.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-600 mb-2">Old Testament</h4>
-                      <div className="space-y-1">
-                        {oldTestament.map((book) => (
-                          <Button
-                            key={book.id}
-                            variant={selectedBook === book.id ? "default" : "ghost"}
-                            onClick={() => {
-                              setSelectedBook(book.id);
-                              setSelectedChapter("");
-                              setSelectedVerse("");
-                            }}
-                            className="w-full justify-start text-left h-auto p-2"
-                          >
-                            <div>
-                              <div className="font-medium">{book.name}</div>
-                              <div className="text-xs text-gray-500">{book.abbreviation}</div>
+                  {searchResults.verses.map((verse, index) => {
+                    const verseText = getVerseText(verse);
+                    const isContentAvailable = !verseText.includes('Content temporarily unavailable') && 
+                                             !verseText.includes('Verse content not available') &&
+                                             verseText.length > 10;
+                    const isTemporaryIssue = verseText.includes('Content temporarily unavailable');
+                    
+                    return (
+                      <motion.div
+                        key={verse.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className={`group p-6 rounded-2xl border transition-all duration-300 hover:shadow-lg ${
+                          isContentAvailable 
+                            ? 'bg-white border-gray-200 hover:border-green-300' 
+                            : isTemporaryIssue
+                            ? 'bg-orange-50 border-orange-200'
+                            : 'bg-yellow-50 border-yellow-200'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                              <span className="text-green-600 font-bold text-sm">{index + 1}</span>
                             </div>
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {newTestament.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-600 mb-2">New Testament</h4>
-                      <div className="space-y-1">
-                        {newTestament.map((book) => (
-                          <Button
-                            key={book.id}
-                            variant={selectedBook === book.id ? "default" : "ghost"}
-                            onClick={() => {
-                              setSelectedBook(book.id);
-                              setSelectedChapter("");
-                              setSelectedVerse("");
-                            }}
-                            className="w-full justify-start text-left h-auto p-2"
-                          >
                             <div>
-                              <div className="font-medium">{book.name}</div>
-                              <div className="text-xs text-gray-500">{book.abbreviation}</div>
+                              <h4 className="font-bold text-gray-900 text-lg">
+                                {verse.reference || `${verse.bookId} ${verse.chapterId?.split('.')[1] || ''}:${verse.verseNumber}`}
+                              </h4>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="secondary" className="bg-gray-100 text-gray-700 px-2 py-1">
+                                  {selectedBible}
+                                </Badge>
+                                {!isContentAvailable && (
+                                  <Badge 
+                                    variant="secondary" 
+                                    className={`px-2 py-1 ${
+                                      isTemporaryIssue 
+                                        ? 'bg-orange-100 text-orange-800' 
+                                        : 'bg-yellow-100 text-yellow-800'
+                                    }`}
+                                  >
+                                    {isTemporaryIssue ? 'API Issue' : 'Loading Issue'}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                          </div>
+                          <div className="flex space-x-2">
+                            {isContentAvailable && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleCopyVerse(verse)}
+                                  className="hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-colors"
+                                >
+                                  <Copy className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleShareVerse(verse)}
+                                  className="hover:bg-green-50 hover:text-green-700 hover:border-green-300 transition-colors"
+                                >
+                                  <Share className="w-4 h-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <p className={`text-lg leading-relaxed font-medium ${
+                          isContentAvailable 
+                            ? 'text-gray-800' 
+                            : isTemporaryIssue 
+                            ? 'text-orange-700 italic' 
+                            : 'text-yellow-700 italic'
+                        }`}>
+                          "{isContentAvailable ? highlightSearchTerms(verseText, searchQuery) : verseText}"
+                        </p>
+                        {!isContentAvailable && (
+                          <div className="mt-4 p-4 bg-gray-50 rounded-xl">
+                            <p className="text-sm text-gray-600 font-medium mb-2">Content temporarily unavailable due to:</p>
+                            <ul className="text-xs text-gray-500 space-y-1">
+                              {isTemporaryIssue ? (
+                                <>
+                                  <li>• API rate limiting or temporary service issues</li>
+                                  <li>• Network connectivity problems</li>
+                                  <li>• Bible API service maintenance</li>
+                                </>
+                              ) : (
+                                <>
+                                  <li>• Verse ID format issues</li>
+                                  <li>• Bible version compatibility problems</li>
+                                  <li>• Data source configuration issues</li>
+                                </>
+                              )}
+                            </ul>
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </ScrollArea>
             </CardContent>
           </Card>
+        )}
 
-          {/* Chapter Selection */}
-          <Card className="shadow-lg border border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-lg">Select Chapter</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {selectedBook ? (
-                <ScrollArea className="h-64">
-                  <div className="grid grid-cols-4 gap-2">
-                    {chapters?.map((chapter) => (
-                      <Button
-                        key={chapter.id}
-                        variant={selectedChapter === chapter.id ? "default" : "outline"}
-                        onClick={() => {
-                          setSelectedChapter(chapter.id);
-                          setSelectedVerse("");
-                        }}
-                        className="h-10"
-                        disabled={chaptersLoading}
-                      >
-                        {chapter.number}
-                      </Button>
-                    ))}
-                  </div>
-                </ScrollArea>
-              ) : (
-                <div className="text-center text-gray-500 py-8">
-                  Select a book to view chapters
-                </div>
-              )}
+        {/* Empty States */}
+        {searchMode === 'search' && !searchResults && !searchLoading && debouncedSearchQuery && (
+          <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-2xl rounded-3xl mb-8">
+            <CardContent className="text-center py-16">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Search className="w-10 h-10 text-gray-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">No Results Found</h3>
+              <p className="text-gray-600 text-lg mb-6">
+                No verses found containing "{debouncedSearchQuery}". Try different keywords.
+              </p>
+              <Button onClick={() => setSearchQuery("")} variant="outline" size="lg" className="hover:bg-gray-50 transition-colors px-6">
+                Clear Search
+              </Button>
             </CardContent>
           </Card>
-
-          {/* Verse Selection */}
-          <Card className="shadow-lg border border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-lg">Select Verse</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {selectedChapter ? (
-                <ScrollArea className="h-64">
-                  <div className="grid grid-cols-5 gap-2">
-                    {verses?.map((verse) => (
-                      <Button
-                        key={verse.id}
-                        variant={selectedVerse === verse.id ? "default" : "outline"}
-                        onClick={() => setSelectedVerse(verse.id)}
-                        className="h-10"
-                        disabled={versesLoading}
-                      >
-                        {verse.verseNumber}
-                      </Button>
-                    ))}
-                  </div>
-                </ScrollArea>
-              ) : (
-                <div className="text-center text-gray-500 py-8">
-                  Select a chapter to view verses
-                </div>
-              )}
+        )}
+        
+        {searchMode === 'search' && !searchQuery && (
+          <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-2xl rounded-3xl mb-8">
+            <CardContent className="text-center py-16">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Search className="w-10 h-10 text-blue-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">Start Searching</h3>
+              <p className="text-gray-600 text-lg">
+                Type a word or phrase to search through the Bible
+              </p>
             </CardContent>
           </Card>
-        </div>
-      )}
+        )}
 
-      {/* Chapter Reader with highlighted verse */}
-      {selectedChapter && chapterView && (
-        <Card className="shadow-lg border border-gi-primary/100">
-          <CardHeader>
-            <CardTitle className="text-lg font-poppins">{chapterView.chapter?.reference || 'Chapter'}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="prose max-w-none">
-              {chapterView.verses?.map((v: any) => (
-                <div key={v.id} id={v.id} className={`py-1 px-2 rounded ${selectedVerse === v.id ? 'bg-yellow-100' : ''}`}>
-                  <span className="text-xs align-top mr-1 text-gray-500">{v.verseNumber}</span>
-                  <Button
-                    variant="link"
-                    className="p-0 h-auto align-baseline"
-                    onClick={async () => {
-                      setSelectedVerse(v.id);
-                      setSearchMode('browse');
-                      const res = await fetch(`/api/bible-verse?action=verse&bibleId=${selectedBible}&query=${v.id}`);
-                      if (res.ok) {
-                        const data = await res.json();
-                        setCurrentVerse({ ...data.verse, id: v.id, verseNumber: v.verseNumber } as any);
-                        setTimeout(() => {
-                          document.getElementById(v.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }, 50);
-                      }
-                    }}
-                  >
-                    {selectedVerse === v.id && currentVerse ? getVerseText(currentVerse) : 'Read verse'}
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Current Verse Display */}
-      {currentVerse && searchMode === 'browse' && (
-        <Card className="shadow-lg border border-gi-primary/100">
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-brand-text font-poppins">
-                  {currentVerse.reference || `Verse ${currentVerse.verseNumber}`}
-                </h3>
-                <Badge variant="secondary" className="mt-1">
-                  {selectedBible}
-                </Badge>
+        {searchMode === 'browse' && !currentVerse && (
+          <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-2xl rounded-3xl mb-8">
+            <CardContent className="text-center py-16">
+              <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Quote className="w-10 h-10 text-purple-600" />
               </div>
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleCopyVerse(currentVerse)}
-                >
-                  <Copy className="w-4 h-4 mr-1" />
-                  Copy
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleShareVerse(currentVerse)}
-                >
-                  <Share className="w-4 h-4 mr-1" />
-                  Share
-                </Button>
-              </div>
-            </div>
-            {verseLoading ? (
-              <div className="flex items-center space-x-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Loading verse content...</span>
-              </div>
-            ) : (
-              <blockquote className="text-lg leading-relaxed text-gray-800 italic border-l-4 border-gi-primary/primary pl-4">
-                "{getVerseText(currentVerse)}"
-              </blockquote>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Search Results */}
-      {searchMode === 'search' && searchLoading && debouncedSearchQuery && (
-        <Card className="shadow-lg border border-gi-primary/100">
-          <CardContent className="text-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-gi-primary" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Searching Verses...</h3>
-            <p className="text-gray-600">
-              Looking for verses containing "{debouncedSearchQuery}"
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {searchMode === 'search' && searchResults && !searchLoading && (
-        <Card className="shadow-lg border border-gi-primary/100">
-          <CardHeader>
-            <CardTitle className="text-lg font-poppins">
-              Search Results for "{searchQuery}"
-            </CardTitle>
-            <p className="text-sm text-gray-600">
-              Found {searchResults.verses.length} verses
-            </p>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-96">
-              <div className="space-y-4">
-                {searchResults.verses.map((verse, index) => {
-                  const verseText = getVerseText(verse);
-                  const isContentAvailable = !verseText.includes('Content temporarily unavailable') && 
-                                           !verseText.includes('Verse content not available') &&
-                                           verseText.length > 10;
-                  const isTemporaryIssue = verseText.includes('Content temporarily unavailable');
-                  
-                  return (
-                    <motion.div
-                      key={verse.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className={`p-4 rounded-lg border hover:shadow-md transition-all ${
-                        isContentAvailable 
-                          ? 'bg-gradient-to-r from-blue-50 to-white border-gi-primary/100' 
-                          : isTemporaryIssue
-                          ? 'bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-300'
-                          : 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h4 className="font-semibold text-brand-text">
-                            {verse.reference || `${verse.bookId} ${verse.chapterId?.split('.')[1] || ''}:${verse.verseNumber}`}
-                          </h4>
-                          <Badge variant="outline" className="mt-1">
-                            {selectedBible}
-                          </Badge>
-                          {!isContentAvailable && (
-                            <Badge 
-                              variant="secondary" 
-                              className={`mt-1 ml-2 ${
-                                isTemporaryIssue 
-                                  ? 'bg-orange-100 text-orange-800' 
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}
-                            >
-                              {isTemporaryIssue ? 'API Loading Issue' : 'Content Loading Issue'}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex space-x-1">
-                          {isContentAvailable && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleCopyVerse(verse)}
-                              >
-                                <Copy className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleShareVerse(verse)}
-                              >
-                                <Share className="w-4 h-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <p className={`leading-relaxed ${
-                        isContentAvailable 
-                          ? 'text-gray-700' 
-                          : isTemporaryIssue 
-                          ? 'text-orange-700 italic' 
-                          : 'text-yellow-700 italic'
-                      }`}>
-                        "{isContentAvailable ? highlightSearchTerms(verseText, searchQuery) : verseText}"
-                      </p>
-                      {!isContentAvailable && (
-                        <div className={`mt-3 p-3 rounded text-sm ${
-                          isTemporaryIssue 
-                            ? 'bg-orange-100 text-orange-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {isTemporaryIssue ? (
-                            <div>
-                              <p className="font-medium mb-1">🔄 API Loading Issue</p>
-                              <p>The Bible API is having trouble loading this verse content. This is usually temporary.</p>
-                              <p className="mt-1">✨ Try searching again in a moment, or browse to this verse directly.</p>
-                            </div>
-                          ) : (
-                            <div>
-                              <p className="font-medium mb-1">💡 Browse Mode Recommended</p>
-                              <p>Try browsing to this verse using the Browse mode above for full content.</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Empty States */}
-      {searchMode === 'search' && !searchResults && !searchLoading && debouncedSearchQuery && (
-        <Card className="shadow-lg border border-gray-200">
-          <CardContent className="text-center py-12">
-            <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Results Found</h3>
-            <p className="text-gray-600 mb-4">
-              No verses found containing "{debouncedSearchQuery}". Try different keywords.
-            </p>
-            <Button onClick={() => setSearchQuery("")} variant="outline">
-              Clear Search
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-      
-      {searchMode === 'search' && !searchQuery && (
-        <Card className="shadow-lg border border-gray-200">
-          <CardContent className="text-center py-12">
-            <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Start Searching</h3>
-            <p className="text-gray-600">
-              Type a word or phrase to search through the Bible
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {searchMode === 'browse' && !currentVerse && (
-        <Card className="shadow-lg border border-gray-200">
-          <CardContent className="text-center py-12">
-            <Quote className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Verse</h3>
-            <p className="text-gray-600">
-              Choose a book, chapter, and verse to read from God's Word
-            </p>
-          </CardContent>
-        </Card>
-      )}
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">Select a Verse</h3>
+              <p className="text-gray-600 text-lg">
+                Choose a book, chapter, and verse to read from God's Word
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
