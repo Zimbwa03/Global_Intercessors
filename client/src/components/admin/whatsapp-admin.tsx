@@ -241,10 +241,7 @@ export function WhatsAppAdmin() {
               type="text"
               placeholder="Enter update title"
               value={updateTitle}
-              onChange={(e) => {
-                e.preventDefault();
-                setUpdateTitle(e.target.value);
-              }}
+              onChange={(e) => setUpdateTitle(e.target.value)}
               autoComplete="off"
               spellCheck={false}
             />
@@ -257,10 +254,7 @@ export function WhatsAppAdmin() {
               placeholder="Enter the full update content. This will be summarized for WhatsApp delivery."
               rows={6}
               value={updateContent}
-              onChange={(e) => {
-                e.preventDefault();
-                setUpdateContent(e.target.value);
-              }}
+              onChange={(e) => setUpdateContent(e.target.value)}
               autoComplete="off"
               spellCheck={false}
             />
