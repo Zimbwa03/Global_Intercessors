@@ -342,7 +342,7 @@ export function MobileDashboardOverview({ userEmail, userId, onTabChange }: Mobi
           {/* Independent Mobile WhatsApp Floating Button */}
           <div className="fixed bottom-24 right-4 z-40 lg:hidden">
             <button
-              onClick={() => window.open('https://wa.me/263782445675', '_blank')}
+              onClick={() => window.open('https://wa.me/263789117038', '_blank')}
               className="group relative bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 active:scale-95"
               style={{
                 background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
