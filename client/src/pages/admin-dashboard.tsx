@@ -35,7 +35,8 @@ import {
   UserCheck,
   Timer,
   AlertCircle,
-  RotateCcw
+  RotateCcw,
+  UserPlus
 } from "lucide-react";
 import { AnimatedCard } from "@/components/ui/animated-card";
 import { motion, AnimatePresence } from "framer-motion";
@@ -44,6 +45,7 @@ import { SlotCoverageMonitor } from '../components/dashboard/slot-coverage-monit
 import { FastingProgramManagement } from '../components/dashboard/fasting-program-management';
 import { AnalyticsCharts } from '../components/dashboard/analytics-charts';
 import { EnhancedAnalytics } from '../components/admin/enhanced-analytics';
+import { AdminManagement } from '../components/admin/admin-management';
 const WeeklyReportAnalytics = lazy(() => import('../components/admin/weekly-report-analytics').then(m => ({ default: m.WeeklyReportAnalytics })));
 
 interface AdminUser {
@@ -143,6 +145,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [hideMobileFooter, setHideMobileFooter] = useState(false);
   const [hideDesktopHeaderButtons, setHideDesktopHeaderButtons] = useState(false);
+  const [isAdminManagementOpen, setIsAdminManagementOpen] = useState(false);
   const lastScrollYRef = useRef(0);
   const isMobileRef = useRef(isMobile);
   // Keep mobile flag in a ref to avoid re-subscribing listeners unnecessarily
@@ -1582,6 +1585,15 @@ export default function AdminDashboard() {
   return (
     <ErrorBoundary>
     <div className="min-h-screen bg-gray-50">
+      {/* Admin Management Dialog */}
+      {adminUser && (
+        <AdminManagement
+          currentAdminEmail={adminUser.email}
+          currentAdminRole={adminUser.role}
+          isOpen={isAdminManagementOpen}
+          onClose={() => setIsAdminManagementOpen(false)}
+        />
+      )}
       {/* Mobile Header */}
       {isMobile && (
         <div className="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3">
@@ -1598,6 +1610,15 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-2">
+              <Button
+                onClick={() => setIsAdminManagementOpen(true)}
+                size="sm"
+                variant="ghost"
+                className="p-2"
+                title="Add Admin"
+              >
+                <UserPlus className="w-4 h-4" />
+              </Button>
               <Button
                 onClick={() => setActiveTab("management")}
                 size="sm"
@@ -1648,6 +1669,15 @@ export default function AdminDashboard() {
             </div>
             <div className={`flex items-center space-x-4 transition-opacity duration-200 ${hideDesktopHeaderButtons ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
               <span className="text-sm">Welcome, {adminUser.email}</span>
+              <Button
+                onClick={() => setIsAdminManagementOpen(true)}
+                variant="outline"
+                size="sm"
+                className="text-gi-primary border-white hover:bg-gi-primary/50"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Add Admin
+              </Button>
               <Button
                 onClick={refreshAllData}
                 variant="outline"
