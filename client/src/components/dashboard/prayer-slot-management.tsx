@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Clock, Calendar, AlertCircle, RotateCcw, Edit3, CheckCircle2, XCircle, Bell, TrendingUp, Users, Settings } from "lucide-react";
+import { Clock, Calendar, AlertCircle, RotateCcw, Edit3, CheckCircle2, XCircle, TrendingUp, Users, Settings } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { notificationService } from '@/lib/notificationService';
 import { countdownService } from '@/lib/countdownService';
@@ -131,19 +131,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     refetchOnWindowFocus: false
   });
 
-  // Fetch notifications/updates
-  const { data: notifications = [] } = useQuery({
-    queryKey: ['notifications'],
-    queryFn: async () => {
-      const response = await fetch('/api/updates');
-      if (!response.ok) {
-        throw new Error('Failed to fetch notifications');
-      }
-
-      return response.json();
-    },
-    refetchOnWindowFocus: false
-  });
 
   // Fetch current Zoom link
   const { data: zoomLinkData } = useQuery({
@@ -388,7 +375,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
       queryClient.invalidateQueries({ queryKey: ['prayer-slot'] });
       queryClient.invalidateQueries({ queryKey: ['available-slots'] });
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: (error: Error) => {
       toast({ title: 'Remove Failed', description: error.message, variant: 'destructive' });
@@ -599,7 +585,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
           Prayer Slot Management
         </h2>
         <p className={`text-gray-600 ${isMobile ? 'text-sm' : ''}`}>
-          Manage your committed prayer time, attendance, and notifications
+          Manage your committed prayer time and attendance
         </p>
       </div>
       {/* Current Slot Status with Animations */}
@@ -1035,64 +1021,6 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
           )}
         </CardContent>
       </Card>
-      {/* Notifications & Updates */}
-      {notifications.length > 0 && (
-        <Card className="shadow-brand-lg border border-gi-primary/100">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <div className="w-8 h-8 bg-gi-primary rounded-lg flex items-center justify-center mr-3 shadow-brand">
-                <Bell className="w-4 h-4 text-gi-gold" />
-              </div>
-              <span className="font-poppins">Notifications & Updates</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {notifications.slice(0, 5).map((notification: any, index: number) => (
-                <div 
-                  key={`notification-${notification.id}-${index}`}
-                  className={`p-4 rounded-lg border ${
-                    notification.pin_to_top 
-                      ? 'bg-gradient-to-r from-yellow-50 to-white border-yellow-200' 
-                      : 'bg-gradient-to-r from-blue-50 to-white border-gi-primary/100'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-brand-text font-poppins mb-1">
-                        {notification.title}
-                      </h4>
-                      <p className={`text-gray-700 mb-2 ${isMobile ? 'text-sm' : ''}`}>
-                        {notification.description}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          className={`text-xs font-poppins ${badgeVariantClass(
-                            notification.priority === 'critical' ? 'destructive' :
-                            notification.priority === 'high' ? 'default' : 'secondary'
-                          )}`}
-                        >
-                          {notification.priority}
-                        </Badge>
-                        <span className="text-xs text-gray-500">
-                          {new Date(notification.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                    {notification.pin_to_top && (
-                      <div className="ml-2">
-                        <Badge className="text-xs bg-black/40 text-white px-2 py-0.5 rounded">
-                          Pinned
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
       {/* Prayer Guidelines */}
       <Card className="shadow-brand-lg border border-gi-primary/100">
         <CardHeader>
