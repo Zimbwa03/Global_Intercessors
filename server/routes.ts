@@ -3585,11 +3585,15 @@ Respond in JSON format as an array:
     try {
       const { date, userId } = req.query as { date?: string; userId?: string };
 
+      console.log('🔍 Fetching daily prayer plan:', { date, userId });
+
       if (!date || !userId) {
+        console.log('❌ Missing required parameters:', { date, userId });
         return res.status(400).json({ error: "date and userId are required" });
       }
 
       // Try to get existing plan for user/date
+      console.log('🔍 Querying prayer_plans table...');
       const { data: existingPlan, error: planError } = await supabaseAdmin
         .from('prayer_plans')
         .select('*')
@@ -3598,7 +3602,10 @@ Respond in JSON format as an array:
         .maybeSingle();
 
       if (planError) {
-        console.error('Error fetching plan:', planError);
+        console.error('❌ Error fetching plan:', planError);
+        console.error('❌ Plan error details:', JSON.stringify(planError, null, 2));
+      } else {
+        console.log('✅ Plan query successful:', existingPlan ? 'Found existing plan' : 'No existing plan');
       }
 
       let planId = existingPlan?.id;
@@ -3619,6 +3626,7 @@ Respond in JSON format as an array:
       }
 
       // Load points - only select fields we know exist
+      console.log('🔍 Querying prayer_points table for plan:', planId);
       const { data: points, error: pointsError } = await supabaseAdmin
         .from('prayer_points')
         .select('id, prayer_plan_id, title, content, category, is_completed, order_position, created_at, updated_at')
@@ -3626,14 +3634,17 @@ Respond in JSON format as an array:
         .order('order_position', { ascending: true });
 
       if (pointsError) {
-        console.error('Error loading points:', pointsError);
+        console.error('❌ Error loading points:', pointsError);
+        console.error('❌ Points error details:', JSON.stringify(pointsError, null, 2));
         return res.status(500).json({ error: 'Failed to load prayer points' });
+      } else {
+        console.log(`✅ Points query successful: Found ${points?.length || 0} prayer points`);
       }
 
       const completedPoints = (points || []).filter(p => p.is_completed).length;
       const totalPoints = (points || []).length;
 
-      res.json({
+      const responseData = {
         id: planId,
         date,
         prayerPoints: (points || []).map(p => ({
@@ -3648,7 +3659,16 @@ Respond in JSON format as an array:
         })),
         totalPoints,
         completedPoints,
+      };
+
+      console.log('✅ Returning daily plan data:', {
+        planId,
+        totalPoints,
+        completedPoints,
+        pointsCount: responseData.prayerPoints.length
       });
+
+      res.json(responseData);
     } catch (error) {
       console.error('Error fetching daily prayer plan:', error);
       res.status(500).json({ error: 'Failed to fetch prayer plan' });
@@ -3660,7 +3680,10 @@ Respond in JSON format as an array:
     try {
       const { title, content, notes, category, date, userId } = req.body as any;
 
+      console.log('🔍 Creating prayer point:', { title, content, category, date, userId });
+
       if (!title || !content || !category || !date || !userId) {
+        console.log('❌ Missing required fields:', { title: !!title, content: !!content, category: !!category, date: !!date, userId: !!userId });
         return res.status(400).json({ error: "title, content, category, date, userId are required" });
       }
 
@@ -3698,6 +3721,14 @@ Respond in JSON format as an array:
         .maybeSingle();
       const nextOrder = (maxOrder?.order_position || 0) + 1;
 
+      console.log('🔍 Inserting prayer point into database...', {
+        prayer_plan_id: planId,
+        title,
+        content,
+        category,
+        order_position: nextOrder
+      });
+
       const { data: inserted, error: insertErr } = await supabaseAdmin
         .from('prayer_points')
         .insert({
@@ -3712,10 +3743,12 @@ Respond in JSON format as an array:
         .single();
 
       if (insertErr) {
-        console.error('Error inserting point:', insertErr);
-        return res.status(500).json({ error: 'Failed to create prayer point' });
+        console.error('❌ Error inserting point:', insertErr);
+        console.error('❌ Insert error details:', JSON.stringify(insertErr, null, 2));
+        return res.status(500).json({ error: 'Failed to create prayer point', details: insertErr.message });
       }
 
+      console.log('✅ Prayer point created successfully:', inserted.id);
       res.json({ success: true, point: inserted, message: 'Prayer point created successfully' });
     } catch (error) {
       console.error('Error creating prayer point:', error);
