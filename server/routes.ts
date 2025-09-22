@@ -728,14 +728,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("=== SKIP REQUEST ERROR ===");
       console.error("Error processing skip request:", error);
       console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace available');
-      console.error("Request details:", { requestId, action, adminComment });
+      console.error("Request details:", { requestId: req.params.requestId, action: req.body.action, adminComment: req.body.adminComment });
       console.error("=== END ERROR DEBUG ===");
       res.status(500).json({ 
         error: "Failed to process skip request", 
         details: error instanceof Error ? error.message : "Unknown error occurred",
         timestamp: new Date().toISOString(),
-        requestId: requestId,
-        action: action
+        requestId: req.params.requestId,
+        action: req.body.action
       });
     }
   });
@@ -1498,10 +1498,16 @@ _Type 'menu' anytime to explore our prayer bot features._`;
   //   }
   // });
 
-  // Bible chat endpoint with Gemini Integration
+  // Bible chat endpoint with Gemini Integration + Chat History
   app.post("/api/bible-chat", async (req: Request, res: Response) => {
     try {
-      const { message, bibleVersion = 'NIV' } = req.body;
+      const { message, bibleVersion = 'NIV', sessionId } = req.body;
+      
+      // Get current user
+      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(req.headers.authorization?.replace('Bearer ', '') || '');
+      if (authError || !user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
 
       if (!message || typeof message !== 'string' || message.trim().length === 0) {
         return res.status(400).json({ error: 'Message is required and must be a non-empty string' });
@@ -1657,13 +1663,55 @@ Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
         insights.push("Trust in God's plan", "Scripture guides our path", "Prayer connects us to divine wisdom");
       }
 
+      // Extract prayer point from response
+      const prayerPointMatch = cleanResponse.match(/Prayer Point:?\s*(.+?)(?:\n|$)/i);
+      const extractedPrayerPoint = prayerPointMatch ? prayerPointMatch[1].trim() : null;
+
+      // Generate session ID if not provided
+      const currentSessionId = sessionId || `session_${Date.now()}_${user.id}`;
+
+      // Store user message in chat history
+      try {
+        await supabaseAdmin
+          .from('bible_chat_history')
+          .insert({
+            user_id: user.id,
+            user_email: user.email || '',
+            message_type: 'user',
+            message_content: message,
+            session_id: currentSessionId,
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+          });
+
+        // Store AI response in chat history
+        await supabaseAdmin
+          .from('bible_chat_history')
+          .insert({
+            user_id: user.id,
+            user_email: user.email || '',
+            message_type: 'ai',
+            message_content: cleanResponse,
+            scripture_reference: extractedScripture?.reference || null,
+            scripture_text: extractedScripture?.text || null,
+            scripture_version: bibleVersion,
+            ai_explanation: cleanResponse,
+            prayer_point: extractedPrayerPoint,
+            session_id: currentSessionId,
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+          });
+      } catch (historyError) {
+        console.error('Failed to store chat history:', historyError);
+        // Continue with response even if history storage fails
+      }
+
       res.json({
         response: cleanResponse,
         scripture: extractedScripture || {
           reference: "Psalm 119:105",
           text: "Your word is a lamp for my feet, a light on my path."
         },
-        insights: insights
+        insights: insights,
+        sessionId: currentSessionId
       });
     } catch (error) {
       console.error('Bible chat error:', error);
@@ -1677,6 +1725,129 @@ Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
         },
         insights: ["Scripture illuminates our path", "God's guidance is constant", "Prayer connects us to divine wisdom"]
       });
+    }
+  });
+
+  // Get user's Bible chat history (last 7 days)
+  app.get("/api/bible-chat/history", async (req: Request, res: Response) => {
+    try {
+      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(req.headers.authorization?.replace('Bearer ', '') || '');
+      if (authError || !user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      console.log('Fetching chat history for user:', user.id);
+
+      const { data: chatHistory, error } = await supabaseAdmin
+        .from('bible_chat_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Last 7 days
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching chat history:', error);
+        return res.status(500).json({ error: 'Failed to fetch chat history' });
+      }
+
+      console.log(`Retrieved ${chatHistory?.length || 0} chat messages for user ${user.id}`);
+      res.json({ history: chatHistory || [] });
+    } catch (error) {
+      console.error('Error in chat history endpoint:', error);
+      res.status(500).json({ error: 'Failed to fetch chat history' });
+    }
+  });
+
+  // Get user's chat sessions summary (grouped by day)
+  app.get("/api/bible-chat/sessions", async (req: Request, res: Response) => {
+    try {
+      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(req.headers.authorization?.replace('Bearer ', '') || '');
+      if (authError || !user) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      console.log('Fetching chat sessions for user:', user.id);
+
+      const { data: sessions, error } = await supabaseAdmin
+        .rpc('get_user_chat_sessions', { target_user_id: user.id });
+
+      if (error) {
+        console.error('Error fetching chat sessions:', error);
+        // Fallback to manual query if function doesn't exist
+        const { data: fallbackData, error: fallbackError } = await supabaseAdmin
+          .from('bible_chat_history')
+          .select('created_at, session_id')
+          .eq('user_id', user.id)
+          .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+        if (fallbackError) {
+          return res.status(500).json({ error: 'Failed to fetch chat sessions' });
+        }
+
+        // Group by date manually
+        const groupedSessions = fallbackData?.reduce((acc: any, curr: any) => {
+          const date = new Date(curr.created_at).toDateString();
+          if (!acc[date]) {
+            acc[date] = { session_count: new Set(), message_count: 0 };
+          }
+          acc[date].session_count.add(curr.session_id);
+          acc[date].message_count += 1;
+          return acc;
+        }, {});
+
+        const formattedSessions = Object.entries(groupedSessions || {}).map(([date, data]: [string, any]) => ({
+          chat_date: date,
+          session_count: data.session_count.size,
+          message_count: data.message_count
+        }));
+
+        res.json({ sessions: formattedSessions });
+        return;
+      }
+
+      console.log(`Retrieved ${sessions?.length || 0} chat sessions for user ${user.id}`);
+      res.json({ sessions: sessions || [] });
+    } catch (error) {
+      console.error('Error in chat sessions endpoint:', error);
+      res.status(500).json({ error: 'Failed to fetch chat sessions' });
+    }
+  });
+
+  // Clean up expired chat history (admin endpoint)
+  app.post("/api/bible-chat/cleanup", async (req: Request, res: Response) => {
+    try {
+      console.log('Running Bible chat history cleanup...');
+
+      const { data: result, error } = await supabaseAdmin
+        .rpc('cleanup_expired_chat_history');
+
+      if (error) {
+        console.error('Error during chat cleanup:', error);
+        // Fallback manual cleanup
+        const { error: manualCleanupError } = await supabaseAdmin
+          .from('bible_chat_history')
+          .delete()
+          .lt('expires_at', new Date().toISOString());
+
+        if (manualCleanupError) {
+          return res.status(500).json({ error: 'Failed to clean up chat history' });
+        }
+
+        res.json({ success: true, message: 'Manual cleanup completed', deleted: 'unknown' });
+        return;
+      }
+
+      const deletedCount = result?.[0]?.deleted_count || 0;
+      console.log(`Chat cleanup completed. Deleted ${deletedCount} expired messages.`);
+
+      res.json({ 
+        success: true, 
+        message: `Cleanup completed successfully`, 
+        deleted: deletedCount 
+      });
+    } catch (error) {
+      console.error('Error in chat cleanup endpoint:', error);
+      res.status(500).json({ error: 'Failed to clean up chat history' });
     }
   });
 

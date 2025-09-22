@@ -545,3 +545,28 @@ export type PrayerPlan = typeof prayerPlans.$inferSelect;
 export type InsertPrayerPlan = z.infer<typeof insertPrayerPlanSchema>;
 export type PrayerPoint = typeof prayerPoints.$inferSelect;
 export type InsertPrayerPoint = z.infer<typeof insertPrayerPointSchema>;
+
+// Bible Chat History with 7-day retention
+export const bibleChatHistory = pgTable("bible_chat_history", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  userEmail: text("user_email").notNull(),
+  messageType: text("message_type").notNull(), // "user" or "ai"
+  messageContent: text("message_content").notNull(),
+  
+  // AI Response specific fields
+  scriptureReference: text("scripture_reference"),
+  scriptureText: text("scripture_text"),
+  scriptureVersion: text("scripture_version").default("KJV"),
+  aiExplanation: text("ai_explanation"),
+  prayerPoint: text("prayer_point"),
+  
+  // Session and timing
+  sessionId: text("session_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
+export const insertBibleChatHistorySchema = createInsertSchema(bibleChatHistory);
+export type BibleChatHistory = typeof bibleChatHistory.$inferSelect;
+export type InsertBibleChatHistory = z.infer<typeof insertBibleChatHistorySchema>;
