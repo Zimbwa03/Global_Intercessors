@@ -157,7 +157,7 @@ export function AuthSection() {
           <div className="text-center mb-12">
             <div className="w-16 h-16 bg-gi-gold rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-brand-lg">
               <img 
-                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                src="/assets/GI_GOLD_Green_Icon_1751586542565.png" 
                 alt="Global Intercessors Icon" 
                 className="w-8 h-8 object-contain"
                 onError={(e) => {

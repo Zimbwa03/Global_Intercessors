@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '../supabase.js';
 import fetch from 'node-fetch';
 import { AdvancedReminderSystem } from './advancedReminderSystem';
 import { ScriptureCoachCommands } from './scriptureCoachCommands.js';
+import { ScriptureCoachCommandsProduction } from './scriptureCoachCommands-production.js';
 
 interface WhatsAppAPIConfig {
   phoneNumberId: string;
@@ -651,6 +652,7 @@ export class WhatsAppPrayerBot {
 
     } catch (error) {
       console.error('❌ Error in checkPrayerSlotReminders:', error);
+      console.error('❌ Full error details:', error);
     }
   }
 
@@ -707,7 +709,7 @@ Reply *help* for more options.`;
     }
   }
 
-  // Morning declarations
+  // Dynamic AI-generated morning declarations
   private async sendMorningDeclarations(): Promise<void> {
     try {
       const { data: activeUsers } = await supabase
@@ -720,31 +722,244 @@ Reply *help* for more options.`;
         return;
       }
 
-      const declarations = `🌅 *Good Morning, Prayer Warrior!* 🌅
+      console.log(`🌅 Generating dynamic morning messages for ${activeUsers.length} users...`);
 
-🔥 *Today's Declarations:*
+      for (const user of activeUsers) {
+        try {
+          const userName = await this.getUserName(user.user_id);
+          
+          // Generate personalized AI morning message
+          const dynamicMessage = await this.generateDynamicMorningMessage(userName);
+          
+          await this.sendWhatsAppMessage(user.whatsapp_number, dynamicMessage);
+          await this.logInteraction(user.whatsapp_number, 'morning_declaration_ai', 'daily');
+          
+          // Rate limiting between users
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } catch (error) {
+          console.error(`❌ Error sending morning message to user ${user.whatsapp_number}:`, error);
+          
+          // Fallback to static message if AI fails
+          const fallbackMessage = `🌅 *Good Morning, ${userName}!* 🌅
 
 ✝️ "This is the day the LORD has made; I will rejoice and be glad in it!" - Psalm 118:24
 
-🛡️ "No weapon formed against me shall prosper!" - Isaiah 54:17
-
-👑 "I can do all things through Christ who strengthens me!" - Philippians 4:13
-
 🙏 May your prayers today move mountains and your intercession break every chain!
 
-*Reply /help for bot commands*`;
-
-      for (const user of activeUsers) {
-        const userName = await this.getUserName(user.user_id);
-        const personalizedMessage = declarations.replace('Prayer Warrior', userName);
-
-        await this.sendWhatsAppMessage(user.whatsapp_number, personalizedMessage);
-        await this.logInteraction(user.whatsapp_number, 'morning_declaration', 'daily');
+*God bless your day!*`;
+          
+          await this.sendWhatsAppMessage(user.whatsapp_number, fallbackMessage);
+        }
       }
 
-      console.log(`✅ Morning declarations sent to ${activeUsers.length} users`);
+      console.log(`✅ Dynamic morning declarations sent to ${activeUsers.length} users`);
     } catch (error) {
       console.error('❌ Error sending morning declarations:', error);
+    }
+  }
+
+  private async generateDynamicMorningMessage(userName: string): Promise<string> {
+    try {
+      const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
+      if (!deepSeekApiKey) {
+        throw new Error('DeepSeek API key not configured');
+      }
+
+      const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+      const currentDate = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+
+      const prompt = `Generate a personalized morning devotional message for ${userName}, a Global Intercessor, for ${dayOfWeek}, ${currentDate}.
+
+Requirements:
+- Personal greeting with their name
+- Fresh, inspiring Bible verse (different each day)
+- Encouraging prayer focus for the day
+- Motivational words for intercession
+- Appropriate emojis for WhatsApp
+- Maximum 200 words
+- End with "Global Intercessors - Standing in the Gap"
+
+Make it uplifting, personal, and spiritually powerful. Focus on prayer, intercession, and spiritual warfare themes.`;
+
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${deepSeekApiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a pastoral AI assistant creating encouraging morning devotionals for Christian intercessors. Always include Bible verses and prayer focus.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 300,
+          temperature: 0.8
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`DeepSeek API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const aiMessage = data.choices[0]?.message?.content;
+
+      if (aiMessage) {
+        console.log(`✅ Generated dynamic morning message for ${userName}`);
+        return aiMessage;
+      } else {
+        throw new Error('No content generated by AI');
+      }
+
+    } catch (error) {
+      console.error('❌ Error generating dynamic morning message:', error);
+      
+      // Fallback to dynamic but simpler message
+      const bibleVerses = [
+        '"For I know the plans I have for you," declares the Lord, "plans to prosper you and not to harm you, to give you hope and a future." - Jeremiah 29:11',
+        '"The Lord your God is with you, the Mighty Warrior who saves. He will take great delight in you." - Zephaniah 3:17',
+        '"Be strong and courageous. Do not be afraid; do not be discouraged, for the Lord your God will be with you wherever you go." - Joshua 1:9',
+        '"But those who hope in the Lord will renew their strength. They will soar on wings like eagles." - Isaiah 40:31',
+        '"The Lord will fight for you; you need only to be still." - Exodus 14:14'
+      ];
+      
+      const randomVerse = bibleVerses[Math.floor(Math.random() * bibleVerses.length)];
+      const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+      
+      return `🌅 *Good Morning, ${userName}!* 🌅
+
+Happy ${dayOfWeek}! God has great plans for your prayers today.
+
+✨ *Today's Word:*
+${randomVerse}
+
+🙏 *Prayer Focus:* Stand in the gap for breakthrough, healing, and divine intervention in our world today.
+
+Your intercession matters! 💪
+
+*Global Intercessors - Standing in the Gap*`;
+    }
+  }
+
+  // Admin update broadcasting
+  public async broadcastAdminUpdate(updateTitle: string, updateContent: string): Promise<void> {
+    try {
+      console.log('📢 Broadcasting admin update to WhatsApp users:', updateTitle);
+      
+      const { data: activeUsers } = await supabase
+        .from('whatsapp_bot_users')
+        .select('*')
+        .eq('is_active', true);
+
+      if (!activeUsers || activeUsers.length === 0) {
+        console.log('⚠️ No active WhatsApp users found for admin update broadcast');
+        return;
+      }
+
+      // Generate AI-summarized update
+      const summarizedUpdate = await this.generateUpdateSummary(updateTitle, updateContent);
+
+      for (const user of activeUsers) {
+        try {
+          const userName = await this.getUserName(user.user_id);
+          
+          const message = `📢 *Important Update from Global Intercessors* 📢
+
+Hello ${userName}!
+
+🎯 **${updateTitle}**
+
+${summarizedUpdate}
+
+💡 *This update was sent by your Global Intercessors leadership team.*
+
+🌐 *Visit the Global Intercessors app for full details.*
+
+*Global Intercessors - Standing in the Gap* 🙏`;
+
+          await this.sendWhatsAppMessage(user.whatsapp_number, message);
+          await this.logInteraction(user.whatsapp_number, 'admin_update', updateTitle);
+          
+          // Rate limiting between users
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        } catch (error) {
+          console.error(`❌ Error sending update to user ${user.whatsapp_number}:`, error);
+        }
+      }
+
+      console.log(`✅ Admin update broadcast sent to ${activeUsers.length} WhatsApp users`);
+    } catch (error) {
+      console.error('❌ Error broadcasting admin update:', error);
+    }
+  }
+
+  private async generateUpdateSummary(title: string, content: string): Promise<string> {
+    try {
+      const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
+      if (!deepSeekApiKey) {
+        // Return simplified version if no AI
+        return content.substring(0, 150) + (content.length > 150 ? '...' : '');
+      }
+
+      const prompt = `Summarize this Global Intercessors admin update for WhatsApp distribution:
+
+Title: ${title}
+Content: ${content}
+
+Requirements:
+- Keep it concise but informative (max 100 words)
+- Maintain the important details
+- Use encouraging, spiritual tone
+- Suitable for WhatsApp messaging
+- Include key action items if any`;
+
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${deepSeekApiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a communications assistant for Global Intercessors. Summarize updates clearly and encouragingly.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 150,
+          temperature: 0.7
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const summary = data.choices[0]?.message?.content;
+        if (summary) {
+          return summary;
+        }
+      }
+
+      // Fallback to truncated content
+      return content.substring(0, 150) + (content.length > 150 ? '...' : '');
+    } catch (error) {
+      console.error('❌ Error generating update summary:', error);
+      return content.substring(0, 150) + (content.length > 150 ? '...' : '');
     }
   }
 
@@ -2556,12 +2771,12 @@ Remember, the journey of faith is continuous. Feel free to start another study s
   private async handleScriptureCoachCommand(phoneNumber: string, userName: string): Promise<void> {
     try {
       await this.ensureScriptureCoachUser(phoneNumber, userName);
-      const { message, buttons } = await ScriptureCoachCommands.handleScriptureCoachMenu(phoneNumber, userName);
+      const { message, buttons } = await ScriptureCoachCommandsProduction.handleScriptureCoachMenu(phoneNumber, userName);
       await this.sendInteractiveMessage(phoneNumber, message, buttons);
     } catch (error) {
       console.error('Error handling ScriptureCoach command:', error);
       await this.sendWhatsAppMessage(phoneNumber, 
-        `❌ Sorry ${userName}, I encountered an error with ScriptureCoach. Please try again.`
+        `🚧 ${userName}, Scripture Coach is temporarily unavailable while we enhance your experience. Please try again in a moment!\n\n*"Be still, and know that I am God." - Psalm 46:10*`
       );
     }
   }
@@ -2577,7 +2792,16 @@ Remember, the journey of faith is continuous. Feel free to start another study s
 
       switch (buttonId) {
         case 'scripture_plan':
-          result = await ScriptureCoachCommands.handleReadingPlans(phoneNumber, userName);
+          result = await ScriptureCoachCommandsProduction.handleReadingPlans(phoneNumber, userName);
+          break;
+        case 'scripture_plan_retry':
+          result = await ScriptureCoachCommandsProduction.handleReadingPlans(phoneNumber, userName);
+          break;
+        case 'scripture_progress':
+          result = await ScriptureCoachCommandsProduction.handleProgressStats(scriptureCoachUserId, userName);
+          break;
+        case 'progress_retry':
+          result = await ScriptureCoachCommandsProduction.handleProgressStats(scriptureCoachUserId, userName);
           break;
         case 'scripture_memorize':
           result = await ScriptureCoachCommands.handleMemorizationMenu(phoneNumber, userName);
@@ -2591,9 +2815,6 @@ Remember, the journey of faith is continuous. Feel free to start another study s
         case 'scripture_more':
           result = await ScriptureCoachCommands.handleMoreOptions(phoneNumber, userName);
           break;
-        case 'scripture_stats':
-          result = await ScriptureCoachCommands.handleProgressStats(scriptureCoachUserId, userName);
-          break;
         case 'daily_review':
           result = await ScriptureCoachCommands.handleDailyReview(scriptureCoachUserId, userName);
           break;
@@ -2604,19 +2825,36 @@ Remember, the journey of faith is continuous. Feel free to start another study s
           result = await ScriptureCoachCommands.handleVersePacks(phoneNumber, userName);
           break;
         case 'create_memory_card':
-          // For now, create a sample memory card - in full implementation, you'd prompt for reference
           result = await ScriptureCoachCommands.handleCreateMemoryCard(scriptureCoachUserId, 'John 3:16', userName);
           break;
         case 'todays_reading':
-          result = await ScriptureCoachCommands.handleTodaysReading(scriptureCoachUserId, userName);
+          result = await ScriptureCoachCommandsProduction.handleTodaysReading(scriptureCoachUserId, userName);
+          break;
+        case 'todays_reading_retry':
+          result = await ScriptureCoachCommandsProduction.handleTodaysReading(scriptureCoachUserId, userName);
+          break;
+        case 'mark_complete':
+          result = await ScriptureCoachCommandsProduction.handleMarkComplete(scriptureCoachUserId, userName);
+          break;
+        case 'mark_complete_retry':
+          result = await ScriptureCoachCommandsProduction.handleMarkComplete(scriptureCoachUserId, userName);
+          break;
+        case 'get_reflection':
+          result = await ScriptureCoachCommands.handleGetReflection(scriptureCoachUserId, userName);
+          break;
+        case 'back':
+          result = await ScriptureCoachCommandsProduction.handleScriptureCoachMenu(phoneNumber, userName);
+          break;
+        case 'help':
+          result = await ScriptureCoachCommandsProduction.handleScriptureCoachHelp(phoneNumber, userName);
           break;
         default:
           // Handle plan selection (e.g., plan_123)
           if (buttonId.startsWith('plan_')) {
-            const planId = buttonId.replace('plan_', '');
-            result = await ScriptureCoachCommands.handleStartReadingPlan(scriptureCoachUserId, planId, userName);
+            const planId = buttonId.replace('plan_', '').replace('_retry', '');
+            result = await ScriptureCoachCommandsProduction.handleStartReadingPlan(scriptureCoachUserId, planId, userName);
           } else {
-            result = await ScriptureCoachCommands.handleScriptureCoachHelp(phoneNumber, userName);
+            result = await ScriptureCoachCommandsProduction.handleScriptureCoachHelp(phoneNumber, userName);
           }
       }
 

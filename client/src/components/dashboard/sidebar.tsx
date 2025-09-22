@@ -31,6 +31,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
     { id: "updates", label: "Updates", icon: "fas fa-bullhorn" },
     { id: "bible-chatbook", label: "Bible Chatbook", icon: "fas fa-book" },
     { id: "bible-search", label: "Bible Search", icon: "fas fa-search" },
+    { id: "scripture-coach", label: "Scripture Coach", icon: "fas fa-graduation-cap" },
     { id: "prayer-planner", label: "Prayer Planner", icon: "fas fa-calendar-check" },
   ];
 
@@ -43,7 +44,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
         <div className="p-4 border-b border-gi-primary/50 relative">
           <div className="flex items-center space-x-3">
             <img
-              src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png"
+              src="/assets/GI_GOLD_Green_Icon_1751586542565.png"
               alt="Global Intercessors Icon"
               className="w-8 h-8 object-contain flex-shrink-0"
               onError={(e) => {
@@ -79,8 +80,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
           <ul className="space-y-3">
             {[
               ...menuItems,
-              { id: "schedule", label: "Prayer Schedule", icon: "fas fa-calendar-alt" },
-              { id: "whatsapp-updates", label: "WhatsApp Updates", icon: "fab fa-whatsapp" }
+              { id: "schedule", label: "Prayer Schedule", icon: "fas fa-calendar-alt" }
             ].map((item) => (
               <li key={item.id}>
                 <Button

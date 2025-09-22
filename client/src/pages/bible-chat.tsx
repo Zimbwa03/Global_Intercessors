@@ -39,7 +39,7 @@ export default function BibleChatPage() {
           <Card className="text-center p-6 hover:shadow-lg transition-shadow border-2 border-gi-primary/100">
             <div className="w-12 h-12 bg-gi-primary/100 rounded-full flex items-center justify-center mx-auto mb-4 relative">
               <img 
-                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                src="/assets/GI_GOLD_Green_Icon_1751586542565.png" 
                 alt="Global Intercessors Icon" 
                 className="w-6 h-6 object-contain absolute opacity-50"
                 onError={(e) => {

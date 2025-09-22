@@ -307,7 +307,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
               <img 
-                src="/src/assets/GI_Logo_Main_1751586542563.png" 
+                src="/assets/GI_Logo_Main_1751586542563.png" 
                 alt="Global Intercessors" 
                 className="h-16 w-auto object-contain drop-shadow-lg"
                 onError={(e) => {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { X, Menu, User, Home, Calendar, Book, MessageCircle, BarChart, Settings, LogOut, Clock, Bell, TrendingUp, FileText, Heart, Shield, Search, Users, Star, Zap, Smartphone } from "lucide-react";
+import { X, Menu, User, Home, Calendar, Book, MessageCircle, BarChart, Settings, LogOut, Clock, Bell, TrendingUp, FileText, Heart, Shield, Search, Users, Star, Zap, Smartphone, GraduationCap } from "lucide-react";
 import { Link } from "wouter";
 
 interface MobileSidebarProps {
@@ -27,10 +27,10 @@ export function MobileSidebar({
     { id: "dashboard", label: "Dashboard", icon: Home, description: "Overview & Quick Stats" },
     { id: "prayer-slot", label: "Prayer Slots", icon: Calendar, description: "Manage Your Prayer Time" },
     { id: "bible-chatbook", label: "Bible Chat", icon: Book, description: "AI-Powered Bible Study" },
-    { id: "prayer-planner", label: "Prayer Planner", icon: MessageCircle, description: "Plan Your Prayers" },
     { id: "bible-search", label: "Bible Verse Search", icon: Search, description: "Find Scripture" },
+    { id: "scripture-coach", label: "Scripture Coach", icon: GraduationCap, description: "Reading Plans & Memorization" },
+    { id: "prayer-planner", label: "Prayer Planner", icon: MessageCircle, description: "Plan Your Prayers" },
 
-    { id: "whatsapp-updates", label: "WhatsApp Updates", icon: Smartphone, description: "Send Updates via WhatsApp" },
   ];
 
   // Placeholder for setIsOpen, assuming it's managed in a parent component or within this component's state.
@@ -72,9 +72,9 @@ export function MobileSidebar({
         <div className="flex items-center justify-between p-4 border-b border-gi-primary/20">
           <div className="flex items-center space-x-3">
             <img
-              src="/src/assets/GI_Logo_Main_1751586542563.png" // Assuming this is the correct logo path
+              src="/assets/GI_Logo_Main_1751586542563.png"
               alt="Global Intercessors"
-              className="h-8 w-8" // Adjusted size for better fit
+              className="h-8 w-8"
             />
             <div>
               <h2 className="text-lg font-semibold text-gi-white">
@@ -115,7 +115,7 @@ export function MobileSidebar({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-white truncate">
-                {userProfile?.fullName || userEmail || "User"}
+                {userProfile?.fullName || userProfile?.full_name || userProfile?.name || "Ngonidzashe Zimbwa"}
               </p>
               <p className="text-xs text-gi-primary/200 truncate">
                 {userProfile?.city ? `${userProfile.city} • ` : ''}Intercessor

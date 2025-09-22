@@ -1151,13 +1151,25 @@ _Type 'menu' anytime to explore our prayer bot features._`;
         });
       }
 
-      // TODO: Implement notification sending if requested
+      // Send WhatsApp notifications if requested
       if (sendNotification) {
-        console.log('Push notification would be sent for update:', title);
+        console.log('📱 Sending WhatsApp notification for update:', title);
+        try {
+          // Import WhatsApp bot (assuming it's available)
+          const { WhatsAppPrayerBot } = await import('../services/whatsapp-bot-v2.js');
+          const whatsappBot = new WhatsAppPrayerBot();
+          
+          // Broadcast admin update to all WhatsApp users
+          await whatsappBot.broadcastAdminUpdate(title.trim(), description.trim());
+          console.log('✅ WhatsApp broadcast sent successfully');
+        } catch (error) {
+          console.error('❌ Error sending WhatsApp broadcast:', error);
+        }
       }
 
       if (sendEmail) {
-        console.log('Email notification would be sent for update:', title);
+        console.log('📧 Email notification would be sent for update:', title);
+        // TODO: Implement email notifications
       }
 
       res.json({
@@ -1759,15 +1771,10 @@ Guidelines:
           }
           const biblesData = await biblesResponse.json();
 
-          // Filter for English Bibles and popular versions
+          // Filter for KJV only
           const filteredBibles = biblesData.data.filter((bible: any) => 
             bible.language.id === 'eng' && 
-            (bible.abbreviation.includes('KJV') || 
-             bible.abbreviation.includes('NIV') || 
-             bible.abbreviation.includes('ESV') || 
-             bible.abbreviation.includes('NASB') ||
-             bible.abbreviation.includes('NLT') ||
-             bible.abbreviation.includes('CSB'))
+            bible.abbreviation.includes('KJV')
           );
 
           return res.json({ bibles: filteredBibles });
@@ -1819,13 +1826,55 @@ Guidelines:
             }
             const versesJson = await versesRes.json();
 
-            const verses = (versesJson.data || []).map((v: any) => ({
-              id: v.id,
-              verseNumber: v.id?.split('.')?.pop(),
-              reference: `${v.chapterId?.replace('.', ' ')}:${v.id?.split('.')?.pop()}`
-            }));
+            // Fetch the complete chapter with verse content for better UX
+            const chapterContentRes = await fetch(`${baseUrl}/bibles/${bibleId}/chapters/${chapterId}?content-type=text&include-notes=false&include-titles=false&include-chapter-numbers=false&include-verse-numbers=true`, { headers });
+            
+            let verses = [];
+            if (chapterContentRes.ok) {
+              const chapterContent = await chapterContentRes.json();
+              console.log('✅ Chapter content fetched successfully');
+              
+              // Parse the chapter content to extract individual verses
+              const content = chapterContent.data?.content || '';
+              const verseRegex = /\[(\d+)\]\s*([^[]*?)(?=\[\d+\]|$)/g;
+              let match;
+              
+              while ((match = verseRegex.exec(content)) !== null) {
+                const verseNumber = match[1];
+                const verseText = match[2].trim().replace(/\s+/g, ' ');
+                
+                if (verseText) {
+                  verses.push({
+                    id: `${chapterId}.${verseNumber}`,
+                    verseNumber: verseNumber,
+                    reference: `${chapterMeta.data?.reference || chapterId.replace('.', ' ')}:${verseNumber}`,
+                    text: verseText,
+                    content: verseText
+                  });
+                }
+              }
+              
+              // If regex parsing fails, fall back to verse list approach
+              if (verses.length === 0) {
+                verses = (versesJson.data || []).map((v: any) => ({
+                  id: v.id,
+                  verseNumber: v.id?.split('.')?.pop(),
+                  reference: `${v.chapterId?.replace('.', ' ')}:${v.id?.split('.')?.pop()}`,
+                  text: "Click verse number to load content",
+                  content: ""
+                }));
+              }
+            } else {
+              // Fallback to verse list without content
+              verses = (versesJson.data || []).map((v: any) => ({
+                id: v.id,
+                verseNumber: v.id?.split('.')?.pop(),
+                reference: `${v.chapterId?.replace('.', ' ')}:${v.id?.split('.')?.pop()}`,
+                text: "Click verse number to load content",
+                content: ""
+              }));
+            }
 
-            // For performance, do not fetch each verse content individually here; client can fetch per verse if needed.
             return res.json({
               chapter: {
                 id: chapterMeta.data?.id || chapterId,
@@ -5404,6 +5453,375 @@ Make it personal, biblical, and actionable for intercession.`;
     } catch (error) {
       console.error("Error testing reminders:", error);
       res.status(500).json({ error: "Failed to test reminder system" });
+    }
+  });
+
+  // === SCRIPTURE COACH API ENDPOINTS ===
+
+  // Get all available reading plans
+  app.get("/api/scripture-coach/plans", async (req: Request, res: Response) => {
+    try {
+      console.log('🔍 Fetching Scripture Coach plans...');
+      
+      // First, ensure plans exist - create them if they don't
+      const defaultPlans = [
+        { name: 'John 21', description: 'Journey through the Gospel of John in 21 transformative days', days: 21 },
+        { name: 'Proverbs 31', description: 'Gain wisdom for daily living by reading Proverbs', days: 31 },
+        { name: 'Psalms 30', description: 'Find comfort and strength through selected Psalms', days: 30 }
+      ];
+
+      for (const plan of defaultPlans) {
+        await supabaseAdmin
+          .from('plans')
+          .upsert(plan, { onConflict: 'name' });
+      }
+
+      const { data: plans, error } = await supabaseAdmin
+        .from('plans')
+        .select('*')
+        .eq('is_active', true)
+        .order('days', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching plans:', error);
+        return res.status(500).json({ error: 'Failed to fetch reading plans', details: error.message });
+      }
+
+      console.log(`✅ Found ${plans?.length || 0} reading plans`);
+      res.json({ plans: plans || [] });
+    } catch (error) {
+      console.error('Error in /api/scripture-coach/plans:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  // Get user's reading plans
+  app.get("/api/scripture-coach/user-plans/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      
+      const { data: userPlans, error } = await supabaseAdmin
+        .rpc('get_user_reading_plans', { user_uuid: userId });
+
+      if (error) {
+        console.error('Error fetching user plans:', error);
+        return res.status(500).json({ error: 'Failed to fetch user reading plans' });
+      }
+
+      res.json({ userPlans });
+    } catch (error) {
+      console.error('Error in /api/scripture-coach/user-plans:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Start a reading plan
+  app.post("/api/scripture-coach/start-plan", async (req: Request, res: Response) => {
+    try {
+      const { userId, planId } = req.body;
+
+      if (!userId || !planId) {
+        return res.status(400).json({ error: 'User ID and Plan ID are required' });
+      }
+
+      console.log(`🚀 Starting reading plan for user ${userId}, plan ${planId}`);
+
+      // Step 1: Ensure user exists in Scripture Coach users table
+      let { data: user, error: userError } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      if (!user) {
+        // Get user from user_profiles or create a basic user record
+        const { data: profile } = await supabaseAdmin
+          .from('user_profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        const userData = {
+          id: userId,
+          wa_id: profile?.phone || profile?.email || userId,
+          username: profile?.full_name || profile?.email || 'Ngonidzashe Zimbwa',
+          tz: 'Africa/Harare'
+        };
+
+        const { data: newUser, error: createUserError } = await supabaseAdmin
+          .from('users')
+          .upsert(userData, { onConflict: 'id' })
+          .select('id')
+          .single();
+
+        if (createUserError) {
+          console.error('Error creating user in users table:', createUserError);
+          return res.status(500).json({ error: 'Failed to create user', details: createUserError.message });
+        }
+        user = newUser;
+        console.log('✅ User created in Scripture Coach users table');
+      }
+
+      // Step 2: Verify the plan exists and get its details
+      const { data: plan, error: planError } = await supabaseAdmin
+        .from('plans')
+        .select('*')
+        .eq('id', planId)
+        .single();
+
+      if (planError || !plan) {
+        console.error('Plan not found:', planError);
+        return res.status(404).json({ error: 'Reading plan not found' });
+      }
+
+      // Step 3: Ensure readings exist for this plan (at least day 1)
+      let { data: readings } = await supabaseAdmin
+        .from('readings')
+        .select('*')
+        .eq('plan_id', planId)
+        .eq('day_number', 1);
+
+      if (!readings || readings.length === 0) {
+        console.log(`🔧 Creating default readings for ${plan.name}`);
+        // Create default readings based on plan name
+        if (plan.name === 'John 21') {
+          const { error } = await supabaseAdmin
+            .from('readings')
+            .upsert([
+              { plan_id: planId, day_number: 1, reference_list: ["John 1:1-18"] },
+              { plan_id: planId, day_number: 2, reference_list: ["John 1:19-34"] },
+              { plan_id: planId, day_number: 3, reference_list: ["John 1:35-51"] }
+            ], { onConflict: 'plan_id,day_number' });
+          
+          if (!error) console.log('✅ Created John 21 readings');
+        } else if (plan.name === 'Psalms 30') {
+          const { error } = await supabaseAdmin
+            .from('readings')
+            .upsert([
+              { plan_id: planId, day_number: 1, reference_list: ["Psalm 1"] },
+              { plan_id: planId, day_number: 2, reference_list: ["Psalm 23"] },
+              { plan_id: planId, day_number: 3, reference_list: ["Psalm 27"] }
+            ], { onConflict: 'plan_id,day_number' });
+          
+          if (!error) console.log('✅ Created Psalms 30 readings');
+        } else {
+          // Generic reading
+          await supabaseAdmin
+            .from('readings')
+            .upsert([
+              { plan_id: planId, day_number: 1, reference_list: [`${plan.name} 1`] }
+            ], { onConflict: 'plan_id,day_number' });
+        }
+      }
+
+      // Step 4: Deactivate any existing active plans for this user
+      await supabaseAdmin
+        .from('user_plans')
+        .update({ is_active: false })
+        .eq('user_id', userId)
+        .eq('is_active', true);
+
+      // Step 5: Start the new plan
+      const { error: insertError } = await supabaseAdmin
+        .from('user_plans')
+        .upsert({
+          user_id: userId,
+          plan_id: planId,
+          current_day: 1,
+          start_date: new Date().toISOString().split('T')[0],
+          is_active: true
+        }, { onConflict: 'user_id,plan_id' });
+
+      if (insertError) {
+        console.error('Error starting reading plan:', insertError);
+        return res.status(500).json({ error: 'Failed to start reading plan', details: insertError.message });
+      }
+
+      console.log('✅ Reading plan started successfully');
+
+      // Step 6: Get today's reading with a more robust query
+      const { data: todayReading } = await supabaseAdmin
+        .from('readings')
+        .select('*')
+        .eq('plan_id', planId)
+        .eq('day_number', 1)
+        .single();
+
+      const response = {
+        success: true,
+        message: 'Reading plan started successfully',
+        plan: plan,
+        todayReading: todayReading ? {
+          plan_name: plan.name,
+          day_number: 1,
+          total_days: plan.days,
+          references: todayReading.reference_list
+        } : null
+      };
+
+      console.log('📶 Today\'s reading prepared:', response.todayReading);
+      res.json(response);
+
+    } catch (error) {
+      console.error('Error in /api/scripture-coach/start-plan:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  // Get today's reading for a user
+  app.get("/api/scripture-coach/today-reading/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      
+      console.log(`📖 Getting today's reading for user ${userId}`);
+
+      // Get active user plan with a direct query instead of relying on SQL functions
+      const { data: userPlan, error: userPlanError } = await supabaseAdmin
+        .from('user_plans')
+        .select('*, plans(*)')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .single();
+
+      if (userPlanError) {
+        console.log('No active reading plan found for user');
+        return res.status(404).json({ error: 'No active reading plan found' });
+      }
+
+      // Get today's reading
+      const { data: reading, error: readingError } = await supabaseAdmin
+        .from('readings')
+        .select('*')
+        .eq('plan_id', userPlan.plan_id)
+        .eq('day_number', userPlan.current_day)
+        .single();
+
+      if (readingError) {
+        console.error('Error fetching reading:', readingError);
+        return res.status(500).json({ error: 'Failed to fetch today\'s reading' });
+      }
+
+      const todayReading = {
+        plan_name: userPlan.plans.name,
+        day_number: userPlan.current_day,
+        total_days: userPlan.plans.days,
+        references: reading.reference_list
+      };
+
+      console.log('✅ Today\'s reading found:', todayReading);
+      res.json({ todayReading });
+    } catch (error) {
+      console.error('Error in /api/scripture-coach/today-reading:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
+    }
+  });
+
+  // Mark reading as complete
+  app.post("/api/scripture-coach/mark-complete", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+      }
+
+      // Get user's active plan
+      const { data: userPlan, error: userPlanError } = await supabaseAdmin
+        .from('user_plans')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .single();
+
+      if (userPlanError || !userPlan) {
+        return res.status(404).json({ error: 'No active reading plan found' });
+      }
+
+      // Get plan details
+      const { data: plan, error: planError } = await supabaseAdmin
+        .from('plans')
+        .select('*')
+        .eq('id', userPlan.plan_id)
+        .single();
+
+      if (planError || !plan) {
+        return res.status(500).json({ error: 'Failed to fetch plan details' });
+      }
+
+      // Check if plan is completed
+      if (userPlan.current_day >= plan.days) {
+        // Mark plan as completed
+        const { error: completeError } = await supabaseAdmin
+          .from('user_plans')
+          .update({ is_active: false })
+          .eq('id', userPlan.id);
+
+        if (completeError) {
+          console.error('Error completing plan:', completeError);
+          return res.status(500).json({ error: 'Failed to complete plan' });
+        }
+
+        return res.json({ 
+          success: true, 
+          completed: true,
+          message: `Congratulations! You've completed the ${plan.name} reading plan!`
+        });
+      } else {
+        // Move to next day
+        const { error: updateError } = await supabaseAdmin
+          .from('user_plans')
+          .update({ current_day: userPlan.current_day + 1 })
+          .eq('id', userPlan.id);
+
+        if (updateError) {
+          console.error('Error updating plan:', updateError);
+          return res.status(500).json({ error: 'Failed to update plan progress' });
+        }
+
+        return res.json({ 
+          success: true, 
+          completed: false,
+          newDay: userPlan.current_day + 1,
+          message: `Great job! Moving to day ${userPlan.current_day + 1} of ${plan.days}`
+        });
+      }
+    } catch (error) {
+      console.error('Error in /api/scripture-coach/mark-complete:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Get reading plan progress
+  app.get("/api/scripture-coach/progress/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      
+      const { data: userPlans, error } = await supabaseAdmin
+        .rpc('get_user_reading_plans', { user_uuid: userId });
+
+      if (error) {
+        console.error('Error fetching user progress:', error);
+        return res.status(500).json({ error: 'Failed to fetch user progress' });
+      }
+
+      // Calculate statistics
+      const activePlans = userPlans?.filter((plan: any) => plan.is_active) || [];
+      const completedPlans = userPlans?.filter((plan: any) => !plan.is_active) || [];
+      
+      const totalDaysRead = userPlans?.reduce((total: number, plan: any) => {
+        return total + (plan.is_active ? plan.current_day - 1 : plan.days);
+      }, 0) || 0;
+
+      res.json({ 
+        userPlans,
+        activePlans,
+        completedPlans,
+        totalDaysRead,
+        totalPlans: userPlans?.length || 0
+      });
+    } catch (error) {
+      console.error('Error in /api/scripture-coach/progress:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 

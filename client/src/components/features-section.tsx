@@ -38,7 +38,7 @@ export function FeaturesSection() {
               <CardContent className="p-8">
                 <div className="w-16 h-16 bg-gi-primary rounded-2xl flex items-center justify-center mb-6 group-hover:bg-gi-gold transition-brand shadow-brand relative">
                   <img 
-                    src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                    src="/assets/GI_GOLD_Green_Icon_1751586542565.png" 
                     alt="Global Intercessors Icon" 
                     className="w-8 h-8 object-contain opacity-75 group-hover:opacity-100 transition-brand absolute"
                     onError={(e) => {

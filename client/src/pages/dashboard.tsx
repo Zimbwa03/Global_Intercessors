@@ -19,6 +19,7 @@ import { NotificationSetup } from "@/components/dashboard/notification-setup";
 import { UserProfile } from "@/components/dashboard/user-profile";
 
 import { BibleVerseSearch } from "@/components/dashboard/bible-verse-search";
+import { ScriptureCoach } from "@/components/dashboard/scripture-coach";
 import { WhatsAppSettings } from "@/components/dashboard/whatsapp-settings";
 import { IntercessorScheduleSettings } from "@/components/intercessor-schedule-settings";
 import { WeeklyPrayerAttendance } from "@/components/weekly-prayer-attendance";
@@ -156,6 +157,8 @@ export default function Dashboard() {
         return <PrayerPlanner />;
       case "bible-search":
         return <BibleVerseSearch />;
+      case "scripture-coach":
+        return <ScriptureCoach />;
 
       case "audio-bible":
         return (
@@ -243,7 +246,7 @@ export default function Dashboard() {
             {/* Render the greeting section */}
             <div className="flex items-center space-x-4 mb-6">
               <img 
-                src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png" 
+                src="/assets/GI_GOLD_Green_Icon_1751586542565.png" 
                 alt="GI Logo" 
                 className="w-12 h-12" 
               />

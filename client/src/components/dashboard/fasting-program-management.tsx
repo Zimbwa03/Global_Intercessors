@@ -163,37 +163,68 @@ export function FastingProgramManagement() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Fasting Program Management</h2>
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-gi-primary/10 rounded-xl">
+            <Calendar className="h-6 w-6 text-gi-primary" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gi-primary">Fasting Program Management</h2>
+            <p className="text-gray-600">Manage monthly 3-day fasting events for Global Intercessors</p>
+          </div>
+        </div>
         {!isEditing ? (
-          <Button onClick={handleEdit}>Edit Program Details</Button>
+          <Button 
+            onClick={handleEdit}
+            className="bg-gi-primary hover:bg-gi-primary/90 text-white"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Program Details
+          </Button>
         ) : (
           <div className="flex gap-2">
             <Button 
               variant="outline" 
               onClick={handleCancel}
               disabled={updateMutation.isPending}
+              className="border-gi-primary text-gi-primary hover:bg-gi-primary/10"
             >
               Cancel
             </Button>
             <Button 
               onClick={handleSave}
               disabled={updateMutation.isPending}
+              className="bg-gi-primary hover:bg-gi-primary/90 text-white"
             >
-              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              {updateMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </>
+              )}
             </Button>
           </div>
         )}
       </div>
 
-      {/* Program Status Overview */}
+      {/* Enhanced Program Status Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="border-gi-primary/20">
           <CardContent className="pt-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-gi-primary/600" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gi-primary/10 rounded-lg">
+                <Calendar className="h-5 w-5 text-gi-primary" />
+              </div>
               <div>
-                <p className="text-sm text-gray-600">Days Until Start</p>
-                <p className="text-2xl font-bold">{programDetails.days_until_start}</p>
+                <p className="text-sm font-medium text-gray-600">Days Until Start</p>
+                <p className="text-2xl font-bold text-gi-primary">{programDetails.days_until_start}</p>
+                <Badge variant={programDetails.days_until_start > 7 ? "secondary" : "destructive"} className="mt-1">
+                  {programDetails.days_until_start > 7 ? "Planning Phase" : "Urgent"}
+                </Badge>
               </div>
             </div>
           </CardContent>

@@ -109,7 +109,7 @@ export function MobileHeader({
 
           <div className="flex items-center space-x-2">
             <img
-              src="/src/assets/GI_GOLD_Green_Icon_1751586542565.png"
+              src="/assets/GI_GOLD_Green_Icon_1751586542565.png"
               alt="GI"
               className="w-8 h-8 rounded-full"
               onError={(e) => {
