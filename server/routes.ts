@@ -599,14 +599,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { requestId } = req.params;
       const { action, adminComment } = req.body;
 
+      console.log('=== SKIP REQUEST DEBUG START ===');
       console.log('Processing skip request action:', { requestId, action, adminComment, timestamp: new Date().toISOString() });
 
       // Validate input parameters
       if (!requestId || isNaN(parseInt(requestId))) {
+        console.log('❌ Invalid request ID:', requestId);
         return res.status(400).json({ error: "Invalid request ID provided" });
       }
 
       if (!action || !['approve', 'reject'].includes(action)) {
+        console.log('❌ Invalid action:', action);
         return res.status(400).json({ error: "Action must be 'approve' or 'reject'" });
       }
 
@@ -654,41 +657,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Skip request has already been processed" });
       }
 
-      // Use the dedicated service function to update skip request (bypasses RLS)
+      // DIAGNOSTIC: Skip database function, use direct update only
+      console.log('🔄 Attempting direct database update...');
       const { error: updateError } = await supabaseAdmin
-        .rpc('update_skip_request_status', {
-          request_id: parseInt(requestId),
-          new_status: action === 'approve' ? 'approved' : 'rejected',
-          comment: adminComment || null
-        });
+        .from('skip_requests')
+        .update({
+          status: action === 'approve' ? 'approved' : 'rejected',
+          admin_comment: adminComment || null,
+          processed_at: new Date().toISOString()
+        })
+        .eq('id', parseInt(requestId));
 
       if (updateError) {
-        console.error("Error updating skip request via service function:", updateError);
-        
-        // Fallback to direct update if service function fails
-        console.log("Attempting direct update as fallback...");
-        const { error: directUpdateError } = await supabaseAdmin
-          .from('skip_requests')
-          .update({
-            status: action === 'approve' ? 'approved' : 'rejected',
-            admin_comment: adminComment || null,
-            processed_at: new Date().toISOString()
-          })
-          .eq('id', parseInt(requestId));
-
-        if (directUpdateError) {
-          console.error("Direct update also failed:", directUpdateError);
-          return res.status(500).json({ 
-            error: "Failed to update skip request", 
-            details: "Both service function and direct update failed. Please ensure the update_skip_request_status function exists in the database."
-          });
-        }
+        console.error("❌ Direct update failed:", updateError);
+        console.error("❌ Update error details:", JSON.stringify(updateError, null, 2));
+        return res.status(500).json({ 
+          error: "Failed to update skip request", 
+          details: `Database update failed: ${updateError.message}`,
+          supabaseError: updateError
+        });
       }
+      
+      console.log('✅ Skip request status updated successfully');
 
       // If approved, update the prayer slot and create notification
       if (action === 'approve') {
+        console.log('🔄 Processing approval - updating prayer slot...');
         const skipEndDate = new Date();
         skipEndDate.setDate(skipEndDate.getDate() + request.skip_days);
+
+        console.log('Prayer slot update params:', {
+          user_id: request.user_id,
+          skip_days: request.skip_days,
+          skip_end_date: skipEndDate.toISOString()
+        });
 
         const { error: slotError } = await supabaseAdmin
           .from('prayer_slots')
@@ -701,28 +703,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .eq('user_id', request.user_id);
 
         if (slotError) {
-          console.error("Error updating prayer slot:", slotError);
-          return res.status(500).json({ error: "Failed to update prayer slot" });
+          console.error("❌ Error updating prayer slot:", slotError);
+          console.error("❌ Prayer slot error details:", JSON.stringify(slotError, null, 2));
+          return res.status(500).json({ 
+            error: "Failed to update prayer slot", 
+            details: `Prayer slot update failed: ${slotError.message}`,
+            supabaseError: slotError
+          });
         }
 
-        console.log(`Prayer slot updated for skip request approval: ${request.user_id}`);
+        console.log(`✅ Prayer slot updated for skip request approval: ${request.user_id}`);
       } else {
-        // Rejection path: nothing to update on prayer_slots
+        console.log('🔄 Processing rejection - no prayer slot update needed');
       }
 
-      console.log(`Skip request ${requestId} ${action} successfully`);
+      console.log(`✅ Skip request ${requestId} ${action}d successfully`);
+      console.log('=== SKIP REQUEST DEBUG END ===');
 
       res.json({ 
         success: true, 
         message: `Skip request ${action === 'approve' ? 'approved' : 'rejected'} successfully` 
       });
     } catch (error) {
+      console.error("=== SKIP REQUEST ERROR ===");
       console.error("Error processing skip request:", error);
       console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace available');
+      console.error("Request details:", { requestId, action, adminComment });
+      console.error("=== END ERROR DEBUG ===");
       res.status(500).json({ 
         error: "Failed to process skip request", 
         details: error instanceof Error ? error.message : "Unknown error occurred",
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        requestId: requestId,
+        action: action
       });
     }
   });
