@@ -599,31 +599,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { requestId } = req.params;
       const { action, adminComment } = req.body;
 
-      console.log('Processing skip request action:', { requestId, action, adminComment });
+      console.log('Processing skip request action:', { requestId, action, adminComment, timestamp: new Date().toISOString() });
 
-      if (!['approve', 'reject'].includes(action)) {
+      // Validate input parameters
+      if (!requestId || isNaN(parseInt(requestId))) {
+        return res.status(400).json({ error: "Invalid request ID provided" });
+      }
+
+      if (!action || !['approve', 'reject'].includes(action)) {
         return res.status(400).json({ error: "Action must be 'approve' or 'reject'" });
       }
 
-      // Get the skip request (prefer service function; fallback to direct query)
+      // Get the skip request using direct query first (more reliable)
       let skipRequest: any | null = null;
-      const { data: skipRequestArray, error: fetchError } = await supabaseAdmin
-        .rpc('get_all_skip_requests_admin');
+      console.log('Fetching skip request with ID:', requestId);
+      
+      const { data: directReq, error: directErr } = await supabaseAdmin
+        .from('skip_requests')
+        .select('*')
+        .eq('id', parseInt(requestId))
+        .maybeSingle();
+        
+      if (directErr) {
+        console.error("Error fetching skip request directly:", directErr);
+        
+        // Try using service function as fallback
+        console.log('Direct query failed, trying service function...');
+        const { data: skipRequestArray, error: fetchError } = await supabaseAdmin
+          .rpc('get_all_skip_requests_admin');
 
-      if (!fetchError && Array.isArray(skipRequestArray)) {
-        skipRequest = skipRequestArray.find((req: any) => req.id === parseInt(requestId));
-      }
-
-      if (!skipRequest) {
-        const { data: directReq, error: directErr } = await supabaseAdmin
-          .from('skip_requests')
-          .select('*')
-          .eq('id', parseInt(requestId))
-          .maybeSingle();
-        if (directErr) {
-          console.error("Error fetching skip request directly:", directErr);
-          return res.status(500).json({ error: "Failed to fetch skip request" });
+        if (!fetchError && Array.isArray(skipRequestArray)) {
+          skipRequest = skipRequestArray.find((req: any) => req.id === parseInt(requestId));
+        } else {
+          console.error("Service function also failed:", fetchError);
+          return res.status(500).json({ 
+            error: "Failed to fetch skip request", 
+            details: "Both direct query and service function failed" 
+          });
         }
+      } else {
         skipRequest = directReq;
       }
 
@@ -631,6 +645,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Skip request not found:", requestId);
         return res.status(404).json({ error: "Skip request not found" });
       }
+      
+      console.log('Found skip request:', { id: skipRequest.id, status: skipRequest.status, user_id: skipRequest.user_id });
 
       const request = skipRequest;
 
@@ -638,19 +654,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Skip request has already been processed" });
       }
 
-      // Update the skip request status directly using service role
+      // Use the dedicated service function to update skip request (bypasses RLS)
       const { error: updateError } = await supabaseAdmin
-        .from('skip_requests')
-        .update({
-          status: action === 'approve' ? 'approved' : 'rejected',
-          admin_comment: adminComment || null,
-          processed_at: new Date().toISOString()
-        })
-        .eq('id', parseInt(requestId));
+        .rpc('update_skip_request_status', {
+          request_id: parseInt(requestId),
+          new_status: action === 'approve' ? 'approved' : 'rejected',
+          comment: adminComment || null
+        });
 
       if (updateError) {
-        console.error("Error updating skip request:", updateError);
-        return res.status(500).json({ error: "Failed to update skip request" });
+        console.error("Error updating skip request via service function:", updateError);
+        
+        // Fallback to direct update if service function fails
+        console.log("Attempting direct update as fallback...");
+        const { error: directUpdateError } = await supabaseAdmin
+          .from('skip_requests')
+          .update({
+            status: action === 'approve' ? 'approved' : 'rejected',
+            admin_comment: adminComment || null,
+            processed_at: new Date().toISOString()
+          })
+          .eq('id', parseInt(requestId));
+
+        if (directUpdateError) {
+          console.error("Direct update also failed:", directUpdateError);
+          return res.status(500).json({ 
+            error: "Failed to update skip request", 
+            details: "Both service function and direct update failed. Please ensure the update_skip_request_status function exists in the database."
+          });
+        }
       }
 
       // If approved, update the prayer slot and create notification
@@ -686,7 +718,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error processing skip request:", error);
-      res.status(500).json({ error: "Failed to process skip request" });
+      console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace available');
+      res.status(500).json({ 
+        error: "Failed to process skip request", 
+        details: error instanceof Error ? error.message : "Unknown error occurred",
+        timestamp: new Date().toISOString()
+      });
     }
   });
 
