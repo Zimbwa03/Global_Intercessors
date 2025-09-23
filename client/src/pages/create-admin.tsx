@@ -210,6 +210,7 @@ export default function CreateAdmin() {
               <Label htmlFor="email">Admin Email *</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

@@ -141,20 +141,16 @@ class AdvancedReminderSystem {
       const now = new Date();
       const currentTime = now.toTimeString().slice(0, 5);
 
-      // Get all active slots with reminder settings
+      // Use the database function to get active slots with user details
       const { data: prayerSlots, error } = await supabase
-        .from('prayer_slots')
-        .select(`
-          *,
-          user_profiles!inner(full_name, phone_number, timezone, reminder_preferences)
-        `)
-        .eq('status', 'active')
-        .not('user_profiles.phone_number', 'is', null);
+        .rpc('get_active_slots_for_reminders');
 
       if (error) {
         console.error('❌ Error fetching prayer slots for reminders:', error);
         return;
       }
+
+      console.log(`🔍 Found ${prayerSlots?.length || 0} active slots for reminder checking`);
 
       for (const slot of prayerSlots || []) {
         await this.processSlotReminder(slot, currentTime);
@@ -167,8 +163,8 @@ class AdvancedReminderSystem {
 
   private async processSlotReminder(slot: any, currentTime: string) {
     try {
-      const userProfile = slot.user_profiles;
-      const reminderMinutes = slot.reminder_time || 30;
+      // slot now contains flattened data from the database function
+      const reminderMinutes = 30; // default reminder time
       
       // Parse slot time
       const slotStartTime = this.parseSlotTime(slot.slot_time);
@@ -180,18 +176,18 @@ class AdvancedReminderSystem {
 
       // Check if it's time to send reminder
       if (currentTime === reminderTimeStr) {
-        const reminderKey = `${slot.id}-${reminderTimeStr}`;
+        const reminderKey = `${slot.slot_id}-${reminderTimeStr}`;
         
         // Prevent duplicate reminders
         if (this.activeReminders.has(reminderKey)) return;
 
         // Check if user is in quiet hours
-        if (this.isInQuietHours(userProfile)) {
-          console.log(`🔇 Skipping reminder for ${userProfile.full_name} - quiet hours`);
+        if (this.isInQuietHours(slot)) {
+          console.log(`🔇 Skipping reminder for ${slot.full_name} - quiet hours`);
           return;
         }
 
-        await this.sendSlotReminder(slot, userProfile, reminderMinutes);
+        await this.sendSlotReminder(slot, reminderMinutes);
         
         // Mark this reminder as sent
         this.activeReminders.set(reminderKey, setTimeout(() => {
@@ -204,9 +200,9 @@ class AdvancedReminderSystem {
     }
   }
 
-  private async sendSlotReminder(slot: any, userProfile: any, reminderMinutes: number) {
+  private async sendSlotReminder(slot: any, reminderMinutes: number) {
     try {
-      const userName = userProfile.full_name || slot.user_email?.split('@')[0] || 'Beloved Intercessor';
+      const userName = slot.full_name || slot.user_email?.split('@')[0] || 'Beloved Intercessor';
       const slotTime = this.formatSlotTime(slot.slot_time);
 
       // Generate personalized prayer focus based on time and user

@@ -205,3 +205,5 @@ BEGIN
   RAISE NOTICE '🧹 Automatic cleanup function is ready for scheduling';
 END
 $$;
+
+

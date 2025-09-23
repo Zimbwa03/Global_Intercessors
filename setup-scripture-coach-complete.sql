@@ -279,3 +279,5 @@ SELECT 'ScriptureCoach setup complete! Ready for testing.' as status;
 
 
 
+
+

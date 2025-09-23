@@ -568,18 +568,7 @@ export class WhatsAppPrayerBot {
 
       // Get active prayer slots with WhatsApp users
       const { data: activeSlots, error: slotsError } = await supabase
-        .from('prayer_slots')
-        .select(`
-          *,
-          whatsapp_bot_users!inner(
-            user_id,
-            whatsapp_number,
-            is_active,
-            timezone
-          )
-        `)
-        .eq('status', 'active')
-        .eq('whatsapp_bot_users.is_active', true);
+        .rpc('get_whatsapp_users_with_slots');
 
       if (slotsError) {
         console.error('❌ Error fetching prayer slots:', slotsError);
@@ -595,16 +584,15 @@ export class WhatsAppPrayerBot {
 
       // Process each slot
       for (const slot of activeSlots) {
-        const whatsappUser = slot.whatsapp_bot_users;
-        if (!whatsappUser || !whatsappUser.whatsapp_number) {
-          console.log(`⚠️ No WhatsApp number for slot ${slot.id}`);
+        if (!slot.whatsapp_number) {
+          console.log(`⚠️ No WhatsApp number for slot ${slot.slot_time}`);
           continue;
         }
 
         // Parse slot time
         const slotTimeStr = slot.slot_time?.split('–')[0] || slot.slot_time;
         if (!slotTimeStr) {
-          console.log(`⚠️ No slot time for slot ${slot.id}`);
+          console.log(`⚠️ No slot time for user ${slot.user_id}`);
           continue;
         }
 
@@ -615,7 +603,7 @@ export class WhatsAppPrayerBot {
         }
 
         const slotTotalMinutes = slotHour * 60 + slotMinute;
-        console.log(`⏰ Slot ${slot.id}: ${slotHour.toString().padStart(2, '0')}:${slotMinute.toString().padStart(2, '0')} (${slotTotalMinutes} minutes)`);
+        console.log(`⏰ User ${slot.user_id}: ${slotHour.toString().padStart(2, '0')}:${slotMinute.toString().padStart(2, '0')} (${slotTotalMinutes} minutes)`);
 
         // Check for 30-minute reminder
         const reminder30Min = (slotTotalMinutes - 30 + 1440) % 1440;

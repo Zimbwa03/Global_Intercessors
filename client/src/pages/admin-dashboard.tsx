@@ -977,6 +977,7 @@ export default function AdminDashboard() {
                   <label htmlFor="sort-order" className="font-medium">Sort by:</label>
                   <select
                     id="sort-order"
+                    name="sort-order"
                     value={sortOrder}
                     onChange={(e) => setSortOrder(e.target.value as 'highest' | 'lowest' | 'alphabetical')}
                     className="border rounded px-2 py-1 text-sm"
@@ -1214,6 +1215,7 @@ export default function AdminDashboard() {
                 <Label htmlFor="updateTitle" className="text-sm font-medium">Update Title *</Label>
                 <Input
                   id="updateTitle"
+                  name="updateTitle"
                   value={newUpdate.title}
                   onChange={(e) => handleUpdateChange('title', e.target.value)}
                   placeholder="e.g., Prayer Meeting Schedule Update, Fasting Program Announcement..."
@@ -1226,6 +1228,7 @@ export default function AdminDashboard() {
                 <Label htmlFor="updateType" className="text-sm font-medium">Update Type</Label>
                 <select
                   id="updateType"
+                  name="updateType"
                   value={newUpdate.type || 'general'}
                   onChange={(e) => handleUpdateChange('type', e.target.value)}
                   className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
@@ -1242,6 +1245,7 @@ export default function AdminDashboard() {
                 <Label htmlFor="updatePriority" className="text-sm font-medium">Priority Level</Label>
                 <select
                   id="updatePriority"
+                  name="updatePriority"
                   value={newUpdate.priority || 'normal'}
                   onChange={(e) => handleUpdateChange('priority', e.target.value)}
                   className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
@@ -1257,6 +1261,7 @@ export default function AdminDashboard() {
                 <Label htmlFor="updateDescription" className="text-sm font-medium">Message Content *</Label>
                 <Textarea
                   id="updateDescription"
+                  name="updateDescription"
                   value={newUpdate.description}
                   onChange={(e) => handleUpdateChange('description', e.target.value)}
                   placeholder="Enter your message for all users. This will appear on their dashboard immediately after posting..."
@@ -1274,6 +1279,7 @@ export default function AdminDashboard() {
                   <Label htmlFor="updateSchedule" className="text-sm font-medium">Schedule Options</Label>
                   <select
                     id="updateSchedule"
+                    name="updateSchedule"
                     value={newUpdate.schedule || 'immediate'}
                     onChange={(e) => handleUpdateChange('schedule', e.target.value)}
                     className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
@@ -1287,6 +1293,7 @@ export default function AdminDashboard() {
                   <Label htmlFor="updateExpiry" className="text-sm font-medium">Auto-Hide After</Label>
                   <select
                     id="updateExpiry"
+                    name="updateExpiry"
                     value={newUpdate.expiry || 'never'}
                     onChange={(e) => handleUpdateChange('expiry', e.target.value)}
                     className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
@@ -1303,8 +1310,10 @@ export default function AdminDashboard() {
               <div className="border rounded-lg p-3 bg-gray-50">
                 <h4 className="text-sm font-medium mb-2">Notification Settings</h4>
                 <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
+                  <label htmlFor="sendNotification" className="flex items-center space-x-2">
                     <input
+                      id="sendNotification"
+                      name="sendNotification"
                       type="checkbox"
                       checked={newUpdate.sendNotification || false}
                       onChange={(e) => handleUpdateChange('sendNotification', e.target.checked)}
@@ -1312,8 +1321,10 @@ export default function AdminDashboard() {
                     />
                     <span className="text-sm">Send push notification to all users</span>
                   </label>
-                  <label className="flex items-center space-x-2">
+                  <label htmlFor="sendEmail" className="flex items-center space-x-2">
                     <input
+                      id="sendEmail"
+                      name="sendEmail"
                       type="checkbox"
                       checked={newUpdate.sendEmail || false}
                       onChange={(e) => handleUpdateChange('sendEmail', e.target.checked)}
@@ -1321,8 +1332,10 @@ export default function AdminDashboard() {
                     />
                     <span className="text-sm">Send email notification to subscribers</span>
                   </label>
-                  <label className="flex items-center space-x-2">
+                  <label htmlFor="pinToTop" className="flex items-center space-x-2">
                     <input
+                      id="pinToTop"
+                      name="pinToTop"
                       type="checkbox"
                       checked={newUpdate.pinToTop || false}
                       onChange={(e) => handleUpdateChange('pinToTop', e.target.checked)}
@@ -1459,6 +1472,7 @@ export default function AdminDashboard() {
               <Label htmlFor="zoomLink">New Zoom Link</Label>
               <Input
                 id="zoomLink"
+                name="zoomLink"
                 value={zoomLink}
                 onChange={(e) => setZoomLink(e.target.value)}
                 placeholder="https://zoom.us/j/..."
@@ -1959,6 +1973,7 @@ export default function AdminDashboard() {
                           <Label htmlFor="min-attendance">Min Attendance %:</Label>
                           <Input
                             id="min-attendance"
+                            name="min-attendance"
                             type="number"
                             min="0"
                             max="100"
@@ -1971,6 +1986,7 @@ export default function AdminDashboard() {
                           <Label htmlFor="max-attendance">Max Attendance %:</Label>
                           <Input
                             id="max-attendance"
+                            name="max-attendance"
                             type="number"
                             min="0"
                             max="100"

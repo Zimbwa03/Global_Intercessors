@@ -704,21 +704,21 @@ export function ScriptureCoach() {
                     </CardContent>
                   </Card>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Detailed Reading Statistics */}
                     <Card className="shadow-brand-lg border border-gi-primary/20">
                       <CardHeader className="bg-gradient-to-r from-gi-primary/5 to-gi-gold/5 border-b border-gi-primary/10">
                         <CardTitle className="flex items-center gap-2 font-poppins">
                           <TrendingUp className="h-5 w-5 text-gi-primary" />
-                          Reading Statistics
-                        </CardTitle>
-                      </CardHeader>
+                        Reading Statistics
+                      </CardTitle>
+                    </CardHeader>
                       <CardContent className="space-y-4 p-6">
                         <div className="space-y-4">
                           <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gi-primary/5 to-gi-gold/5 rounded-lg border border-gi-primary/10">
                             <div className="flex items-center gap-3">
                               <Calendar className="h-5 w-5 text-gi-primary" />
-                              <span className="font-medium text-gray-700">Total Days Read</span>
+                        <span className="font-medium text-gray-700">Total Days Read</span>
                             </div>
                             <span className="text-2xl font-bold text-gi-primary">{progressStats.totalDaysRead}</span>
                           </div>
@@ -737,7 +737,7 @@ export function ScriptureCoach() {
                               <span className="text-lg font-bold text-gi-gold">{progressStats.completedPlans.length}</span>
                             </div>
                             <Progress value={progressStats.completedPlans.length * 20} className="h-2" />
-                          </div>
+                      </div>
 
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
@@ -745,15 +745,15 @@ export function ScriptureCoach() {
                               <span className="text-lg font-bold text-purple-600">
                                 {progressStats.totalPlans > 0 ? Math.round((progressStats.completedPlans.length / progressStats.totalPlans) * 100) : 0}%
                               </span>
-                            </div>
+                      </div>
                             <Progress 
                               value={progressStats.totalPlans > 0 ? (progressStats.completedPlans.length / progressStats.totalPlans) * 100 : 0} 
                               className="h-2" 
                             />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
                     {/* Plan Progress Details */}
                     <Card className="shadow-brand-lg border border-gi-primary/20">
@@ -761,8 +761,8 @@ export function ScriptureCoach() {
                         <CardTitle className="flex items-center gap-2 font-poppins">
                           <Clock className="h-5 w-5 text-gi-primary" />
                           Active Plan Progress
-                        </CardTitle>
-                      </CardHeader>
+                      </CardTitle>
+                    </CardHeader>
                       <CardContent className="p-6">
                         <ScrollArea className="h-64">
                           {progressStats.activePlans.length > 0 ? (
@@ -770,7 +770,7 @@ export function ScriptureCoach() {
                               {progressStats.activePlans.map((plan) => (
                                 <div key={plan.plan_id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                                   <div className="flex items-start justify-between mb-3">
-                                    <div>
+                                <div>
                                       <h4 className="font-semibold text-gray-800 font-poppins">{plan.plan_name}</h4>
                                       <p className="text-sm text-gray-600">Day {plan.current_day} of {plan.days}</p>
                                     </div>
@@ -783,13 +783,13 @@ export function ScriptureCoach() {
                                     <div className="flex items-center justify-between text-xs text-gray-500">
                                       <span>Started: {new Date(plan.start_date).toLocaleDateString()}</span>
                                       <span>{plan.days - plan.current_day} days remaining</span>
-                                    </div>
-                                  </div>
                                 </div>
-                              ))}
+                              </div>
                             </div>
-                          ) : (
-                            <div className="text-center py-8">
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
                               <Target className="h-12 w-12 text-gray-400 mx-auto mb-3" />
                               <p className="text-gray-500">No active plans to track</p>
                               <Button 
@@ -803,8 +803,8 @@ export function ScriptureCoach() {
                               >
                                 Start a Plan
                               </Button>
-                            </div>
-                          )}
+                        </div>
+                      )}
                         </ScrollArea>
                       </CardContent>
                     </Card>

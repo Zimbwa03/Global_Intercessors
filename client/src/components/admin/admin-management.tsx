@@ -198,6 +198,7 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
                     <Label htmlFor="admin-email">Email Address *</Label>
                     <Input
                       id="admin-email"
+                      name="admin-email"
                       type="email"
                       placeholder="Enter intercessor's email"
                       value={newAdminEmail}
@@ -213,7 +214,7 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
                   <div>
                     <Label htmlFor="admin-role">Admin Role *</Label>
                     <Select value={newAdminRole} onValueChange={(value: 'admin' | 'super_admin') => setNewAdminRole(value)}>
-                      <SelectTrigger className="mt-1">
+                      <SelectTrigger id="admin-role" name="admin-role" className="mt-1">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

@@ -139,3 +139,5 @@ BEGIN
   RAISE NOTICE '🔒 Security: The /create-admin route will be secured to only allow existing admins';
 END
 $$;
+
+

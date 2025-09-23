@@ -194,3 +194,5 @@ BEGIN
   RAISE NOTICE '🔧 Functions created for efficient data retrieval';
 END
 $$;
+
+
