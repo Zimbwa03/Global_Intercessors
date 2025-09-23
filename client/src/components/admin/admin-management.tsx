@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,12 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminRole, setNewAdminRole] = useState<'admin' | 'super_admin'>('admin');
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(isOpen);
+
+  // Sync dialog state with parent
+  useEffect(() => {
+    setIsDialogOpen(isOpen);
+  }, [isOpen]);
 
   // Check if current user can create the selected role
   const canCreateRole = (targetRole: string) => {
@@ -53,7 +59,7 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
       if (error) throw error;
       return data as AdminUser[];
     },
-    enabled: isOpen,
+    enabled: true, // Always enabled to prevent flickering
   });
 
   // Create new admin mutation
@@ -172,9 +178,17 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
     return role === 'super_admin' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : 'bg-blue-100 text-blue-800 border-blue-300';
   };
 
+  // Handle dialog state changes
+  const handleDialogOpenChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      onClose();
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+    <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" key="admin-management-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5" />
@@ -256,9 +270,15 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="text-center py-4">Loading admin users...</div>
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-sm text-gray-500">Loading admin users...</p>
+                </div>
               ) : adminUsers.length === 0 ? (
-                <div className="text-center py-4 text-gray-500">No admin users found</div>
+                <div className="text-center py-4 text-gray-500">
+                  <User className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                  <p>No admin users found</p>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {adminUsers.map((admin) => (

@@ -265,37 +265,58 @@ export default function AdminDashboard() {
 
   // Check admin authentication
   useEffect(() => {
+    let isMounted = true;
+    
     const checkAdminAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
 
-      if (!user) {
-        setLocation("/admin/login");
-        return;
+        if (!user) {
+          if (isMounted) setLocation("/admin/login");
+          return;
+        }
+
+        // Verify admin role
+        const { data: userData, error } = await supabase
+          .from('admin_users')
+          .select('*')
+          .eq('email', user.email)
+          .eq('is_active', true)
+          .single();
+
+        if (error || !userData) {
+          if (isMounted) {
+            toast({
+              title: "Access Denied",
+              description: "Admin privileges required",
+              variant: "destructive",
+            });
+            await supabase.auth.signOut();
+            setLocation("/admin/login");
+          }
+          return;
+        }
+
+        if (isMounted) {
+          setAdminUser(userData);
+        }
+      } catch (error) {
+        console.error('Admin auth error:', error);
+        if (isMounted) {
+          toast({
+            title: "Authentication Error",
+            description: "Failed to verify admin privileges",
+            variant: "destructive",
+          });
+        }
       }
-
-      // Verify admin role
-      const { data: userData, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('email', user.email)
-        .eq('is_active', true)
-        .single();
-
-      if (error || !userData) {
-        toast({
-          title: "Access Denied",
-          description: "Admin privileges required",
-          variant: "destructive",
-        });
-        await supabase.auth.signOut();
-        setLocation("/admin/login");
-        return;
-      }
-
-      setAdminUser(userData);
     };
 
     checkAdminAuth();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [setLocation, toast]);
 
   // Fetch prayer slots from Supabase
