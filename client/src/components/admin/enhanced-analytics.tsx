@@ -40,6 +40,8 @@ import {
   ArcElement,
 } from 'chart.js';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
+// Frontend-only presentation data
+import { PresentationData, PRESENTATION_MODE } from '@/utils/frontend-zoom-data';
 
 ChartJS.register(
   CategoryScale,
@@ -128,6 +130,35 @@ export function EnhancedAnalytics() {
   const { data: realtimeData, isLoading: realtimeLoading, refetch: refetchRealtime } = useQuery({
     queryKey: ['analytics-realtime', refreshKey],
     queryFn: async () => {
+      if (PRESENTATION_MODE) {
+        const stats = PresentationData.dashboard();
+        const activity = PresentationData.activityFeed();
+        const mappedActivity = activity.map((a: any, idx: number) => ({
+          type: a.type,
+          user_email: a.user || 'intercessor@giprayer.org',
+          status: a.type === 'attendance_logged' ? 'attended' : 'joined',
+          timestamp: a.time,
+          slot_time: a.slot_time || '—',
+        }));
+        const fallback: RealtimeData = {
+          current_time: new Date().toISOString(),
+          today_attendance: {
+            total_records: stats.todayTotalSlots || 48,
+            attended_count: stats.todayAttended || 44,
+            missed_count: (stats.todayTotalSlots || 48) - (stats.todayAttended || 44),
+            attendance_rate: Math.round((stats.todayAttended || 44) / (stats.todayTotalSlots || 48) * 100),
+          },
+          active_slots_today: stats.activeSlots || 48,
+          zoom_meetings_today: {
+            total_meetings: stats.totalZoomMeetings || 124,
+            total_participants: stats.avgZoomParticipants * 3 || 126,
+            active_meetings: 1,
+          },
+          weekly_summary: {},
+          recent_activity: mappedActivity,
+        };
+        return fallback;
+      }
       const response = await fetch('/api/admin/analytics/realtime');
       if (!response.ok) throw new Error('Failed to fetch realtime data');
       return response.json() as Promise<RealtimeData>;
@@ -140,6 +171,57 @@ export function EnhancedAnalytics() {
   const { data: weeklyData, isLoading: weeklyLoading, refetch: refetchWeekly } = useQuery({
     queryKey: ['analytics-weekly', refreshKey],
     queryFn: async () => {
+      if (PRESENTATION_MODE) {
+        const a = PresentationData.analytics();
+        const stats = PresentationData.dashboard();
+        // Derive weekly summary from presentation data
+        const attended = a.weeklyAttendance.datasets?.[0]?.data || [44,42,45,43,46,44,45];
+        const totals = a.weeklyAttendance.datasets?.[1]?.data || [48,48,48,48,48,48,48];
+        const total_records = totals.reduce((s: number, v: number) => s + v, 0);
+        const attended_count = attended.reduce((s: number, v: number) => s + v, 0);
+        const missed_count = total_records - attended_count;
+        const attendance_rate = Math.round(attended_count / total_records * 100);
+        const fallback: WeeklyAnalytics = {
+          week_start: new Date(Date.now() - 6*24*3600*1000).toISOString(),
+          week_end: new Date().toISOString(),
+          attendance_summary: {
+            total_records,
+            attended_count,
+            missed_count,
+            attendance_rate,
+            avg_duration_minutes: 45,
+          },
+          slot_coverage: {
+            total_slots: 48,
+            active_slots: stats.activeSlots || 48,
+            inactive_slots: Math.max(0, 48 - (stats.activeSlots || 48)),
+            coverage_rate: 94,
+          },
+          zoom_meetings: {
+            total_meetings: stats.totalZoomMeetings || 124,
+            total_participants: (stats.avgZoomParticipants || 42) * 7,
+            avg_participants: stats.avgZoomParticipants || 42,
+            avg_duration: 45,
+            processed_meetings: Math.round((stats.totalZoomMeetings || 124) * 0.92),
+            unprocessed_meetings: Math.round((stats.totalZoomMeetings || 124) * 0.08),
+          },
+          daily_breakdown: [0,1,2,3,4,5,6].map((i) => ({
+            date: new Date(Date.now() - (6 - i) * 24 * 3600 * 1000).toISOString().split('T')[0],
+            attendance_count: totals[i] || 48,
+            attended_count: attended[i] || 44,
+            missed_count: (totals[i] || 48) - (attended[i] || 44),
+            attendance_rate: Math.round(((attended[i] || 44) / (totals[i] || 48)) * 100),
+            zoom_meetings: 4,
+            total_participants: (stats.avgZoomParticipants || 42) * 4,
+          })),
+          top_performers: [
+            { user_id: '1', user_email: 'sarah.johnson@example.com', slot_time: '06:00', attendance_rate: 100, current_streak: 21, total_attendance_days: 30 },
+            { user_id: '2', user_email: 'john.mukasa@example.com', slot_time: '12:00', attendance_rate: 97, current_streak: 18, total_attendance_days: 29 },
+            { user_id: '3', user_email: 'mary.okonkwo@example.com', slot_time: '18:00', attendance_rate: 95, current_streak: 15, total_attendance_days: 28 },
+          ],
+        };
+        return fallback;
+      }
       const response = await fetch('/api/admin/analytics/weekly');
       if (!response.ok) throw new Error('Failed to fetch weekly data');
       return response.json() as Promise<WeeklyAnalytics>;
@@ -151,6 +233,11 @@ export function EnhancedAnalytics() {
   const { data: zoomData, isLoading: zoomLoading } = useQuery({
     queryKey: ['analytics-zoom', refreshKey],
     queryFn: async () => {
+      if (PRESENTATION_MODE) {
+        const details = PresentationData.zoomMeeting();
+        const geo = PresentationData.analytics().geographicDistribution;
+        return { details, geo };
+      }
       const response = await fetch('/api/admin/analytics/zoom');
       if (!response.ok) throw new Error('Failed to fetch zoom data');
       return response.json();
@@ -162,6 +249,9 @@ export function EnhancedAnalytics() {
   const { data: slotsData, isLoading: slotsLoading } = useQuery({
     queryKey: ['analytics-slots', refreshKey],
     queryFn: async () => {
+      if (PRESENTATION_MODE) {
+        return PresentationData.analytics().slotCoverage;
+      }
       const response = await fetch('/api/admin/analytics/slots');
       if (!response.ok) throw new Error('Failed to fetch slots data');
       return response.json();
@@ -177,11 +267,15 @@ export function EnhancedAnalytics() {
 
   const exportData = async (type: string) => {
     try {
-      const response = await fetch(`/api/admin/analytics/export?type=${type}`);
-      if (!response.ok) throw new Error('Export failed');
-      
-      const data = await response.json();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      // Export whatever is currently displayed (realtime + weekly + zoom + slots)
+      const payload = {
+        generated_at: new Date().toISOString(),
+        realtime: realtimeData,
+        weekly: weeklyData,
+        zoom: zoomData,
+        slots: slotsData,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -508,19 +602,58 @@ export function EnhancedAnalytics() {
         </TabsContent>
 
         <TabsContent value="zoom">
-          <div className="text-center py-8">
-            <Activity className="w-12 h-12 text-gi-primary/60 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gi-dark mb-2">Zoom Analytics</h3>
-            <p className="text-gi-dark/80">Detailed Zoom meeting analytics coming soon...</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card className="border-gi-primary/20">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-gi-dark flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-gi-primary" />
+                  Participants by Day (Weekly)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Line
+                  data={{
+                    labels: (PresentationData.analytics().weeklyAttendance.labels),
+                    datasets: [
+                      {
+                        label: 'Participants',
+                        data: (PresentationData.analytics().weeklyAttendance.datasets?.[0]?.data || [44,42,45,43,46,44,45]).map((v: number) => Math.round(v * (PresentationData.dashboard().avgZoomParticipants / 44))),
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.4,
+                      },
+                    ],
+                  }}
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="border-gi-primary/20">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-gi-dark flex items-center gap-2">
+                  <PieChart className="w-5 h-5 text-gi-primary" />
+                  Geographic Distribution
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Doughnut data={PresentationData.analytics().geographicDistribution} />
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
         <TabsContent value="slots">
-          <div className="text-center py-8">
-            <Clock className="w-12 h-12 text-gi-primary/60 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gi-dark mb-2">Slot Coverage Analytics</h3>
-            <p className="text-gi-dark/80">Prayer slot coverage analytics coming soon...</p>
-          </div>
+          <Card className="border-gi-primary/20">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gi-dark flex items-center gap-2">
+                <BarChart className="w-5 h-5 text-gi-primary" />
+                Time Slot Coverage
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Bar data={PresentationData.analytics().slotCoverage} options={{ responsive: true, plugins: { legend: { position: 'top' as const } } }} />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

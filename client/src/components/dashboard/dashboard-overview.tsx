@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { supabase } from "@/lib/supabase";
 import { NotificationSetup } from './notification-setup';
+import { PresentationData, PRESENTATION_MODE } from '@/utils/frontend-zoom-data';
 
 interface DashboardOverviewProps {
   userEmail?: string;
@@ -164,6 +165,15 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
     refetchInterval: false, // Disabled auto-refresh to prevent disruption during typing
     refetchOnWindowFocus: false
   });
+
+  // Presentation fallback values for Attendance & Performance panel
+  const demoSlotData = PRESENTATION_MODE ? PresentationData.prayerSlot() : null;
+  const attendanceRateDisplay = (attendanceStats?.sessionsThisMonth && attendanceStats.sessionsThisMonth > 0)
+    ? Math.round((attendanceStats.sessionsThisMonth / new Date().getDate()) * 100)
+    : (demoSlotData?.attendanceRate || 0);
+  const dayStreakDisplay = attendanceStats?.dayStreak || (demoSlotData ? Math.min(30, Math.floor((demoSlotData.attendedSessions || 27) / 2) + 7) : 0);
+  const sessionsAttendedDisplay = attendanceStats?.sessionsThisMonth || (demoSlotData?.attendedSessions || 0);
+  const totalSessionsDisplay = new Date().getDate() || (demoSlotData?.totalSessions || 0);
 
   // Fetch global intercessors count
   const { data: globalStats } = useQuery({
@@ -363,9 +373,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                   {/* Attendance Rate */}
                   <div className="text-center">
                     <div className="text-4xl font-bold text-gi-gold mb-2">
-                      {attendanceStats?.sessionsThisMonth && attendanceStats?.sessionsThisMonth > 0 
-                        ? Math.round((attendanceStats.sessionsThisMonth / new Date().getDate()) * 100)
-                        : 0}%
+                      {attendanceRateDisplay}%
                     </div>
                     <p className="text-gi-primary/70 text-sm font-medium">Attendance Rate</p>
                   </div>
@@ -373,7 +381,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                   {/* Current Streak */}
                   <div className="text-center">
                     <div className="text-4xl font-bold text-gi-primary mb-2">
-                      {attendanceStats?.dayStreak || 0}
+                      {dayStreakDisplay}
                     </div>
                     <p className="text-gi-primary/70 text-sm font-medium">Current Streak</p>
                   </div>
@@ -381,7 +389,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                   {/* Sessions Attended */}
                   <div className="text-center">
                     <div className="text-4xl font-bold text-gi-gold mb-2">
-                      {attendanceStats?.sessionsThisMonth || 0}
+                      {sessionsAttendedDisplay}
                     </div>
                     <p className="text-gi-primary/70 text-sm font-medium">Sessions Attended</p>
                   </div>
@@ -389,7 +397,7 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                   {/* Total Sessions */}
                   <div className="text-center">
                     <div className="text-4xl font-bold text-gi-primary mb-2">
-                      {new Date().getDate()}
+                      {totalSessionsDisplay}
                     </div>
                     <p className="text-gi-primary/70 text-sm font-medium">Total Sessions</p>
                   </div>

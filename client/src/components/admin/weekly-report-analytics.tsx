@@ -86,6 +86,8 @@ interface WeeklyReportData {
 }
 
 export function WeeklyReportAnalytics() {
+  // Frontend-only presentation mode: show sample data immediately
+  const PRESENTATION_MODE = true; // set to false after presentation
   const [reportData, setReportData] = useState<WeeklyReportData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -165,7 +167,7 @@ export function WeeklyReportAnalytics() {
     }
   };
 
-  const data = reportData || sampleData;
+  const data = (reportData || (PRESENTATION_MODE ? sampleData : null)) as WeeklyReportData;
 
   // Chart configurations with Global Intercessors brand colors
   const dailyCoverageChartData = {
@@ -322,7 +324,7 @@ export function WeeklyReportAnalytics() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !PRESENTATION_MODE) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-gi-primary/600 border-t-transparent"></div>

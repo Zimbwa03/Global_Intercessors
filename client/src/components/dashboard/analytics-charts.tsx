@@ -33,13 +33,60 @@ interface AnalyticsData {
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
 export function AnalyticsCharts() {
+  // Frontend-only sample mode for presentations
+  const PRESENTATION_MODE = true; // set to false after presentation
+
+  const buildPresentationAnalyticsData = (): AnalyticsData => {
+    // 7-day daily activity trends
+    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const attended = [44, 42, 45, 43, 46, 44, 45];
+    const totals =   [48, 48, 48, 48, 48, 48, 48];
+    const userActivities = days.map((d, i) => ({
+      date: d,
+      activities: 120 + i * 8, // synthetic total platform activities
+      prayers: 60 + i * 4,     // prayer sessions
+      attendance: attended[i], // attended sessions per day
+    }));
+
+    // Time slot coverage (8 blocks)
+    const timeSlots = [
+      '00:00-02:59','03:00-05:59','06:00-08:59','09:00-11:59',
+      '12:00-14:59','15:00-17:59','18:00-20:59','21:00-23:59'
+    ];
+    const coverageSeries = [88, 85, 92, 95, 94, 96, 93, 91];
+    const attendanceSeries = [85, 82, 89, 93, 91, 94, 90, 88];
+    const prayerStats = timeSlots.map((slot, i) => ({
+      timeSlot: slot,
+      coverage: coverageSeries[i],
+      attendance: attendanceSeries[i],
+    }));
+
+    const intercessorStats = {
+      totalActive: 48,
+      totalRegistered: 247,
+      activeToday: 44,
+      averageAttendance: Math.round((attended.reduce((s, v) => s + v, 0) / totals.reduce((s, v) => s + v, 0)) * 100),
+    };
+
+    const weeklyTrends = [
+      { week: 'Week 1', newRegistrations: 32, totalSessions: 310, avgDuration: 44 },
+      { week: 'Week 2', newRegistrations: 38, totalSessions: 328, avgDuration: 45 },
+      { week: 'Week 3', newRegistrations: 41, totalSessions: 343, avgDuration: 45 },
+      { week: 'Week 4', newRegistrations: 46, totalSessions: 356, avgDuration: 46 },
+    ];
+
+    return { userActivities, prayerStats, intercessorStats, weeklyTrends };
+  };
+
   const { data: analytics, isLoading } = useQuery<AnalyticsData>({
     queryKey: ['/api/admin/analytics'],
     refetchInterval: false, // Disabled auto-refresh to prevent disruption during typing
     refetchOnWindowFocus: false
   });
 
-  if (isLoading || !analytics) {
+  const effectiveAnalytics: AnalyticsData | undefined = analytics || (PRESENTATION_MODE ? buildPresentationAnalyticsData() : undefined);
+
+  if (isLoading && !effectiveAnalytics) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[...Array(6)].map((_, i) => (
@@ -66,7 +113,7 @@ export function AnalyticsCharts() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gi-primary/100">Total Intercessors</p>
-                <p className="text-2xl font-bold">{analytics.intercessorStats.totalRegistered}</p>
+                <p className="text-2xl font-bold">{effectiveAnalytics!.intercessorStats.totalRegistered}</p>
               </div>
               <Users className="w-8 h-8 text-gi-primary/200" />
             </div>
@@ -78,7 +125,7 @@ export function AnalyticsCharts() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-emerald-100">Active Today</p>
-                <p className="text-2xl font-bold">{analytics.intercessorStats.activeToday}</p>
+                <p className="text-2xl font-bold">{effectiveAnalytics!.intercessorStats.activeToday}</p>
               </div>
               <Activity className="w-8 h-8 text-emerald-200" />
             </div>
@@ -90,7 +137,7 @@ export function AnalyticsCharts() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-amber-100">Avg Attendance</p>
-                <p className="text-2xl font-bold">{Math.round(analytics.intercessorStats.averageAttendance)}%</p>
+                <p className="text-2xl font-bold">{Math.round(effectiveAnalytics!.intercessorStats.averageAttendance)}%</p>
               </div>
               <Clock className="w-8 h-8 text-amber-200" />
             </div>
@@ -102,7 +149,7 @@ export function AnalyticsCharts() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-violet-100">Active Slots</p>
-                <p className="text-2xl font-bold">{analytics.intercessorStats.totalActive}</p>
+                <p className="text-2xl font-bold">{effectiveAnalytics!.intercessorStats.totalActive}</p>
               </div>
               <Calendar className="w-8 h-8 text-violet-200" />
             </div>
@@ -122,7 +169,7 @@ export function AnalyticsCharts() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={analytics.userActivities}>
+              <LineChart data={effectiveAnalytics!.userActivities}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis />
@@ -160,7 +207,7 @@ export function AnalyticsCharts() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={analytics.prayerStats}>
+              <BarChart data={effectiveAnalytics!.prayerStats}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="timeSlot" />
                 <YAxis />
@@ -179,7 +226,7 @@ export function AnalyticsCharts() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={analytics.weeklyTrends}>
+              <BarChart data={effectiveAnalytics!.weeklyTrends}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="week" />
                 <YAxis />
@@ -200,7 +247,7 @@ export function AnalyticsCharts() {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={analytics.prayerStats.slice(0, 5)}
+                  data={effectiveAnalytics!.prayerStats.slice(0, 5)}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -209,7 +256,7 @@ export function AnalyticsCharts() {
                   fill="#8884d8"
                   dataKey="coverage"
                 >
-                  {analytics.prayerStats.slice(0, 5).map((entry, index) => (
+                  {effectiveAnalytics!.prayerStats.slice(0, 5).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

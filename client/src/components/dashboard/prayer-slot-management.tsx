@@ -17,6 +17,7 @@ import { countdownService } from '@/lib/countdownService';
 import { AnimatedCard } from '@/components/ui/animated-card';
 import { SlotTransition } from '@/components/ui/slot-transition';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PresentationData, PRESENTATION_MODE } from '@/utils/frontend-zoom-data';
 
 interface CountdownTime {
   hours: number;
@@ -402,7 +403,14 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
     return { rate: Math.round(rate), streak, total, attended };
   };
 
-  const attendanceStats = calculateAttendanceStats();
+  const attendanceStatsRaw = calculateAttendanceStats();
+  const demoSlotData = PRESENTATION_MODE ? PresentationData.prayerSlot() : null;
+  const attendanceStats = {
+    rate: attendanceStatsRaw.rate || (demoSlotData?.attendanceRate || 0),
+    streak: attendanceStatsRaw.streak || (demoSlotData ? Math.min(30, Math.floor((demoSlotData.attendedSessions || 27) / 2) + 7) : 0),
+    total: attendanceStatsRaw.total || (demoSlotData?.totalSessions || 0),
+    attended: attendanceStatsRaw.attended || (demoSlotData?.attendedSessions || 0)
+  };
 
   // Helper function to get status text safely
   const getStatusText = (status: string | undefined) => {
