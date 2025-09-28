@@ -23,6 +23,7 @@ import { ScriptureCoach } from "@/components/dashboard/scripture-coach";
 import { WhatsAppSettings } from "@/components/dashboard/whatsapp-settings";
 import { IntercessorScheduleSettings } from "@/components/intercessor-schedule-settings";
 import { WeeklyPrayerAttendance } from "@/components/weekly-prayer-attendance";
+import { ZoomTestPanel } from "@/components/dashboard/zoom-test-panel";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { notificationService } from "@/lib/notificationService";
@@ -180,6 +181,10 @@ export default function Dashboard() {
         return <div className="p-6 bg-white rounded-lg shadow-md">
           <h2 className="text-2xl font-bold text-gi-primary mb-4">Prayer Analytics</h2>
           <p className="text-gray-600">Track your prayer consistency and spiritual growth metrics.</p>
+        </div>;
+      case "zoom-test":
+        return <div className="p-6">
+          <ZoomTestPanel />
         </div>;
       case "updates":
         // Mark updates as read when viewed

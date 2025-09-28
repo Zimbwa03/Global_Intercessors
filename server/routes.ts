@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { supabaseAdmin, supabase } from "./supabase";
 import { whatsAppBot } from "./services/whatsapp-bot-v2.js";
+import { zoomAPIService } from "./services/zoom-api-service.js";
 import axios from "axios";
 import * as htmlPdf from 'html-pdf-node';
 
@@ -75,6 +76,113 @@ async function getUserEmail(userId: string): Promise<string | null> {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Test Zoom credentials and authentication with detailed diagnostics
   app.get("/api/admin/test-zoom", async (req: Request, res: Response) => {
+    // Basic security check for admin endpoints
+    const adminKey = req.headers['x-admin-key'] || req.query.admin_key;
+    if (adminKey !== process.env.ADMIN_SECRET_KEY && adminKey !== 'dev-admin-key') {
+      return res.status(401).json({ error: 'Unauthorized access to admin endpoint' });
+    }
+
+    try {
+      const result = await zoomAPIService.testConnection();
+      return res.json(result);
+    } catch (error: any) {
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  });
+
+  // Get real Zoom analytics data
+  app.get("/api/zoom/analytics", async (req: Request, res: Response) => {
+    try {
+      const analytics = await zoomAPIService.getZoomAnalytics();
+      return res.json(analytics);
+    } catch (error: any) {
+      console.error('Error fetching Zoom analytics:', error);
+      return res.status(500).json({ 
+        error: 'Failed to fetch Zoom analytics',
+        message: error.message 
+      });
+    }
+  });
+
+  // Get live Zoom meetings
+  app.get("/api/zoom/live-meetings", async (req: Request, res: Response) => {
+    try {
+      const liveMeetings = await zoomAPIService.getLiveMeetings();
+      return res.json({ meetings: liveMeetings });
+    } catch (error: any) {
+      console.error('Error fetching live meetings:', error);
+      return res.status(500).json({ 
+        error: 'Failed to fetch live meetings',
+        message: error.message 
+      });
+    }
+  });
+
+  // Get all meetings with optional date range
+  app.get("/api/zoom/meetings", async (req: Request, res: Response) => {
+    try {
+      const { from, to } = req.query;
+      const meetings = await zoomAPIService.getAllMeetings(from as string, to as string);
+      return res.json({ meetings });
+    } catch (error: any) {
+      console.error('Error fetching meetings:', error);
+      return res.status(500).json({ 
+        error: 'Failed to fetch meetings',
+        message: error.message 
+      });
+    }
+  });
+
+  // Get user-specific attendance data
+  app.get("/api/zoom/user-attendance/:userId", async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const attendanceData = await zoomAPIService.getUserAttendanceData(userId);
+      return res.json(attendanceData);
+    } catch (error: any) {
+      console.error('Error fetching user attendance:', error);
+      return res.status(500).json({ 
+        error: 'Failed to fetch user attendance',
+        message: error.message 
+      });
+    }
+  });
+
+  // Get meeting participants
+  app.get("/api/zoom/meeting/:meetingUuid/participants", async (req: Request, res: Response) => {
+    try {
+      const { meetingUuid } = req.params;
+      const participants = await zoomAPIService.getMeetingParticipants(meetingUuid);
+      return res.json({ participants });
+    } catch (error: any) {
+      console.error('Error fetching meeting participants:', error);
+      return res.status(500).json({ 
+        error: 'Failed to fetch meeting participants',
+        message: error.message 
+      });
+    }
+  });
+
+  // Get live meeting participants
+  app.get("/api/zoom/live-meeting/:meetingId/participants", async (req: Request, res: Response) => {
+    try {
+      const { meetingId } = req.params;
+      const participants = await zoomAPIService.getLiveMeetingParticipants(meetingId);
+      return res.json({ participants });
+    } catch (error: any) {
+      console.error('Error fetching live meeting participants:', error);
+      return res.status(500).json({ 
+        error: 'Failed to fetch live meeting participants',
+        message: error.message 
+      });
+    }
+  });
+
+  // Original test endpoint (keeping for backwards compatibility)
+  app.get("/api/admin/test-zoom-legacy", async (req: Request, res: Response) => {
     // Basic security check for admin endpoints
     const adminKey = req.headers['x-admin-key'] || req.query.admin_key;
     if (adminKey !== process.env.ADMIN_SECRET_KEY && adminKey !== 'dev-admin-key') {

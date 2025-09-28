@@ -9,6 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { supabase } from "@/lib/supabase";
 import { NotificationSetup } from './notification-setup';
 import { PresentationData, PRESENTATION_MODE } from '@/utils/frontend-zoom-data';
+import { zoomService } from '@/services/zoom-service';
 
 interface DashboardOverviewProps {
   userEmail?: string;
@@ -113,6 +114,19 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
     enabled: !!user?.id,
   });
 
+  // Fetch real Zoom data
+  const { data: zoomData, isLoading: zoomLoading } = useQuery({
+    queryKey: ['zoom-dashboard-data'],
+    queryFn: () => zoomService.getDashboardData(),
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  const { data: activityData } = useQuery({
+    queryKey: ['zoom-activity-feed'],
+    queryFn: () => zoomService.getActivityFeed(),
+    refetchInterval: 15000, // Refresh every 15 seconds
+  });
+
   // Fetch user's attendance statistics
   const { data: attendanceStats } = useQuery({
     queryKey: ['attendance-stats', user?.id],
@@ -166,14 +180,26 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
     refetchOnWindowFocus: false
   });
 
-  // Presentation fallback values for Attendance & Performance panel
+  // Use real Zoom data when available, fallback to presentation data
   const demoSlotData = PRESENTATION_MODE ? PresentationData.prayerSlot() : null;
-  const attendanceRateDisplay = (attendanceStats?.sessionsThisMonth && attendanceStats.sessionsThisMonth > 0)
-    ? Math.round((attendanceStats.sessionsThisMonth / new Date().getDate()) * 100)
-    : (demoSlotData?.attendanceRate || 0);
+  const attendanceRateDisplay = zoomData?.analytics?.attendanceRate || 
+    (attendanceStats?.sessionsThisMonth && attendanceStats.sessionsThisMonth > 0
+      ? Math.round((attendanceStats.sessionsThisMonth / new Date().getDate()) * 100)
+      : (demoSlotData?.attendanceRate || 0));
   const dayStreakDisplay = attendanceStats?.dayStreak || (demoSlotData ? Math.min(30, Math.floor((demoSlotData.attendedSessions || 27) / 2) + 7) : 0);
   const sessionsAttendedDisplay = attendanceStats?.sessionsThisMonth || (demoSlotData?.attendedSessions || 0);
   const totalSessionsDisplay = new Date().getDate() || (demoSlotData?.totalSessions || 0);
+
+  // Zoom statistics
+  const zoomStats = {
+    totalMeetings: zoomData?.analytics?.totalMeetings || (PRESENTATION_MODE ? PresentationData.dashboard().totalMeetings : 0),
+    avgParticipants: zoomData?.analytics?.avgParticipants || (PRESENTATION_MODE ? PresentationData.dashboard().avgZoomParticipants : 0),
+    totalParticipants: zoomData?.analytics?.totalParticipants || (PRESENTATION_MODE ? PresentationData.dashboard().totalIntercessors : 0),
+    liveMeetings: zoomData?.liveMeetings || [],
+    recentMeetings: zoomData?.recentMeetings || [],
+    meetingsThisWeek: zoomData?.analytics?.meetingsThisWeek || 0,
+    participantGrowth: zoomData?.analytics?.participantGrowth || '0%'
+  };
 
   // Fetch global intercessors count
   const { data: globalStats } = useQuery({
@@ -406,6 +432,112 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
             </Card>
           </div>
         </div>
+
+        {/* Zoom Analytics Panel */}
+        <Card className="shadow-xl border border-gi-primary/20 hover:shadow-2xl transition-all duration-300 mb-8">
+          <CardHeader className="bg-gradient-to-r from-gi-primary/5 to-gi-gold/5 border-b border-gi-primary/10">
+            <CardTitle className="flex items-center">
+              <div className="w-10 h-10 bg-gi-primary rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                <i className="fas fa-video text-gi-gold"></i>
+              </div>
+              <div>
+                <span className="font-poppins text-xl text-gi-primary">Zoom Meeting Analytics</span>
+                {zoomStats.liveMeetings.length > 0 && (
+                  <div className="flex items-center ml-2">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    <span className="text-red-500 text-sm font-semibold ml-1">LIVE</span>
+                  </div>
+                )}
+              </div>
+              {zoomLoading && (
+                <div className="ml-auto">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gi-primary"></div>
+                </div>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {/* Total Meetings */}
+              <div className="text-center">
+                <div className="text-4xl font-bold text-gi-gold mb-2">
+                  {zoomStats.totalMeetings}
+                </div>
+                <p className="text-gi-primary/70 text-sm font-medium">Total Meetings</p>
+              </div>
+
+              {/* Average Participants */}
+              <div className="text-center">
+                <div className="text-4xl font-bold text-gi-primary mb-2">
+                  {zoomStats.avgParticipants}
+                </div>
+                <p className="text-gi-primary/70 text-sm font-medium">Avg Participants</p>
+              </div>
+
+              {/* Live Meetings */}
+              <div className="text-center">
+                <div className="text-4xl font-bold text-red-500 mb-2">
+                  {zoomStats.liveMeetings.length}
+                </div>
+                <p className="text-gi-primary/70 text-sm font-medium">Live Meetings</p>
+              </div>
+
+              {/* Weekly Growth */}
+              <div className="text-center">
+                <div className="text-4xl font-bold text-green-600 mb-2">
+                  {zoomStats.participantGrowth}
+                </div>
+                <p className="text-gi-primary/70 text-sm font-medium">Growth</p>
+              </div>
+            </div>
+
+            {/* Live Meeting Details */}
+            {zoomStats.liveMeetings.length > 0 && (
+              <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center mb-3">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse mr-2"></div>
+                  <h4 className="font-semibold text-red-700">Live Prayer Sessions</h4>
+                </div>
+                <div className="space-y-2">
+                  {zoomStats.liveMeetings.slice(0, 3).map((meeting: any, index: number) => (
+                    <div key={meeting.id} className="flex justify-between items-center text-sm">
+                      <span className="text-red-700 font-medium">{meeting.topic}</span>
+                      <Badge variant="destructive" className="animate-pulse">
+                        LIVE {meeting.participant_count ? `• ${meeting.participant_count} joined` : ''}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Activity Feed */}
+            {activityData && activityData.length > 0 && (
+              <div className="mt-6 p-4 bg-gi-primary/5 border border-gi-primary/20 rounded-lg">
+                <h4 className="font-semibold text-gi-primary mb-3">Recent Activity</h4>
+                <div className="space-y-3">
+                  {activityData.slice(0, 4).map((activity: any, index: number) => (
+                    <div key={activity.id || index} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center">
+                        <span className="mr-2">{activity.icon}</span>
+                        <div>
+                          <span className="font-medium text-gi-primary">{activity.user}</span>
+                          <span className="text-gi-primary/70 ml-1">{activity.action}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-gi-primary/60">
+                          {activity.time ? new Date(activity.time).toLocaleTimeString() : 'Now'}
+                        </div>
+                        <div className="text-xs text-gi-gold">{activity.slot_time}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Enhanced Prayer Slot Card */}

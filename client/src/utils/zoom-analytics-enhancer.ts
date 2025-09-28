@@ -4,7 +4,7 @@
 // This only enhances Zoom and Analytics data without touching other data
 // ============================================
 
-export const ENHANCE_ZOOM_ANALYTICS = true; // Set to false after presentation
+export const ENHANCE_ZOOM_ANALYTICS = false; // Set to false after presentation
 
 // Zoom Meeting Data Enhancer
 export function enhanceZoomData(data: any): any {
