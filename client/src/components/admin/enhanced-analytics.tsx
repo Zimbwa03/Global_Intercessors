@@ -41,6 +41,7 @@ import {
 } from 'chart.js';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
 import dayjs from 'dayjs';
+import { enhanceAnalyticsData, enhanceZoomData, enhanceDashboardStats } from '@/utils/zoom-analytics-enhancer';
 
 ChartJS.register(
   CategoryScale,
@@ -142,13 +143,14 @@ export function EnhancedAnalytics() {
     return `${start.format('DD MMM')} - ${end.format('DD MMM YYYY')}`;
   });
 
-  // Fetch Zoom analytics
+  // Fetch Zoom analytics with enhancement
   const { data: zoomData, isLoading: zoomLoading, refetch: refetchZoom } = useQuery({
     queryKey: ['zoom-analytics', refreshKey],
     queryFn: async () => {
       const response = await fetch('/api/zoom/analytics');
       if (!response.ok) throw new Error('Failed to fetch Zoom analytics');
-      return response.json();
+      const data = await response.json();
+      return enhanceZoomData(data);
     },
     refetchInterval: 30000
   });
@@ -228,8 +230,8 @@ export function EnhancedAnalytics() {
     }
   };
 
-  // Prepare weekly participation chart data
-  const weeklyParticipationData = {
+  // Prepare weekly participation chart data with enhancement
+  const rawWeeklyData = {
     labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
     datasets: [
       {
@@ -250,9 +252,10 @@ export function EnhancedAnalytics() {
       }
     ]
   };
+  const weeklyParticipationData = enhanceAnalyticsData(rawWeeklyData, 'attendance');
 
-  // Zoom participants trend
-  const zoomTrendData = {
+  // Zoom participants trend with enhancement
+  const rawZoomTrendData = {
     labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
     datasets: [
       {
@@ -271,6 +274,7 @@ export function EnhancedAnalytics() {
       }
     ]
   };
+  const zoomTrendData = enhanceAnalyticsData(rawZoomTrendData, 'weeklyTrend');
 
   // Coverage rate visualization
   const coverageData = {
