@@ -374,38 +374,130 @@ export function MobileDashboardOverview({ userEmail, userId, onTabChange }: Mobi
       </div>
 
 
-      {/* Stats Overview */}
+      {/* Progress & Growth Dashboard */}
       <div>
-        <h3 className="text-lg font-semibold text-gi-primary mb-4">Your Impact</h3>
-        <div className="space-y-3">
-          {stats.map((stat, index) => (
-            <div 
-              key={stat.label}
-              className="mobile-stat-card mobile-fade-in"
-              style={{ animationDelay: `${index * 150}ms` }}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                    <stat.icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">{stat.value}</div>
-                    <div className="text-sm opacity-90">{stat.label}</div>
-                  </div>
+        <h3 className="text-lg font-semibold text-gi-primary mb-4">Your Progress & Growth</h3>
+        
+        {/* Attendance Rate Circle */}
+        <Card className="mobile-card mb-4 bg-gradient-to-br from-gi-primary/10 to-gi-gold/10">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-gi-primary mb-2">Attendance Rate</h4>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-gi-gold">85%</span>
+                  <span className="text-sm text-gi-primary/70">this month</span>
                 </div>
-                <div className="text-right">
-                  <div className={cn(
-                    "text-xs font-medium",
-                    stat.positive ? "text-green-200" : "text-red-200"
-                  )}>
-                    {stat.change}
-                  </div>
+                <div className="mt-3 w-full bg-gray-200 rounded-full h-2.5">
+                  <div className="bg-gi-gold h-2.5 rounded-full" style={{ width: '85%' }}></div>
                 </div>
               </div>
+              <div className="w-20 h-20 ml-4">
+                <svg className="transform -rotate-90 w-20 h-20">
+                  <circle cx="40" cy="40" r="35" stroke="#E8F5E9" strokeWidth="8" fill="none" />
+                  <circle 
+                    cx="40" cy="40" r="35" 
+                    stroke="#D2AA68" 
+                    strokeWidth="8" 
+                    fill="none"
+                    strokeDasharray={`${85 * 2.2} ${100 * 2.2}`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
             </div>
-          ))}
+          </CardContent>
+        </Card>
+
+        {/* Week Progress Bar */}
+        <Card className="mobile-card mb-4">
+          <CardContent className="p-4">
+            <h4 className="text-sm font-semibold text-gi-primary mb-3">This Week's Journey</h4>
+            <div className="grid grid-cols-7 gap-2">
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
+                <div key={day} className="text-center">
+                  <div className={cn(
+                    "w-10 h-10 rounded-lg flex items-center justify-center mb-1 transition-all",
+                    index < 6 
+                      ? "bg-gi-primary text-white shadow-lg" 
+                      : "bg-gray-200 text-gray-400"
+                  )}>
+                    <span className="text-xs font-bold">{day}</span>
+                  </div>
+                  {index < 6 && (
+                    <div className="w-2 h-2 bg-green-500 rounded-full mx-auto"></div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-center text-gi-primary/70 mt-3">
+              6 of 7 days completed • 1 day remaining
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Streak Counter */}
+        <Card className="mobile-card mb-4 bg-gradient-to-r from-gi-primary to-gi-primary/80 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90 mb-1">Current Streak</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold">7</span>
+                  <span className="text-lg opacity-90">days</span>
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-2">
+                  <i className="fas fa-fire text-3xl text-gi-gold"></i>
+                </div>
+                <span className="text-xs opacity-75">On Fire!</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Mini Stats Grid */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <Card className="mobile-card">
+            <CardContent className="p-4 text-center">
+              <Activity className="w-8 h-8 text-gi-primary mx-auto mb-2" />
+              <p className="text-2xl font-bold text-gi-primary">27</p>
+              <p className="text-xs text-gi-primary/70">Sessions Attended</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="mobile-card">
+            <CardContent className="p-4 text-center">
+              <Users className="w-8 h-8 text-gi-gold mx-auto mb-2" />
+              <p className="text-2xl font-bold text-gi-gold">42</p>
+              <p className="text-xs text-gi-primary/70">Avg Zoom Join</p>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Monthly Progress Chart */}
+        <Card className="mobile-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold text-gi-primary">Monthly Overview</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="flex items-end justify-between h-32 gap-1">
+              {[12, 15, 18, 22, 20, 24, 27].map((value, index) => (
+                <div key={index} className="flex-1 flex flex-col items-center">
+                  <div 
+                    className="w-full bg-gi-primary rounded-t transition-all"
+                    style={{ height: `${(value / 30) * 100}%` }}
+                  ></div>
+                  <span className="text-xs text-gi-primary/70 mt-1">W{index + 1}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-center text-gi-primary/70 mt-3">
+              Weekly prayer sessions this month
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Recent Activity */}

@@ -391,41 +391,114 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
                   <div className="w-10 h-10 bg-gi-primary rounded-xl flex items-center justify-center mr-3 shadow-lg">
                     <i className="fas fa-chart-line text-gi-gold"></i>
                   </div>
-                  <span className="font-poppins text-xl text-gi-primary">Attendance & Performance</span>
+                  <span className="font-poppins text-xl text-gi-primary">Your Progress & Growth</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-8">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                  {/* Attendance Rate */}
-                  <div className="text-center">
-                    <div className="text-4xl font-bold text-gi-gold mb-2">
-                      {attendanceRateDisplay}%
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Left: Key Metrics */}
+                  <div className="grid grid-cols-2 gap-6">
+                    {/* Attendance Rate */}
+                    <div className="text-center p-4 bg-gi-gold/10 rounded-xl">
+                      <div className="text-4xl font-bold text-gi-gold mb-2">
+                        {attendanceRateDisplay}%
+                      </div>
+                      <p className="text-gi-primary/70 text-sm font-medium">Attendance Rate</p>
+                      <div className="mt-3">
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-gi-gold h-2 rounded-full transition-all duration-500" 
+                            style={{ width: `${attendanceRateDisplay}%` }}
+                          ></div>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-gi-primary/70 text-sm font-medium">Attendance Rate</p>
+
+                    {/* Current Streak */}
+                    <div className="text-center p-4 bg-gi-primary/10 rounded-xl">
+                      <div className="text-4xl font-bold text-gi-primary mb-2">
+                        {dayStreakDisplay}
+                      </div>
+                      <p className="text-gi-primary/70 text-sm font-medium">Day Streak</p>
+                      <div className="mt-3 flex items-center justify-center gap-1">
+                        {[...Array(Math.min(7, dayStreakDisplay))].map((_, i) => (
+                          <div key={i} className="w-2 h-6 bg-gi-primary rounded-full"></div>
+                        ))}
+                        {dayStreakDisplay > 7 && (
+                          <span className="text-xs text-gi-primary/70 ml-1">+{dayStreakDisplay - 7}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Sessions This Month */}
+                    <div className="text-center p-4 bg-gi-primary/10 rounded-xl">
+                      <div className="text-4xl font-bold text-gi-primary mb-2">
+                        {sessionsAttendedDisplay}
+                      </div>
+                      <p className="text-gi-primary/70 text-sm font-medium">Sessions This Month</p>
+                      <p className="text-xs text-gi-primary/60 mt-2">
+                        of {totalSessionsDisplay} days
+                      </p>
+                    </div>
+
+                    {/* Zoom Participation */}
+                    <div className="text-center p-4 bg-gi-gold/10 rounded-xl">
+                      <div className="text-4xl font-bold text-gi-gold mb-2">
+                        {zoomStats.avgParticipants}
+                      </div>
+                      <p className="text-gi-primary/70 text-sm font-medium">Avg Zoom Join</p>
+                      <p className="text-xs text-gi-primary/60 mt-2">
+                        {zoomStats.totalMeetings} meetings
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Current Streak */}
-                  <div className="text-center">
-                    <div className="text-4xl font-bold text-gi-primary mb-2">
-                      {dayStreakDisplay}
-                    </div>
-                    <p className="text-gi-primary/70 text-sm font-medium">Current Streak</p>
+                  {/* Right: Weekly Progress Chart */}
+                  <div className="bg-white rounded-xl p-4 border border-gi-primary/10">
+                    <h4 className="text-sm font-semibold text-gi-primary mb-4">Weekly Attendance Progress</h4>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={[
+                        { day: 'Mon', attended: attendanceStats?.sessionsThisMonth >= 1 ? 1 : 0 },
+                        { day: 'Tue', attended: attendanceStats?.sessionsThisMonth >= 2 ? 1 : 0 },
+                        { day: 'Wed', attended: attendanceStats?.sessionsThisMonth >= 3 ? 1 : 0 },
+                        { day: 'Thu', attended: attendanceStats?.sessionsThisMonth >= 4 ? 1 : 0 },
+                        { day: 'Fri', attended: attendanceStats?.sessionsThisMonth >= 5 ? 1 : 0 },
+                        { day: 'Sat', attended: attendanceStats?.sessionsThisMonth >= 6 ? 1 : 0 },
+                        { day: 'Sun', attended: attendanceStats?.sessionsThisMonth >= 7 ? 1 : 0 },
+                      ]}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E8F5E9" />
+                        <XAxis dataKey="day" tick={{ fill: '#104220', fontSize: 12 }} />
+                        <YAxis hide />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#104220', border: 'none', borderRadius: '8px', color: '#fff' }}
+                          formatter={(value) => [value === 1 ? 'Attended' : 'Missed', '']}
+                        />
+                        <Bar dataKey="attended" fill="#104220" radius={[8, 8, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
+                </div>
 
-                  {/* Sessions Attended */}
-                  <div className="text-center">
-                    <div className="text-4xl font-bold text-gi-gold mb-2">
-                      {sessionsAttendedDisplay}
+                {/* Growth Indicator */}
+                <div className="mt-6 p-4 bg-gradient-to-r from-gi-primary/5 to-gi-gold/5 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gi-primary/20 rounded-full flex items-center justify-center">
+                        <i className="fas fa-chart-line text-gi-primary text-xl"></i>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gi-primary">Your Prayer Journey</p>
+                        <p className="text-sm text-gi-primary/70">
+                          {dayStreakDisplay > 0 
+                            ? `Amazing! ${dayStreakDisplay} day streak - Keep going!` 
+                            : 'Start your prayer journey today!'}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-gi-primary/70 text-sm font-medium">Sessions Attended</p>
-                  </div>
-
-                  {/* Total Sessions */}
-                  <div className="text-center">
-                    <div className="text-4xl font-bold text-gi-primary mb-2">
-                      {totalSessionsDisplay}
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-gi-gold">{attendanceRateDisplay}%</p>
+                      <p className="text-xs text-gi-primary/60">Consistency Score</p>
                     </div>
-                    <p className="text-gi-primary/70 text-sm font-medium">Total Sessions</p>
                   </div>
                 </div>
               </CardContent>

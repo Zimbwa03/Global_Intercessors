@@ -17,6 +17,7 @@ import { PrayerPlanner } from "@/components/dashboard/prayer-planner";
 import { AudioBiblePlayer } from "@/components/dashboard/audio-bible-player";
 import { NotificationSetup } from "@/components/dashboard/notification-setup";
 import { UserProfile } from "@/components/dashboard/user-profile";
+import { UserProgressAnalytics } from "@/components/dashboard/user-progress-analytics";
 
 import { BibleVerseSearch } from "@/components/dashboard/bible-verse-search";
 import { ScriptureCoach } from "@/components/dashboard/scripture-coach";
@@ -178,10 +179,7 @@ export default function Dashboard() {
           <p className="text-gray-600">Join our community fasting events and spiritual growth programs.</p>
         </div>;
       case "analytics":
-        return <div className="p-6 bg-white rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold text-gi-primary mb-4">Prayer Analytics</h2>
-          <p className="text-gray-600">Track your prayer consistency and spiritual growth metrics.</p>
-        </div>;
+        return user?.id ? <UserProgressAnalytics userId={user.id} /> : null;
       case "zoom-test":
         return <div className="p-6">
           <ZoomTestPanel />
@@ -194,7 +192,7 @@ export default function Dashboard() {
         return <UpdatesAnnouncements />;
       case "profile":
         return <UserProfile userEmail={user.email} />;
-      
+
       case "schedule":
         return (
           <div className="space-y-6">
@@ -204,7 +202,7 @@ export default function Dashboard() {
             </div>
           </div>
         );
-      
+
       case "settings":
         return <div className="p-6 bg-white rounded-lg shadow-md">
           <h2 className="text-2xl font-bold text-gi-primary mb-4">Settings</h2>
