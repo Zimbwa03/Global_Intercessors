@@ -1,0 +1,157 @@
+✅ Advanced Reminder System fully initialized
+❌ Marking nyaraiseda26@gmail.com as missed for tuesday
+Auto-released slot 14:30–15:00 after 5 missed days
+Notification: Slot 14:30–15:00 has been auto-released for user nyaraiseda26@gmail.com
+❌ Marking privilegemutsambiwa@gmail.com as missed for tuesday
+Auto-released slot 19:00–19:30 after 5 missed days
+Notification: Slot 19:00–19:30 has been auto-released for user privilegemutsambiwa@gmail.com
+❌ Marking kachepaanotida123@gmail.com as missed for tuesday
+Auto-released slot 20:00–20:30 after 5 missed days
+Notification: Slot 20:00–20:30 has been auto-released for user kachepaanotida123@gmail.com
+❌ Marking zimbwatakudzwa98@gmail.com as missed for tuesday
+Auto-released slot 04:00–04:30 after 5 missed days
+Notification: Slot 04:00–04:30 has been auto-released for user zimbwatakudzwa98@gmail.com
+❌ Marking ottilia.chidavaenzi@higherlifefoundation.org as missed for tuesday
+Auto-released slot 10:30–11:00 after 5 missed days
+Notification: Slot 10:30–11:00 has been auto-released for user ottilia.chidavaenzi@higherlifefoundation.org
+Browserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+❌ Marking ruramai.mataranyika@higherlifefoundation.org as missed for tuesday
+Auto-released slot 03:30–04:00 after 5 missed days
+Notification: Slot 03:30–04:00 has been auto-released for user ruramai.mataranyika@higherlifefoundation.org
+❌ Marking privilidgemutsambiwa@gmail.com as missed for tuesday
+Auto-released slot 01:00–01:30 after 5 missed days
+Notification: Slot 01:00–01:30 has been auto-released for user privilidgemutsambiwa@gmail.com
+❌ Marking pemhiwapanashek@gmail.com as missed for tuesday
+Auto-released slot 00:30–01:00 after 5 missed days
+Notification: Slot 00:30–01:00 has been auto-released for user pemhiwapanashek@gmail.com
+⏭️  Skipping neezykidngoni@gmail.com - tuesday is not their prayer day
+❌ Marking courteneylungilezimbeva@gmail.com as missed for tuesday
+Auto-released slot 05:00–05:30 after 5 missed days
+Notification: Slot 05:00–05:30 has been auto-released for user courteneylungilezimbeva@gmail.com
+⏭️  Skipping harmieofficial03@gmail.com - tuesday is not their prayer day
+🔄 Requesting Zoom access token...
+Using Account ID: BRd_lsW5THORoWN5I3epUw
+Request payload: grant_type=account_credentials&account_id=BRd_lsW5THORoWN5I3epUw
+Authorization header (first 20 chars): WkVZT0RCRU9RSXFJX3lx...
+🔍 [12:45:00] Checking prayer slot reminders...
+🕐 Current time: 12:45 (765 minutes)
+✅ Zoom access token obtained successfully
+Token type: bearer
+Expires in: 3600 seconds
+Processing attendance for: 2025-10-07 12:45
+🔍 Searching for meetings from 2025-09-30 to 2025-10-07
+📊 Found 0 meetings in the last 7 days
+⚠️ No meetings found. This could mean:
+  1. No Zoom meetings were held in the date range
+  2. Meetings are under a different user account
+  3. Meeting history retention settings
+  4. API permissions or scope issues
+📅 Processing attendance for 2025-10-07 (tuesday)
+❌ Error fetching prayer slots: {
+  code: 'PGRST202',
+  details: 'Searched for the function public.get_whatsapp_users_with_slots without parameters or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.',
+  hint: 'Perhaps you meant to call the function public.get_user_quiz_stats',
+  message: 'Could not find the function public.get_whatsapp_users_with_slots without parameters in the schema cache'
+}
+❌ Error fetching prayer slots for reminders: {
+  code: 'PGRST202',
+  details: 'Searched for the function public.get_active_slots_for_reminders without parameters or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.',
+  hint: 'Perhaps you meant to call the function public.get_users_due_for_reminders',
+  message: 'Could not find the function public.get_active_slots_for_reminders without parameters in the schema cache'
+}
+❌ Marking nyaraiseda26@gmail.com as missed for tuesday
+Marked slot 04:00–04:30 as missed for user zimbwatakudzwa98@gmail.com
+Auto-released slot 14:30–15:00 after 5 missed days
+Notification: Slot 14:30–15:00 has been auto-released for user nyaraiseda26@gmail.com
+Marked slot 10:30–11:00 as missed for user ottilia.chidavaenzi@higherlifefoundation.org
+❌ Marking privilegemutsambiwa@gmail.com as missed for tuesday
+Marked slot 03:30–04:00 as missed for user ruramai.mataranyika@higherlifefoundation.org
+Auto-released slot 19:00–19:30 after 5 missed days
+Notification: Slot 19:00–19:30 has been auto-released for user privilegemutsambiwa@gmail.com
+❌ Marking kachepaanotida123@gmail.com as missed for tuesday
+Marked slot 01:00–01:30 as missed for user privilidgemutsambiwa@gmail.com
+Auto-released slot 20:00–20:30 after 5 missed days
+Notification: Slot 20:00–20:30 has been auto-released for user kachepaanotida123@gmail.com
+Marked slot 00:30–01:00 as missed for user pemhiwapanashek@gmail.com
+❌ Marking zimbwatakudzwa98@gmail.com as missed for tuesday
+Marked slot 03:00–03:30 as missed for user neezykidngoni@gmail.com
+Auto-released slot 04:00–04:30 after 5 missed days
+Notification: Slot 04:00–04:30 has been auto-released for user zimbwatakudzwa98@gmail.com
+Marked slot 05:00–05:30 as missed for user courteneylungilezimbeva@gmail.com
+❌ Marking ottilia.chidavaenzi@higherlifefoundation.org as missed for tuesday
+Marked slot 02:30–03:00 as missed for user harmieofficial03@gmail.com
+Auto-released slot 10:30–11:00 after 5 missed days
+Notification: Slot 10:30–11:00 has been auto-released for user ottilia.chidavaenzi@higherlifefoundation.org
+❌ Marking ruramai.mataranyika@higherlifefoundation.org as missed for tuesday
+Auto-released slot 03:30–04:00 after 5 missed days
+Notification: Slot 03:30–04:00 has been auto-released for user ruramai.mataranyika@higherlifefoundation.org
+❌ Marking privilidgemutsambiwa@gmail.com as missed for tuesday
+Auto-released slot 01:00–01:30 after 5 missed days
+Notification: Slot 01:00–01:30 has been auto-released for user privilidgemutsambiwa@gmail.com
+❌ Marking pemhiwapanashek@gmail.com as missed for tuesday
+Auto-released slot 00:30–01:00 after 5 missed days
+Notification: Slot 00:30–01:00 has been auto-released for user pemhiwapanashek@gmail.com
+⏭️  Skipping neezykidngoni@gmail.com - tuesday is not their prayer day
+❌ Marking courteneylungilezimbeva@gmail.com as missed for tuesday
+Auto-released slot 05:00–05:30 after 5 missed days
+Notification: Slot 05:00–05:30 has been auto-released for user courteneylungilezimbeva@gmail.com
+⏭️  Skipping harmieofficial03@gmail.com - tuesday is not their prayer day
+🔍 [12:46:00] Checking prayer slot reminders...
+🕐 Current time: 12:46 (766 minutes)
+❌ Error fetching prayer slots: {
+  code: 'PGRST202',
+  details: 'Searched for the function public.get_whatsapp_users_with_slots without parameters or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.',
+  hint: 'Perhaps you meant to call the function public.get_user_quiz_stats',
+  message: 'Could not find the function public.get_whatsapp_users_with_slots without parameters in the schema cache'
+}
+❌ Error fetching prayer slots for reminders: {
+  code: 'PGRST202',
+  details: 'Searched for the function public.get_active_slots_for_reminders without parameters or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.',
+  hint: 'Perhaps you meant to call the function public.get_users_due_for_reminders',
+  message: 'Could not find the function public.get_active_slots_for_reminders without parameters in the schema cache'
+}
+🔍 [12:47:00] Checking prayer slot reminders...
+🕐 Current time: 12:47 (767 minutes)
+❌ Error fetching prayer slots: {
+  code: 'PGRST202',
+  details: 'Searched for the function public.get_whatsapp_users_with_slots without parameters or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.',
+  hint: 'Perhaps you meant to call the function public.get_user_quiz_stats',
+  message: 'Could not find the function public.get_whatsapp_users_with_slots without parameters in the schema cache'
+}
+❌ Error fetching prayer slots for reminders: {
+  code: 'PGRST202',
+  details: 'Searched for the function public.get_active_slots_for_reminders without parameters or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.',
+  hint: 'Perhaps you meant to call the function public.get_users_due_for_reminders',
+  message: 'Could not find the function public.get_active_slots_for_reminders without parameters in the schema cache'
+}
+🔍 [12:48:00] Checking prayer slot reminders...
+🕐 Current time: 12:48 (768 minutes)
+❌ Error fetching prayer slots: {
+  code: 'PGRST202',
+  details: 'Searched for the function public.get_whatsapp_users_with_slots without parameters or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.',
+  hint: 'Perhaps you meant to call the function public.get_user_quiz_stats',
+  message: 'Could not find the function public.get_whatsapp_users_with_slots without parameters in the schema cache'
+}
+❌ Error fetching prayer slots for reminders: {
+  code: 'PGRST202',
+  details: 'Searched for the function public.get_active_slots_for_reminders without parameters or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.',
+  hint: 'Perhaps you meant to call the function public.get_users_due_for_reminders',
+  message: 'Could not find the function public.get_active_slots_for_reminders without parameters in the schema cache'
+}
+🔍 [12:49:00] Checking prayer slot reminders...
+🕐 Current time: 12:49 (769 minutes)
+❌ Error fetching prayer slots: {
+  code: 'PGRST202',
+  details: 'Searched for the function public.get_whatsapp_users_with_slots without parameters or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.',
+  hint: 'Perhaps you meant to call the function public.get_user_quiz_stats',
+  message: 'Could not find the function public.get_whatsapp_users_with_slots without parameters in the schema cache'
+}
+❌ Error fetching prayer slots for reminders: {
+  code: 'PGRST202',
+  details: 'Searched for the function public.get_active_slots_for_reminders without parameters or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.',
+  hint: 'Perhaps you meant to call the function public.get_users_due_for_reminders',
+  message: 'Could not find the function public.get_active_slots_for_reminders without parameters in the schema cache'
+}
+^C
