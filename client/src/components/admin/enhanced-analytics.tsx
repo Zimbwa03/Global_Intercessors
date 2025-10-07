@@ -230,23 +230,36 @@ export function EnhancedAnalytics() {
     }
   };
 
-  // Prepare weekly participation chart data with enhancement
+  // Calculate variance (difference between target and actual)
+  const targetSlots = 48; // Total slots per day
+  const actualData = weeklyData?.daily_breakdown?.map(d => d.attended_count) || [0, 0, 0, 0, 0, 0, 0];
+  const varianceData = actualData.map(actual => targetSlots - actual);
+
+  // Prepare weekly participation chart data with GI brand colors
   const rawWeeklyData = {
     labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
     datasets: [
       {
-        label: 'Current Week Coverage',
-        data: weeklyData?.daily_breakdown?.map(d => d.attended_count) || [0, 0, 0, 0, 0, 0, 0],
-        backgroundColor: `${GI_COLORS.primary}CC`,
-        borderColor: GI_COLORS.primary,
+        label: 'Actual',
+        data: actualData,
+        backgroundColor: '#104220', // GI Primary Green
+        borderColor: '#104220',
         borderWidth: 2,
         borderRadius: 6,
       },
       {
-        label: 'Total Slots',
-        data: weeklyData?.daily_breakdown?.map(d => d.attendance_count) || [48, 48, 48, 48, 48, 48, 48],
-        backgroundColor: `${GI_COLORS.gold}66`,
-        borderColor: GI_COLORS.gold,
+        label: 'Variance',
+        data: varianceData,
+        backgroundColor: '#D2AA68', // GI Gold
+        borderColor: '#D2AA68',
+        borderWidth: 2,
+        borderRadius: 6,
+      },
+      {
+        label: 'Target',
+        data: Array(7).fill(targetSlots),
+        backgroundColor: '#F5E6D3', // Light Gold/Cream for target
+        borderColor: '#D2AA68',
         borderWidth: 2,
         borderRadius: 6,
       }
@@ -254,19 +267,19 @@ export function EnhancedAnalytics() {
   };
   const weeklyParticipationData = enhanceAnalyticsData(rawWeeklyData, 'attendance');
 
-  // Zoom participants trend with enhancement
+  // Zoom participants trend with GI brand colors
   const rawZoomTrendData = {
     labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
     datasets: [
       {
         label: 'Zoom Participants',
         data: weeklyData?.daily_breakdown?.map(d => d.total_participants || 0) || [0, 0, 0, 0, 0, 0, 0],
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(16, 66, 32, 0.1)', // GI Green with transparency
+        borderColor: '#104220', // GI Primary Green
         borderWidth: 3,
         fill: true,
         tension: 0.4,
-        pointBackgroundColor: 'rgb(59, 130, 246)',
+        pointBackgroundColor: '#104220',
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
         pointRadius: 5,
@@ -276,7 +289,7 @@ export function EnhancedAnalytics() {
   };
   const zoomTrendData = enhanceAnalyticsData(rawZoomTrendData, 'weeklyTrend');
 
-  // Coverage rate visualization
+  // Coverage rate visualization with GI brand colors
   const coverageData = {
     labels: ['Covered', 'Uncovered'],
     datasets: [{
@@ -284,7 +297,7 @@ export function EnhancedAnalytics() {
         weeklyData?.attendance_summary?.attended_count || 0,
         (weeklyData?.attendance_summary?.total_records || 0) - (weeklyData?.attendance_summary?.attended_count || 0)
       ],
-      backgroundColor: [GI_COLORS.primary, GI_COLORS.gold],
+      backgroundColor: ['#104220', '#D2AA68'], // GI Primary Green and Gold
       borderColor: ['#fff', '#fff'],
       borderWidth: 3
     }]
@@ -457,7 +470,7 @@ export function EnhancedAnalytics() {
               <BarChart3 className="w-5 h-5 text-gi-primary" />
               Weekly Participation Analysis
             </CardTitle>
-            <p className="text-sm text-gi-dark/70 mt-1">Daily slot coverage vs total available slots</p>
+            <p className="text-sm text-gi-dark/70 mt-1">Actual attendance, variance from target, and target slots (48/day)</p>
           </CardHeader>
           <CardContent className="p-6">
             <div className="h-80">
