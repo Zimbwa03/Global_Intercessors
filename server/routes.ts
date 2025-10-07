@@ -2760,17 +2760,87 @@ Respond in JSON format as an array:
   });
 
   // Enhanced Analytics endpoints
-  // Real-time dashboard data endpoint
+  // Real-time dashboard data endpoint (RESPECTS ACTIVE DAYS)
   app.get("/api/admin/analytics/realtime", async (req: Request, res: Response) => {
     try {
-      const { data: realtimeData, error } = await supabaseAdmin
-        .rpc('get_realtime_analytics_data');
+      const today = new Date().toISOString().split('T')[0];
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const todayDayOfWeek = new Date().getDay();
+      const todayDayName = dayNames[todayDayOfWeek];
 
-      if (error) {
-        console.error('Realtime analytics error:', error);
-        throw error;
+      console.log(`📊 Calculating realtime analytics for ${today} (${todayDayName})`);
+
+      // Get all active users with their schedules
+      const { data: schedules } = await supabaseAdmin
+        .from('intercessor_schedules')
+        .select('user_id, active_days');
+
+      // Get attendance records for today
+      const { data: todayAttendance } = await supabaseAdmin
+        .from('attendance_log')
+        .select('*')
+        .eq('date', today);
+
+      // Calculate attendance only for users whose active days include today
+      let attendedCount = 0;
+      let missedCount = 0;
+      let totalRecords = 0;
+
+      if (schedules && todayAttendance) {
+        for (const schedule of schedules) {
+          // Check if today is one of their active days
+          if (schedule.active_days && Array.isArray(schedule.active_days) && 
+              schedule.active_days.includes(todayDayName)) {
+            
+            totalRecords++;
+            
+            const userAttendance = todayAttendance.find(a => a.user_id === schedule.user_id);
+            if (userAttendance) {
+              if (userAttendance.status === 'attended') {
+                attendedCount++;
+              } else if (userAttendance.status === 'missed') {
+                missedCount++;
+              }
+            }
+          }
+        }
       }
 
+      const attendanceRate = totalRecords > 0 ? 
+        Math.round((attendedCount / totalRecords) * 100 * 10) / 10 : 0;
+
+      // Get recent activity
+      const { data: recentActivity } = await supabaseAdmin
+        .from('attendance_log')
+        .select('*, prayer_slots(slot_time)')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      const realtimeData = {
+        current_time: new Date().toISOString(),
+        today_attendance: {
+          total_records: totalRecords,
+          attended_count: attendedCount,
+          missed_count: missedCount,
+          attendance_rate: attendanceRate
+        },
+        active_slots_today: totalRecords,
+        zoom_meetings_today: {
+          total_meetings: 0,
+          total_participants: 0,
+          active_meetings: 0
+        },
+        weekly_summary: {},
+        recent_activity: (recentActivity || []).map(a => ({
+          type: a.status === 'attended' ? 'attendance_logged' : 'attendance_missed',
+          user_email: a.user_email || 'Unknown',
+          status: a.status,
+          timestamp: a.created_at,
+          slot_time: a.prayer_slots?.slot_time || 'N/A'
+        }))
+      };
+
+      console.log(`✅ Today's active day attendance: ${attendedCount}/${totalRecords} (${attendanceRate}%)`);
       res.json(realtimeData);
     } catch (error) {
       console.error('Error fetching realtime analytics:', error);
@@ -2778,18 +2848,179 @@ Respond in JSON format as an array:
     }
   });
 
-  // Weekly analytics endpoint
+  // Weekly analytics endpoint (RESPECTS ACTIVE DAYS)
   app.get("/api/admin/analytics/weekly", async (req: Request, res: Response) => {
     try {
-      const { startDate } = req.query;
-      const { data: weeklyData, error } = await supabaseAdmin
-        .rpc('get_weekly_analytics_data', { weeks_back: 4 });
+      console.log('📊 Calculating weekly analytics with active days...');
+      
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      
+      // Get last 7 days
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 6);
+      
+      const weekStart = startDate.toISOString().split('T')[0];
+      const weekEnd = endDate.toISOString().split('T')[0];
 
-      if (error) {
-        console.error('Weekly analytics error:', error);
-        throw error;
+      // Get all schedules
+      const { data: schedules } = await supabaseAdmin
+        .from('intercessor_schedules')
+        .select('user_id, active_days');
+
+      // Get all attendance for the week
+      const { data: weekAttendance } = await supabaseAdmin
+        .from('attendance_log')
+        .select('*')
+        .gte('date', weekStart)
+        .lte('date', weekEnd);
+
+      // Calculate daily breakdown respecting active days
+      const dailyBreakdown = [];
+      let totalAttended = 0;
+      let totalMissed = 0;
+      let totalRecords = 0;
+
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayOfWeek = date.getDay();
+        const dayName = dayNames[dayOfWeek];
+
+        let dayAttended = 0;
+        let dayMissed = 0;
+        let dayTotal = 0;
+
+        // Only count users where this day is in their active_days
+        if (schedules && weekAttendance) {
+          for (const schedule of schedules) {
+            if (schedule.active_days && Array.isArray(schedule.active_days) && 
+                schedule.active_days.includes(dayName)) {
+              
+              dayTotal++;
+              
+              const userAttendance = weekAttendance.find(
+                a => a.user_id === schedule.user_id && a.date === dateStr
+              );
+              
+              if (userAttendance) {
+                if (userAttendance.status === 'attended') {
+                  dayAttended++;
+                } else if (userAttendance.status === 'missed') {
+                  dayMissed++;
+                }
+              }
+            }
+          }
+        }
+
+        totalAttended += dayAttended;
+        totalMissed += dayMissed;
+        totalRecords += dayTotal;
+
+        const dayAttendanceRate = dayTotal > 0 ? 
+          Math.round((dayAttended / dayTotal) * 100 * 10) / 10 : 0;
+
+        dailyBreakdown.push({
+          date: dateStr,
+          attendance_count: dayTotal,
+          attended_count: dayAttended,
+          missed_count: dayMissed,
+          attendance_rate: dayAttendanceRate,
+          zoom_meetings: 0,
+          total_participants: 0
+        });
       }
 
+      const overallAttendanceRate = totalRecords > 0 ?
+        Math.round((totalAttended / totalRecords) * 100 * 10) / 10 : 0;
+
+      // Get top performers (users with best attendance on their active days)
+      const userPerformance = [];
+      if (schedules && weekAttendance) {
+        for (const schedule of schedules) {
+          if (!schedule.active_days || !Array.isArray(schedule.active_days)) continue;
+
+          let userAttended = 0;
+          let userTotal = 0;
+
+          // Count attendance only on their active days
+          for (let i = 0; i < 7; i++) {
+            const date = new Date(startDate);
+            date.setDate(date.getDate() + i);
+            const dateStr = date.toISOString().split('T')[0];
+            const dayName = dayNames[date.getDay()];
+
+            if (schedule.active_days.includes(dayName)) {
+              userTotal++;
+              
+              const userAtt = weekAttendance.find(
+                a => a.user_id === schedule.user_id && a.date === dateStr
+              );
+              
+              if (userAtt && userAtt.status === 'attended') {
+                userAttended++;
+              }
+            }
+          }
+
+          if (userTotal > 0) {
+            const rate = Math.round((userAttended / userTotal) * 100 * 10) / 10;
+            
+            // Get user details
+            const { data: slot } = await supabaseAdmin
+              .from('prayer_slots')
+              .select('user_email, slot_time')
+              .eq('user_id', schedule.user_id)
+              .single();
+
+            userPerformance.push({
+              user_id: schedule.user_id,
+              user_email: slot?.user_email || 'Unknown',
+              slot_time: slot?.slot_time || 'N/A',
+              attendance_rate: rate,
+              current_streak: 0,
+              total_attendance_days: userAttended
+            });
+          }
+        }
+      }
+
+      // Sort by attendance rate and take top 10
+      const topPerformers = userPerformance
+        .sort((a, b) => b.attendance_rate - a.attendance_rate)
+        .slice(0, 10);
+
+      const weeklyData = {
+        week_start: weekStart,
+        week_end: weekEnd,
+        attendance_summary: {
+          total_records: totalRecords,
+          attended_count: totalAttended,
+          missed_count: totalMissed,
+          attendance_rate: overallAttendanceRate,
+          avg_duration_minutes: 0
+        },
+        slot_coverage: {
+          total_slots: 48,
+          active_slots: 48,
+          inactive_slots: 0,
+          coverage_rate: 100
+        },
+        zoom_meetings: {
+          total_meetings: 0,
+          total_participants: 0,
+          avg_participants: 0,
+          avg_duration: 0,
+          processed_meetings: 0,
+          unprocessed_meetings: 0
+        },
+        daily_breakdown: dailyBreakdown,
+        top_performers: topPerformers
+      };
+
+      console.log(`✅ Weekly analytics: ${totalAttended}/${totalRecords} (${overallAttendanceRate}%)`);
       res.json(weeklyData);
     } catch (error) {
       console.error('Error fetching weekly analytics:', error);
