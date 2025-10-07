@@ -118,8 +118,8 @@ class ZoomAttendanceTracker {
       }
     });
 
-    // Run every minute during active prayer hours for immediate tracking
-    cron.schedule('* * * * *', async () => {
+    // Run every 2 minutes during active prayer hours to avoid rate limits
+    cron.schedule('*/2 * * * *', async () => {
       try {
         await this.checkActiveSlots();
       } catch (error) {
@@ -676,29 +676,52 @@ class ZoomAttendanceTracker {
     }
   }
 
-  // Check for live meetings and mark attendance immediately
+  // Rate limiting variables
+  private lastZoomApiCall: number = 0;
+  private minApiInterval: number = 2000; // Minimum 2 seconds between API calls
+
+  // Check for live meetings with rate limiting
   private async checkLiveMeetings(activeSlots: any[]) {
     try {
+      // Rate limiting check
+      const now = Date.now();
+      if (now - this.lastZoomApiCall < this.minApiInterval) {
+        console.log('⏳ Rate limiting: Skipping Zoom API call');
+        return;
+      }
+      this.lastZoomApiCall = now;
+
       if (!this.zoomToken) {
         await this.getAccessToken();
       }
 
-      // Get live meetings
-      const response = await axios.get(
-        `https://api.zoom.us/v2/users/me/meetings`,
-        {
-          headers: {
-            Authorization: `Bearer ${this.zoomToken}`,
-            'Content-Type': 'application/json'
-          },
-          params: {
-            type: 'live',
-            page_size: 100
+      // Get live meetings with retry logic
+      let liveMeetings = [];
+      try {
+        const response = await axios.get(
+          `https://api.zoom.us/v2/users/me/meetings`,
+          {
+            headers: {
+              Authorization: `Bearer ${this.zoomToken}`,
+              'Content-Type': 'application/json'
+            },
+            params: {
+              type: 'live',
+              page_size: 100
+            },
+            timeout: 5000
           }
-        }
-      );
+        );
 
-      const liveMeetings = response.data.meetings || [];
+        liveMeetings = response.data.meetings || [];
+      } catch (apiError: any) {
+        if (apiError.response?.status === 429) {
+          console.log('⚠️ Zoom API rate limit hit - will retry in next cycle');
+          this.minApiInterval = 5000; // Increase interval to 5 seconds
+          return;
+        }
+        throw apiError;
+      }
       
       if (liveMeetings.length > 0) {
         console.log(`🔴 LIVE MEETINGS DETECTED: ${liveMeetings.length} active Zoom meetings!`);
@@ -707,10 +730,12 @@ class ZoomAttendanceTracker {
           console.log(`📹 Processing LIVE meeting: ${meeting.topic} (${meeting.id})`);
           await this.processLiveMeetingAttendance(meeting, activeSlots);
         }
+      } else {
+        console.log('📊 No live Zoom meetings currently active');
       }
 
-    } catch (error) {
-      console.error('Error checking live meetings:', error);
+    } catch (error: any) {
+      console.error('Error checking live meetings:', error.message);
     }
   }
 
@@ -763,10 +788,28 @@ class ZoomAttendanceTracker {
   // Process individual participant in live meeting
   private async processLiveParticipantAttendance(participant: any, meeting: any, activeSlots: any[]) {
     try {
-      const email = participant.user_email?.toLowerCase();
-      if (!email) return;
+      const email = participant.user_email?.toLowerCase() || participant.email?.toLowerCase();
+      const participantName = participant.name || participant.user_name || 'Unknown';
+      
+      if (!email) {
+        console.log(`⚠️ Participant ${participantName} has no email - checking by name match`);
+        
+        // Try to match by name if email is not available
+        const nameMatch = activeSlots.find(slot => 
+          slot.user_email && slot.user_email.includes(participantName.toLowerCase())
+        );
+        
+        if (nameMatch) {
+          console.log(`✅ Matched participant by name: ${participantName}`);
+          await this.logAttendanceForSlot(nameMatch, meeting, participant);
+          return;
+        }
+        
+        console.log(`❌ Could not match participant: ${participantName}`);
+        return;
+      }
 
-      console.log(`🔍 Checking participant: ${email}`);
+      console.log(`🔍 Processing participant: ${email} (${participantName})`);
 
       // Find matching active slot for this user
       const userSlot = activeSlots.find(slot => 
@@ -774,10 +817,33 @@ class ZoomAttendanceTracker {
       );
 
       if (!userSlot) {
-        console.log(`No matching prayer slot found for ${email}`);
+        console.log(`⚠️ No matching prayer slot found for ${email} - checking all slots`);
+        
+        // Check if user has ANY slot (even if not in activeSlots for today)
+        const { data: anySlot } = await supabaseAdmin
+          .from('prayer_slots')
+          .select('*')
+          .ilike('user_email', `%${email}%`)
+          .eq('status', 'active')
+          .single();
+        
+        if (anySlot) {
+          console.log(`✅ Found slot for ${email} outside active time`);
+          await this.logAttendanceForSlot(anySlot, meeting, participant);
+        }
         return;
       }
 
+      await this.logAttendanceForSlot(userSlot, meeting, participant);
+
+    } catch (error: any) {
+      console.error('Error processing live participant attendance:', error.message);
+    }
+  }
+
+  // Helper method to log attendance for a slot
+  private async logAttendanceForSlot(userSlot: any, meeting: any, participant: any) {
+    try {
       const today = dayjs().format('YYYY-MM-DD');
       const now = dayjs();
 
@@ -790,7 +856,7 @@ class ZoomAttendanceTracker {
         .single();
 
       if (existingAttendance && existingAttendance.status === 'attended') {
-        console.log(`✅ ${email} already marked as attended today`);
+        console.log(`✅ ${userSlot.user_email} already marked as attended today`);
         return;
       }
 
@@ -801,20 +867,25 @@ class ZoomAttendanceTracker {
         date: today,
         status: 'attended',
         zoom_join_time: participant.join_time || now.toISOString(),
-        zoom_leave_time: null, // Will be updated when meeting ends
+        zoom_leave_time: null,
         zoom_meeting_id: meeting.id.toString(),
         created_at: now.toISOString()
       };
 
-      await supabaseAdmin
+      const { error: attendanceError } = await supabaseAdmin
         .from('attendance_log')
         .upsert(attendanceData, { 
           onConflict: 'user_id,date',
           ignoreDuplicates: false 
         });
 
+      if (attendanceError) {
+        console.error(`❌ Failed to log attendance for ${userSlot.user_email}:`, attendanceError);
+        return;
+      }
+
       // Reset missed count and update last attended
-      await supabaseAdmin
+      const { error: updateError } = await supabaseAdmin
         .from('prayer_slots')
         .update({
           missed_count: 0,
@@ -823,10 +894,14 @@ class ZoomAttendanceTracker {
         })
         .eq('id', userSlot.id);
 
-      console.log(`🎉 LIVE ATTENDANCE MARKED: ${email} for slot ${userSlot.slot_time}`);
+      if (updateError) {
+        console.error(`⚠️ Failed to update slot for ${userSlot.user_email}:`, updateError);
+      }
 
-    } catch (error) {
-      console.error('Error processing live participant attendance:', error);
+      console.log(`🎉 ATTENDANCE LOGGED: ${userSlot.user_email} joined ${meeting.topic} at ${now.format('HH:mm')}`);
+
+    } catch (error: any) {
+      console.error('Error in logAttendanceForSlot:', error.message);
     }
   }
 

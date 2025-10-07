@@ -1921,6 +1921,81 @@ Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
     }
   });
 
+  // Manual Zoom attendance confirmation
+  app.post("/api/zoom/confirm-attendance", async (req: Request, res: Response) => {
+    try {
+      const { userId, meetingId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
+      }
+
+      console.log(`📝 Manual attendance confirmation for user ${userId}, meeting ${meetingId || 'current'}`);
+
+      // Get user's prayer slot
+      const { data: prayerSlot } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (!prayerSlot) {
+        return res.status(404).json({ error: 'No active prayer slot found for user' });
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const now = new Date();
+
+      // Log attendance
+      const attendanceData = {
+        user_id: userId,
+        slot_id: prayerSlot.id,
+        date: today,
+        status: 'attended',
+        zoom_join_time: now.toISOString(),
+        zoom_leave_time: null,
+        zoom_meeting_id: meetingId || `manual_${Date.now()}`,
+        created_at: now.toISOString()
+      };
+
+      const { error: attendanceError } = await supabaseAdmin
+        .from('attendance_log')
+        .upsert(attendanceData, { 
+          onConflict: 'user_id,date',
+          ignoreDuplicates: false 
+        });
+
+      if (attendanceError) {
+        console.error('Error logging manual attendance:', attendanceError);
+        return res.status(500).json({ error: 'Failed to log attendance' });
+      }
+
+      // Reset missed count
+      await supabaseAdmin
+        .from('prayer_slots')
+        .update({
+          missed_count: 0,
+          last_attended: now.toISOString(),
+          updated_at: now.toISOString()
+        })
+        .eq('id', prayerSlot.id);
+
+      console.log(`✅ Manual attendance confirmed for ${prayerSlot.user_email}`);
+
+      res.json({ 
+        success: true, 
+        message: 'Attendance confirmed successfully',
+        date: today,
+        slotTime: prayerSlot.slot_time
+      });
+
+    } catch (error: any) {
+      console.error('Error confirming attendance:', error);
+      res.status(500).json({ error: 'Failed to confirm attendance' });
+    }
+  });
+
   // Clean up expired chat history (admin endpoint)
   app.post("/api/bible-chat/cleanup", async (req: Request, res: Response) => {
     try {
