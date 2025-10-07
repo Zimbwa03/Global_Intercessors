@@ -404,6 +404,11 @@ class ZoomAttendanceTracker {
   private async processSlotAttendance() {
     try {
       const today = dayjs().format('YYYY-MM-DD');
+      const todayDayOfWeek = dayjs().day(); // 0=Sunday, 6=Saturday
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const todayDayName = dayNames[todayDayOfWeek];
+
+      console.log(`📅 Processing attendance for ${today} (${todayDayName})`);
 
       // Get all active prayer slots
       const { data: activeSlots } = await supabaseAdmin
@@ -414,6 +419,23 @@ class ZoomAttendanceTracker {
       if (!activeSlots) return;
 
       for (const slot of activeSlots) {
+        // Check user's active prayer days schedule
+        const { data: schedule } = await supabaseAdmin
+          .from('intercessor_schedules')
+          .select('active_days')
+          .eq('user_id', slot.user_id)
+          .single();
+
+        // If user has a schedule, check if today is one of their active days
+        if (schedule && schedule.active_days && Array.isArray(schedule.active_days)) {
+          const isActiveDayToday = schedule.active_days.includes(todayDayName);
+          
+          if (!isActiveDayToday) {
+            console.log(`⏭️  Skipping ${slot.user_email} - ${todayDayName} is not their prayer day`);
+            continue; // Skip this user - today is not their prayer day
+          }
+        }
+
         // Check if there's an attendance record for today
         const { data: attendance } = await supabaseAdmin
           .from('attendance_log')
@@ -423,8 +445,11 @@ class ZoomAttendanceTracker {
           .single();
 
         if (!attendance) {
-          // No attendance record - mark as missed
+          // No attendance record on their prayer day - mark as missed
+          console.log(`❌ Marking ${slot.user_email} as missed for ${todayDayName}`);
           await this.markSlotMissed(slot, today);
+        } else {
+          console.log(`✅ ${slot.user_email} attended on ${todayDayName}`);
         }
       }
     } catch (error) {

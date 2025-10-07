@@ -5,7 +5,7 @@
 // even if API calls fail or return empty data
 // ============================================
 
-export const PRESENTATION_MODE = true; // Set to false after presentation
+export const PRESENTATION_MODE = false; // Real Zoom data enabled
 
 export const presentationData = {
   // Dashboard Overview Stats

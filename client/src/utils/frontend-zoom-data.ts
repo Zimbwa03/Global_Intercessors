@@ -5,7 +5,7 @@
 // No backend changes needed!
 // ============================================
 
-export const PRESENTATION_MODE = true; // Set to false after presentation
+export const PRESENTATION_MODE = false; // Real Zoom data enabled
 
 // ============================================
 // ZOOM DATA FOR PRAYER SLOT PANEL
