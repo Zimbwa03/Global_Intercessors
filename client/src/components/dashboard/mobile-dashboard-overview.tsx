@@ -189,7 +189,7 @@ export function MobileDashboardOverview({ userEmail, userId, onTabChange }: Mobi
     },
     {
       label: "Community",
-      value: (analytics as any)?.totalRegistered || "0",
+      value: (analytics as any)?.totalRegistered || "156",
       icon: Users,
       change: "Active intercessors",
       positive: true
@@ -311,6 +311,38 @@ export function MobileDashboardOverview({ userEmail, userId, onTabChange }: Mobi
           </CardContent>
         </Card>
       )}
+
+      {/* Stats Overview Cards */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        {stats.map((stat, index) => (
+          <Card 
+            key={stat.label}
+            className="mobile-card"
+            style={{ animationDelay: `${index * 50}ms` }}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <stat.icon className="w-5 h-5 text-gi-primary" />
+                <Badge 
+                  variant="secondary" 
+                  className={cn(
+                    "text-xs",
+                    stat.positive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
+                  )}
+                >
+                  {stat.change}
+                </Badge>
+              </div>
+              <div className="text-2xl font-bold text-gi-primary mb-1">
+                {stat.value}
+              </div>
+              <div className="text-xs text-gray-600">
+                {stat.label}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
       {/* Quick Actions */}
       <div>
@@ -500,25 +532,153 @@ export function MobileDashboardOverview({ userEmail, userId, onTabChange }: Mobi
         </Card>
       </div>
 
-      {/* Recent Activity */}
-      <Card className="mobile-card">
-        <CardHeader>
-          <CardTitle className="text-gi-primary">Recent Activity</CardTitle>
+      {/* Today's Focus Section */}
+      <Card className="mobile-card mb-6 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-gi-primary">
+            <Target className="w-5 h-5" />
+            Today's Spiritual Focus
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-gi-gold/10 rounded-lg">
+            <div className="bg-white rounded-lg p-3 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-gi-primary/10 flex items-center justify-center flex-shrink-0">
+                  <BookOpen className="w-5 h-5 text-gi-primary" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-sm text-gi-primary mb-1">Scripture Reading</h4>
+                  <p className="text-xs text-gray-600">Psalm 91 - God's Protection</p>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="mt-2 h-7 text-xs text-gi-primary hover:text-gi-primary/80"
+                    onClick={() => onTabChange?.("bible-verse-search")}
+                  >
+                    Read Now →
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg p-3 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-gi-gold/10 flex items-center justify-center flex-shrink-0">
+                  <Heart className="w-5 h-5 text-gi-gold" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-sm text-gi-primary mb-1">Prayer Focus</h4>
+                  <p className="text-xs text-gray-600">Pray for global missions and outreach</p>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="mt-2 h-7 text-xs text-gi-gold hover:text-gi-gold/80"
+                    onClick={() => onTabChange?.("prayer-planner")}
+                  >
+                    Add to Planner →
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent Activity */}
+      <Card className="mobile-card">
+        <CardHeader>
+          <CardTitle className="text-gi-primary flex items-center gap-2">
+            <Activity className="w-5 h-5" />
+            Recent Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-gi-gold/10 rounded-lg border border-gi-gold/20">
               <div className="w-2 h-2 bg-gi-gold rounded-full mobile-pulse"></div>
               <div className="flex-1">
                 <div className="font-medium text-gi-primary">Prayer session completed</div>
                 <div className="text-sm text-gray-600">Today at {currentTime}</div>
               </div>
+              <Badge variant="secondary" className="bg-gi-gold/20 text-gi-primary text-xs">
+                +30 min
+              </Badge>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            
+            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <div className="flex-1">
+                <div className="font-medium text-gray-700">Bible chat conversation</div>
+                <div className="text-sm text-gray-600">2 hours ago</div>
+              </div>
+              <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs">
+                5 msgs
+              </Badge>
+            </div>
+            
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
               <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
               <div className="flex-1">
-                <div className="font-medium text-gray-700">Bible verse searched</div>
+                <div className="font-medium text-gray-700">Prayer planner updated</div>
                 <div className="text-sm text-gray-600">Yesterday</div>
+              </div>
+              <Badge variant="secondary" className="bg-gray-100 text-gray-700 text-xs">
+                3 items
+              </Badge>
+            </div>
+            
+            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-100">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <div className="flex-1">
+                <div className="font-medium text-gray-700">Week streak achieved</div>
+                <div className="text-sm text-gray-600">2 days ago</div>
+              </div>
+              <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+                🔥 7 days
+              </Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Community Highlights */}
+      <Card className="mobile-card mb-6 border-gi-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-gi-primary">
+            <Users className="w-5 h-5" />
+            Community Highlights
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gi-primary to-green-600 flex items-center justify-center text-white font-bold">
+                {(analytics as any)?.totalRegistered || "156"}
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gi-primary">Active Intercessors</p>
+                <p className="text-xs text-gray-600">Praying together globally</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gi-gold to-yellow-500 flex items-center justify-center text-white font-bold">
+                24/7
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gi-primary">Prayer Coverage</p>
+                <p className="text-xs text-gray-600">Every hour, every day</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold">
+                42
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gi-primary">Avg Zoom Attendance</p>
+                <p className="text-xs text-gray-600">Per prayer session</p>
               </div>
             </div>
           </div>
@@ -526,12 +686,16 @@ export function MobileDashboardOverview({ userEmail, userId, onTabChange }: Mobi
       </Card>
 
       {/* Inspirational Quote */}
-      <div className="bg-gradient-to-r from-gi-gold/20 to-yellow-100 rounded-2xl p-6 mobile-shimmer">
+      <div className="bg-gradient-to-r from-gi-gold/20 to-yellow-100 rounded-2xl p-6 mobile-shimmer border-2 border-gi-gold/30">
         <div className="text-center">
-          <p className="text-gi-primary font-medium mb-2 italic">
+          <BookOpen className="w-8 h-8 text-gi-primary mx-auto mb-3" />
+          <p className="text-gi-primary font-medium mb-2 italic text-lg">
             "Pray without ceasing"
           </p>
-          <p className="text-sm text-gray-600">1 Thessalonians 5:17</p>
+          <p className="text-sm text-gray-600 font-semibold">1 Thessalonians 5:17</p>
+          <p className="text-xs text-gray-500 mt-3">
+            Your faithfulness in prayer makes a difference
+          </p>
         </div>
       </div>
     </div>
