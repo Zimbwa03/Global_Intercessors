@@ -141,18 +141,62 @@ class AdvancedReminderSystem {
       const now = new Date();
       const currentTime = now.toTimeString().slice(0, 5);
 
-      // Use the database function to get active slots with user details
+      // Direct query instead of using missing database function
       const { data: prayerSlots, error } = await supabase
-        .rpc('get_active_slots_for_reminders');
+        .from('prayer_slots')
+        .select(`
+          id,
+          user_id,
+          user_email,
+          slot_time,
+          status,
+          reminder_time
+        `)
+        .eq('status', 'active');
 
       if (error) {
         console.error('❌ Error fetching prayer slots for reminders:', error);
         return;
       }
 
-      console.log(`🔍 Found ${prayerSlots?.length || 0} active slots for reminder checking`);
+      // Get user profiles and WhatsApp users
+      const userEmails = prayerSlots?.map(slot => slot.user_email).filter(Boolean) || [];
+      const userIds = prayerSlots?.map(slot => slot.user_id).filter(Boolean) || [];
 
-      for (const slot of prayerSlots || []) {
+      const { data: userProfiles } = await supabase
+        .from('user_profiles')
+        .select('user_id, email, full_name, phone_number, timezone, notification_preferences, reminder_preferences')
+        .in('email', userEmails);
+
+      const { data: whatsappUsers } = await supabase
+        .from('whatsapp_bot_users')
+        .select('user_id, whatsapp_number, reminder_preferences, personal_reminder_time, is_active')
+        .in('user_id', userIds)
+        .eq('is_active', true);
+
+      // Combine the data
+      const enrichedSlots = prayerSlots?.map(slot => {
+        const profile = userProfiles?.find(p => p.email === slot.user_email);
+        const whatsapp = whatsappUsers?.find(w => w.user_id === slot.user_id);
+        
+        return {
+          slot_id: slot.id,
+          user_id: slot.user_id,
+          user_email: slot.user_email,
+          slot_time: slot.slot_time,
+          full_name: profile?.full_name,
+          phone_number: profile?.phone_number,
+          timezone: profile?.timezone || 'UTC',
+          whatsapp_number: whatsapp?.whatsapp_number,
+          reminder_preferences: whatsapp?.reminder_preferences,
+          personal_reminder_time: whatsapp?.personal_reminder_time,
+          notification_preferences: profile?.notification_preferences
+        };
+      }).filter(slot => slot.whatsapp_number) || [];
+
+      console.log(`🔍 Found ${enrichedSlots.length} active slots for reminder checking`);
+
+      for (const slot of enrichedSlots) {
         await this.processSlotReminder(slot, currentTime);
       }
 
@@ -238,10 +282,12 @@ _"The effective, fervent prayer of a righteous man avails much." - James 5:16_
 Global Intercessors ⚔️ Standing Strong!`;
 
       // Add to queue for reliable delivery
-      this.addToReminderQueue(userProfile.phone_number, reminderMessage, 1);
+      if (slot.whatsapp_number) {
+        this.addToReminderQueue(slot.whatsapp_number, reminderMessage, 1);
+      }
       
       // Log the reminder
-      await this.logReminderSent(slot.id, slot.user_id, reminderMinutes, reminderMessage);
+      await this.logReminderSent(slot.slot_id, slot.user_id, reminderMinutes, reminderMessage);
 
     } catch (error) {
       console.error('❌ Error sending slot reminder:', error);

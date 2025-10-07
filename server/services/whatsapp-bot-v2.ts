@@ -548,7 +548,7 @@ export class WhatsAppPrayerBot {
       hour12: false, 
       timeZone: 'Africa/Harare' 
     });
-    
+
     console.log(`🔍 [${currentTime}] Checking prayer slot reminders...`);
 
     try {
@@ -566,26 +566,64 @@ export class WhatsAppPrayerBot {
 
       console.log(`🕐 Current time: ${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')} (${currentTotalMinutes} minutes)`);
 
-      // Get active prayer slots with WhatsApp users
-      const { data: activeSlots, error: slotsError } = await supabase
-        .rpc('get_whatsapp_users_with_slots');
+      // Direct query to get active slots with user details
+      const { data: prayerSlots, error: slotsError } = await supabase
+        .from('prayer_slots')
+        .select('*')
+        .eq('status', 'active');
 
       if (slotsError) {
         console.error('❌ Error fetching prayer slots:', slotsError);
         return;
       }
 
-      if (!activeSlots || activeSlots.length === 0) {
-        console.log('⚠️ No active prayer slots with WhatsApp users found');
+      if (!prayerSlots || prayerSlots.length === 0) {
+        console.log('⚠️ No active prayer slots found');
         return;
       }
 
-      console.log(`📊 Found ${activeSlots.length} active prayer slots with WhatsApp users`);
+      const userIds = prayerSlots?.map(slot => slot.user_id).filter(Boolean) || [];
+
+      const { data: whatsappUsers, error: whatsappError } = await supabase
+        .from('whatsapp_bot_users')
+        .select('*')
+        .in('user_id', userIds)
+        .eq('is_active', true);
+
+      if (whatsappError) {
+        console.error('❌ Error fetching WhatsApp users:', whatsappError);
+        return;
+      }
+
+      const { data: userProfiles, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .in('user_id', userIds);
+
+      if (profilesError) {
+        console.error('❌ Error fetching user profiles:', profilesError);
+      }
+
+      // Combine data for easier access
+      const combinedData = prayerSlots?.map(slot => {
+        const user = whatsappUsers?.find(wu => wu.user_id === slot.user_id);
+        const profile = userProfiles?.find(up => up.id === slot.user_id);
+        return { slot, user, profile };
+      }).filter(d => d.user && d.profile); // Only include if we have all data
+
+      if (!combinedData || combinedData.length === 0) {
+        console.log('⚠️ No active prayer slots with associated WhatsApp users or profiles found');
+        return;
+      }
+
+      console.log(`📊 Found ${combinedData.length} active prayer slots with WhatsApp users`);
 
       // Process each slot
-      for (const slot of activeSlots) {
-        if (!slot.whatsapp_number) {
-          console.log(`⚠️ No WhatsApp number for slot ${slot.slot_time}`);
+      for (const item of combinedData) {
+        const { slot, user } = item; // User is guaranteed to exist here
+
+        if (!slot.whatsapp_number) { // Double check, though `user` check should cover this
+          console.log(`⚠️ No WhatsApp number for slot ${slot.slot_time} (User ID: ${slot.user_id})`);
           continue;
         }
 
@@ -628,13 +666,13 @@ export class WhatsAppPrayerBot {
         // Send appropriate reminder
         if (timeDiff30Min <= 1) {
           console.log(`🔔 Sending 30-minute reminder for slot ${slot.id}`);
-          await this.sendPrayerSlotReminder(whatsappUser, slot, 30);
+          await this.sendPrayerSlotReminder(user, slot, 30);
         } else if (timeDiff15Min <= 1) {
           console.log(`🔔 Sending 15-minute reminder for slot ${slot.id}`);
-          await this.sendPrayerSlotReminder(whatsappUser, slot, 15);
+          await this.sendPrayerSlotReminder(user, slot, 15);
         } else if (timeDiff5Min <= 1) {
           console.log(`🔔 Sending 5-minute reminder for slot ${slot.id}`);
-          await this.sendPrayerSlotReminder(whatsappUser, slot, 5);
+          await this.sendPrayerSlotReminder(user, slot, 5);
         }
       }
 
@@ -651,7 +689,7 @@ export class WhatsAppPrayerBot {
 
       let timeText = '';
       let urgencyEmoji = '';
-      
+
       switch (minutesBefore) {
         case 30:
           timeText = '30 minutes';
@@ -715,18 +753,18 @@ Reply *help* for more options.`;
       for (const user of activeUsers) {
         try {
           const userName = await this.getUserName(user.user_id);
-          
+
           // Generate personalized AI morning message
           const dynamicMessage = await this.generateDynamicMorningMessage(userName);
-          
+
           await this.sendWhatsAppMessage(user.whatsapp_number, dynamicMessage);
           await this.logInteraction(user.whatsapp_number, 'morning_declaration_ai', 'daily');
-          
+
           // Rate limiting between users
           await new Promise(resolve => setTimeout(resolve, 2000));
         } catch (error) {
           console.error(`❌ Error sending morning message to user ${user.whatsapp_number}:`, error);
-          
+
           // Fallback to static message if AI fails
           const fallbackMessage = `🌅 *Good Morning, ${userName}!* 🌅
 
@@ -735,7 +773,7 @@ Reply *help* for more options.`;
 🙏 May your prayers today move mountains and your intercession break every chain!
 
 *God bless your day!*`;
-          
+
           await this.sendWhatsAppMessage(user.whatsapp_number, fallbackMessage);
         }
       }
@@ -812,7 +850,7 @@ Make it uplifting, personal, and spiritually powerful. Focus on prayer, interces
 
     } catch (error) {
       console.error('❌ Error generating dynamic morning message:', error);
-      
+
       // Fallback to dynamic but simpler message
       const bibleVerses = [
         '"For I know the plans I have for you," declares the Lord, "plans to prosper you and not to harm you, to give you hope and a future." - Jeremiah 29:11',
@@ -821,10 +859,10 @@ Make it uplifting, personal, and spiritually powerful. Focus on prayer, interces
         '"But those who hope in the Lord will renew their strength. They will soar on wings like eagles." - Isaiah 40:31',
         '"The Lord will fight for you; you need only to be still." - Exodus 14:14'
       ];
-      
+
       const randomVerse = bibleVerses[Math.floor(Math.random() * bibleVerses.length)];
       const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-      
+
       return `🌅 *Good Morning, ${userName}!* 🌅
 
 Happy ${dayOfWeek}! God has great plans for your prayers today.
@@ -844,7 +882,7 @@ Your intercession matters! 💪
   public async broadcastAdminUpdate(updateTitle: string, updateContent: string): Promise<void> {
     try {
       console.log('📢 Broadcasting admin update to WhatsApp users:', updateTitle);
-      
+
       const { data: activeUsers } = await supabase
         .from('whatsapp_bot_users')
         .select('*')
@@ -861,7 +899,7 @@ Your intercession matters! 💪
       for (const user of activeUsers) {
         try {
           const userName = await this.getUserName(user.user_id);
-          
+
           const message = `📢 *Important Update from Global Intercessors* 📢
 
 Hello ${userName}!
@@ -878,7 +916,7 @@ ${summarizedUpdate}
 
           await this.sendWhatsAppMessage(user.whatsapp_number, message);
           await this.logInteraction(user.whatsapp_number, 'admin_update', updateTitle);
-          
+
           // Rate limiting between users
           await new Promise(resolve => setTimeout(resolve, 1500));
         } catch (error) {
@@ -1698,7 +1736,7 @@ Global Intercessors is a worldwide prayer movement that maintains 24/7 prayer co
 `• 🌍 Shares global prayer updates and declarations\n\n` +
 `🙏 *About Global Intercessors*\n` +
 `We are a worldwide prayer movement committed to 24/7 prayer coverage across nations. Intercessors from around the world stand together in continuous prayer for revival, transformation, and God's Kingdom purposes.\n\n` +
-`"The effective, fervent prayer of a righteous man avails much." — James 5:16`;
+`"The effective, fervent prayer of the righteous man avails much." — James 5:16`;
 
     await this.sendWhatsAppMessage(phoneNumber, aboutMessage);
     await this.logInteraction(phoneNumber, 'button_action', 'about');
@@ -1974,7 +2012,7 @@ ${content}
   private async generateAIContent(prompt: string): Promise<string> {
     try {
       console.log('🤖 Attempting AI content generation...');
-      
+
       // Check if API key is available
       const apiKey = process.env.DEEPSEEK_API_KEY || process.env.AI_API_KEY;
       if (!apiKey) {
@@ -2013,7 +2051,7 @@ ${content}
 
       const data = await response.json();
       const content = data.choices[0]?.message?.content;
-      
+
       if (!content) {
         console.error('❌ No content returned from AI');
         throw new Error('No content returned from AI service');
@@ -2114,7 +2152,7 @@ Beloved ${userName},
 
 Deep dive, ${userName}!
 
-📖 *"The effectual fervent prayer of a righteous man availeth much."* - James 5:17
+📖 *"The effectual fervent prayer of the righteous man availeth much."* - James 5:17
 
 🎯 **Hebrew Insight:** The word "effectual" means "energized by divine power." Your prayers aren't just words - they're spiritual forces!
 
