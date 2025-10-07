@@ -19,10 +19,9 @@ import {
   Activity,
   Zap,
   Eye,
-  Database,
-  BarChart,
-  PieChart,
-  LineChart
+  Video,
+  PieChart as PieChartIcon,
+  LineChart as LineChartIcon
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -38,10 +37,10 @@ import {
   LineElement,
   PointElement,
   ArcElement,
+  Filler
 } from 'chart.js';
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
-// Frontend-only presentation data
-import { PresentationData, PRESENTATION_MODE } from '@/utils/frontend-zoom-data';
+import dayjs from 'dayjs';
 
 ChartJS.register(
   CategoryScale,
@@ -53,7 +52,19 @@ ChartJS.register(
   LineElement,
   PointElement,
   ArcElement,
+  Filler
 );
+
+// GI Brand Colors
+const GI_COLORS = {
+  primary: '#104220',
+  gold: '#D2AA68',
+  dark: '#0A2E18',
+  light: '#E8F5E9',
+  success: '#10B981',
+  warning: '#F59E0B',
+  danger: '#EF4444'
+};
 
 interface RealtimeData {
   current_time: string;
@@ -125,45 +136,32 @@ interface WeeklyAnalytics {
 export function EnhancedAnalytics() {
   const [activeTab, setActiveTab] = useState('overview');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [reportDate, setReportDate] = useState(() => {
+    const end = dayjs();
+    const start = end.subtract(6, 'days');
+    return `${start.format('DD MMM')} - ${end.format('DD MMM YYYY')}`;
+  });
+
+  // Fetch Zoom analytics
+  const { data: zoomData, isLoading: zoomLoading, refetch: refetchZoom } = useQuery({
+    queryKey: ['zoom-analytics', refreshKey],
+    queryFn: async () => {
+      const response = await fetch('/api/zoom/analytics');
+      if (!response.ok) throw new Error('Failed to fetch Zoom analytics');
+      return response.json();
+    },
+    refetchInterval: 30000
+  });
 
   // Fetch real-time data
   const { data: realtimeData, isLoading: realtimeLoading, refetch: refetchRealtime } = useQuery({
     queryKey: ['analytics-realtime', refreshKey],
     queryFn: async () => {
-      if (PRESENTATION_MODE) {
-        const stats = PresentationData.dashboard();
-        const activity = PresentationData.activityFeed();
-        const mappedActivity = activity.map((a: any, idx: number) => ({
-          type: a.type,
-          user_email: a.user || 'intercessor@giprayer.org',
-          status: a.type === 'attendance_logged' ? 'attended' : 'joined',
-          timestamp: a.time,
-          slot_time: a.slot_time || '—',
-        }));
-        const fallback: RealtimeData = {
-          current_time: new Date().toISOString(),
-          today_attendance: {
-            total_records: stats.todayTotalSlots || 48,
-            attended_count: stats.todayAttended || 44,
-            missed_count: (stats.todayTotalSlots || 48) - (stats.todayAttended || 44),
-            attendance_rate: Math.round((stats.todayAttended || 44) / (stats.todayTotalSlots || 48) * 100),
-          },
-          active_slots_today: stats.activeSlots || 48,
-          zoom_meetings_today: {
-            total_meetings: stats.totalZoomMeetings || 124,
-            total_participants: stats.avgZoomParticipants * 3 || 126,
-            active_meetings: 1,
-          },
-          weekly_summary: {},
-          recent_activity: mappedActivity,
-        };
-        return fallback;
-      }
       const response = await fetch('/api/admin/analytics/realtime');
       if (!response.ok) throw new Error('Failed to fetch realtime data');
       return response.json() as Promise<RealtimeData>;
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
     refetchOnWindowFocus: true
   });
 
@@ -171,115 +169,138 @@ export function EnhancedAnalytics() {
   const { data: weeklyData, isLoading: weeklyLoading, refetch: refetchWeekly } = useQuery({
     queryKey: ['analytics-weekly', refreshKey],
     queryFn: async () => {
-      if (PRESENTATION_MODE) {
-        const a = PresentationData.analytics();
-        const stats = PresentationData.dashboard();
-        // Derive weekly summary from presentation data
-        const attended = a.weeklyAttendance.datasets?.[0]?.data || [44,42,45,43,46,44,45];
-        const totals = a.weeklyAttendance.datasets?.[1]?.data || [48,48,48,48,48,48,48];
-        const total_records = totals.reduce((s: number, v: number) => s + v, 0);
-        const attended_count = attended.reduce((s: number, v: number) => s + v, 0);
-        const missed_count = total_records - attended_count;
-        const attendance_rate = Math.round(attended_count / total_records * 100);
-        const fallback: WeeklyAnalytics = {
-          week_start: new Date(Date.now() - 6*24*3600*1000).toISOString(),
-          week_end: new Date().toISOString(),
-          attendance_summary: {
-            total_records,
-            attended_count,
-            missed_count,
-            attendance_rate,
-            avg_duration_minutes: 45,
-          },
-          slot_coverage: {
-            total_slots: 48,
-            active_slots: stats.activeSlots || 48,
-            inactive_slots: Math.max(0, 48 - (stats.activeSlots || 48)),
-            coverage_rate: 94,
-          },
-          zoom_meetings: {
-            total_meetings: stats.totalZoomMeetings || 124,
-            total_participants: (stats.avgZoomParticipants || 42) * 7,
-            avg_participants: stats.avgZoomParticipants || 42,
-            avg_duration: 45,
-            processed_meetings: Math.round((stats.totalZoomMeetings || 124) * 0.92),
-            unprocessed_meetings: Math.round((stats.totalZoomMeetings || 124) * 0.08),
-          },
-          daily_breakdown: [0,1,2,3,4,5,6].map((i) => ({
-            date: new Date(Date.now() - (6 - i) * 24 * 3600 * 1000).toISOString().split('T')[0],
-            attendance_count: totals[i] || 48,
-            attended_count: attended[i] || 44,
-            missed_count: (totals[i] || 48) - (attended[i] || 44),
-            attendance_rate: Math.round(((attended[i] || 44) / (totals[i] || 48)) * 100),
-            zoom_meetings: 4,
-            total_participants: (stats.avgZoomParticipants || 42) * 4,
-          })),
-          top_performers: [
-            { user_id: '1', user_email: 'sarah.johnson@example.com', slot_time: '06:00', attendance_rate: 100, current_streak: 21, total_attendance_days: 30 },
-            { user_id: '2', user_email: 'john.mukasa@example.com', slot_time: '12:00', attendance_rate: 97, current_streak: 18, total_attendance_days: 29 },
-            { user_id: '3', user_email: 'mary.okonkwo@example.com', slot_time: '18:00', attendance_rate: 95, current_streak: 15, total_attendance_days: 28 },
-          ],
-        };
-        return fallback;
-      }
       const response = await fetch('/api/admin/analytics/weekly');
       if (!response.ok) throw new Error('Failed to fetch weekly data');
       return response.json() as Promise<WeeklyAnalytics>;
     },
-    refetchInterval: 60000, // Refresh every minute
-  });
-
-  // Fetch Zoom analytics
-  const { data: zoomData, isLoading: zoomLoading } = useQuery({
-    queryKey: ['analytics-zoom', refreshKey],
-    queryFn: async () => {
-      if (PRESENTATION_MODE) {
-        const details = PresentationData.zoomMeeting();
-        const geo = PresentationData.analytics().geographicDistribution;
-        return { details, geo };
-      }
-      const response = await fetch('/api/admin/analytics/zoom');
-      if (!response.ok) throw new Error('Failed to fetch zoom data');
-      return response.json();
-    },
-    refetchInterval: 60000,
-  });
-
-  // Fetch slot coverage analytics
-  const { data: slotsData, isLoading: slotsLoading } = useQuery({
-    queryKey: ['analytics-slots', refreshKey],
-    queryFn: async () => {
-      if (PRESENTATION_MODE) {
-        return PresentationData.analytics().slotCoverage;
-      }
-      const response = await fetch('/api/admin/analytics/slots');
-      if (!response.ok) throw new Error('Failed to fetch slots data');
-      return response.json();
-    },
-    refetchInterval: 60000,
+    refetchInterval: 60000
   });
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
     refetchRealtime();
     refetchWeekly();
+    refetchZoom();
+  };
+
+  // Professional chart configurations
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+          font: { size: 12, family: 'Inter, sans-serif', weight: '600' },
+          color: GI_COLORS.dark,
+          padding: 15,
+          usePointStyle: true
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        titleColor: GI_COLORS.gold,
+        bodyColor: '#fff',
+        borderColor: GI_COLORS.gold,
+        borderWidth: 1,
+        cornerRadius: 8,
+        padding: 12,
+        titleFont: { size: 14, weight: 'bold' },
+        bodyFont: { size: 13 }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(16, 66, 32, 0.1)' },
+        ticks: {
+          font: { size: 11, family: 'Inter, sans-serif' },
+          color: GI_COLORS.dark
+        }
+      },
+      x: {
+        grid: { display: false },
+        ticks: {
+          font: { size: 11, family: 'Inter, sans-serif' },
+          color: GI_COLORS.dark
+        }
+      }
+    }
+  };
+
+  // Prepare weekly participation chart data
+  const weeklyParticipationData = {
+    labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    datasets: [
+      {
+        label: 'Current Week Coverage',
+        data: weeklyData?.daily_breakdown?.map(d => d.attended_count) || [0, 0, 0, 0, 0, 0, 0],
+        backgroundColor: `${GI_COLORS.primary}CC`,
+        borderColor: GI_COLORS.primary,
+        borderWidth: 2,
+        borderRadius: 6,
+      },
+      {
+        label: 'Total Slots',
+        data: weeklyData?.daily_breakdown?.map(d => d.attendance_count) || [48, 48, 48, 48, 48, 48, 48],
+        backgroundColor: `${GI_COLORS.gold}66`,
+        borderColor: GI_COLORS.gold,
+        borderWidth: 2,
+        borderRadius: 6,
+      }
+    ]
+  };
+
+  // Zoom participants trend
+  const zoomTrendData = {
+    labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    datasets: [
+      {
+        label: 'Zoom Participants',
+        data: weeklyData?.daily_breakdown?.map(d => d.total_participants || 0) || [0, 0, 0, 0, 0, 0, 0],
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: 'rgb(59, 130, 246)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: 'rgb(59, 130, 246)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7
+      }
+    ]
+  };
+
+  // Coverage rate visualization
+  const coverageData = {
+    labels: ['Covered', 'Uncovered'],
+    datasets: [{
+      data: [
+        weeklyData?.attendance_summary?.attended_count || 0,
+        (weeklyData?.attendance_summary?.total_records || 0) - (weeklyData?.attendance_summary?.attended_count || 0)
+      ],
+      backgroundColor: [GI_COLORS.primary, GI_COLORS.gold],
+      borderColor: ['#fff', '#fff'],
+      borderWidth: 3
+    }]
   };
 
   const exportData = async (type: string) => {
     try {
-      // Export whatever is currently displayed (realtime + weekly + zoom + slots)
       const payload = {
         generated_at: new Date().toISOString(),
+        report_date: reportDate,
         realtime: realtimeData,
         weekly: weeklyData,
         zoom: zoomData,
-        slots: slotsData,
+        total_slots_available: 336
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `analytics_${type}_${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `GI_Weekly_Report_${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -299,27 +320,43 @@ export function EnhancedAnalytics() {
 
   const OverviewTab = () => (
     <div className="space-y-6">
-      {/* Real-time Metrics */}
+      {/* Header with Report Date */}
+      <Card className="border-gi-primary/30 bg-gradient-to-r from-gi-primary/10 to-gi-gold/10">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gi-dark">Prayer Platform Weekly Report</h2>
+              <p className="text-gi-dark/80 mt-1">{reportDate}</p>
+            </div>
+            <Badge className="bg-gi-primary text-white px-4 py-2 text-sm">
+              <Calendar className="w-4 h-4 mr-2" />
+              {dayjs().format('DD MMM YYYY')}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Key Metrics - Professional Layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <Card className="border-gi-primary/20 bg-gradient-to-br from-gi-primary/5 to-gi-primary/10">
-            <CardContent className="p-4">
+          <Card className="border-gi-primary/20 bg-gradient-to-br from-gi-primary/5 to-gi-primary/10 hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gi-primary">Today's Attendance</p>
-                  <p className="text-2xl font-bold text-gi-primary">
-                    {realtimeData?.today_attendance?.attendance_rate || 0}%
+                  <p className="text-sm font-semibold text-gi-primary uppercase tracking-wide">Weekly Coverage</p>
+                  <p className="text-3xl font-bold text-gi-primary mt-2">
+                    {weeklyData?.attendance_summary?.attendance_rate || 0}%
                   </p>
-                  <p className="text-xs text-gi-primary/80 mt-1">
-                    {realtimeData?.today_attendance?.attended_count || 0} / {realtimeData?.today_attendance?.total_records || 0} records
+                  <p className="text-xs text-gi-dark/70 mt-2 font-medium">
+                    {weeklyData?.attendance_summary?.attended_count || 0} / {weeklyData?.attendance_summary?.total_records || 0} slots
                   </p>
                 </div>
-                <div className="p-2 bg-gi-primary/20 rounded-lg">
-                  <Target className="w-6 h-6 text-gi-primary" />
+                <div className="p-3 bg-gi-primary/20 rounded-xl">
+                  <Target className="w-8 h-8 text-gi-primary" />
                 </div>
               </div>
             </CardContent>
@@ -331,18 +368,20 @@ export function EnhancedAnalytics() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <Card className="border-gi-gold/30 bg-gradient-to-br from-gi-gold/10 to-gi-gold/20">
-            <CardContent className="p-4">
+          <Card className="border-gi-gold/30 bg-gradient-to-br from-gi-gold/10 to-gi-gold/20 hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gi-dark">Active Slots</p>
-                  <p className="text-2xl font-bold text-gi-dark">
-                    {realtimeData?.active_slots_today || 0}
+                  <p className="text-sm font-semibold text-gi-dark uppercase tracking-wide">Zoom Meetings</p>
+                  <p className="text-3xl font-bold text-gi-dark mt-2">
+                    {zoomData?.totalMeetings || weeklyData?.zoom_meetings?.total_meetings || 0}
                   </p>
-                  <p className="text-xs text-gi-dark/80 mt-1">prayer slots today</p>
+                  <p className="text-xs text-gi-dark/70 mt-2 font-medium">
+                    {zoomData?.totalParticipants || weeklyData?.zoom_meetings?.total_participants || 0} total participants
+                  </p>
                 </div>
-                <div className="p-2 bg-gi-gold/30 rounded-lg">
-                  <Clock className="w-6 h-6 text-gi-dark" />
+                <div className="p-3 bg-gi-gold/30 rounded-xl">
+                  <Video className="w-8 h-8 text-gi-dark" />
                 </div>
               </div>
             </CardContent>
@@ -354,20 +393,20 @@ export function EnhancedAnalytics() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <Card className="border-gi-primary/30 bg-gradient-to-br from-gi-primary/10 to-gi-primary/20">
-            <CardContent className="p-4">
+          <Card className="border-gi-primary/30 bg-gradient-to-br from-gi-primary/10 to-gi-primary/20 hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gi-primary">Zoom Meetings</p>
-                  <p className="text-2xl font-bold text-gi-primary">
-                    {realtimeData?.zoom_meetings_today?.total_meetings || 0}
+                  <p className="text-sm font-semibold text-gi-primary uppercase tracking-wide">Avg Participants</p>
+                  <p className="text-3xl font-bold text-gi-primary mt-2">
+                    {zoomData?.avgParticipants || weeklyData?.zoom_meetings?.avg_participants || 0}
                   </p>
-                  <p className="text-xs text-gi-primary/80 mt-1">
-                    {realtimeData?.zoom_meetings_today?.total_participants || 0} participants
+                  <p className="text-xs text-gi-primary/70 mt-2 font-medium">
+                    per Zoom session
                   </p>
                 </div>
-                <div className="p-2 bg-gi-primary/20 rounded-lg">
-                  <Activity className="w-6 h-6 text-gi-primary" />
+                <div className="p-3 bg-gi-primary/20 rounded-xl">
+                  <Users className="w-8 h-8 text-gi-primary" />
                 </div>
               </div>
             </CardContent>
@@ -379,18 +418,25 @@ export function EnhancedAnalytics() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.3 }}
         >
-          <Card className="border-gi-gold/30 bg-gradient-to-br from-gi-gold/5 to-gi-gold/15">
-            <CardContent className="p-4">
+          <Card className="border-gi-gold/30 bg-gradient-to-br from-gi-gold/5 to-gi-gold/15 hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gi-dark">Live Meetings</p>
-                  <p className="text-2xl font-bold text-gi-dark">
-                    {realtimeData?.zoom_meetings_today?.active_meetings || 0}
+                  <p className="text-sm font-semibold text-gi-dark uppercase tracking-wide">Growth Rate</p>
+                  <p className="text-3xl font-bold text-gi-dark mt-2 flex items-center gap-2">
+                    {zoomData?.participantGrowth || '+0%'}
+                    {(zoomData?.participantGrowth?.includes('+') || false) ? (
+                      <TrendingUp className="w-6 h-6 text-green-600" />
+                    ) : (
+                      <TrendingDown className="w-6 h-6 text-red-600" />
+                    )}
                   </p>
-                  <p className="text-xs text-gi-dark/80 mt-1">currently active</p>
+                  <p className="text-xs text-gi-dark/70 mt-2 font-medium">
+                    participant growth
+                  </p>
                 </div>
-                <div className="p-2 bg-gi-gold/30 rounded-lg">
-                  <Zap className="w-6 h-6 text-gi-dark" />
+                <div className="p-3 bg-gi-gold/30 rounded-xl">
+                  <Activity className="w-8 h-8 text-gi-dark" />
                 </div>
               </div>
             </CardContent>
@@ -398,46 +444,107 @@ export function EnhancedAnalytics() {
         </motion.div>
       </div>
 
-      {/* Recent Activity */}
-      <Card className="border-gi-primary/20">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gi-dark flex items-center gap-2">
-            <Activity className="w-5 h-5 text-gi-primary" />
-            Recent Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-64">
-            <div className="space-y-3">
-              {realtimeData?.recent_activity?.map((activity, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.2, delay: index * 0.05 }}
-                  className="flex items-center gap-3 p-3 bg-gi-primary/5 rounded-lg border border-gi-primary/20"
-                >
-                  <div className={`w-2 h-2 rounded-full ${
-                    activity.status === 'attended' ? 'bg-green-500' : 'bg-red-500'
-                  }`} />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gi-dark">
-                      {activity.user_email}
-                    </p>
-                    <p className="text-xs text-gi-dark/80">
-                      {activity.status} • {activity.slot_time} • {new Date(activity.timestamp).toLocaleTimeString()}
-                    </p>
-                  </div>
-                  <Badge variant="secondary" className="bg-gi-primary/20 text-gi-primary">
-                    {activity.status}
-                  </Badge>
-                </motion.div>
-              )) || []}
+      {/* Professional Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Weekly Participation Chart */}
+        <Card className="border-gi-primary/20 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-gi-primary/5 to-gi-gold/5 border-b border-gi-primary/10">
+            <CardTitle className="text-lg font-bold text-gi-dark flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-gi-primary" />
+              Weekly Participation Analysis
+            </CardTitle>
+            <p className="text-sm text-gi-dark/70 mt-1">Daily slot coverage vs total available slots</p>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="h-80">
+              <Bar data={weeklyParticipationData} options={chartOptions} />
             </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+
+        {/* Zoom Participants Trend */}
+        <Card className="border-gi-primary/20 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-gi-primary/5 to-gi-gold/5 border-b border-gi-primary/10">
+            <CardTitle className="text-lg font-bold text-gi-dark flex items-center gap-2">
+              <LineChartIcon className="w-5 h-5 text-gi-primary" />
+              Zoom Participants Trend
+            </CardTitle>
+            <p className="text-sm text-gi-dark/70 mt-1">Weekly Zoom meeting participation</p>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="h-80">
+              <Line data={zoomTrendData} options={chartOptions} />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Coverage Rate Doughnut */}
+        <Card className="border-gi-gold/30 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-gi-gold/10 to-gi-primary/10 border-b border-gi-gold/20">
+            <CardTitle className="text-lg font-bold text-gi-dark flex items-center gap-2">
+              <PieChartIcon className="w-5 h-5 text-gi-gold" />
+              Overall Coverage Rate
+            </CardTitle>
+            <p className="text-sm text-gi-dark/70 mt-1">Weekly slot coverage distribution</p>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="h-80 flex items-center justify-center">
+              <Doughnut 
+                data={coverageData} 
+                options={{
+                  ...chartOptions,
+                  cutout: '65%',
+                  plugins: {
+                    ...chartOptions.plugins,
+                    legend: {
+                      ...chartOptions.plugins.legend,
+                      position: 'bottom' as const
+                    }
+                  }
+                }} 
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Statistics Summary */}
+        <Card className="border-gi-gold/30 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-gi-gold/10 to-gi-primary/10 border-b border-gi-gold/20">
+            <CardTitle className="text-lg font-bold text-gi-dark flex items-center gap-2">
+              <Award className="w-5 h-5 text-gi-gold" />
+              Key Statistics
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center p-3 bg-gi-primary/10 rounded-lg">
+                <span className="text-sm font-semibold text-gi-dark">Total Slots Available:</span>
+                <span className="text-lg font-bold text-gi-primary">336</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-gi-gold/10 rounded-lg">
+                <span className="text-sm font-semibold text-gi-dark">Slots Covered:</span>
+                <span className="text-lg font-bold text-gi-dark">{weeklyData?.attendance_summary?.attended_count || 0}</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-gi-primary/10 rounded-lg">
+                <span className="text-sm font-semibold text-gi-dark">Avg Session Duration:</span>
+                <span className="text-lg font-bold text-gi-primary">{weeklyData?.attendance_summary?.avg_duration_minutes || 0} min</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-gi-gold/10 rounded-lg">
+                <span className="text-sm font-semibold text-gi-dark">Highest Coverage Day:</span>
+                <span className="text-lg font-bold text-gi-dark">
+                  {weeklyData?.daily_breakdown?.reduce((max, day) => 
+                    day.attended_count > (max?.attended_count || 0) ? day : max
+                  )?.date ? dayjs(weeklyData.daily_breakdown.reduce((max, day) => 
+                    day.attended_count > (max?.attended_count || 0) ? day : max
+                  ).date).format('dddd') : 'N/A'}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      </div>
   );
 
   const WeeklyTab = () => (
@@ -541,119 +648,78 @@ export function EnhancedAnalytics() {
     </div>
   );
 
+  if (realtimeLoading || weeklyLoading || zoomLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-gi-primary/600 border-t-transparent mx-auto"></div>
+          <p className="text-gi-dark/80 font-medium">Loading analytics data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gi-dark">Enhanced Analytics Dashboard</h1>
-          <p className="text-gi-dark/80 mt-1">
-            Real-time insights and comprehensive reporting
-          </p>
+    <div className="space-y-6 p-6 bg-gradient-to-br from-gray-50 to-gi-primary/5 min-h-screen">
+      {/* Professional Header */}
+      <div className="flex items-center justify-between bg-white p-6 rounded-xl shadow-lg border border-gi-primary/20">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-gi-primary to-gi-primary/80 rounded-xl flex items-center justify-center shadow-lg">
+            <BarChart3 className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gi-dark">Global Intercessors Analytics</h1>
+            <p className="text-gi-dark/70 mt-1 font-medium">
+              Professional Weekly Report & Zoom Integration
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <Button
             onClick={handleRefresh}
             variant="outline"
             size="sm"
-            className="border-gi-primary/30 hover:bg-gi-primary/10 text-gi-primary"
+            className="border-gi-primary hover:bg-gi-primary hover:text-white transition-colors"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
           <Button
-            onClick={() => exportData('all')}
-            className="bg-gi-primary hover:bg-gi-primary/90 text-white"
+            onClick={() => exportData('report')}
+            className="bg-gradient-to-r from-gi-primary to-gi-primary/90 hover:from-gi-primary/90 hover:to-gi-primary text-white shadow-lg"
             size="sm"
           >
             <Download className="w-4 h-4 mr-2" />
-            Export Data
+            Export Report
           </Button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <Eye className="w-4 h-4" />
-            Overview
+      {/* Main Content - Professional Dashboard */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="bg-white border border-gi-primary/20 p-1 rounded-lg shadow-md">
+          <TabsTrigger 
+            value="overview" 
+            className="data-[state=active]:bg-gi-primary data-[state=active]:text-white rounded-md transition-all"
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Weekly Report
           </TabsTrigger>
-          <TabsTrigger value="weekly" className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            Weekly
-          </TabsTrigger>
-          <TabsTrigger value="zoom" className="flex items-center gap-2">
-            <Activity className="w-4 h-4" />
-            Zoom
-          </TabsTrigger>
-          <TabsTrigger value="slots" className="flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            Slots
+          <TabsTrigger 
+            value="weekly" 
+            className="data-[state=active]:bg-gi-primary data-[state=active]:text-white rounded-md transition-all"
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            Detailed Analysis
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview">
+        <TabsContent value="overview" className="mt-6">
           <OverviewTab />
         </TabsContent>
 
-        <TabsContent value="weekly">
+        <TabsContent value="weekly" className="mt-6">
           <WeeklyTab />
-        </TabsContent>
-
-        <TabsContent value="zoom">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card className="border-gi-primary/20">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold text-gi-dark flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-gi-primary" />
-                  Participants by Day (Weekly)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Line
-                  data={{
-                    labels: (PresentationData.analytics().weeklyAttendance.labels),
-                    datasets: [
-                      {
-                        label: 'Participants',
-                        data: (PresentationData.analytics().weeklyAttendance.datasets?.[0]?.data || [44,42,45,43,46,44,45]).map((v: number) => Math.round(v * (PresentationData.dashboard().avgZoomParticipants / 44))),
-                        borderColor: 'rgb(75, 192, 192)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        tension: 0.4,
-                      },
-                    ],
-                  }}
-                />
-              </CardContent>
-            </Card>
-
-            <Card className="border-gi-primary/20">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold text-gi-dark flex items-center gap-2">
-                  <PieChart className="w-5 h-5 text-gi-primary" />
-                  Geographic Distribution
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Doughnut data={PresentationData.analytics().geographicDistribution} />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="slots">
-          <Card className="border-gi-primary/20">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold text-gi-dark flex items-center gap-2">
-                <BarChart className="w-5 h-5 text-gi-primary" />
-                Time Slot Coverage
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Bar data={PresentationData.analytics().slotCoverage} options={{ responsive: true, plugins: { legend: { position: 'top' as const } } }} />
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
