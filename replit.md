@@ -24,12 +24,14 @@ Preferred communication style: Simple, everyday language.
 - **Passcode**: 01204
 - **Live Participant Tracking**: System polls specific meeting ID every 2 minutes during active prayer slots to detect and record attendance in real-time.
 - **Attendance Logic**: Matches Zoom participants by email to prayer slot database, automatically logs attendance and resets missed counts.
-- **Required Zoom API Scopes**: 
-  - `meeting:read:participant` (view live meeting participants)
-  - `meeting:read:list_past_instances` (access meeting history)
-  - `meeting:read:list_past_instances:admin` (admin access for all meetings)
+- **Zoom API Scopes (Server-to-Server OAuth)**: 
+  - `meeting:read:participant:admin` - Live meeting participant tracking
+  - `meeting:read:list_past_participants:admin` - Past participant history (primary fallback)
+  - `meeting:read:past_meeting:admin` - Past meeting details
+  - `meeting:read:meeting:admin` - Meeting configuration access
+- **Smart Fallback System**: Automatically switches from instances endpoint to participants endpoint when scopes don't match, ensuring attendance tracking works with available permissions.
 - **Configuration Files Updated**: 
-  - `server/services/zoomAttendanceTracker.ts` - Core attendance tracking logic
+  - `server/services/zoomAttendanceTracker.ts` - Core attendance tracking logic with automatic fallback
   - `client/src/components/dashboard/prayer-slot-management.tsx` - Frontend meeting link display
   - `server/services/whatsapp-bot-v2.ts` - WhatsApp bot Zoom link sharing
   - `server/routes.ts` - Admin API endpoints for Zoom link management
