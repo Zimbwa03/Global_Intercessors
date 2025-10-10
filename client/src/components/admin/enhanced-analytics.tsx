@@ -91,6 +91,49 @@ interface RealtimeData {
   }>;
 }
 
+interface GIWeeklyReport {
+  report_date: string;
+  total_slots_available: number;
+  current_week: {
+    total_slots_covered: number;
+    daily_coverage: {
+      Sunday?: number;
+      Monday?: number;
+      Tuesday?: number;
+      Wednesday?: number;
+      Thursday?: number;
+      Friday?: number;
+      Saturday?: number;
+    };
+    percentage_change: number;
+  };
+  previous_week: {
+    total_slots_covered: number;
+    daily_coverage: {
+      Sunday?: number;
+      Monday?: number;
+      Tuesday?: number;
+      Wednesday?: number;
+      Thursday?: number;
+      Friday?: number;
+      Saturday?: number;
+    };
+  };
+  calculated_metrics: {
+    coverage_rate: number;
+    average_daily_coverage: number;
+    total_variance: number;
+    highest_day: string;
+    lowest_day: string;
+  };
+  platform_manning_consistent_intercessors: string[];
+  week_comparison: {
+    slots_difference: number;
+    percentage_change: number;
+    trend: 'increase' | 'decrease' | 'stable';
+  };
+}
+
 interface WeeklyAnalytics {
   week_start: string;
   week_end: string;
@@ -135,7 +178,7 @@ interface WeeklyAnalytics {
 }
 
 export function EnhancedAnalytics() {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('gi-report');
   const [refreshKey, setRefreshKey] = useState(0);
   const [reportDate, setReportDate] = useState(() => {
     const end = dayjs();
@@ -178,11 +221,23 @@ export function EnhancedAnalytics() {
     refetchInterval: 60000
   });
 
+  // Fetch GI Weekly Report
+  const { data: giReportData, isLoading: giReportLoading, refetch: refetchGIReport } = useQuery({
+    queryKey: ['gi-weekly-report', refreshKey],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/analytics/gi-weekly-report');
+      if (!response.ok) throw new Error('Failed to fetch GI weekly report');
+      return response.json() as Promise<GIWeeklyReport>;
+    },
+    refetchInterval: 60000
+  });
+
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
     refetchRealtime();
     refetchWeekly();
     refetchZoom();
+    refetchGIReport();
   };
 
   // Professional chart configurations
@@ -334,6 +389,254 @@ export function EnhancedAnalytics() {
       </div>
     );
   }
+
+  const GIReportTab = ({ data, isLoading }: { data?: GIWeeklyReport; isLoading: boolean }) => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center p-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gi-primary"></div>
+        </div>
+      );
+    }
+
+    if (!data) {
+      return (
+        <div className="text-center p-12 text-gray-500">
+          No report data available
+        </div>
+      );
+    }
+
+    const dailyCoverageLabels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const currentWeekValues = dailyCoverageLabels.map(day => data.current_week.daily_coverage[day as keyof typeof data.current_week.daily_coverage] || 0);
+    const previousWeekValues = dailyCoverageLabels.map(day => data.previous_week.daily_coverage[day as keyof typeof data.previous_week.daily_coverage] || 0);
+
+    return (
+      <div className="space-y-6">
+        {/* Report Header */}
+        <Card className="border-gi-primary/30 bg-gradient-to-r from-gi-primary/10 to-gi-gold/10">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-gi-primary mb-1">
+                  Global Intercessors Weekly Report
+                </h2>
+                <p className="text-sm text-gray-600">{data.report_date}</p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-gi-primary">
+                  {data.current_week.total_slots_covered}/{data.total_slots_available}
+                </div>
+                <p className="text-sm text-gray-600">Slots Covered</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="border-gi-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Coverage Rate</p>
+                  <div className="text-2xl font-bold text-gi-primary">
+                    {data.calculated_metrics.coverage_rate}%
+                  </div>
+                </div>
+                <Target className="w-8 h-8 text-gi-gold" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-gi-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Avg Daily Coverage</p>
+                  <div className="text-2xl font-bold text-gi-primary">
+                    {data.calculated_metrics.average_daily_coverage}
+                  </div>
+                </div>
+                <Calendar className="w-8 h-8 text-gi-gold" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-gi-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Weekly Trend</p>
+                  <div className="flex items-center gap-2">
+                    <div className={`text-2xl font-bold ${
+                      data.week_comparison.trend === 'increase' ? 'text-green-600' :
+                      data.week_comparison.trend === 'decrease' ? 'text-red-600' :
+                      'text-gray-600'
+                    }`}>
+                      {data.week_comparison.percentage_change > 0 ? '+' : ''}{data.week_comparison.percentage_change}%
+                    </div>
+                    {data.week_comparison.trend === 'increase' ? (
+                      <TrendingUp className="w-6 h-6 text-green-600" />
+                    ) : data.week_comparison.trend === 'decrease' ? (
+                      <TrendingDown className="w-6 h-6 text-red-600" />
+                    ) : (
+                      <Activity className="w-6 h-6 text-gray-600" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-gi-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Variance</p>
+                  <div className="text-2xl font-bold text-gi-primary">
+                    {data.calculated_metrics.total_variance}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {data.calculated_metrics.highest_day} → {data.calculated_metrics.lowest_day}
+                  </p>
+                </div>
+                <BarChart3 className="w-8 h-8 text-gi-gold" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Daily Coverage Comparison Chart */}
+        <Card className="border-gi-primary/20">
+          <CardHeader>
+            <CardTitle className="text-gi-primary flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Daily Coverage Comparison
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <Bar
+                data={{
+                  labels: dailyCoverageLabels,
+                  datasets: [
+                    {
+                      label: 'Current Week',
+                      data: currentWeekValues,
+                      backgroundColor: GI_COLORS.primary,
+                      borderRadius: 8,
+                    },
+                    {
+                      label: 'Previous Week',
+                      data: previousWeekValues,
+                      backgroundColor: GI_COLORS.gold,
+                      borderRadius: 8,
+                    }
+                  ]
+                }}
+                options={chartOptions}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Week Comparison Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="border-gi-primary/20">
+            <CardHeader>
+              <CardTitle className="text-gi-primary">Current Week Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Total Slots Covered:</span>
+                <span className="font-bold text-gi-primary text-lg">
+                  {data.current_week.total_slots_covered}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Out of Available:</span>
+                <span className="font-bold text-gi-primary text-lg">
+                  {data.total_slots_available}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Coverage Rate:</span>
+                <Badge className="bg-gi-primary text-white">
+                  {data.calculated_metrics.coverage_rate}%
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-gi-primary/20">
+            <CardHeader>
+              <CardTitle className="text-gi-primary">Week-to-Week Change</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Slots Difference:</span>
+                <span className={`font-bold text-lg ${
+                  data.week_comparison.slots_difference > 0 ? 'text-green-600' :
+                  data.week_comparison.slots_difference < 0 ? 'text-red-600' :
+                  'text-gray-600'
+                }`}>
+                  {data.week_comparison.slots_difference > 0 ? '+' : ''}{data.week_comparison.slots_difference}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Percentage Change:</span>
+                <Badge className={
+                  data.week_comparison.trend === 'increase' ? 'bg-green-600 text-white' :
+                  data.week_comparison.trend === 'decrease' ? 'bg-red-600 text-white' :
+                  'bg-gray-600 text-white'
+                }>
+                  {data.week_comparison.percentage_change > 0 ? '+' : ''}{data.week_comparison.percentage_change}%
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Trend:</span>
+                <Badge className={
+                  data.week_comparison.trend === 'increase' ? 'bg-green-100 text-green-800' :
+                  data.week_comparison.trend === 'decrease' ? 'bg-red-100 text-red-800' :
+                  'bg-gray-100 text-gray-800'
+                }>
+                  {data.week_comparison.trend.charAt(0).toUpperCase() + data.week_comparison.trend.slice(1)}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Consistent Intercessors */}
+        {data.platform_manning_consistent_intercessors.length > 0 && (
+          <Card className="border-gi-primary/20">
+            <CardHeader>
+              <CardTitle className="text-gi-primary flex items-center gap-2">
+                <Award className="w-5 h-5" />
+                Platform Manning Consistent Intercessors ({data.platform_manning_consistent_intercessors.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[200px]">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {data.platform_manning_consistent_intercessors.map((email, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 p-2 bg-gi-primary/5 rounded-md"
+                    >
+                      <Award className="w-4 h-4 text-gi-gold flex-shrink-0" />
+                      <span className="text-sm text-gray-700 truncate">{email}</span>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  };
 
   const OverviewTab = () => (
     <div className="space-y-6">
@@ -716,6 +1019,13 @@ export function EnhancedAnalytics() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-white border border-gi-primary/20 p-1 rounded-lg shadow-md">
           <TabsTrigger 
+            value="gi-report" 
+            className="data-[state=active]:bg-gi-primary data-[state=active]:text-white rounded-md transition-all"
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            GI Weekly Report
+          </TabsTrigger>
+          <TabsTrigger 
             value="overview" 
             className="data-[state=active]:bg-gi-primary data-[state=active]:text-white rounded-md transition-all"
           >
@@ -730,6 +1040,13 @@ export function EnhancedAnalytics() {
             Detailed Analysis
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="gi-report" className="mt-6">
+          <GIReportTab 
+            data={giReportData} 
+            isLoading={giReportLoading}
+          />
+        </TabsContent>
 
         <TabsContent value="overview" className="mt-6">
           <OverviewTab />
