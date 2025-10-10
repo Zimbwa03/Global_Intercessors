@@ -280,6 +280,67 @@ class ZoomAttendanceTracker {
         url: error.config?.url
       });
       
+      // If missing list_past_instances scope, try alternative endpoint
+      if (error.response?.data?.code === 4711) {
+        console.log('ℹ️ Trying alternative endpoint with meeting:read:list_past_participants:admin scope...');
+        return await this.getPastParticipantsDirect();
+      }
+      
+      return [];
+    }
+  }
+
+  // Alternative method using meeting:read:list_past_participants:admin scope
+  private async getPastParticipantsDirect() {
+    try {
+      console.log(`🔍 Fetching past participants directly for meeting ${this.meetingId}`);
+      
+      const response = await axios.get(
+        `https://api.zoom.us/v2/past_meetings/${this.meetingId}/participants`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.zoomToken}`,
+            'Content-Type': 'application/json'
+          },
+          params: {
+            page_size: 300
+          }
+        }
+      );
+
+      const participants = response.data.participants || [];
+      console.log(`📊 Found ${participants.length} past participants`);
+      
+      if (participants.length > 0) {
+        // Group participants by session (same join times within 30 min window)
+        const sessions: any[] = [];
+        let currentSession: any = null;
+        
+        participants.forEach((participant: any) => {
+          const joinTime = dayjs(participant.join_time);
+          
+          if (!currentSession || joinTime.diff(currentSession.start_time, 'minute') > 30) {
+            // New session
+            currentSession = {
+              id: participant.id,
+              uuid: participant.id, // Use participant ID as uuid
+              start_time: participant.join_time,
+              participants: [participant]
+            };
+            sessions.push(currentSession);
+          } else {
+            // Same session
+            currentSession.participants.push(participant);
+          }
+        });
+        
+        console.log(`📅 Grouped into ${sessions.length} sessions`);
+        return sessions;
+      }
+      
+      return [];
+    } catch (error: any) {
+      console.error('❌ Error fetching past participants:', error.response?.data || error.message);
       return [];
     }
   }
@@ -298,17 +359,20 @@ class ZoomAttendanceTracker {
         return; // Already processed
       }
 
-      // Get meeting participants
-      const participants = await this.getMeetingParticipants(meeting.uuid);
+      // Get meeting participants (either from embedded data or API call)
+      let participants = meeting.participants || [];
+      if (participants.length === 0 && meeting.uuid) {
+        participants = await this.getMeetingParticipants(meeting.uuid);
+      }
 
       // Store meeting data
       const meetingData = {
         meeting_id: meeting.id.toString(),
         meeting_uuid: meeting.uuid,
-        topic: meeting.topic,
+        topic: meeting.topic || 'Global Intercessors Prayer',
         start_time: new Date(meeting.start_time),
         end_time: meeting.end_time ? new Date(meeting.end_time) : null,
-        duration: meeting.duration,
+        duration: meeting.duration || 30,
         participant_count: participants.length,
         processed: true
       };
