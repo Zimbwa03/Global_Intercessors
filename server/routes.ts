@@ -26,7 +26,7 @@ function getPdfOptions(format: string = 'A4', margin: any = { top: '10mm', right
   const options: any = {
     format,
     margin,
-    args: [
+    puppeteerArgs: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
@@ -35,7 +35,9 @@ function getPdfOptions(format: string = 'A4', margin: any = { top: '10mm', right
   };
   
   if (chromiumPath) {
-    options.path = chromiumPath;
+    options.puppeteerOptions = {
+      executablePath: chromiumPath
+    };
   }
   
   return options;
