@@ -26,7 +26,6 @@ export function MobileSidebar({
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: Home, description: "Overview & Quick Stats" },
     { id: "prayer-slot", label: "Prayer Slots", icon: Calendar, description: "Manage Your Prayer Time" },
-    { id: "zoom-test", label: "Zoom Test", icon: FlaskConical, description: "Test Zoom Integration" },
     { id: "bible-chatbook", label: "Bible Chat", icon: Book, description: "AI-Powered Bible Study" },
     { id: "bible-search", label: "Bible Verse Search", icon: Search, description: "Find Scripture" },
     { id: "scripture-coach", label: "Scripture Coach", icon: GraduationCap, description: "Reading Plans & Memorization" },
