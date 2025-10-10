@@ -33,12 +33,6 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminRole, setNewAdminRole] = useState<'admin' | 'super_admin'>('admin');
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(isOpen);
-
-  // Sync dialog state with parent
-  useEffect(() => {
-    setIsDialogOpen(isOpen);
-  }, [isOpen]);
 
   // Check if current user can create the selected role
   const canCreateRole = (targetRole: string) => {
@@ -180,14 +174,13 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
 
   // Handle dialog state changes
   const handleDialogOpenChange = (open: boolean) => {
-    setIsDialogOpen(open);
     if (!open) {
       onClose();
     }
   };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" key="admin-management-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
