@@ -19,8 +19,9 @@ Preferred communication style: Simple, everyday language.
 - **Admin Reports**: PDF generation with AI-powered narratives now fully functional using DeepSeek AI for professional content.
 
 ### Zoom Attendance Tracking (October 10, 2025)
-- **Meeting Configuration**: Updated to track specific Personal Meeting Room (ID: 9565792987) for Ngoni Zimbwa's prayer meetings.
-- **Meeting Link**: https://us05web.zoom.us/j/9565792987?pwd=RSlfzbyg7I7SGd0QkXewoal3tgjWid.1
+- **Meeting Configuration**: Updated to track official Global Intercessors Prayer Platform meeting (ID: 83923875995).
+- **Meeting Link**: https://us06web.zoom.us/j/83923875995?pwd=QmVJcGpmRys1aWlvWCtZdzZKLzFRQT09
+- **Passcode**: 01204
 - **Live Participant Tracking**: System polls specific meeting ID every 2 minutes during active prayer slots to detect and record attendance in real-time.
 - **Attendance Logic**: Matches Zoom participants by email to prayer slot database, automatically logs attendance and resets missed counts.
 - **Required Zoom API Scopes**: 

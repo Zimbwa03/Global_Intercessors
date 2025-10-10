@@ -147,7 +147,7 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
   });
 
   // Fixed Zoom join link as requested
-  const ZOOM_JOIN_LINK = 'https://us05web.zoom.us/j/9565792987?pwd=RSlfzbyg7I7SGd0QkXewoal3tgjWid.1';
+  const ZOOM_JOIN_LINK = 'https://us06web.zoom.us/j/83923875995?pwd=QmVJcGpmRys1aWlvWCtZdzZKLzFRQT09';
 
   // Extract the prayer slot from the response
   const prayerSlot = prayerSlotResponse?.prayerSlot;

@@ -3890,8 +3890,8 @@ Use professional, faith-based language appropriate for Christian directors. Be a
   app.get("/api/admin/zoom-link", async (req: Request, res: Response) => {
     try {
       // Return the configured prayer meeting link
-      const PRAYER_MEETING_ID = process.env.ZOOM_MEETING_ID || '9565792987';
-      const PRAYER_MEETING_LINK = 'https://us05web.zoom.us/j/9565792987?pwd=RSlfzbyg7I7SGd0QkXewoal3tgjWid.1';
+      const PRAYER_MEETING_ID = process.env.ZOOM_MEETING_ID || '83923875995';
+      const PRAYER_MEETING_LINK = 'https://us06web.zoom.us/j/83923875995?pwd=QmVJcGpmRys1aWlvWCtZdzZKLzFRQT09';
       
       const response = {
         zoomLink: PRAYER_MEETING_LINK,

@@ -36,7 +36,7 @@ class ZoomAttendanceTracker {
     this.clientId = process.env.ZOOM_CLIENT_ID || '';
     this.clientSecret = process.env.ZOOM_API_SECRET || '';
     this.accountId = process.env.ZOOM_ACCOUNT_ID || '';
-    this.meetingId = process.env.ZOOM_MEETING_ID || '9565792987';
+    this.meetingId = process.env.ZOOM_MEETING_ID || '83923875995';
     this.zoomToken = '';
     
     console.log('🔧 Zoom Credentials Check:');
