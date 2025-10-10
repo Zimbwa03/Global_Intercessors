@@ -3889,25 +3889,16 @@ Use professional, faith-based language appropriate for Christian directors. Be a
   // Get current zoom link/session
   app.get("/api/admin/zoom-link", async (req: Request, res: Response) => {
     try {
-      const { data: latestSession, error } = await supabaseAdmin
-        .from('zoom_meetings')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching zoom link:', error);
-        throw error;
-      }
-
-      // Format the response to match what the frontend expects
-      const response = latestSession ? {
-        zoomLink: latestSession.zoom_link || `https://zoom.us/j/${latestSession.meeting_id}`,
-        meetingId: latestSession.meeting_id,
-        topic: latestSession.topic,
-        createdAt: latestSession.created_at
-      } : null;
+      // Return the configured prayer meeting link
+      const PRAYER_MEETING_ID = process.env.ZOOM_MEETING_ID || '9565792987';
+      const PRAYER_MEETING_LINK = 'https://us05web.zoom.us/j/9565792987?pwd=RSlfzbyg7I7SGd0QkXewoal3tgjWid.1';
+      
+      const response = {
+        zoomLink: PRAYER_MEETING_LINK,
+        meetingId: PRAYER_MEETING_ID,
+        topic: 'Global Intercessors Prayer Meeting',
+        createdAt: new Date().toISOString()
+      };
 
       res.json(response);
     } catch (error) {

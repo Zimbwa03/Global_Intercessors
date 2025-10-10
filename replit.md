@@ -18,6 +18,21 @@ Preferred communication style: Simple, everyday language.
 - **Security Flags**: Added required browser flags (`--no-sandbox`, `--disable-setuid-sandbox`, `--disable-dev-shm-usage`, `--disable-gpu`) for Replit environment.
 - **Admin Reports**: PDF generation with AI-powered narratives now fully functional using DeepSeek AI for professional content.
 
+### Zoom Attendance Tracking (October 10, 2025)
+- **Meeting Configuration**: Updated to track specific Personal Meeting Room (ID: 9565792987) for Ngoni Zimbwa's prayer meetings.
+- **Meeting Link**: https://us05web.zoom.us/j/9565792987?pwd=RSlfzbyg7I7SGd0QkXewoal3tgjWid.1
+- **Live Participant Tracking**: System polls specific meeting ID every 2 minutes during active prayer slots to detect and record attendance in real-time.
+- **Attendance Logic**: Matches Zoom participants by email to prayer slot database, automatically logs attendance and resets missed counts.
+- **Required Zoom API Scopes**: 
+  - `meeting:read:participant` (view live meeting participants)
+  - `meeting:read:list_past_instances` (access meeting history)
+  - `meeting:read:list_past_instances:admin` (admin access for all meetings)
+- **Configuration Files Updated**: 
+  - `server/services/zoomAttendanceTracker.ts` - Core attendance tracking logic
+  - `client/src/components/dashboard/prayer-slot-management.tsx` - Frontend meeting link display
+  - `server/services/whatsapp-bot-v2.ts` - WhatsApp bot Zoom link sharing
+  - `server/routes.ts` - Admin API endpoints for Zoom link management
+
 ## System Architecture
 
 ### UI/UX Decisions

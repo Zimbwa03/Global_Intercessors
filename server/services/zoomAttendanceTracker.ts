@@ -30,17 +30,20 @@ class ZoomAttendanceTracker {
   private clientId: string;
   private clientSecret: string;
   private accountId: string;
+  private meetingId: string;
 
   constructor() {
     this.clientId = process.env.ZOOM_CLIENT_ID || '';
     this.clientSecret = process.env.ZOOM_API_SECRET || '';
     this.accountId = process.env.ZOOM_ACCOUNT_ID || '';
+    this.meetingId = process.env.ZOOM_MEETING_ID || '9565792987';
     this.zoomToken = '';
     
     console.log('🔧 Zoom Credentials Check:');
     console.log('Client ID:', this.clientId ? `${this.clientId.substring(0, 8)}...` : 'MISSING');
     console.log('Client Secret:', this.clientSecret ? `${this.clientSecret.substring(0, 8)}...` : 'MISSING');
     console.log('Account ID:', this.accountId ? `${this.accountId.substring(0, 8)}...` : 'MISSING');
+    console.log('Meeting ID:', this.meetingId);
     
     if (!this.clientId || !this.clientSecret || !this.accountId) {
       console.error('❌ ZOOM CREDENTIALS MISSING! Please set:');
@@ -144,11 +147,20 @@ class ZoomAttendanceTracker {
     console.log('Processing attendance for:', dayjs().format('YYYY-MM-DD HH:mm'));
 
     try {
-      // Get all recent unprocessed Zoom meetings
-      const meetings = await this.getRecentZoomMeetings();
-      
-      for (const meeting of meetings) {
-        await this.processMeetingAttendance(meeting);
+      // Try to get past meeting instances (requires additional API scopes)
+      try {
+        const meetings = await this.getRecentZoomMeetings();
+        
+        for (const meeting of meetings) {
+          await this.processMeetingAttendance(meeting);
+        }
+      } catch (error: any) {
+        // If we don't have the required scopes, skip past meetings
+        if (error.response?.data?.code === 4711) {
+          console.log('ℹ️ Skipping past meetings (requires additional Zoom API scopes)');
+        } else {
+          console.error('Error fetching past meetings:', error.message);
+        }
       }
 
       // Process slot attendance for today
@@ -159,85 +171,114 @@ class ZoomAttendanceTracker {
     }
   }
 
-  // Get recent Zoom meetings from API
-  private async getRecentZoomMeetings() {
+  // Get live participants from the specific prayer meeting
+  private async getLiveParticipants() {
     try {
-      const today = dayjs().format('YYYY-MM-DD');
-      const sevenDaysAgo = dayjs().subtract(7, 'day').format('YYYY-MM-DD');
-
-      console.log(`🔍 Searching for meetings from ${sevenDaysAgo} to ${today}`);
+      console.log(`🔍 Checking for live participants in meeting ${this.meetingId}`);
 
       const response = await axios.get(
-        `https://api.zoom.us/v2/users/me/meetings`,
+        `https://api.zoom.us/v2/meetings/${this.meetingId}/participants`,
         {
           headers: {
             Authorization: `Bearer ${this.zoomToken}`,
             'Content-Type': 'application/json'
-          },
-          params: {
-            type: 'previous_meetings',
-            from: sevenDaysAgo,
-            to: today,
-            page_size: 300
           }
         }
       );
 
-      const meetings = response.data.meetings || [];
-      console.log(`📊 Found ${meetings.length} meetings in the last 7 days`);
+      const participants = response.data.participants || [];
+      console.log(`👥 Found ${participants.length} live participants in prayer meeting`);
       
-      if (meetings.length > 0) {
-        console.log('📋 Sample meeting data:', JSON.stringify(meetings[0], null, 2));
-        meetings.forEach((meeting: any, index: number) => {
-          console.log(`📅 Meeting ${index + 1}: ${meeting.topic} (${meeting.id}) - ${meeting.start_time}`);
+      if (participants.length > 0) {
+        participants.forEach((participant: any, index: number) => {
+          console.log(`📍 Participant ${index + 1}: ${participant.name} (${participant.user_email || 'no email'})`);
         });
       } else {
-        console.log('⚠️ No meetings found. This could mean:');
-        console.log('  1. No Zoom meetings were held in the date range');
-        console.log('  2. Meetings are under a different user account');
-        console.log('  3. Meeting history retention settings');
-        console.log('  4. API permissions or scope issues');
+        console.log('⚠️ No participants currently in the meeting');
       }
 
-      return meetings;
+      return participants;
     } catch (error: any) {
-      console.error('❌ Error fetching Zoom meetings:', error.response?.data || error.message);
+      // Meeting not started or no participants
+      if (error.response?.status === 404 || error.response?.status === 400) {
+        console.log('ℹ️ Prayer meeting not currently active or has no participants');
+        return [];
+      }
+      
+      console.error('❌ Error fetching live participants:', error.response?.data || error.message);
       console.error('🔍 Debug info:', {
         status: error.response?.status,
         statusText: error.response?.statusText,
-        headers: error.response?.headers,
-        url: error.config?.url,
-        params: error.config?.params
+        meetingId: this.meetingId,
+        url: error.config?.url
       });
       
       // If token is expired, try to refresh it once
-      if (error.response?.status === 401 && error.response?.data?.code === 124) {
+      if (error.response?.status === 401) {
         console.log('🔄 Token expired, attempting to refresh...');
         try {
           await this.getAccessToken();
           // Retry the request with new token
           const retryResponse = await axios.get(
-            `https://api.zoom.us/v2/users/me/meetings`,
+            `https://api.zoom.us/v2/meetings/${this.meetingId}/participants`,
             {
               headers: {
                 Authorization: `Bearer ${this.zoomToken}`,
                 'Content-Type': 'application/json'
-              },
-              params: {
-                type: 'previous_meetings',
-                from: dayjs().subtract(7, 'day').format('YYYY-MM-DD'),
-                to: dayjs().format('YYYY-MM-DD'),
-                page_size: 300
               }
             }
           );
           console.log('✅ Token refresh successful, retry completed');
-          return retryResponse.data.meetings || [];
+          return retryResponse.data.participants || [];
         } catch (refreshError) {
           console.error('❌ Token refresh failed:', refreshError);
           return [];
         }
       }
+      
+      return [];
+    }
+  }
+
+  // Get recent Zoom meetings from API (now tracks past instances of recurring meeting)
+  private async getRecentZoomMeetings() {
+    try {
+      const today = dayjs().format('YYYY-MM-DD');
+      const sevenDaysAgo = dayjs().subtract(7, 'day').format('YYYY-MM-DD');
+
+      console.log(`🔍 Fetching past instances of meeting ${this.meetingId} from ${sevenDaysAgo} to ${today}`);
+
+      const response = await axios.get(
+        `https://api.zoom.us/v2/past_meetings/${this.meetingId}/instances`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.zoomToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const meetings = response.data.meetings || [];
+      console.log(`📊 Found ${meetings.length} past instances of prayer meeting`);
+      
+      if (meetings.length > 0) {
+        console.log('📋 Sample meeting data:', JSON.stringify(meetings[0], null, 2));
+        meetings.forEach((meeting: any, index: number) => {
+          console.log(`📅 Meeting ${index + 1}: ${meeting.start_time}`);
+        });
+      } else {
+        console.log('⚠️ No past meeting instances found');
+      }
+
+      return meetings;
+    } catch (error: any) {
+      console.error('❌ Error fetching past meeting instances:', error.response?.data || error.message);
+      console.error('🔍 Debug info:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        meetingId: this.meetingId,
+        url: error.config?.url
+      });
       
       return [];
     }
@@ -695,47 +736,22 @@ class ZoomAttendanceTracker {
         await this.getAccessToken();
       }
 
-      // Get live meetings with retry logic
-      let liveMeetings = [];
-      try {
-        const response = await axios.get(
-          `https://api.zoom.us/v2/users/me/meetings`,
-          {
-            headers: {
-              Authorization: `Bearer ${this.zoomToken}`,
-              'Content-Type': 'application/json'
-            },
-            params: {
-              type: 'live',
-              page_size: 100
-            },
-            timeout: 5000
-          }
-        );
-
-        liveMeetings = response.data.meetings || [];
-      } catch (apiError: any) {
-        if (apiError.response?.status === 429) {
-          console.log('⚠️ Zoom API rate limit hit - will retry in next cycle');
-          this.minApiInterval = 5000; // Increase interval to 5 seconds
-          return;
-        }
-        throw apiError;
-      }
+      // Get live participants from specific prayer meeting
+      const liveParticipants = await this.getLiveParticipants();
       
-      if (liveMeetings.length > 0) {
-        console.log(`🔴 LIVE MEETINGS DETECTED: ${liveMeetings.length} active Zoom meetings!`);
+      if (liveParticipants.length > 0) {
+        console.log(`🔴 LIVE PRAYER SESSION: ${liveParticipants.length} participants in meeting!`);
         
-        for (const meeting of liveMeetings) {
-          console.log(`📹 Processing LIVE meeting: ${meeting.topic} (${meeting.id})`);
-          await this.processLiveMeetingAttendance(meeting, activeSlots);
+        // Process attendance for each participant
+        for (const participant of liveParticipants) {
+          await this.processLiveParticipantAttendance(participant, activeSlots);
         }
       } else {
-        console.log('📊 No live Zoom meetings currently active');
+        console.log('📊 No participants in prayer meeting right now');
       }
 
     } catch (error: any) {
-      console.error('Error checking live meetings:', error.message);
+      console.error('Error checking live meeting participants:', error.message);
     }
   }
 
@@ -786,7 +802,7 @@ class ZoomAttendanceTracker {
   }
 
   // Process individual participant in live meeting
-  private async processLiveParticipantAttendance(participant: any, meeting: any, activeSlots: any[]) {
+  private async processLiveParticipantAttendance(participant: any, activeSlots: any[]) {
     try {
       const email = participant.user_email?.toLowerCase() || participant.email?.toLowerCase();
       const participantName = participant.name || participant.user_name || 'Unknown';
@@ -801,7 +817,7 @@ class ZoomAttendanceTracker {
         
         if (nameMatch) {
           console.log(`✅ Matched participant by name: ${participantName}`);
-          await this.logAttendanceForSlot(nameMatch, meeting, participant);
+          await this.logLiveAttendanceForSlot(nameMatch, participant);
           return;
         }
         
@@ -829,15 +845,65 @@ class ZoomAttendanceTracker {
         
         if (anySlot) {
           console.log(`✅ Found slot for ${email} outside active time`);
-          await this.logAttendanceForSlot(anySlot, meeting, participant);
+          await this.logLiveAttendanceForSlot(anySlot, participant);
         }
         return;
       }
 
-      await this.logAttendanceForSlot(userSlot, meeting, participant);
+      await this.logLiveAttendanceForSlot(userSlot, participant);
 
     } catch (error: any) {
       console.error('Error processing live participant attendance:', error.message);
+    }
+  }
+
+  // Helper method to log attendance for a live participant (updated signature)
+  private async logLiveAttendanceForSlot(userSlot: any, participant: any) {
+    try {
+      const today = dayjs().format('YYYY-MM-DD');
+      const now = dayjs();
+
+      // Check if already marked attendance for today
+      const { data: existingAttendance } = await supabaseAdmin
+        .from('attendance_log')
+        .select('*')
+        .eq('user_id', userSlot.user_id)
+        .eq('date', today)
+        .single();
+
+      if (existingAttendance && existingAttendance.status === 'attended') {
+        console.log(`✅ ${userSlot.user_email} already marked as attended today`);
+        return;
+      }
+
+      // Mark attendance immediately
+      const attendanceData = {
+        user_id: userSlot.user_id,
+        slot_id: userSlot.id,
+        date: today,
+        status: 'attended',
+        meeting_id: this.meetingId,
+        join_time: participant.join_time || now.toISOString(),
+        participant_name: participant.name || participant.user_name
+      };
+
+      await supabaseAdmin
+        .from('attendance_log')
+        .upsert(attendanceData, { onConflict: 'user_id,date' });
+
+      // Reset missed count
+      await supabaseAdmin
+        .from('prayer_slots')
+        .update({ 
+          missed_count: 0,
+          last_attended: today
+        })
+        .eq('id', userSlot.id);
+
+      console.log(`✅ LIVE ATTENDANCE logged for ${userSlot.user_email}`);
+
+    } catch (error: any) {
+      console.error('Error logging live attendance:', error.message);
     }
   }
 
