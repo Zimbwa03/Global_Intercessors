@@ -8,37 +8,29 @@ import axios from "axios";
 import * as htmlPdf from 'html-pdf-node';
 import { execSync } from 'child_process';
 
-// Helper function to get Chromium path for Puppeteer in Replit/Nix environment
-function getChromiumPath(): string {
-  try {
-    const chromiumPath = execSync('which chromium').toString().trim();
-    return chromiumPath;
-  } catch (error) {
-    console.error('⚠️ Could not find Nix Chromium, falling back to bundled version');
-    return ''; // Fall back to bundled Puppeteer Chromium
+// Set Chromium path for Puppeteer BEFORE html-pdf-node loads
+try {
+  const chromiumPath = execSync('which chromium').toString().trim();
+  if (chromiumPath) {
+    process.env.PUPPETEER_EXECUTABLE_PATH = chromiumPath;
+    console.log('✅ Configured Puppeteer to use Nix Chromium:', chromiumPath);
   }
+} catch (error) {
+  console.error('⚠️ Could not find Nix Chromium, using bundled Puppeteer');
 }
 
-// Helper function to get PDF generation options with Nix Chromium
+// Helper function to get PDF generation options
 function getPdfOptions(format: string = 'A4', margin: any = { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }) {
-  const chromiumPath = getChromiumPath();
-  
   const options: any = {
     format,
     margin,
-    puppeteerArgs: [
+    args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
       '--disable-gpu'
     ]
   };
-  
-  if (chromiumPath) {
-    options.puppeteerOptions = {
-      executablePath: chromiumPath
-    };
-  }
   
   return options;
 }
@@ -3701,6 +3693,8 @@ Use professional, faith-based language appropriate for Christian directors. Be a
       // Generate PDF with Nix Chromium
       const file = { content: htmlContent };
       const options = getPdfOptions('A4', { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' });
+      
+      console.log('🔍 PDF Options:', JSON.stringify(options, null, 2));
 
       const pdfBuffer = await htmlPdf.generatePdf(file, options);
 
