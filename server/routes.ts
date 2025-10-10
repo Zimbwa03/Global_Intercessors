@@ -3103,6 +3103,164 @@ Respond in JSON format as an array:
     }
   });
 
+  // GI WEEKLY REPORT ENDPOINT - Follows exact PowerPoint report structure
+  app.get("/api/admin/analytics/gi-weekly-report", async (req: Request, res: Response) => {
+    try {
+      console.log('📊 Generating GI Weekly Report in PowerPoint format...');
+      
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const dayNamesCapitalized = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      
+      // Get current week (last 7 days)
+      const currentWeekEnd = new Date();
+      const currentWeekStart = new Date();
+      currentWeekStart.setDate(currentWeekStart.getDate() - 6);
+      
+      // Get previous week (7 days before current week)
+      const previousWeekEnd = new Date(currentWeekStart);
+      previousWeekEnd.setDate(previousWeekEnd.getDate() - 1);
+      const previousWeekStart = new Date(previousWeekEnd);
+      previousWeekStart.setDate(previousWeekStart.getDate() - 6);
+      
+      const formatDate = (d: Date) => {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${d.getDate()} ${months[d.getMonth()]}`;
+      };
+      
+      const reportDate = `${formatDate(currentWeekStart)}-${formatDate(currentWeekEnd)} ${currentWeekEnd.getFullYear()}`;
+      
+      // Total slots available (48 slots × 7 days = 336)
+      const TOTAL_SLOTS_AVAILABLE = 336;
+      
+      // Get all prayer slots with user info
+      const { data: allSlots } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*, intercessor_schedules!inner(user_id, active_days)')
+        .not('user_id', 'is', null);
+      
+      // Get attendance for current week
+      const { data: currentWeekAttendance } = await supabaseAdmin
+        .from('attendance_log')
+        .select('*')
+        .gte('date', currentWeekStart.toISOString().split('T')[0])
+        .lte('date', currentWeekEnd.toISOString().split('T')[0]);
+      
+      // Get attendance for previous week
+      const { data: previousWeekAttendance } = await supabaseAdmin
+        .from('attendance_log')
+        .select('*')
+        .gte('date', previousWeekStart.toISOString().split('T')[0])
+        .lte('date', previousWeekEnd.toISOString().split('T')[0]);
+      
+      // Calculate current week daily coverage
+      const currentWeekDailyCoverage: any = {};
+      let currentWeekTotalCovered = 0;
+      
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(currentWeekStart);
+        date.setDate(date.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayName = dayNamesCapitalized[date.getDay()];
+        
+        const dayAttended = currentWeekAttendance?.filter(
+          a => a.date === dateStr && a.status === 'attended'
+        ).length || 0;
+        
+        currentWeekDailyCoverage[dayName] = dayAttended;
+        currentWeekTotalCovered += dayAttended;
+      }
+      
+      // Calculate previous week daily coverage
+      const previousWeekDailyCoverage: any = {};
+      let previousWeekTotalCovered = 0;
+      
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(previousWeekStart);
+        date.setDate(date.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayName = dayNamesCapitalized[date.getDay()];
+        
+        const dayAttended = previousWeekAttendance?.filter(
+          a => a.date === dateStr && a.status === 'attended'
+        ).length || 0;
+        
+        previousWeekDailyCoverage[dayName] = dayAttended;
+        previousWeekTotalCovered += dayAttended;
+      }
+      
+      // Calculate metrics
+      const coverageRate = Math.round((currentWeekTotalCovered / TOTAL_SLOTS_AVAILABLE) * 100 * 10) / 10;
+      const averageDailyCoverage = Math.round(currentWeekTotalCovered / 7);
+      
+      // Calculate variance (highest - lowest daily coverage)
+      const dailyValues = Object.values(currentWeekDailyCoverage) as number[];
+      const highestDaily = Math.max(...dailyValues);
+      const lowestDaily = Math.min(...dailyValues);
+      const totalVariance = highestDaily - lowestDaily;
+      
+      // Get consistent intercessors (attended >= 5 days out of their active days)
+      const consistentIntercessors: string[] = [];
+      
+      if (allSlots && currentWeekAttendance) {
+        const userAttendanceMap = new Map<string, number>();
+        
+        for (const slot of allSlots) {
+          const userAttended = currentWeekAttendance.filter(
+            a => a.user_id === slot.user_id && a.status === 'attended'
+          ).length;
+          
+          const schedule = slot.intercessor_schedules;
+          const activeDaysCount = schedule?.active_days?.length || 7;
+          
+          // Consider consistent if attended >= 70% of their active days
+          if (userAttended >= Math.ceil(activeDaysCount * 0.7)) {
+            consistentIntercessors.push(slot.user_email || 'Unknown');
+          }
+        }
+      }
+      
+      // Calculate percentage change from previous week
+      const percentageChange = previousWeekTotalCovered > 0 
+        ? Math.round(((currentWeekTotalCovered - previousWeekTotalCovered) / previousWeekTotalCovered) * 100 * 10) / 10
+        : 0;
+      
+      const giWeeklyReport = {
+        report_date: reportDate,
+        total_slots_available: TOTAL_SLOTS_AVAILABLE,
+        current_week: {
+          total_slots_covered: currentWeekTotalCovered,
+          daily_coverage: currentWeekDailyCoverage,
+          percentage_change: percentageChange
+        },
+        previous_week: {
+          total_slots_covered: previousWeekTotalCovered,
+          daily_coverage: previousWeekDailyCoverage
+        },
+        calculated_metrics: {
+          coverage_rate: coverageRate,
+          average_daily_coverage: averageDailyCoverage,
+          total_variance: totalVariance,
+          highest_day: dayNamesCapitalized[dailyValues.indexOf(highestDaily)],
+          lowest_day: dayNamesCapitalized[dailyValues.indexOf(lowestDaily)]
+        },
+        platform_manning_consistent_intercessors: consistentIntercessors.slice(0, 20),
+        week_comparison: {
+          slots_difference: currentWeekTotalCovered - previousWeekTotalCovered,
+          percentage_change: percentageChange,
+          trend: percentageChange > 0 ? 'increase' : percentageChange < 0 ? 'decrease' : 'stable'
+        }
+      };
+      
+      console.log(`✅ GI Report generated: ${currentWeekTotalCovered}/${TOTAL_SLOTS_AVAILABLE} slots covered (${coverageRate}%)`);
+      console.log(`📈 Change from previous week: ${percentageChange}% (${currentWeekTotalCovered - previousWeekTotalCovered} slots)`);
+      
+      res.json(giWeeklyReport);
+    } catch (error) {
+      console.error('Error generating GI weekly report:', error);
+      res.status(500).json({ error: 'Failed to generate GI weekly report' });
+    }
+  });
+
   // User detailed analytics endpoint
   app.get("/api/admin/analytics/user/:email", async (req: Request, res: Response) => {
     try {
