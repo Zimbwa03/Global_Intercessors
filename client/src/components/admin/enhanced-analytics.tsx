@@ -410,6 +410,11 @@ export function EnhancedAnalytics() {
     const dailyCoverageLabels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const currentWeekValues = dailyCoverageLabels.map(day => data.current_week.daily_coverage[day as keyof typeof data.current_week.daily_coverage] || 0);
     const previousWeekValues = dailyCoverageLabels.map(day => data.previous_week.daily_coverage[day as keyof typeof data.previous_week.daily_coverage] || 0);
+    
+    // Calculate variance and target for visualization
+    const targetPerDay = 48; // Expected coverage per day
+    const targetValues = dailyCoverageLabels.map(() => targetPerDay);
+    const varianceValues = currentWeekValues.map(value => value - targetPerDay);
 
     return (
       <div className="space-y-6">
@@ -507,36 +512,82 @@ export function EnhancedAnalytics() {
           </Card>
         </div>
 
-        {/* Daily Coverage Comparison Chart */}
+        {/* Daily Coverage Comparison Chart with Variance */}
         <Card className="border-gi-primary/20">
           <CardHeader>
             <CardTitle className="text-gi-primary flex items-center gap-2">
               <BarChart3 className="w-5 h-5" />
-              Daily Coverage Comparison
+              Daily Coverage with Variance Analysis
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[400px]">
               <Bar
                 data={{
                   labels: dailyCoverageLabels,
                   datasets: [
                     {
-                      label: 'Current Week',
-                      data: currentWeekValues,
-                      backgroundColor: GI_COLORS.primary,
-                      borderRadius: 8,
+                      label: 'Target',
+                      data: targetValues,
+                      backgroundColor: 'rgba(209, 213, 219, 0.6)', // Light gray
+                      borderRadius: 6,
+                      barThickness: 30,
                     },
                     {
-                      label: 'Previous Week',
-                      data: previousWeekValues,
-                      backgroundColor: GI_COLORS.gold,
-                      borderRadius: 8,
+                      label: 'Variance',
+                      data: varianceValues, // Show all variance (positive and negative)
+                      backgroundColor: varianceValues.map(v => v >= 0 ? GI_COLORS.success : GI_COLORS.danger), // Green for above target, Red for below
+                      borderRadius: 6,
+                      barThickness: 30,
+                    },
+                    {
+                      label: 'Actual',
+                      data: currentWeekValues,
+                      backgroundColor: GI_COLORS.gold, // Gold for actual
+                      borderRadius: 6,
+                      barThickness: 30,
                     }
                   ]
                 }}
-                options={chartOptions}
+                options={{
+                  ...chartOptions,
+                  plugins: {
+                    ...chartOptions.plugins,
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          const label = context.dataset.label || '';
+                          const value = context.parsed.y;
+                          if (label === 'Variance') {
+                            const actualValue = currentWeekValues[context.dataIndex];
+                            const variance = actualValue - targetPerDay;
+                            return `${label}: ${variance >= 0 ? '+' : ''}${variance} (${variance >= 0 ? 'above' : 'below'} target)`;
+                          }
+                          return `${label}: ${value}`;
+                        }
+                      }
+                    }
+                  }
+                }}
               />
+            </div>
+            <div className="mt-4 flex items-center justify-center gap-6 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: GI_COLORS.gold }}></div>
+                <span className="text-gray-600">Actual Coverage</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: GI_COLORS.success }}></div>
+                <span className="text-gray-600">Above Target</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded" style={{ backgroundColor: GI_COLORS.danger }}></div>
+                <span className="text-gray-600">Below Target</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-gray-300"></div>
+                <span className="text-gray-600">Target (48/day)</span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -867,10 +918,32 @@ export function EnhancedAnalytics() {
       </div>
   );
 
-  const WeeklyTab = () => (
+  const WeeklyTab = () => {
+    if (weeklyLoading) {
+      return (
+        <div className="flex items-center justify-center p-12">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-gi-primary/60 border-t-transparent mx-auto"></div>
+            <p className="text-gi-dark/80">Loading detailed analysis...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!weeklyData) {
+      return (
+        <div className="text-center p-12">
+          <div className="text-gi-dark/60">
+            <Activity className="w-16 h-16 mx-auto mb-4 opacity-50" />
+            <p className="text-lg font-medium">No weekly data available</p>
+            <p className="text-sm mt-2">Data will appear once prayer sessions are recorded</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
     <div className="space-y-6">
-      {weeklyData && (
-        <>
           {/* Weekly Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="border-gi-primary/20">
@@ -963,10 +1036,251 @@ export function EnhancedAnalytics() {
               </ScrollArea>
             </CardContent>
           </Card>
-        </>
-      )}
+
+          {/* Advanced Analytics Section */}
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold text-gi-primary mb-6 flex items-center gap-2">
+              <LineChartIcon className="w-6 h-6 text-gi-gold" />
+              Advanced Insights & Trends
+            </h2>
+
+            {/* Daily Attendance Trend */}
+            <Card className="mb-6 border-gi-primary/30 bg-gradient-to-br from-white to-gi-primary/5">
+              <CardHeader>
+                <CardTitle className="text-gi-primary flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-gi-gold" />
+                  Daily Attendance Trends
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[350px]">
+                  <Line
+                    data={{
+                      labels: weeklyData.daily_breakdown?.map(day => dayjs(day.date).format('ddd, MMM D')) || [],
+                      datasets: [
+                        {
+                          label: 'Attendance Rate',
+                          data: weeklyData.daily_breakdown?.map(day => day.attendance_rate) || [],
+                          borderColor: GI_COLORS.primary,
+                          backgroundColor: `${GI_COLORS.primary}20`,
+                          fill: true,
+                          tension: 0.4,
+                          borderWidth: 3,
+                          pointRadius: 6,
+                          pointHoverRadius: 8,
+                          pointBackgroundColor: GI_COLORS.gold,
+                          pointBorderColor: GI_COLORS.primary,
+                          pointBorderWidth: 2,
+                        },
+                        {
+                          label: 'Attended',
+                          data: weeklyData.daily_breakdown?.map(day => day.attended_count) || [],
+                          borderColor: GI_COLORS.success,
+                          backgroundColor: `${GI_COLORS.success}20`,
+                          fill: true,
+                          tension: 0.4,
+                          borderWidth: 2,
+                        },
+                        {
+                          label: 'Missed',
+                          data: weeklyData.daily_breakdown?.map(day => day.missed_count) || [],
+                          borderColor: GI_COLORS.danger,
+                          backgroundColor: `${GI_COLORS.danger}20`,
+                          fill: true,
+                          tension: 0.4,
+                          borderWidth: 2,
+                        }
+                      ]
+                    }}
+                    options={{
+                      ...chartOptions,
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                          grid: {
+                            color: 'rgba(16, 66, 32, 0.1)',
+                          },
+                          ticks: {
+                            color: GI_COLORS.dark,
+                          }
+                        },
+                        x: {
+                          grid: {
+                            display: false,
+                          },
+                          ticks: {
+                            color: GI_COLORS.dark,
+                          }
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Key Performance Indicators Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="border-gi-primary/20 bg-gradient-to-br from-gi-primary/10 to-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gi-dark/70">Avg Duration</p>
+                        <p className="text-3xl font-bold text-gi-primary mt-2">
+                          {weeklyData.attendance_summary.avg_duration_minutes}
+                          <span className="text-lg font-normal text-gi-dark/70 ml-1">min</span>
+                        </p>
+                        <p className="text-xs text-gi-dark/60 mt-1">Per session</p>
+                      </div>
+                      <Clock className="w-12 h-12 text-gi-gold/60" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+              >
+                <Card className="border-gi-gold/20 bg-gradient-to-br from-gi-gold/10 to-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gi-dark/70">Active Slots</p>
+                        <p className="text-3xl font-bold text-gi-primary mt-2">
+                          {weeklyData.slot_coverage.active_slots}
+                          <span className="text-lg font-normal text-gi-dark/70 ml-1">
+                            /{weeklyData.slot_coverage.total_slots}
+                          </span>
+                        </p>
+                        <p className="text-xs text-gi-dark/60 mt-1">
+                          {weeklyData.slot_coverage.coverage_rate}% coverage
+                        </p>
+                      </div>
+                      <Target className="w-12 h-12 text-gi-primary/60" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+              >
+                <Card className="border-gi-success/20 bg-gradient-to-br from-gi-success/10 to-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gi-dark/70">Attendance Rate</p>
+                        <p className="text-3xl font-bold text-gi-success mt-2">
+                          {weeklyData.attendance_summary.attendance_rate}%
+                        </p>
+                        <p className="text-xs text-gi-dark/60 mt-1">
+                          {weeklyData.attendance_summary.attended_count} attended
+                        </p>
+                      </div>
+                      <BarChart3 className="w-12 h-12 text-gi-success/60" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.3 }}
+              >
+                <Card className="border-gi-primary/20 bg-gradient-to-br from-gi-primary/10 to-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gi-dark/70">Total Participants</p>
+                        <p className="text-3xl font-bold text-gi-primary mt-2">
+                          {weeklyData.zoom_meetings.total_participants}
+                        </p>
+                        <p className="text-xs text-gi-dark/60 mt-1">
+                          Across {weeklyData.zoom_meetings.total_meetings} meetings
+                        </p>
+                      </div>
+                      <Users className="w-12 h-12 text-gi-gold/60" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+
+            {/* Daily Performance Breakdown */}
+            <Card className="border-gi-gold/30 bg-gradient-to-br from-gi-gold/5 to-white">
+              <CardHeader>
+                <CardTitle className="text-gi-primary flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-gi-gold" />
+                  Daily Performance Breakdown
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {weeklyData.daily_breakdown?.map((day, index) => (
+                    <motion.div
+                      key={day.date}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.2, delay: index * 0.05 }}
+                      className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gi-primary/20 hover:border-gi-gold/50 transition-colors"
+                    >
+                      <div className="w-20">
+                        <p className="text-sm font-bold text-gi-primary">
+                          {dayjs(day.date).format('ddd')}
+                        </p>
+                        <p className="text-xs text-gi-dark/60">
+                          {dayjs(day.date).format('MMM D')}
+                        </p>
+                      </div>
+                      
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-gi-success to-gi-primary transition-all duration-500"
+                              style={{ width: `${day.attendance_rate}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-bold text-gi-primary w-12 text-right">
+                            {day.attendance_rate}%
+                          </span>
+                        </div>
+                        <div className="flex gap-4 text-xs text-gi-dark/70">
+                          <span>✓ {day.attended_count} attended</span>
+                          <span>✗ {day.missed_count} missed</span>
+                          <span>🎥 {day.zoom_meetings} meetings</span>
+                          <span>👥 {day.total_participants} participants</span>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        {day.attendance_rate >= 80 ? (
+                          <Badge className="bg-gi-success text-white">Excellent</Badge>
+                        ) : day.attendance_rate >= 60 ? (
+                          <Badge className="bg-gi-gold text-white">Good</Badge>
+                        ) : (
+                          <Badge className="bg-gi-danger text-white">Needs Attention</Badge>
+                        )}
+                      </div>
+                    </motion.div>
+                  )) || []}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
     </div>
   );
+  };
 
   if (realtimeLoading || weeklyLoading || zoomLoading) {
     return (
