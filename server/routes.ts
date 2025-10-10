@@ -1724,26 +1724,26 @@ Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
           }],
           generationConfig: {
             temperature: 0.7,
-            topK: 1,
-            topP: 1,
+            topK: 40,
+            topP: 0.95,
             maxOutputTokens: maxTokens,
           },
           safetySettings: [
             {
               category: "HARM_CATEGORY_HARASSMENT",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+              threshold: "BLOCK_ONLY_HIGH"
             },
             {
               category: "HARM_CATEGORY_HATE_SPEECH",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+              threshold: "BLOCK_ONLY_HIGH"
             },
             {
               category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+              threshold: "BLOCK_ONLY_HIGH"
             },
             {
               category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+              threshold: "BLOCK_ONLY_HIGH"
             }
           ]
         })
@@ -1756,10 +1756,21 @@ Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
       }
 
       const data = await response.json();
+      
+      // Log the full response structure for debugging
+      console.log('Gemini API response:', JSON.stringify(data, null, 2));
+      
       const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (!aiResponse) {
-        throw new Error('No response from Gemini API');
+        console.error('No text in Gemini response. Full data:', data);
+        
+        // Check if content was blocked by safety filters
+        if (data.candidates?.[0]?.finishReason === 'SAFETY') {
+          throw new Error('Response blocked by safety filters. Please rephrase your question.');
+        }
+        
+        throw new Error(`No response from Gemini API. Finish reason: ${data.candidates?.[0]?.finishReason || 'unknown'}`);
       }
 
       console.log('Gemini API response received successfully');

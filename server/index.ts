@@ -5,6 +5,7 @@ import { zoomAttendanceTracker } from "./services/zoomAttendanceTracker";
 import { registerRoutes } from "./routes";
 import { notificationScheduler } from "./services/notificationScheduler";
 import { whatsAppBot } from "./services/whatsapp-bot-v2";
+import { supabaseAdmin } from "./supabase";
 
 // Set default server timezone to Africa/Harare to align with majority of intercessors
 if (!process.env.TZ) {
@@ -46,6 +47,28 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Test Bible chat database table
+  try {
+    console.log('📚 Checking Bible chat database...');
+    
+    // Test if table exists by querying it
+    const { data, error } = await supabaseAdmin
+      .from('bible_chat_history')
+      .select('id')
+      .limit(1);
+    
+    if (error) {
+      console.error('❌ Bible chat table not accessible:', error.message);
+      console.log('ℹ️  Please ensure bible_chat_history table exists in Supabase');
+      console.log('ℹ️  Bible chat will use fallback responses only');
+    } else {
+      console.log('✅ Bible chat database ready');
+    }
+  } catch (error) {
+    console.error('❌ Bible chat initialization error:', error);
+    console.log('ℹ️  Continuing without database persistence for Bible chat');
+  }
+  
   const server = await registerRoutes(app);
   
   // Start notification scheduler
