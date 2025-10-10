@@ -53,7 +53,9 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
       if (error) throw error;
       return data as AdminUser[];
     },
-    enabled: true, // Always enabled to prevent flickering
+    enabled: isOpen, // Only fetch when dialog is open
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
+    staleTime: 30000, // Keep data fresh for 30 seconds
   });
 
   // Create new admin mutation

@@ -159,13 +159,25 @@ export default function AdminDashboard() {
     const onFocusIn = (e: Event) => {
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.getAttribute('contenteditable') === 'true') {
+      // Only track focus for actual text input fields, not buttons or selects
+      if ((tag === 'INPUT' && !['checkbox', 'radio', 'button', 'submit'].includes((target as HTMLInputElement).type)) || 
+          tag === 'TEXTAREA' || 
+          target?.getAttribute('contenteditable') === 'true') {
         setIsInputFocused(true);
       }
     };
-    const onFocusOut = () => setIsInputFocused(false);
-    document.addEventListener('focusin', onFocusIn);
-    document.addEventListener('focusout', onFocusOut);
+    const onFocusOut = (e: Event) => {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      // Only clear focus for text inputs
+      if ((tag === 'INPUT' && !['checkbox', 'radio', 'button', 'submit'].includes((target as HTMLInputElement).type)) || 
+          tag === 'TEXTAREA' || 
+          target?.getAttribute('contenteditable') === 'true') {
+        setIsInputFocused(false);
+      }
+    };
+    document.addEventListener('focusin', onFocusIn, { passive: true });
+    document.addEventListener('focusout', onFocusOut, { passive: true });
     return () => {
       document.removeEventListener('focusin', onFocusIn);
       document.removeEventListener('focusout', onFocusOut);
