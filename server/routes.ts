@@ -3280,6 +3280,409 @@ Respond in JSON format as an array:
     }
   });
 
+  // GENERATE PDF WEEKLY REPORT WITH DEEPSEEK AI
+  app.get("/api/admin/analytics/download-pdf-report", async (req: Request, res: Response) => {
+    try {
+      console.log('📄 Generating Professional PDF Weekly Report with DeepSeek AI...');
+
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const dayNamesCapitalized = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      
+      // Get current week (last 7 days)
+      const currentWeekEnd = new Date();
+      const currentWeekStart = new Date();
+      currentWeekStart.setDate(currentWeekStart.getDate() - 6);
+      
+      // Get previous week (7 days before current week)
+      const previousWeekEnd = new Date(currentWeekStart);
+      previousWeekEnd.setDate(previousWeekEnd.getDate() - 1);
+      const previousWeekStart = new Date(previousWeekEnd);
+      previousWeekStart.setDate(previousWeekStart.getDate() - 6);
+      
+      const formatDate = (d: Date) => {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${d.getDate()} ${months[d.getMonth()]}`;
+      };
+      
+      const reportDate = `${formatDate(currentWeekStart)}-${formatDate(currentWeekEnd)} ${currentWeekEnd.getFullYear()}`;
+      const TOTAL_SLOTS_AVAILABLE = 336;
+      
+      // Get all prayer slots with user info
+      const { data: allSlots } = await supabaseAdmin
+        .from('prayer_slots')
+        .select('*, intercessor_schedules!inner(user_id, active_days)')
+        .not('user_id', 'is', null);
+      
+      // Get attendance for current week
+      const { data: currentWeekAttendance } = await supabaseAdmin
+        .from('attendance_log')
+        .select('*')
+        .gte('date', currentWeekStart.toISOString().split('T')[0])
+        .lte('date', currentWeekEnd.toISOString().split('T')[0]);
+      
+      // Get attendance for previous week
+      const { data: previousWeekAttendance } = await supabaseAdmin
+        .from('attendance_log')
+        .select('*')
+        .gte('date', previousWeekStart.toISOString().split('T')[0])
+        .lte('date', previousWeekEnd.toISOString().split('T')[0]);
+      
+      // Calculate current week daily coverage
+      const currentWeekDailyCoverage: any = {};
+      let currentWeekTotalCovered = 0;
+      
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(currentWeekStart);
+        date.setDate(date.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayName = dayNamesCapitalized[date.getDay()];
+        
+        const dayAttended = currentWeekAttendance?.filter(
+          a => a.date === dateStr && a.status === 'attended'
+        ).length || 0;
+        
+        currentWeekDailyCoverage[dayName] = dayAttended;
+        currentWeekTotalCovered += dayAttended;
+      }
+      
+      // Calculate previous week daily coverage
+      const previousWeekDailyCoverage: any = {};
+      let previousWeekTotalCovered = 0;
+      
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(previousWeekStart);
+        date.setDate(date.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayName = dayNamesCapitalized[date.getDay()];
+        
+        const dayAttended = previousWeekAttendance?.filter(
+          a => a.date === dateStr && a.status === 'attended'
+        ).length || 0;
+        
+        previousWeekDailyCoverage[dayName] = dayAttended;
+        previousWeekTotalCovered += dayAttended;
+      }
+      
+      // Calculate metrics
+      const coverageRate = Math.round((currentWeekTotalCovered / TOTAL_SLOTS_AVAILABLE) * 100 * 10) / 10;
+      const averageDailyCoverage = Math.round(currentWeekTotalCovered / 7);
+      
+      // Calculate variance
+      const dailyValues = Object.values(currentWeekDailyCoverage) as number[];
+      const highestDaily = Math.max(...dailyValues);
+      const lowestDaily = Math.min(...dailyValues);
+      const totalVariance = TOTAL_SLOTS_AVAILABLE - currentWeekTotalCovered;
+      
+      // Get consistent intercessors
+      const consistentIntercessors: string[] = [];
+      
+      if (allSlots && currentWeekAttendance) {
+        for (const slot of allSlots) {
+          const userAttended = currentWeekAttendance.filter(
+            a => a.user_id === slot.user_id && a.status === 'attended'
+          ).length;
+          
+          const schedule = slot.intercessor_schedules;
+          const activeDaysCount = schedule?.active_days?.length || 7;
+          
+          if (userAttended >= Math.ceil(activeDaysCount * 0.7)) {
+            consistentIntercessors.push(slot.user_email || 'Unknown');
+          }
+        }
+      }
+      
+      const percentageChange = previousWeekTotalCovered > 0 
+        ? Math.round(((currentWeekTotalCovered - previousWeekTotalCovered) / previousWeekTotalCovered) * 100 * 10) / 10
+        : 0;
+
+      // DEEPSEEK AI: Generate professional insights
+      console.log('🤖 Calling DeepSeek AI for professional report narratives...');
+      
+      const prompt = `You are a professional report writer for Global Intercessors, a Christian prayer organization. Generate well-articulated, accurate, and professional insights for our weekly prayer platform report.
+
+Data Summary:
+- Report Period: ${reportDate}
+- Total Slots Covered: ${currentWeekTotalCovered} out of ${TOTAL_SLOTS_AVAILABLE} (${coverageRate}%)
+- Previous Week: ${previousWeekTotalCovered} slots
+- Change: ${percentageChange}% ${percentageChange >= 0 ? 'increase' : 'decrease'}
+- Average Daily Coverage: ${averageDailyCoverage} slots
+- Highest Day: ${dayNamesCapitalized[dailyValues.indexOf(highestDaily)]} with ${highestDaily} slots
+- Lowest Day: ${dayNamesCapitalized[dailyValues.indexOf(lowestDaily)]} with ${lowestDaily} slots
+- Daily Coverage: ${Object.entries(currentWeekDailyCoverage).map(([day, count]) => `${day}: ${count}`).join(', ')}
+
+Generate THREE professional sections (keep each under 180 words):
+
+1. EXECUTIVE SUMMARY: A professional overview of this week's participation and key highlights
+2. PERFORMANCE ANALYSIS: Detailed analysis of the coverage breakdown, comparing highest and lowest days
+3. STRATEGIC RECOMMENDATIONS: Forward-looking recommendations for improving prayer coverage
+
+Use professional, faith-based language appropriate for Christian directors. Be accurate with numbers. Format as JSON with keys: executive_summary, performance_analysis, strategic_recommendations`;
+
+      let aiInsights = {
+        executive_summary: `This week, ${currentWeekTotalCovered} out of ${TOTAL_SLOTS_AVAILABLE} intercession slots were filled, achieving a ${coverageRate}% coverage rate. This represents ${percentageChange >= 0 ? 'an increase' : 'a decrease'} of ${Math.abs(percentageChange)}% compared to last week's ${previousWeekTotalCovered} slots.`,
+        performance_analysis: `The highest participation occurred on ${dayNamesCapitalized[dailyValues.indexOf(highestDaily)]} with ${highestDaily} slots filled, while ${dayNamesCapitalized[dailyValues.indexOf(lowestDaily)]} recorded the lowest with ${lowestDaily} slots. This variance suggests opportunities for targeted engagement.`,
+        strategic_recommendations: `To strengthen our prayer coverage, we recommend focused outreach on lower-participation days and recognition of our consistent intercessors who maintain regular attendance.`
+      };
+
+      try {
+        const aiResponse = await axios.post(
+          'https://api.deepseek.com/chat/completions',
+          {
+            model: 'deepseek-chat',
+            messages: [
+              { role: 'system', content: 'You are a professional Christian report writer. Respond ONLY with valid JSON.' },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 1500
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        const aiText = aiResponse.data.choices[0].message.content;
+        const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          aiInsights = {
+            executive_summary: parsed.executive_summary || aiInsights.executive_summary,
+            performance_analysis: parsed.performance_analysis || aiInsights.performance_analysis,
+            strategic_recommendations: parsed.strategic_recommendations || aiInsights.strategic_recommendations
+          };
+        }
+        console.log('✅ DeepSeek AI insights generated successfully');
+      } catch (aiError) {
+        console.error('❌ DeepSeek AI error, using fallback insights:', aiError);
+      }
+
+      // Generate PDF HTML
+      const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page { margin: 40px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      color: #1a1a1a;
+      line-height: 1.6;
+    }
+    .header { 
+      background: linear-gradient(135deg, #104220 0%, #0a2e18 100%); 
+      color: white; 
+      padding: 40px; 
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .header h1 { font-size: 32px; margin-bottom: 10px; font-weight: 700; }
+    .header p { font-size: 18px; color: #D2AA68; font-weight: 500; }
+    .section { 
+      margin-bottom: 30px; 
+      padding: 25px; 
+      background: white;
+      border-radius: 8px;
+      border-left: 4px solid #104220;
+    }
+    .section h2 { 
+      color: #104220; 
+      font-size: 22px; 
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    .section h3 { 
+      color: #D2AA68; 
+      font-size: 18px; 
+      margin: 20px 0 10px 0;
+      font-weight: 600;
+    }
+    .metrics { 
+      display: grid; 
+      grid-template-columns: repeat(3, 1fr); 
+      gap: 20px; 
+      margin: 20px 0;
+    }
+    .metric-card { 
+      background: #f8f9fa; 
+      padding: 20px; 
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid #e0e0e0;
+    }
+    .metric-value { 
+      font-size: 36px; 
+      font-weight: 700; 
+      color: #104220; 
+      margin: 10px 0;
+    }
+    .metric-label { 
+      font-size: 14px; 
+      color: #666; 
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .daily-table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      margin: 20px 0;
+    }
+    .daily-table th { 
+      background: #104220; 
+      color: white; 
+      padding: 12px; 
+      text-align: left;
+      font-weight: 600;
+    }
+    .daily-table td { 
+      padding: 12px; 
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .daily-table tr:hover { background: #f8f9fa; }
+    .variance-positive { color: #22c55e; font-weight: 600; }
+    .variance-negative { color: #ef4444; font-weight: 600; }
+    .intercessors-grid { 
+      display: grid; 
+      grid-template-columns: repeat(3, 1fr); 
+      gap: 10px; 
+      margin: 15px 0;
+    }
+    .intercessor-name { 
+      background: #f0f7f4; 
+      padding: 10px; 
+      border-radius: 6px;
+      font-size: 14px;
+      color: #104220;
+    }
+    .footer { 
+      margin-top: 40px; 
+      padding: 20px; 
+      background: #f8f9fa; 
+      text-align: center;
+      border-radius: 8px;
+    }
+    .ai-insight { 
+      background: #f0f7f4; 
+      padding: 20px; 
+      border-radius: 8px;
+      border-left: 4px solid #D2AA68;
+      margin: 15px 0;
+      font-size: 15px;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Global Intercessors Weekly Report</h1>
+    <p>${reportDate}</p>
+  </div>
+
+  <div class="section">
+    <h2>📊 Executive Summary</h2>
+    <div class="ai-insight">${aiInsights.executive_summary}</div>
+    
+    <div class="metrics">
+      <div class="metric-card">
+        <div class="metric-label">Slots Covered</div>
+        <div class="metric-value">${currentWeekTotalCovered}</div>
+        <div class="metric-label">of ${TOTAL_SLOTS_AVAILABLE}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Coverage Rate</div>
+        <div class="metric-value">${coverageRate}%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Weekly Change</div>
+        <div class="metric-value ${percentageChange >= 0 ? 'variance-positive' : 'variance-negative'}">
+          ${percentageChange >= 0 ? '+' : ''}${percentageChange}%
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📈 Performance Analysis</h2>
+    <div class="ai-insight">${aiInsights.performance_analysis}</div>
+    
+    <h3>Daily Coverage Breakdown</h3>
+    <table class="daily-table">
+      <thead>
+        <tr>
+          <th>Day</th>
+          <th>This Week</th>
+          <th>Last Week</th>
+          <th>Variance from Target (48)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${dayNamesCapitalized.map(day => {
+          const currentVal = currentWeekDailyCoverage[day] || 0;
+          const previousVal = previousWeekDailyCoverage[day] || 0;
+          const variance = currentVal - 48;
+          return `
+            <tr>
+              <td><strong>${day}</strong></td>
+              <td>${currentVal} slots</td>
+              <td>${previousVal} slots</td>
+              <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">
+                ${variance >= 0 ? '+' : ''}${variance}
+              </td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>⭐ Platform Manning - Consistent Intercessors</h2>
+    <p style="margin-bottom: 15px;">The following intercessors demonstrated outstanding consistency this week:</p>
+    <div class="intercessors-grid">
+      ${consistentIntercessors.slice(0, 18).map(name => 
+        `<div class="intercessor-name">${name}</div>`
+      ).join('')}
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>💡 Strategic Recommendations</h2>
+    <div class="ai-insight">${aiInsights.strategic_recommendations}</div>
+  </div>
+
+  <div class="footer">
+    <p style="color: #666; font-size: 14px;">
+      Generated by Global Intercessors Analytics Platform | ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+    </p>
+  </div>
+</body>
+</html>`;
+
+      // Generate PDF
+      const file = { content: htmlContent };
+      const options = { 
+        format: 'A4',
+        margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
+      };
+
+      const pdfBuffer = await htmlPdf.generatePdf(file, options);
+
+      // Send PDF as download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="GI_Weekly_Report_${reportDate.replace(/\s/g, '_')}.pdf"`);
+      res.send(pdfBuffer);
+
+      console.log('✅ PDF Report generated and sent successfully');
+    } catch (error) {
+      console.error('❌ Error generating PDF report:', error);
+      res.status(500).json({ error: 'Failed to generate PDF report' });
+    }
+  });
+
   // User detailed analytics endpoint
   app.get("/api/admin/analytics/user/:email", async (req: Request, res: Response) => {
     try {
