@@ -1319,6 +1319,17 @@ export function EnhancedAnalytics() {
             Refresh
           </Button>
           <Button
+            onClick={() => {
+              window.open('/api/admin/analytics/download-pdf-report', '_blank');
+            }}
+            className="bg-gradient-to-r from-gi-gold to-gi-gold/90 hover:from-gi-gold/90 hover:to-gi-gold text-white shadow-lg"
+            size="sm"
+            data-testid="button-download-pdf"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download PDF Report
+          </Button>
+          <Button
             onClick={() => exportData('report')}
             className="bg-gradient-to-r from-gi-primary to-gi-primary/90 hover:from-gi-primary/90 hover:to-gi-primary text-white shadow-lg"
             size="sm"
