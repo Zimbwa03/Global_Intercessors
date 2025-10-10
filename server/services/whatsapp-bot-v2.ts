@@ -428,7 +428,7 @@ export class WhatsAppPrayerBot {
       let { data: profile } = await supabase
         .from('user_profiles')
         .select('first_name, last_name')
-        .eq('user_id', userIdOrPhone)
+        .eq('id', userIdOrPhone)
         .single();
 
       if (profile) {
@@ -448,7 +448,7 @@ export class WhatsAppPrayerBot {
         const { data: profileByBotUser } = await supabase
           .from('user_profiles')
           .select('first_name, last_name')
-          .eq('user_id', botUser.user_id)
+          .eq('id', botUser.user_id)
           .single();
 
         if (profileByBotUser) {
@@ -598,7 +598,7 @@ export class WhatsAppPrayerBot {
       const { data: userProfiles, error: profilesError } = await supabase
         .from('user_profiles')
         .select('*')
-        .in('user_id', userIds);
+        .in('id', userIds);
 
       if (profilesError) {
         console.error('❌ Error fetching user profiles:', profilesError);

@@ -3982,7 +3982,7 @@ Respond in JSON format as an array:
         const { data: userProfile } = await supabaseAdmin
           .from('user_profiles')
           .select('*')
-          .eq('user_id', slot.user_id)
+          .eq('id', slot.user_id)
           .single();
 
         // Calculate attendance for this user over the last 30 days
