@@ -1708,7 +1708,7 @@ Global Intercessors is a worldwide prayer movement that maintains 24/7 prayer co
   }
 
   private async handleJoinZoom(phoneNumber: string): Promise<void> {
-    const url = 'https://us06web.zoom.us/j/83923875995?pwd=QmVJcGpmRys1aWlvWCtZdzZKLzFRQT09';
+    const url = 'https://us05web.zoom.us/j/9565792987?pwd=RSlfzbyg7I7SGd0QkXewoal3tgjWid.1';
     const message = `🎥 *Join Zoom Prayer*\n\nTap to join now:\n${url}`;
     await this.sendWhatsAppMessage(phoneNumber, message);
     await this.logInteraction(phoneNumber, 'button_action', 'join_zoom');
