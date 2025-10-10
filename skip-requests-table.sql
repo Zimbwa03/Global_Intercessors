@@ -100,13 +100,18 @@ DROP FUNCTION IF EXISTS notify_skip_request_approval();
 CREATE OR REPLACE FUNCTION notify_skip_request_approval()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- This function can be used to send notifications when skip requests are approved/rejected
-  -- For now, it just logs the action
+  -- This function sends notifications when skip requests are approved/rejected
   INSERT INTO updates (
     title,
     description,
+    date,
     type,
     priority,
+    schedule,
+    expiry,
+    send_notification,
+    send_email,
+    pin_to_top,
     is_active,
     created_at
   ) VALUES (
@@ -119,8 +124,14 @@ BEGIN
       WHEN NEW.status = 'rejected' THEN 'Your skip request has been reviewed. Please check for details.'
       ELSE 'Your skip request status has been updated.'
     END,
+    CURRENT_TIMESTAMP,  -- Added date field
     'skip_approval',
     'normal',
+    'immediate',
+    'never',
+    false,
+    false,
+    false,
     true,
     CURRENT_TIMESTAMP
   );

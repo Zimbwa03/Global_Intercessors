@@ -93,6 +93,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Migration endpoint to fix skip request trigger
+  app.post("/api/admin/fix-skip-trigger", async (req: Request, res: Response) => {
+    try {
+      console.log('🔧 Running skip request trigger fix migration...');
+      
+      // Drop the existing trigger (using raw SQL)
+      await supabaseAdmin.rpc('drop_skip_trigger_if_exists');
+      
+      // Create the fixed function and trigger
+      await supabaseAdmin.rpc('create_fixed_skip_trigger');
+
+      console.log('✅ Skip request trigger fixed successfully!');
+      return res.json({ success: true, message: 'Skip request trigger fixed successfully' });
+    } catch (error: any) {
+      console.error('❌ Migration error:', error);
+      return res.status(500).json({ error: 'Migration failed', message: error.message });
+    }
+  });
+
   // Get real Zoom analytics data
   app.get("/api/zoom/analytics", async (req: Request, res: Response) => {
     try {
