@@ -584,17 +584,6 @@ export class WhatsAppPrayerBot {
 
       const userIds = prayerSlots?.map(slot => slot.user_id).filter(Boolean) || [];
 
-      const { data: whatsappUsers, error: whatsappError } = await supabase
-        .from('whatsapp_bot_users')
-        .select('*')
-        .in('user_id', userIds)
-        .eq('is_active', true);
-
-      if (whatsappError) {
-        console.error('❌ Error fetching WhatsApp users:', whatsappError);
-        return;
-      }
-
       const { data: userProfiles, error: profilesError } = await supabase
         .from('user_profiles')
         .select('*')
@@ -602,27 +591,27 @@ export class WhatsAppPrayerBot {
 
       if (profilesError) {
         console.error('❌ Error fetching user profiles:', profilesError);
-      }
-
-      // Combine data for easier access
-      const combinedData = prayerSlots?.map(slot => {
-        const user = whatsappUsers?.find(wu => wu.user_id === slot.user_id);
-        const profile = userProfiles?.find(up => up.id === slot.user_id);
-        return { slot, user, profile };
-      }).filter(d => d.user && d.profile); // Only include if we have all data
-
-      if (!combinedData || combinedData.length === 0) {
-        console.log('⚠️ No active prayer slots with associated WhatsApp users or profiles found');
         return;
       }
 
-      console.log(`📊 Found ${combinedData.length} active prayer slots with WhatsApp users`);
+      // Combine data for easier access - using phone_number from user_profiles
+      const combinedData = prayerSlots?.map(slot => {
+        const profile = userProfiles?.find(up => up.id === slot.user_id);
+        return { slot, profile };
+      }).filter(d => d.profile && d.profile.phone_number); // Only include if profile exists with phone number
+
+      if (!combinedData || combinedData.length === 0) {
+        console.log('⚠️ No active prayer slots with WhatsApp phone numbers found');
+        return;
+      }
+
+      console.log(`📊 Found ${combinedData.length} active prayer slots with WhatsApp numbers`);
 
       // Process each slot
       for (const item of combinedData) {
-        const { slot, user } = item; // User is guaranteed to exist here
+        const { slot, profile } = item;
 
-        if (!slot.whatsapp_number) { // Double check, though `user` check should cover this
+        if (!profile.phone_number) {
           console.log(`⚠️ No WhatsApp number for slot ${slot.slot_time} (User ID: ${slot.user_id})`);
           continue;
         }
@@ -666,13 +655,13 @@ export class WhatsAppPrayerBot {
         // Send appropriate reminder
         if (timeDiff30Min <= 1) {
           console.log(`🔔 Sending 30-minute reminder for slot ${slot.id}`);
-          await this.sendPrayerSlotReminder(user, slot, 30);
+          await this.sendPrayerSlotReminder(profile, slot, 30);
         } else if (timeDiff15Min <= 1) {
           console.log(`🔔 Sending 15-minute reminder for slot ${slot.id}`);
-          await this.sendPrayerSlotReminder(user, slot, 15);
+          await this.sendPrayerSlotReminder(profile, slot, 15);
         } else if (timeDiff5Min <= 1) {
           console.log(`🔔 Sending 5-minute reminder for slot ${slot.id}`);
-          await this.sendPrayerSlotReminder(user, slot, 5);
+          await this.sendPrayerSlotReminder(profile, slot, 5);
         }
       }
 
@@ -682,10 +671,16 @@ export class WhatsAppPrayerBot {
     }
   }
 
-  private async sendPrayerSlotReminder(user: WhatsAppBotUser, slot: PrayerSlot, minutesBefore: number): Promise<void> {
+  private async sendPrayerSlotReminder(profile: any, slot: any, minutesBefore: number): Promise<void> {
     try {
-      const userName = await this.getUserName(user.user_id);
+      const userName = profile.full_name || 'Beloved Intercessor';
       const slotTime = slot.slot_time?.split('–')[0] || slot.slot_time;
+      const whatsappNumber = profile.phone_number;
+
+      if (!whatsappNumber) {
+        console.log(`⚠️ No WhatsApp number found for user ${profile.id}`);
+        return;
+      }
 
       let timeText = '';
       let urgencyEmoji = '';
@@ -722,13 +717,13 @@ ${slot.zoom_link ? `🔗 Join Zoom: ${slot.zoom_link}` : ''}
 
 Reply *help* for more options.`;
 
-      const success = await this.sendWhatsAppMessage(user.whatsapp_number, message);
+      const success = await this.sendWhatsAppMessage(whatsappNumber, message);
 
       if (success) {
-        console.log(`✅ ${timeText} prayer reminder sent to ${user.whatsapp_number} for slot ${slotTime}`);
-        await this.logInteraction(user.whatsapp_number, 'reminder', 'prayer_slot');
+        console.log(`✅ ${timeText} prayer reminder sent to ${whatsappNumber} for slot ${slotTime}`);
+        await this.logInteraction(whatsappNumber, 'reminder', 'prayer_slot');
       } else {
-        console.log(`❌ Failed to send ${timeText} prayer reminder to ${user.whatsapp_number}`);
+        console.log(`❌ Failed to send ${timeText} prayer reminder to ${whatsappNumber}`);
       }
     } catch (error) {
       console.error('❌ Error sending prayer slot reminder:', error);
