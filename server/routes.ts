@@ -6,6 +6,40 @@ import { whatsAppBot } from "./services/whatsapp-bot-v2.js";
 import { zoomAPIService } from "./services/zoom-api-service.js";
 import axios from "axios";
 import * as htmlPdf from 'html-pdf-node';
+import { execSync } from 'child_process';
+
+// Helper function to get Chromium path for Puppeteer in Replit/Nix environment
+function getChromiumPath(): string {
+  try {
+    const chromiumPath = execSync('which chromium').toString().trim();
+    return chromiumPath;
+  } catch (error) {
+    console.error('⚠️ Could not find Nix Chromium, falling back to bundled version');
+    return ''; // Fall back to bundled Puppeteer Chromium
+  }
+}
+
+// Helper function to get PDF generation options with Nix Chromium
+function getPdfOptions(format: string = 'A4', margin: any = { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }) {
+  const chromiumPath = getChromiumPath();
+  
+  const options: any = {
+    format,
+    margin,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu'
+    ]
+  };
+  
+  if (chromiumPath) {
+    options.path = chromiumPath;
+  }
+  
+  return options;
+}
 
 // Helper function to clean AI responses from markdown formatting
 function cleanAIResponse(text: string): string {
@@ -3662,12 +3696,9 @@ Use professional, faith-based language appropriate for Christian directors. Be a
 </body>
 </html>`;
 
-      // Generate PDF
+      // Generate PDF with Nix Chromium
       const file = { content: htmlContent };
-      const options = { 
-        format: 'A4',
-        margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
-      };
+      const options = getPdfOptions('A4', { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' });
 
       const pdfBuffer = await htmlPdf.generatePdf(file, options);
 
@@ -5377,18 +5408,14 @@ Make it personal, biblical, and actionable for intercession.`;
 </body>
 </html>`;
 
-      // Generate PDF from HTML
-      const options = { 
-        format: 'A4',
-        margin: {
-          top: '20mm',
-          bottom: '20mm',
-          left: '15mm',
-          right: '15mm'
-        }
-      };
-
+      // Generate PDF from HTML with Nix Chromium
       const file = { content: htmlContent };
+      const options = getPdfOptions('A4', {
+        top: '20mm',
+        bottom: '20mm',
+        left: '15mm',
+        right: '15mm'
+      });
 
       try {
         const pdfBuffer = await htmlPdf.generatePdf(file, options);
