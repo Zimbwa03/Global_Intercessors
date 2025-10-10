@@ -1,0 +1,121 @@
+Fetching prayer slot for user: eb399bac-8ae0-42fb-9ee8-ffb46f63a97f
+Prayer slot data retrieved: {
+  id: 28,
+  user_id: 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f',
+  user_email: 'neezykidngoni@gmail.com',
+  slot_time: '12:30–13:00',
+  status: 'active',
+  missed_count: 1,
+  skip_start_date: null,
+  skip_end_date: null,
+  created_at: '2025-10-10T19:56:57.127336',
+  updated_at: '2025-10-10T20:00:09.794'
+}
+Formatted prayer slot response: {
+  id: 28,
+  userId: 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f',
+  userEmail: 'neezykidngoni@gmail.com',
+  slotTime: '12:30–13:00',
+  status: 'active',
+  missedCount: 1,
+  skipStartDate: null,
+  skipEndDate: null,
+  createdAt: '2025-10-10T19:56:57.127336',
+  updatedAt: '2025-10-10T20:00:09.794'
+}
+10:01:13 PM [express] GET /api/prayer-slot/eb399bac-8ae0-42fb-9ee8-ffb46f63a97f 200 in 413ms :: {"pra…
+❌ Error fetching live meetings: {
+  code: 429,
+  message: 'You have reached the maximum per-second rate limit for this API. Try again later.'
+}
+10:01:13 PM [express] GET /api/zoom/live-meetings 304 in 206ms :: {"meetings":[]}
+❌ Error fetching meetings: {
+  code: 429,
+  message: 'You have reached the maximum per-second rate limit for this API. Try again later.'
+}
+10:01:13 PM [express] GET /api/zoom/meetings 304 in 244ms :: {"meetings":[]}
+❌ Error fetching meetings: {
+  code: 429,
+  message: 'You have reached the maximum per-second rate limit for this API. Try again later.'
+}
+❌ Error fetching live meetings: {
+  code: 429,
+  message: 'You have reached the maximum per-second rate limit for this API. Try again later.'
+}
+Fetching analytics data...
+10:01:14 PM [express] GET /api/zoom/analytics 304 in 653ms :: {"totalMeetings":0,"totalParticipants":…
+🔴 Found 0 live meetings
+10:01:14 PM [express] GET /api/zoom/live-meetings 304 in 250ms :: {"meetings":[]}
+Fetching prayer slot for user: eb399bac-8ae0-42fb-9ee8-ffb46f63a97f
+Fetching attendance for user: eb399bac-8ae0-42fb-9ee8-ffb46f63a97f
+Found attendance records: 0
+No attendance records found for user: eb399bac-8ae0-42fb-9ee8-ffb46f63a97f
+10:01:14 PM [express] GET /api/attendance/eb399bac-8ae0-42fb-9ee8-ffb46f63a97f 304 in 307ms :: {"atte…
+Prayer slot data retrieved: {
+  id: 28,
+  user_id: 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f',
+  user_email: 'neezykidngoni@gmail.com',
+  slot_time: '12:30–13:00',
+  status: 'active',
+  missed_count: 1,
+  skip_start_date: null,
+  skip_end_date: null,
+  created_at: '2025-10-10T19:56:57.127336',
+  updated_at: '2025-10-10T20:00:09.794'
+}
+Formatted prayer slot response: {
+  id: 28,
+  userId: 'eb399bac-8ae0-42fb-9ee8-ffb46f63a97f',
+  userEmail: 'neezykidngoni@gmail.com',
+  slotTime: '12:30–13:00',
+  status: 'active',
+  missedCount: 1,
+  skipStartDate: null,
+  skipEndDate: null,
+  createdAt: '2025-10-10T19:56:57.127336',
+  updatedAt: '2025-10-10T20:00:09.794'
+}
+10:01:14 PM [express] GET /api/prayer-slot/eb399bac-8ae0-42fb-9ee8-ffb46f63a97f 304 in 347ms :: {"pra…
+❌ Error fetching meetings: {
+  code: 429,
+  message: 'You have reached the maximum per-second rate limit for this API. Try again later.'
+}
+10:01:14 PM [express] GET /api/zoom/meetings 304 in 186ms :: {"meetings":[]}
+Real data counts: {
+  totalSlots: 11,
+  uniqueIntercessors: 11,
+  attendanceRecords: 0,
+  sessionRecords: 0
+}
+Analytics response: { totalRegistered: 11, totalActive: 11, activeToday: 0 }
+10:01:14 PM [express] GET /api/admin/analytics 200 in 966ms :: {"userActivities":[{"date":"Oct 4","ac…
+Fetching chat history for user: eb399bac-8ae0-42fb-9ee8-ffb46f63a97f
+Fetching chat sessions for user: eb399bac-8ae0-42fb-9ee8-ffb46f63a97f
+Retrieved 0 chat messages for user eb399bac-8ae0-42fb-9ee8-ffb46f63a97f
+10:01:26 PM [express] GET /api/bible-chat/history 304 in 622ms :: {"history":[]}
+Retrieved 0 chat sessions for user eb399bac-8ae0-42fb-9ee8-ffb46f63a97f
+10:01:26 PM [express] GET /api/bible-chat/sessions 304 in 695ms :: {"sessions":[]}
+Calling Gemini API for Bible chat with key: AIzaSyAA...
+Gemini API error: 404 Not Found {
+  "error": {
+    "code": 404,
+    "message": "models/gemini-1.5-flash-latest is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
+    "status": "NOT_FOUND"
+  }
+}
+
+Bible chat error: Error: Gemini API error: 404 - {
+  "error": {
+    "code": 404,
+    "message": "models/gemini-1.5-flash-latest is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
+    "status": "NOT_FOUND"
+  }
+}
+
+    at <anonymous> (/home/runner/workspace/server/routes.ts:1755:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+10:01:28 PM [express] POST /api/bible-chat 200 in 488ms :: {"response":"I'm having trouble connecting…
+Fetching chat history for user: eb399bac-8ae0-42fb-9ee8-ffb46f63a97f
+Retrieved 0 chat messages for user eb399bac-8ae0-42fb-9ee8-ffb46f63a97f
+10:01:29 PM [express] GET /api/bible-chat/history 304 in 606ms :: {"history":[]}
+🔍 [22:02:00] Checking prayer slot reminders...

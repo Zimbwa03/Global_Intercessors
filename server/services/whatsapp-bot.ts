@@ -185,7 +185,7 @@ Format as plain text without formatting. Provide both languages professionally.`
 Format as plain text without formatting.`;
       }
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${this.deepSeekApiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.deepSeekApiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -608,7 +608,7 @@ Content: ${content}
 
 Provide only the summarized content without any formatting.`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${this.deepSeekApiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.deepSeekApiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

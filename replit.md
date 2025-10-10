@@ -6,6 +6,18 @@ The Global Intercessors Prayer Management Platform is a full-stack web applicati
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (October 2025)
+
+### AI Model Updates
+- **Gemini API Migration**: Updated from deprecated `gemini-1.5-flash-latest` to latest `gemini-2.5-flash` model across all services (Bible chat, WhatsApp bot devotionals, quiz generation).
+- **Model Enhancement**: Gemini 2.5 Flash includes thinking capabilities at no extra cost with better performance.
+
+### PDF Generation Infrastructure  
+- **Chromium Integration**: Configured Nix-installed Chromium for PDF generation in Replit environment.
+- **Puppeteer Setup**: Set `PUPPETEER_EXECUTABLE_PATH` environment variable at module load time for html-pdf-node compatibility.
+- **Security Flags**: Added required browser flags (`--no-sandbox`, `--disable-setuid-sandbox`, `--disable-dev-shm-usage`, `--disable-gpu`) for Replit environment.
+- **Admin Reports**: PDF generation with AI-powered narratives now fully functional using DeepSeek AI for professional content.
+
 ## System Architecture
 
 ### UI/UX Decisions

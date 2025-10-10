@@ -1711,7 +1711,7 @@ Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
 
       console.log('Calling Gemini API for Bible chat with key:', geminiApiKey ? `${geminiApiKey.substring(0, 8)}...` : 'undefined');
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2120,7 +2120,7 @@ Guidelines:
 - Make it user-friendly and spiritually uplifting
 - Ensure the verse is accurate for the specified version`;
 
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}', {
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2650,7 +2650,7 @@ Respond in JSON format as an array:
   }
 ]`;
 
-      const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
+      const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -4886,7 +4886,7 @@ Make it personal, biblical, and actionable for intercession.`;
       }
 
       if (!aiResponseText && geminiApiKey) {
-        const gm = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
+        const gm = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -5186,7 +5186,7 @@ Make it personal, biblical, and actionable for intercession.`;
       try {
         const geminiApiKey = process.env.GEMINI_API_KEY;
         if (geminiApiKey) {
-          const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}', {
+          const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
