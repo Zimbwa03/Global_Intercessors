@@ -32,6 +32,10 @@ import {
 import giMainLogo from "@assets/GI_Logo_Main_1751586542563.png";
 import giIcon from "@assets/GI_GOLD_Green_Icon_1751586542565.png";
 import { useIsMobile } from "@/hooks/use-mobile";
+import heroWorshipImage from "@assets/generated_images/Prayer_worship_hero_image_8b9cb959.png";
+import globalNetworkImage from "@assets/generated_images/Global_prayer_network_map_f20b2ab1.png";
+import spiritualGrowthImage from "@assets/generated_images/Bible_study_spiritual_growth_8bb7c92c.png";
+import communityPrayerImage from "@assets/generated_images/Community_unity_prayer_hands_43a42306.png";
 
 interface InteractiveLandingPageProps {
   onGetStarted?: () => void;
@@ -254,9 +258,20 @@ export function InteractiveLandingPage({ onGetStarted, onLearnMore }: Interactiv
       {/* Hero Section */}
       <section 
         ref={heroRef}
-        className="relative pt-20 pb-20 md:pt-32 md:pb-32 bg-gradient-to-br from-gi-primary via-gi-primary/95 to-gi-primary/90 text-white overflow-hidden"
+        className="relative pt-20 pb-20 md:pt-32 md:pb-32 text-white overflow-hidden"
       >
-        {/* Animated Background */}
+        {/* Hero Background Image with Overlay */}
+        <div className="absolute inset-0">
+          <img 
+            src={heroWorshipImage} 
+            alt="People worshiping together" 
+            className="w-full h-full object-cover"
+          />
+          {/* Gradient Overlay to maintain brand colors */}
+          <div className="absolute inset-0 bg-gradient-to-br from-gi-primary/95 via-gi-primary/90 to-gi-primary/85"></div>
+        </div>
+        
+        {/* Animated Background Effects */}
         <motion.div 
           style={{ y: backgroundY }}
           className="absolute inset-0"
@@ -501,6 +516,56 @@ export function InteractiveLandingPage({ onGetStarted, onLearnMore }: Interactiv
         </div>
       </section>
 
+      {/* Global Network Visual Section */}
+      <section className="py-20 bg-gradient-to-br from-gi-primary to-gi-primary/90 text-white">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              animate={featuresInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.8 }}
+            >
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">
+                Connected Worldwide in Prayer
+              </h2>
+              <p className="text-xl text-white/90 mb-8 leading-relaxed">
+                Join thousands of intercessors across every continent. Our platform creates a seamless network of faith, 
+                ensuring continuous prayer coverage around the clock.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <Globe className="w-6 h-6 text-gi-gold" />
+                  <span className="text-lg">89+ Countries Represented</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Users className="w-6 h-6 text-gi-gold" />
+                  <span className="text-lg">1,200+ Active Intercessors</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Clock className="w-6 h-6 text-gi-gold" />
+                  <span className="text-lg">24/7 Global Prayer Coverage</span>
+                </div>
+              </div>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              animate={featuresInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="relative"
+            >
+              <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-gi-gold/30">
+                <img 
+                  src={globalNetworkImage} 
+                  alt="Global prayer network connection map"
+                  className="w-full h-auto"
+                />
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* Benefits Section */}
       <section className="py-20 bg-gradient-to-br from-gi-primary/5 to-gi-gold/5">
         <div className="container mx-auto px-4">
@@ -542,6 +607,15 @@ export function InteractiveLandingPage({ onGetStarted, onLearnMore }: Interactiv
               transition={{ duration: 0.8, delay: 0.2 }}
               className="relative"
             >
+              {/* Visual Image Card */}
+              <div className="mb-6 rounded-3xl overflow-hidden shadow-2xl">
+                <img 
+                  src={communityPrayerImage} 
+                  alt="Community prayer hands united"
+                  className="w-full h-64 object-cover"
+                />
+              </div>
+              
               <div className="bg-white rounded-3xl p-8 shadow-2xl">
                 <div className="space-y-6">
                   <div className="flex items-center space-x-4">
@@ -664,38 +738,58 @@ export function InteractiveLandingPage({ onGetStarted, onLearnMore }: Interactiv
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA Section with Spiritual Growth Image */}
       <section className="py-20 bg-gradient-to-r from-gi-primary to-gi-primary/90 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={testimonialsInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8 }}
-          >
-            <h2 className="text-4xl md:text-6xl font-bold mb-6">
-              Ready to Transform Your Prayer Life?
-            </h2>
-            <p className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto text-white/90">
-              Join thousands of believers worldwide and experience the power of united prayer today.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Button
-                onClick={onGetStarted}
-                size="lg"
-                className="bg-gi-gold hover:bg-gi-gold/90 text-gi-primary font-bold px-12 py-6 text-xl rounded-2xl shadow-2xl hover:shadow-gi-gold/30 transition-all duration-300 hover:scale-105"
-              >
-                Start Your Journey Now
-                <ArrowRight className="ml-3 w-6 h-6" />
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-3 border-white/40 text-white hover:bg-white/20 px-12 py-6 text-xl rounded-2xl"
-              >
-                Learn More
-              </Button>
-            </div>
-          </motion.div>
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              animate={testimonialsInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.8 }}
+            >
+              <h2 className="text-4xl md:text-6xl font-bold mb-6">
+                Ready to Transform Your Prayer Life?
+              </h2>
+              <p className="text-xl md:text-2xl mb-8 text-white/90 leading-relaxed">
+                Join thousands of believers worldwide and experience the power of united prayer, spiritual growth, and divine connection today.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-6">
+                <Button
+                  onClick={onGetStarted}
+                  size="lg"
+                  className="bg-gi-gold hover:bg-gi-gold/90 text-gi-primary font-bold px-12 py-6 text-xl rounded-2xl shadow-2xl hover:shadow-gi-gold/30 transition-all duration-300 hover:scale-105"
+                  data-testid="button-get-started-cta"
+                >
+                  Start Your Journey Now
+                  <ArrowRight className="ml-3 w-6 h-6" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={onLearnMore}
+                  className="border-3 border-white/40 text-white hover:bg-white/20 px-12 py-6 text-xl rounded-2xl"
+                  data-testid="button-learn-more-cta"
+                >
+                  Learn More
+                </Button>
+              </div>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              animate={testimonialsInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="relative"
+            >
+              <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-gi-gold/30">
+                <img 
+                  src={spiritualGrowthImage} 
+                  alt="Person in peaceful prayer and bible study"
+                  className="w-full h-auto"
+                />
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
