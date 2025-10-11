@@ -142,6 +142,33 @@ Reply STOP to unsubscribe.
 Global Intercessors - Standing in the Gap
 ```
 
+**Sample Variables:**
+- {{1}} = User's first name (e.g., "John", "Mary", "Pastor David")
+- {{2}} = Urgency emoji (e.g., "⏰" for 30min, "🔔" for 15min, "🚨" for 5min)
+- {{3}} = Slot time (e.g., "12:30–13:00", "06:00–06:30")
+- {{4}} = Time remaining (e.g., "30 minutes", "15 minutes", "5 minutes")
+- {{5}} = Urgency message (e.g., "May the Lord strengthen you..." OR "🚨 URGENT: Your prayer slot is starting soon!")
+- {{6}} = Zoom link (e.g., "🔗 Join Zoom: https://us06web.zoom.us/j/83923875995..." OR empty string if no link)
+
+**Example Message Output:**
+```
+🕊️ Prayer Slot Reminder 🕊️
+
+Hello John!
+
+⏰ Your prayer slot (12:30–13:00) begins in 30 minutes.
+
+🙏 "The effectual fervent prayer of a righteous man availeth much." - James 5:16
+
+May the Lord strengthen you as you stand in the gap for His people and purposes.
+
+🔗 Join Zoom: https://us06web.zoom.us/j/83923875995?pwd=QmVJcGpmRys1aWlvWCtZdzZKLzFRQT09
+
+Reply STOP to unsubscribe.
+
+Global Intercessors - Standing in the Gap
+```
+
 **Template: Daily Devotional (Utility)**
 ```
 🌅 Good Morning, {{1}}! 🌅
@@ -160,6 +187,30 @@ Reply STOP to unsubscribe.
 Global Intercessors - Standing in the Gap
 ```
 
+**Sample Variables:**
+- {{1}} = User's first name (e.g., "Sarah", "Emmanuel", "Sister Grace")
+- {{2}} = Day of week (e.g., "Monday", "Tuesday", "Saturday")
+- {{3}} = Bible verse (e.g., ""For I know the plans I have for you," declares the Lord - Jeremiah 29:11")
+- {{4}} = Prayer focus (e.g., "Stand in the gap for breakthrough, healing, and divine intervention in our world today.")
+
+**Example Message Output:**
+```
+🌅 Good Morning, Sarah! 🌅
+
+Happy Monday! God has great plans for your prayers today.
+
+✨ Today's Word:
+"For I know the plans I have for you," declares the Lord, "plans to prosper you and not to harm you, to give you hope and a future." - Jeremiah 29:11
+
+🙏 Prayer Focus: Stand in the gap for breakthrough, healing, and divine intervention in our world today.
+
+Your intercession matters! 💪
+
+Reply STOP to unsubscribe.
+
+Global Intercessors - Standing in the Gap
+```
+
 **Template: Admin Update (Utility)**
 ```
 📢 Important Update from Global Intercessors 📢
@@ -169,6 +220,30 @@ Hello {{1}}!
 🎯 {{2}}
 
 {{3}}
+
+💡 This update was sent by your leadership team.
+
+🌐 Visit the Global Intercessors app for full details.
+
+Reply STOP to unsubscribe.
+
+Global Intercessors - Standing in the Gap
+```
+
+**Sample Variables:**
+- {{1}} = User's first name (e.g., "Pastor Mike", "Elizabeth", "Brother James")
+- {{2}} = Update title (e.g., "Urgent Notice", "Prayer Request", "Event Updates", "Fasting Program")
+- {{3}} = Update summary (e.g., "Join us for 21 days of prayer and fasting from Jan 15-Feb 5. Register on the app to participate and receive daily devotionals.")
+
+**Example Message Output:**
+```
+📢 Important Update from Global Intercessors 📢
+
+Hello Pastor Mike!
+
+🎯 Urgent Notice
+
+Join us for 21 days of prayer and fasting from Jan 15-Feb 5. Register on the app to participate and receive daily devotionals. This is a critical time of intercession for our nation.
 
 💡 This update was sent by your leadership team.
 
