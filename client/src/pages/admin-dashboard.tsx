@@ -269,6 +269,27 @@ export default function AdminDashboard() {
   const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'excellent' | 'good' | 'needs-improvement'>('all');
   const [sortOrder, setSortOrder] = useState<'highest' | 'lowest' | 'alphabetical'>('highest');
   const [dataAllocationFilter, setDataAllocationFilter] = useState({ min: 0, max: 100 });
+  
+  // State for categorized update dialogs
+  const [fastUpdateOpen, setFastUpdateOpen] = useState(false);
+  const [urgentNoticeOpen, setUrgentNoticeOpen] = useState(false);
+  const [prayerRequestOpen, setPrayerRequestOpen] = useState(false);
+  const [eventUpdateOpen, setEventUpdateOpen] = useState(false);
+  const [maintenanceOpen, setMaintenanceOpen] = useState(false);
+  const [zoomLinkOpen, setZoomLinkOpen] = useState(false);
+  
+  const [fastingTitle, setFastingTitle] = useState("3 Days & 3 Nights Fasting Program - August");
+  const [fastingStartDate, setFastingStartDate] = useState<Date>();
+  const [fastingEndDate, setFastingEndDate] = useState<Date>();
+  const [fastingDescription, setFastingDescription] = useState("");
+  
+  const [urgentMessage, setUrgentMessage] = useState("");
+  const [prayerRequestMessage, setPrayerRequestMessage] = useState("");
+  const [eventMessage, setEventMessage] = useState("");
+  const [eventImage, setEventImage] = useState<File | null>(null);
+  const [maintenanceMessage, setMaintenanceMessage] = useState("");
+  const [zoomLinkUpdate, setZoomLinkUpdate] = useState("");
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
@@ -1237,26 +1258,6 @@ export default function AdminDashboard() {
       </AnimatedCard>
     </div>
   );
-
-  // State for categorized update dialogs
-  const [fastUpdateOpen, setFastUpdateOpen] = useState(false);
-  const [urgentNoticeOpen, setUrgentNoticeOpen] = useState(false);
-  const [prayerRequestOpen, setPrayerRequestOpen] = useState(false);
-  const [eventUpdateOpen, setEventUpdateOpen] = useState(false);
-  const [maintenanceOpen, setMaintenanceOpen] = useState(false);
-  const [zoomLinkOpen, setZoomLinkOpen] = useState(false);
-  
-  const [fastingTitle, setFastingTitle] = useState("3 Days & 3 Nights Fasting Program - August");
-  const [fastingStartDate, setFastingStartDate] = useState<Date>();
-  const [fastingEndDate, setFastingEndDate] = useState<Date>();
-  const [fastingDescription, setFastingDescription] = useState("");
-  
-  const [urgentMessage, setUrgentMessage] = useState("");
-  const [prayerRequestMessage, setPrayerRequestMessage] = useState("");
-  const [eventMessage, setEventMessage] = useState("");
-  const [eventImage, setEventImage] = useState<File | null>(null);
-  const [maintenanceMessage, setMaintenanceMessage] = useState("");
-  const [zoomLinkUpdate, setZoomLinkUpdate] = useState("");
 
   const ManagementTab = () => (
     <div className="space-y-6">
