@@ -1361,12 +1361,8 @@ _Type 'menu' anytime to explore our prayer bot features._`;
       if (sendNotification) {
         console.log('📱 Sending WhatsApp notification for update:', title);
         try {
-          // Import WhatsApp bot (assuming it's available)
-          const { WhatsAppPrayerBot } = await import('../services/whatsapp-bot-v2.js');
-          const whatsappBot = new WhatsAppPrayerBot();
-          
-          // Broadcast admin update to all WhatsApp users
-          await whatsappBot.broadcastAdminUpdate(title.trim(), description.trim());
+          // Use the singleton WhatsApp bot instance
+          await whatsAppBot.broadcastAdminUpdate(title.trim(), description.trim());
           console.log('✅ WhatsApp broadcast sent successfully');
         } catch (error) {
           console.error('❌ Error sending WhatsApp broadcast:', error);
@@ -3896,10 +3892,40 @@ Use professional, faith-based language appropriate for Christian directors. Be a
         throw error;
       }
 
+      // Create admin update for Zoom link change
+      const updateTitle = "🔗 Zoom Meeting Link Updated";
+      const updateDescription = `The prayer session Zoom link has been updated.\n\nNew Link: ${zoomLink}\n\nPlease use this link for all upcoming prayer sessions.`;
+
+      try {
+        await supabaseAdmin.rpc('create_admin_update', {
+          p_title: updateTitle,
+          p_description: updateDescription,
+          p_type: 'zoom_link',
+          p_priority: 'high',
+          p_schedule: 'immediate',
+          p_expiry: 'never',
+          p_send_notification: true,
+          p_send_email: false,
+          p_pin_to_top: true
+        });
+        console.log('✅ Admin update created for Zoom link change');
+      } catch (updateError) {
+        console.error('❌ Failed to create admin update:', updateError);
+      }
+
+      // Send WhatsApp notifications to all users using singleton instance
+      console.log('📱 Sending WhatsApp notification for Zoom link update');
+      try {
+        await whatsAppBot.broadcastAdminUpdate(updateTitle, updateDescription);
+        console.log('✅ WhatsApp broadcast sent successfully for Zoom link update');
+      } catch (whatsappError) {
+        console.error('❌ Error sending WhatsApp broadcast:', whatsappError);
+      }
+
       console.log('Zoom link updated successfully:', zoomLink);
       res.json({ 
         success: true,
-        message: 'Zoom link updated successfully', 
+        message: 'Zoom link updated successfully and notifications sent', 
         session: zoomSession 
       });
     } catch (error) {
