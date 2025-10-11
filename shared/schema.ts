@@ -549,22 +549,22 @@ export type InsertPrayerPoint = z.infer<typeof insertPrayerPointSchema>;
 // Bible Chat History with 7-day retention
 export const bibleChatHistory = pgTable("bible_chat_history", {
   id: serial("id").primaryKey(),
-  userId: text("user_id").notNull(),
-  userEmail: text("user_email").notNull(),
-  messageType: text("message_type").notNull(), // "user" or "ai"
-  messageContent: text("message_content").notNull(),
+  user_id: text("user_id").notNull(),
+  user_email: text("user_email").notNull(),
+  message_type: text("message_type").notNull(), // "user" or "ai"
+  message_content: text("message_content").notNull(),
   
   // AI Response specific fields
-  scriptureReference: text("scripture_reference"),
-  scriptureText: text("scripture_text"),
-  scriptureVersion: text("scripture_version").default("KJV"),
-  aiExplanation: text("ai_explanation"),
-  prayerPoint: text("prayer_point"),
+  scripture_reference: text("scripture_reference"),
+  scripture_text: text("scripture_text"),
+  scripture_version: text("scripture_version").default("KJV"),
+  ai_explanation: text("ai_explanation"),
+  prayer_point: text("prayer_point"),
   
   // Session and timing
-  sessionId: text("session_id").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
+  session_id: text("session_id").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  expires_at: timestamp("expires_at").notNull(),
 });
 
 export const insertBibleChatHistorySchema = createInsertSchema(bibleChatHistory);
