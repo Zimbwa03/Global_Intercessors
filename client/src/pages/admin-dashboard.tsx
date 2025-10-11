@@ -7,6 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -14,6 +17,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { format } from "date-fns";
 import { 
   Users, 
   Clock, 
@@ -36,7 +40,15 @@ import {
   Timer,
   AlertCircle,
   RotateCcw,
-  UserPlus
+  UserPlus,
+  Zap,
+  Bell,
+  Heart,
+  ImagePlus,
+  Wrench,
+  X,
+  Send,
+  CalendarDays
 } from "lucide-react";
 import { AnimatedCard } from "@/components/ui/animated-card";
 import { motion, AnimatePresence } from "framer-motion";
@@ -556,7 +568,7 @@ export default function AdminDashboard() {
         pinToTop: false
       });
 
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/updates'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-updates'] });
     }, [toast, queryClient]),
     onError: useCallback((error: Error) => {
       toast({
@@ -1226,200 +1238,621 @@ export default function AdminDashboard() {
     </div>
   );
 
+  // State for categorized update dialogs
+  const [fastUpdateOpen, setFastUpdateOpen] = useState(false);
+  const [urgentNoticeOpen, setUrgentNoticeOpen] = useState(false);
+  const [prayerRequestOpen, setPrayerRequestOpen] = useState(false);
+  const [eventUpdateOpen, setEventUpdateOpen] = useState(false);
+  const [maintenanceOpen, setMaintenanceOpen] = useState(false);
+  const [zoomLinkOpen, setZoomLinkOpen] = useState(false);
+  
+  const [fastingTitle, setFastingTitle] = useState("3 Days & 3 Nights Fasting Program - August");
+  const [fastingStartDate, setFastingStartDate] = useState<Date>();
+  const [fastingEndDate, setFastingEndDate] = useState<Date>();
+  const [fastingDescription, setFastingDescription] = useState("");
+  
+  const [urgentMessage, setUrgentMessage] = useState("");
+  const [prayerRequestMessage, setPrayerRequestMessage] = useState("");
+  const [eventMessage, setEventMessage] = useState("");
+  const [eventImage, setEventImage] = useState<File | null>(null);
+  const [maintenanceMessage, setMaintenanceMessage] = useState("");
+  const [zoomLinkUpdate, setZoomLinkUpdate] = useState("");
+
   const ManagementTab = () => (
     <div className="space-y-6">
-      {/* Advanced Update Posting */}
+      {/* Categorized Update Buttons */}
       <AnimatedCard animationType="fadeIn" delay={0.1}>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center">
-              <Plus className="w-5 h-5 mr-2" />
-              Post Global Update
-            </span>
-            <Badge variant="outline" className="text-xs">
-              Will appear on user dashboard
-            </Badge>
+          <CardTitle className="flex items-center">
+            <Settings className="w-5 h-5 mr-2" />
+            Global Updates Management
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCreateUpdate} className="space-y-6">
-            <div className="grid gap-4">
-              <div>
-                <Label htmlFor="updateTitle" className="text-sm font-medium">Update Title *</Label>
-                <Input
-                  id="updateTitle"
-                  name="updateTitle"
-                  value={newUpdate.title}
-                  onChange={(e) => handleUpdateChange('title', e.target.value)}
-                  placeholder="e.g., Prayer Meeting Schedule Update, Fasting Program Announcement..."
-                  className="mt-1"
-                  required
-                />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Fast Update */}
+            <Button
+              onClick={() => setFastUpdateOpen(true)}
+              className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-gi-primary to-gi-primary/80 hover:from-gi-primary/90 hover:to-gi-primary/70 text-white transition-all duration-300 hover:scale-105"
+              data-testid="button-fast-update"
+            >
+              <Zap className="w-8 h-8" />
+              <div className="text-center">
+                <div className="font-bold text-lg">Fast Update</div>
+                <div className="text-xs opacity-90">Fasting Program Announcement</div>
               </div>
+            </Button>
 
-              <div>
-                <Label htmlFor="updateType" className="text-sm font-medium">Update Type</Label>
-                <select
-                  id="updateType"
-                  name="updateType"
-                  value={newUpdate.type || 'general'}
-                  onChange={(e) => handleUpdateChange('type', e.target.value)}
-                  className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                >
-                  <option value="general">General Announcement</option>
-                  <option value="urgent">Urgent Notice</option>
-                  <option value="prayer">Prayer Request</option>
-                  <option value="event">Event Update</option>
-                  <option value="maintenance">System Maintenance</option>
-                </select>
+            {/* Urgent Notice */}
+            <Button
+              onClick={() => setUrgentNoticeOpen(true)}
+              className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white transition-all duration-300 hover:scale-105"
+              data-testid="button-urgent-notice"
+            >
+              <Bell className="w-8 h-8" />
+              <div className="text-center">
+                <div className="font-bold text-lg">Urgent Notice</div>
+                <div className="text-xs opacity-90">Critical Announcements</div>
               </div>
+            </Button>
 
-              <div>
-                <Label htmlFor="updatePriority" className="text-sm font-medium">Priority Level</Label>
-                <select
-                  id="updatePriority"
-                  name="updatePriority"
-                  value={newUpdate.priority || 'normal'}
-                  onChange={(e) => handleUpdateChange('priority', e.target.value)}
-                  className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                >
-                  <option value="low">Low Priority</option>
-                  <option value="normal">Normal Priority</option>
-                  <option value="high">High Priority</option>
-                  <option value="critical">Critical Alert</option>
-                </select>
+            {/* Prayer Request */}
+            <Button
+              onClick={() => setPrayerRequestOpen(true)}
+              className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white transition-all duration-300 hover:scale-105"
+              data-testid="button-prayer-request"
+            >
+              <Heart className="w-8 h-8" />
+              <div className="text-center">
+                <div className="font-bold text-lg">Prayer Request</div>
+                <div className="text-xs opacity-90">Community Prayer Needs</div>
               </div>
+            </Button>
 
-              <div>
-                <Label htmlFor="updateDescription" className="text-sm font-medium">Message Content *</Label>
-                <Textarea
-                  id="updateDescription"
-                  name="updateDescription"
-                  value={newUpdate.description}
-                  onChange={(e) => handleUpdateChange('description', e.target.value)}
-                  placeholder="Enter your message for all users. This will appear on their dashboard immediately after posting..."
-                  rows={6}
-                  className="mt-1"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {newUpdate.description.length}/500 characters
-                </p>
+            {/* Event Updates */}
+            <Button
+              onClick={() => setEventUpdateOpen(true)}
+              className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white transition-all duration-300 hover:scale-105"
+              data-testid="button-event-update"
+            >
+              <ImagePlus className="w-8 h-8" />
+              <div className="text-center">
+                <div className="font-bold text-lg">Event Updates</div>
+                <div className="text-xs opacity-90">With Image Upload</div>
               </div>
+            </Button>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="updateSchedule" className="text-sm font-medium">Schedule Options</Label>
-                  <select
-                    id="updateSchedule"
-                    name="updateSchedule"
-                    value={newUpdate.schedule || 'immediate'}
-                    onChange={(e) => handleUpdateChange('schedule', e.target.value)}
-                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  >
-                    <option value="immediate">Post Immediately</option>
-                    <option value="scheduled">Schedule for Later</option>
-                  </select>
-                </div>
-
-                <div>
-                  <Label htmlFor="updateExpiry" className="text-sm font-medium">Auto-Hide After</Label>
-                  <select
-                    id="updateExpiry"
-                    name="updateExpiry"
-                    value={newUpdate.expiry || 'never'}
-                    onChange={(e) => handleUpdateChange('expiry', e.target.value)}
-                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  >
-                    <option value="never">Never Hide</option>
-                    <option value="1day">1 Day</option>
-                    <option value="3days">3 Days</option>
-                    <option value="1week">1 Week</option>
-                    <option value="1month">1 Month</option>
-                  </select>
-                </div>
+            {/* System Maintenance */}
+            <Button
+              onClick={() => setMaintenanceOpen(true)}
+              className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white transition-all duration-300 hover:scale-105"
+              data-testid="button-system-maintenance"
+            >
+              <Wrench className="w-8 h-8" />
+              <div className="text-center">
+                <div className="font-bold text-lg">System Maintenance</div>
+                <div className="text-xs opacity-90">Technical Updates</div>
               </div>
+            </Button>
 
-              <div className="border rounded-lg p-3 bg-gray-50">
-                <h4 className="text-sm font-medium mb-2">Notification Settings</h4>
-                <div className="space-y-2">
-                  <label htmlFor="sendNotification" className="flex items-center space-x-2">
-                    <input
-                      id="sendNotification"
-                      name="sendNotification"
-                      type="checkbox"
-                      checked={newUpdate.sendNotification || false}
-                      onChange={(e) => handleUpdateChange('sendNotification', e.target.checked)}
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm">Send push notification to all users</span>
-                  </label>
-                  <label htmlFor="sendEmail" className="flex items-center space-x-2">
-                    <input
-                      id="sendEmail"
-                      name="sendEmail"
-                      type="checkbox"
-                      checked={newUpdate.sendEmail || false}
-                      onChange={(e) => handleUpdateChange('sendEmail', e.target.checked)}
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm">Send email notification to subscribers</span>
-                  </label>
-                  <label htmlFor="pinToTop" className="flex items-center space-x-2">
-                    <input
-                      id="pinToTop"
-                      name="pinToTop"
-                      type="checkbox"
-                      checked={newUpdate.pinToTop || false}
-                      onChange={(e) => handleUpdateChange('pinToTop', e.target.checked)}
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm">Pin to top of user dashboard</span>
-                  </label>
-                </div>
+            {/* Zoom Link Management */}
+            <Button
+              onClick={() => setZoomLinkOpen(true)}
+              className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-gi-gold to-yellow-500 hover:from-gi-gold/90 hover:to-yellow-600 text-gi-primary transition-all duration-300 hover:scale-105"
+              data-testid="button-zoom-link"
+            >
+              <LinkIcon className="w-8 h-8" />
+              <div className="text-center">
+                <div className="font-bold text-lg">Zoom Link</div>
+                <div className="text-xs opacity-90">Meeting Link Update</div>
               </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button 
-                type="button"
-                variant="outline"
-                onClick={() => setNewUpdate({ 
-                  title: '', 
-                  description: '', 
-                  type: 'general', 
-                  priority: 'normal',
-                  schedule: 'immediate',
-                  expiry: 'never',
-                  sendNotification: false,
-                  sendEmail: false,
-                  pinToTop: false
-                })}
-                className="flex-1"
-              >
-                Clear Form
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={createUpdateMutation.isPending || !newUpdate.title.trim() || !newUpdate.description.trim()}
-                className="flex-1 bg-gi-primary/600 hover:bg-gi-primary/700 text-white font-medium"
-              >
-                {createUpdateMutation.isPending ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Publishing...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Publish Global Update
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
+            </Button>
+          </div>
         </CardContent>
       </AnimatedCard>
+
+      {/* Fast Update Dialog */}
+      <Dialog open={fastUpdateOpen} onOpenChange={setFastUpdateOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-gi-primary" />
+              Fast Update - Fasting Program
+            </DialogTitle>
+            <DialogDescription>
+              Update fasting program details and dates
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="fasting-title">Program Title *</Label>
+              <Input
+                id="fasting-title"
+                value={fastingTitle}
+                onChange={(e) => setFastingTitle(e.target.value)}
+                placeholder="e.g., 3 Days & 3 Nights Fasting Program - August"
+                className="mt-1"
+                data-testid="input-fasting-title"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Start Date *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={`w-full mt-1 justify-start text-left font-normal ${!fastingStartDate && "text-muted-foreground"}`}
+                      data-testid="button-select-start-date"
+                    >
+                      <CalendarDays className="mr-2 h-4 w-4" />
+                      {fastingStartDate ? format(fastingStartDate, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={fastingStartDate}
+                      onSelect={setFastingStartDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div>
+                <Label>End Date *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={`w-full mt-1 justify-start text-left font-normal ${!fastingEndDate && "text-muted-foreground"}`}
+                      data-testid="button-select-end-date"
+                    >
+                      <CalendarDays className="mr-2 h-4 w-4" />
+                      {fastingEndDate ? format(fastingEndDate, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={fastingEndDate}
+                      onSelect={setFastingEndDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="fasting-description">Program Description *</Label>
+              <Textarea
+                id="fasting-description"
+                value={fastingDescription}
+                onChange={(e) => setFastingDescription(e.target.value)}
+                placeholder="Join believers worldwide in a powerful 3-day fasting period for breakthrough and revival..."
+                rows={5}
+                className="mt-1"
+                data-testid="textarea-fasting-description"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFastingTitle("3 Days & 3 Nights Fasting Program - August");
+                setFastingStartDate(undefined);
+                setFastingEndDate(undefined);
+                setFastingDescription("");
+              }}
+              data-testid="button-clear-fast"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Clear
+            </Button>
+            <Button
+              onClick={() => {
+                if (!fastingTitle || !fastingStartDate || !fastingEndDate || !fastingDescription) {
+                  toast({ title: "Error", description: "Please fill all fields", variant: "destructive" });
+                  return;
+                }
+                const dateRange = `${format(fastingStartDate, "MMMM d")}-${format(fastingEndDate, "d, yyyy")}`;
+                const fullDescription = `${fastingDescription}\n\n📅 Dates: ${dateRange}`;
+                createUpdateMutation.mutate({
+                  title: fastingTitle,
+                  description: fullDescription,
+                  type: "fast",
+                  priority: "high",
+                  schedule: "immediate",
+                  expiry: "never",
+                  sendNotification: true,
+                  sendEmail: true,
+                  pinToTop: true
+                });
+                setFastUpdateOpen(false);
+                setFastingTitle("3 Days & 3 Nights Fasting Program - August");
+                setFastingStartDate(undefined);
+                setFastingEndDate(undefined);
+                setFastingDescription("");
+              }}
+              className="bg-gi-primary hover:bg-gi-primary/90"
+              data-testid="button-send-fast"
+              disabled={createUpdateMutation.isPending}
+            >
+              {createUpdateMutation.isPending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Send Update
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Urgent Notice Dialog */}
+      <Dialog open={urgentNoticeOpen} onOpenChange={setUrgentNoticeOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bell className="w-5 h-5 text-red-600" />
+              Urgent Notice
+            </DialogTitle>
+            <DialogDescription>
+              Send critical announcement to all users
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              value={urgentMessage}
+              onChange={(e) => setUrgentMessage(e.target.value)}
+              placeholder="Enter urgent notice message..."
+              rows={6}
+              data-testid="textarea-urgent-message"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setUrgentMessage("")} data-testid="button-clear-urgent">
+              <X className="w-4 h-4 mr-2" />
+              Clear
+            </Button>
+            <Button
+              onClick={() => {
+                if (!urgentMessage.trim()) {
+                  toast({ title: "Error", description: "Please enter a message", variant: "destructive" });
+                  return;
+                }
+                createUpdateMutation.mutate({
+                  title: "Urgent Notice",
+                  description: urgentMessage,
+                  type: "urgent",
+                  priority: "critical",
+                  schedule: "immediate",
+                  expiry: "never",
+                  sendNotification: true,
+                  sendEmail: true,
+                  pinToTop: true
+                });
+                setUrgentMessage("");
+                setUrgentNoticeOpen(false);
+              }}
+              className="bg-red-600 hover:bg-red-700"
+              data-testid="button-send-urgent"
+              disabled={createUpdateMutation.isPending}
+            >
+              {createUpdateMutation.isPending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Send
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Prayer Request Dialog */}
+      <Dialog open={prayerRequestOpen} onOpenChange={setPrayerRequestOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Heart className="w-5 h-5 text-purple-600" />
+              Prayer Request
+            </DialogTitle>
+            <DialogDescription>
+              Share prayer needs with the community
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              value={prayerRequestMessage}
+              onChange={(e) => setPrayerRequestMessage(e.target.value)}
+              placeholder="Enter prayer request..."
+              rows={6}
+              data-testid="textarea-prayer-request"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setPrayerRequestMessage("")} data-testid="button-clear-prayer">
+              <X className="w-4 h-4 mr-2" />
+              Clear
+            </Button>
+            <Button
+              onClick={() => {
+                if (!prayerRequestMessage.trim()) {
+                  toast({ title: "Error", description: "Please enter a prayer request", variant: "destructive" });
+                  return;
+                }
+                createUpdateMutation.mutate({
+                  title: "Prayer Request",
+                  description: prayerRequestMessage,
+                  type: "prayer",
+                  priority: "high",
+                  schedule: "immediate",
+                  expiry: "never",
+                  sendNotification: true,
+                  sendEmail: false,
+                  pinToTop: false
+                });
+                setPrayerRequestMessage("");
+                setPrayerRequestOpen(false);
+              }}
+              className="bg-purple-600 hover:bg-purple-700"
+              data-testid="button-send-prayer"
+              disabled={createUpdateMutation.isPending}
+            >
+              {createUpdateMutation.isPending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Send
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Event Update Dialog */}
+      <Dialog open={eventUpdateOpen} onOpenChange={setEventUpdateOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ImagePlus className="w-5 h-5 text-blue-600" />
+              Event Update
+            </DialogTitle>
+            <DialogDescription>
+              Post event update with optional image flyer
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="event-image">Event Flyer (Optional)</Label>
+              <Input
+                id="event-image"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setEventImage(e.target.files?.[0] || null)}
+                className="mt-1"
+                data-testid="input-event-image"
+              />
+            </div>
+            <div>
+              <Label htmlFor="event-message">Event Message *</Label>
+              <Textarea
+                id="event-message"
+                value={eventMessage}
+                onChange={(e) => setEventMessage(e.target.value)}
+                placeholder="Enter event details..."
+                rows={6}
+                data-testid="textarea-event-message"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEventMessage("");
+                setEventImage(null);
+              }}
+              data-testid="button-clear-event"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Clear
+            </Button>
+            <Button
+              onClick={() => {
+                if (!eventMessage.trim()) {
+                  toast({ title: "Error", description: "Please enter event details", variant: "destructive" });
+                  return;
+                }
+                const description = eventImage 
+                  ? `${eventMessage}\n\n${eventImage.name ? `📎 Attachment: ${eventImage.name}` : ''}`
+                  : eventMessage;
+                createUpdateMutation.mutate({
+                  title: "Event Update",
+                  description,
+                  type: "event",
+                  priority: "normal",
+                  schedule: "immediate",
+                  expiry: "never",
+                  sendNotification: true,
+                  sendEmail: false,
+                  pinToTop: false
+                });
+                setEventMessage("");
+                setEventImage(null);
+                setEventUpdateOpen(false);
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+              data-testid="button-send-event"
+              disabled={createUpdateMutation.isPending}
+            >
+              {createUpdateMutation.isPending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Send
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* System Maintenance Dialog */}
+      <Dialog open={maintenanceOpen} onOpenChange={setMaintenanceOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="w-5 h-5 text-orange-600" />
+              System Maintenance
+            </DialogTitle>
+            <DialogDescription>
+              Notify users about system updates or downtime
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              value={maintenanceMessage}
+              onChange={(e) => setMaintenanceMessage(e.target.value)}
+              placeholder="Enter maintenance notice..."
+              rows={6}
+              data-testid="textarea-maintenance"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setMaintenanceMessage("")} data-testid="button-clear-maintenance">
+              <X className="w-4 h-4 mr-2" />
+              Clear
+            </Button>
+            <Button
+              onClick={() => {
+                if (!maintenanceMessage.trim()) {
+                  toast({ title: "Error", description: "Please enter maintenance details", variant: "destructive" });
+                  return;
+                }
+                createUpdateMutation.mutate({
+                  title: "System Maintenance",
+                  description: maintenanceMessage,
+                  type: "maintenance",
+                  priority: "normal",
+                  schedule: "immediate",
+                  expiry: "1week",
+                  sendNotification: true,
+                  sendEmail: false,
+                  pinToTop: false
+                });
+                setMaintenanceMessage("");
+                setMaintenanceOpen(false);
+              }}
+              className="bg-orange-600 hover:bg-orange-700"
+              data-testid="button-send-maintenance"
+              disabled={createUpdateMutation.isPending}
+            >
+              {createUpdateMutation.isPending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Send
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Zoom Link Dialog */}
+      <Dialog open={zoomLinkOpen} onOpenChange={setZoomLinkOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LinkIcon className="w-5 h-5 text-gi-gold" />
+              Zoom Link Management
+            </DialogTitle>
+            <DialogDescription>
+              Update the meeting link for prayer sessions
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {currentZoomLink && typeof currentZoomLink === 'object' && 'zoomLink' in currentZoomLink && (
+              <div className="mb-4 p-3 bg-gi-primary/10 rounded-lg">
+                <p className="text-sm text-gray-600 mb-1">Current Link:</p>
+                <p className="text-gi-primary font-mono text-sm break-all">{(currentZoomLink as any).zoomLink}</p>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="zoom-link-input">New Zoom Link *</Label>
+              <Input
+                id="zoom-link-input"
+                value={zoomLinkUpdate}
+                onChange={(e) => setZoomLinkUpdate(e.target.value)}
+                placeholder="https://zoom.us/j/..."
+                className="mt-1"
+                data-testid="input-zoom-link"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setZoomLinkUpdate("")} data-testid="button-clear-zoom">
+              <X className="w-4 h-4 mr-2" />
+              Clear
+            </Button>
+            <Button
+              onClick={() => {
+                if (!zoomLinkUpdate.trim()) {
+                  toast({ title: "Error", description: "Please enter a Zoom link", variant: "destructive" });
+                  return;
+                }
+                updateZoomLinkMutation.mutate(zoomLinkUpdate);
+                setZoomLinkUpdate("");
+                setZoomLinkOpen(false);
+              }}
+              className="bg-gi-gold hover:bg-gi-gold/90 text-gi-primary"
+              data-testid="button-send-zoom"
+              disabled={updateZoomLinkMutation.isPending}
+            >
+              {updateZoomLinkMutation.isPending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Update Link
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Recent Updates Preview */}
       <AnimatedCard animationType="fadeIn" delay={0.2}>
@@ -1435,13 +1868,13 @@ export default function AdminDashboard() {
         <CardContent>
           {updatesLoading ? (
             <div className="text-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-2 border-gi-primary/primary border-t-transparent mx-auto mb-2"></div>
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-gi-primary border-t-transparent mx-auto mb-2"></div>
               <p className="text-sm text-gray-600">Loading updates...</p>
             </div>
           ) : updates.length > 0 ? (
             <ScrollArea className="h-64">
               <div className="space-y-3">
-                {updates.slice(0, 10).map((update, index) => (
+                {updates.slice(0, 10).map((update) => (
                   <div key={update.id} className="border rounded-lg p-3 hover:bg-gray-50 transition-colors">
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="font-medium text-sm">{update.title}</h4>
@@ -1468,7 +1901,7 @@ export default function AdminDashboard() {
                       <div className="flex items-center space-x-2">
                         <span className="text-xs text-green-600">✓ Published</span>
                         {update.pinToTop && (
-                          <span className="text-xs text-gi-primary/600">📌 Pinned</span>
+                          <span className="text-xs text-gi-primary">📌 Pinned</span>
                         )}
                       </div>
                     </div>
@@ -1479,57 +1912,14 @@ export default function AdminDashboard() {
           ) : (
             <div className="text-center py-8 text-gray-500">
               <p className="text-sm">No updates posted yet</p>
-              <p className="text-xs mt-1">Use the form above to post your first update</p>
+              <p className="text-xs mt-1">Use the buttons above to post your first update</p>
             </div>
           )}
-        </CardContent>
-      </AnimatedCard>
-
-      {/* Zoom Link Management */}
-      <AnimatedCard animationType="fadeIn" delay={0.3}>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <LinkIcon className="w-5 h-5 mr-2" />
-            Zoom Link Management
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {currentZoomLink && typeof currentZoomLink === 'object' && 'zoomLink' in currentZoomLink && (
-            <div className="mb-4 p-3 bg-gi-primary/50 rounded-lg">
-              <p className="text-sm text-gray-600 mb-1">Current Zoom Link:</p>
-              <p className="text-gi-primary/600 font-mono text-sm break-all">{(currentZoomLink as any).zoomLink}</p>
-            </div>
-          )}
-          <form onSubmit={handleUpdateZoomLink} className="space-y-4">
-            <div>
-              <Label htmlFor="zoomLink">New Zoom Link</Label>
-              <Input
-                id="zoomLink"
-                name="zoomLink"
-                value={zoomLink}
-                onChange={(e) => setZoomLink(e.target.value)}
-                placeholder="https://zoom.us/j/..."
-                className="mt-1"
-              />
-            </div>
-            <Button 
-              type="submit" 
-              disabled={updateZoomLinkMutation.isPending}
-              className="w-full"
-            >
-              {updateZoomLinkMutation.isPending ? (
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <LinkIcon className="w-4 h-4 mr-2" />
-              )}
-              Update Zoom Link
-            </Button>
-          </form>
         </CardContent>
       </AnimatedCard>
 
       {/* System Analytics */}
-      <AnimatedCard animationType="fadeIn" delay={0.4}>
+      <AnimatedCard animationType="fadeIn" delay={0.3}>
         <CardHeader>
           <CardTitle className="flex items-center">
             <TrendingUp className="w-5 h-5 mr-2" />
@@ -1538,8 +1928,8 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div className="p-3 bg-gi-primary/50 rounded-lg">
-              <div className="text-2xl font-bold text-gi-primary/600">{prayerSlots.length}</div>
+            <div className="p-3 bg-gi-primary/10 rounded-lg">
+              <div className="text-2xl font-bold text-gi-primary">{prayerSlots.length}</div>
               <div className="text-xs text-gray-600">Prayer Slots</div>
             </div>
             <div className="p-3 bg-green-50 rounded-lg">
