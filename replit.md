@@ -35,6 +35,40 @@ Preferred communication style: Simple, everyday language.
 - **Security Flags**: Added required browser flags (`--no-sandbox`, `--disable-setuid-sandbox`, `--disable-dev-shm-usage`, `--disable-gpu`) for Replit environment.
 - **Admin Reports**: PDF generation with AI-powered narratives now fully functional using DeepSeek AI for professional content.
 
+### WhatsApp Bot Meta 2025 Compliance (October 11, 2025)
+- **Compliance Framework**: Complete implementation of Meta's 2025 WhatsApp Business API policies to prevent account suspension.
+- **Database Schema** (pending db:push due to connection timeout):
+  - `opted_in` (boolean) - User opt-in status tracking
+  - `opt_in_timestamp` (timestamp) - When user opted in
+  - `opt_in_method` (varchar) - How user opted in (web_app, whatsapp, manual)
+  - `last_inbound_message_at` (timestamp) - For 24-hour service window tracking
+  - `devotional_enabled` (boolean, default true) - Daily devotional preference
+  - `reminders_enabled` (boolean, default true) - Prayer reminder preference
+  - `updates_enabled` (boolean, default true) - Admin update preference
+- **Opt-In/Opt-Out System**:
+  - STOP - Opt out of all automated messages
+  - YES - Opt in to automated messages
+  - NO - Decline opt-in request
+  - SETTINGS - View current preferences
+- **User Preference Controls**:
+  - DEVOTIONAL ON/OFF - Toggle daily devotionals
+  - REMINDERS ON/OFF - Toggle prayer reminders
+  - UPDATES ON/OFF - Toggle admin updates
+- **24-Hour Customer Service Window**:
+  - All inbound messages tracked via `trackInboundMessage()`
+  - `isWithinServiceWindow()` checks if within 24-hour window
+  - Automated messages only sent within window OR skipped until templates approved
+- **Template Message System**:
+  - `sendTemplateMessage()` ready for Meta-approved template IDs
+  - Three templates submitted to Meta (Prayer Reminder, Daily Devotional, Admin Update)
+  - Waiting 24-48 hours for approval
+- **Compliance Enforcement**:
+  - Morning devotionals check: opted_in AND devotional_enabled AND 24h window
+  - Prayer reminders check: opted_in AND reminders_enabled AND 24h window
+  - Admin updates check: opted_in AND updates_enabled AND 24h window
+  - All compliance commands processed BEFORE authentication checks
+- **Next Steps**: Replace TODO branches with `sendTemplateMessage()` calls once Meta approves templates; add telemetry for skipped sends.
+
 ### Zoom Attendance Tracking (October 10, 2025)
 - **Meeting Configuration**: Updated to track official Global Intercessors Prayer Platform meeting (ID: 83923875995).
 - **Meeting Link**: https://us06web.zoom.us/j/83923875995?pwd=QmVJcGpmRys1aWlvWCtZdzZKLzFRQT09
