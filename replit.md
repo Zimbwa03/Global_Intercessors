@@ -19,6 +19,8 @@ Preferred communication style: Simple, everyday language.
   - **Zoom Link Management** (Gold): Update Zoom meeting links for prayer sessions with automatic WhatsApp broadcast
 - **Professional UI**: Each category has branded gradient backgrounds, hover effects, and dedicated Dialog popups
 - **Smart Interactions**: Clear/Send buttons, form validation, loading states with disabled buttons and spinning icons
+- **Update Management**: Delete functionality with confirmation dialog for all updates except protected "Register for fasting program" entries
+- **New Update Notifications**: Real-time badge on Management tab showing count of new updates since last view, tracked via localStorage
 - **Cache Management**: Fixed TanStack Query cache invalidation (`['admin-updates']` key) for instant UI refresh after posting
 - **WhatsApp Integration**: All admin updates automatically broadcast via WhatsApp to users with registered bot numbers using singleton pattern to prevent duplicate cron jobs
 - **Schema Enhancement**: Added `imageUrl` field to updates table for future image storage (pending database migration)
