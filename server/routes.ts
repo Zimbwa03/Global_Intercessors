@@ -1676,12 +1676,12 @@ _Type 'menu' anytime to explore our prayer bot features._`;
 
       // Determine response length based on input message length
       const inputLength = message.trim().length;
-      let maxTokens = 200; // Default for short inputs
+      let maxTokens = 1000; // Default for short inputs - enough for scripture + guidance
 
       if (inputLength > 100) {
-        maxTokens = 400;
+        maxTokens = 1500; // Longer responses for detailed questions
       } else if (inputLength > 50) {
-        maxTokens = 300;
+        maxTokens = 1200; // Medium responses
       }
 
       // Create a focused prompt for biblical guidance
