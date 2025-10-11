@@ -300,6 +300,7 @@ export const updates = pgTable("updates", {
   sendEmail: boolean("send_email").default(false),
   pinToTop: boolean("pin_to_top").default(false),
   isActive: boolean("is_active").default(true),
+  imageUrl: text("image_url"), // Event flyer or attachment URL
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
