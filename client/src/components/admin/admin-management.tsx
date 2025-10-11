@@ -183,7 +183,7 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
 
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" key="admin-management-dialog">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5" />
