@@ -1834,8 +1834,17 @@ Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
       const prayerPointMatch = cleanResponse.match(/Prayer Point:?\s*(.+?)(?:\n|$)/i);
       const extractedPrayerPoint = prayerPointMatch ? prayerPointMatch[1].trim() : null;
 
-      // Generate session ID if not provided (use UUID format)
-      const currentSessionId = sessionId || randomUUID();
+      // Generate or validate session ID to ensure proper UUID format
+      let currentSessionId: string;
+      
+      if (sessionId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId)) {
+        // Valid UUID format provided
+        currentSessionId = sessionId;
+      } else {
+        // Generate new UUID if not provided or invalid format
+        currentSessionId = randomUUID();
+        console.log('Generated new session UUID:', currentSessionId);
+      }
 
       // Store user message in chat history
       try {
