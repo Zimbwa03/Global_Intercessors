@@ -33,7 +33,6 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminRole, setNewAdminRole] = useState<'admin' | 'super_admin'>('admin');
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
 
   // Check if current user can create the selected role
   const canCreateRole = (targetRole: string) => {
@@ -54,11 +53,12 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
       if (error) throw error;
       return data as AdminUser[];
     },
-    enabled: isOpen, // Only fetch when dialog is open
-    refetchOnWindowFocus: false, // Prevent unnecessary refetches
-    refetchOnMount: false, // Prevent refetch on mount
-    refetchInterval: false, // Disable automatic refetching
-    staleTime: Infinity, // Keep data fresh indefinitely while dialog is open
+    enabled: isOpen,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   // Create new admin mutation
@@ -214,11 +214,7 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
                       type="email"
                       placeholder="Enter intercessor's email"
                       value={newAdminEmail}
-                      onChange={(e) => {
-                        setNewAdminEmail(e.target.value);
-                        setIsTyping(true);
-                      }}
-                      onBlur={() => setIsTyping(false)}
+                      onChange={(e) => setNewAdminEmail(e.target.value)}
                       required
                       className="mt-1"
                       autoComplete="off"
