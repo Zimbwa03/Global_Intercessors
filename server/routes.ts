@@ -1838,33 +1838,45 @@ Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
 
       // Store user message in chat history
       try {
-        await supabaseAdmin
+        const { error: userInsertError } = await supabaseAdmin
           .from('bible_chat_history')
           .insert({
-            user_id: user.id,
-            user_email: user.email || '',
-            message_type: 'user',
-            message_content: message,
-            session_id: currentSessionId,
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+            userId: user.id,
+            userEmail: user.email || '',
+            messageType: 'user',
+            messageContent: message,
+            sessionId: currentSessionId,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
           });
 
+        if (userInsertError) {
+          console.error('Error saving user message:', userInsertError);
+        } else {
+          console.log('✅ User message saved to chat history');
+        }
+
         // Store AI response in chat history
-        await supabaseAdmin
+        const { error: aiInsertError } = await supabaseAdmin
           .from('bible_chat_history')
           .insert({
-            user_id: user.id,
-            user_email: user.email || '',
-            message_type: 'ai',
-            message_content: cleanResponse,
-            scripture_reference: extractedScripture?.reference || null,
-            scripture_text: extractedScripture?.text || null,
-            scripture_version: bibleVersion,
-            ai_explanation: cleanResponse,
-            prayer_point: extractedPrayerPoint,
-            session_id: currentSessionId,
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+            userId: user.id,
+            userEmail: user.email || '',
+            messageType: 'ai',
+            messageContent: cleanResponse,
+            scriptureReference: extractedScripture?.reference || null,
+            scriptureText: extractedScripture?.text || null,
+            scriptureVersion: bibleVersion,
+            aiExplanation: cleanResponse,
+            prayerPoint: extractedPrayerPoint,
+            sessionId: currentSessionId,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
           });
+
+        if (aiInsertError) {
+          console.error('Error saving AI response:', aiInsertError);
+        } else {
+          console.log('✅ AI response saved to chat history');
+        }
       } catch (historyError) {
         console.error('Failed to store chat history:', historyError);
         // Continue with response even if history storage fails
