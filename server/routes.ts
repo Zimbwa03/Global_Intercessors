@@ -1388,6 +1388,59 @@ _Type 'menu' anytime to explore our prayer bot features._`;
     }
   });
 
+  // Delete admin update endpoint (protected - prevent deletion of fasting program updates)
+  app.delete("/api/admin/updates/:id", async (req: Request, res: Response) => {
+    try {
+      const updateId = parseInt(req.params.id);
+
+      if (!updateId) {
+        return res.status(400).json({ error: "Invalid update ID" });
+      }
+
+      // First, check if this update exists and get its title
+      const { data: existingUpdate, error: fetchError } = await supabaseAdmin
+        .from('updates')
+        .select('title')
+        .eq('id', updateId)
+        .single();
+
+      if (fetchError || !existingUpdate) {
+        return res.status(404).json({ error: "Update not found" });
+      }
+
+      // Prevent deletion of "Register for fasting program" updates
+      if (existingUpdate.title.toLowerCase().includes('register for fasting')) {
+        return res.status(403).json({ 
+          error: "Cannot delete fasting program registration updates",
+          message: "This update is protected and cannot be deleted"
+        });
+      }
+
+      // Delete the update
+      const { error: deleteError } = await supabaseAdmin
+        .from('updates')
+        .delete()
+        .eq('id', updateId);
+
+      if (deleteError) {
+        console.error("Error deleting update:", deleteError);
+        return res.status(500).json({ error: "Failed to delete update" });
+      }
+
+      console.log(`✅ Update deleted successfully: ${existingUpdate.title}`);
+      res.json({ 
+        success: true, 
+        message: "Update deleted successfully" 
+      });
+    } catch (error) {
+      console.error("Error in delete update endpoint:", error);
+      res.status(500).json({ 
+        error: "Failed to delete update",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Get updates for user frontend (public endpoint)
   app.get("/api/updates", async (req: Request, res: Response) => {
     try {

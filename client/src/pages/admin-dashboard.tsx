@@ -48,7 +48,8 @@ import {
   Wrench,
   X,
   Send,
-  CalendarDays
+  CalendarDays,
+  Trash2
 } from "lucide-react";
 import { AnimatedCard } from "@/components/ui/animated-card";
 import { motion, AnimatePresence } from "framer-motion";
@@ -282,6 +283,9 @@ export default function AdminDashboard() {
   const [eventUpdateOpen, setEventUpdateOpen] = useState(false);
   const [maintenanceOpen, setMaintenanceOpen] = useState(false);
   const [zoomLinkOpen, setZoomLinkOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [updateToDelete, setUpdateToDelete] = useState<any>(null);
+  const [newUpdateCount, setNewUpdateCount] = useState(0);
   
   const [fastingTitle, setFastingTitle] = useState("3 Days & 3 Nights Fasting Program - August");
   const [fastingStartDate, setFastingStartDate] = useState<Date>();
@@ -301,7 +305,7 @@ export default function AdminDashboard() {
 
   // Check if any dialog is open to prevent refetching during user interaction
   const isAnyDialogOpen = fastUpdateOpen || urgentNoticeOpen || prayerRequestOpen || 
-                          eventUpdateOpen || maintenanceOpen || zoomLinkOpen;
+                          eventUpdateOpen || maintenanceOpen || zoomLinkOpen || deleteDialogOpen;
 
   // Fetch data allocation
   const { data: dataAllocation = [], isLoading: dataAllocationLoading, refetch: refetchDataAllocation } = useQuery({
@@ -372,6 +376,39 @@ export default function AdminDashboard() {
       isMounted = false;
     };
   }, [setLocation, toast]);
+
+  // Calculate new updates count based on last viewed timestamp
+  useEffect(() => {
+    if (!updates || updates.length === 0) {
+      setNewUpdateCount(0);
+      return;
+    }
+
+    const lastViewedTimestamp = localStorage.getItem('lastViewedUpdates');
+    if (!lastViewedTimestamp) {
+      // If never viewed, all updates are new
+      setNewUpdateCount(updates.length);
+      return;
+    }
+
+    const lastViewed = new Date(lastViewedTimestamp);
+    const newUpdates = updates.filter(update => {
+      const updateDate = new Date(update.created_at);
+      return updateDate > lastViewed;
+    });
+
+    setNewUpdateCount(newUpdates.length);
+  }, [updates]);
+
+  // Mark updates as viewed when Management tab is clicked
+  useEffect(() => {
+    if (activeTab === 'management') {
+      // Update the last viewed timestamp
+      localStorage.setItem('lastViewedUpdates', new Date().toISOString());
+      // Reset the new update count after a short delay to show the badge first
+      setTimeout(() => setNewUpdateCount(0), 500);
+    }
+  }, [activeTab]);
 
   // Fetch prayer slots from Supabase
   const { data: prayerSlotsResponse, isLoading: slotsLoading, refetch: refetchSlots } = useQuery({
@@ -630,6 +667,34 @@ export default function AdminDashboard() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to update Zoom link", variant: "destructive" });
+    },
+  });
+
+  const deleteUpdateMutation = useMutation({
+    mutationFn: async (updateId: number) => {
+      const response = await apiRequest(`/api/admin/updates/${updateId}`, {
+        method: "DELETE",
+      });
+      return response;
+    },
+    onSuccess: () => {
+      toast({ 
+        title: "Success", 
+        description: "Update deleted successfully" 
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-updates'] });
+      setDeleteDialogOpen(false);
+      setUpdateToDelete(null);
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.message || "Failed to delete update";
+      toast({ 
+        title: "Error", 
+        description: errorMessage, 
+        variant: "destructive" 
+      });
+      setDeleteDialogOpen(false);
+      setUpdateToDelete(null);
     },
   });
 
@@ -1884,39 +1949,56 @@ export default function AdminDashboard() {
           ) : updates.length > 0 ? (
             <ScrollArea className="h-64">
               <div className="space-y-3">
-                {updates.slice(0, 10).map((update) => (
-                  <div key={update.id} className="border rounded-lg p-3 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-sm">{update.title}</h4>
-                      <div className="flex items-center space-x-2">
-                        <Badge 
-                          variant={update.priority === 'critical' ? 'destructive' : 
-                                  update.priority === 'high' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {update.priority || 'normal'}
+                {updates.slice(0, 10).map((update) => {
+                  const canDelete = !update.title.toLowerCase().includes('register for fasting');
+                  return (
+                    <div key={update.id} className="border rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-medium text-sm flex-1">{update.title}</h4>
+                        <div className="flex items-center space-x-2">
+                          <Badge 
+                            variant={update.priority === 'critical' ? 'destructive' : 
+                                    update.priority === 'high' ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {update.priority || 'normal'}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {new Date(update.created_at).toLocaleDateString()}
+                          </span>
+                          {canDelete && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => {
+                                setUpdateToDelete(update);
+                                setDeleteDialogOpen(true);
+                              }}
+                              data-testid={`button-delete-update-${update.id}`}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-600 line-clamp-2">
+                        {update.description}
+                      </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <Badge variant="outline" className="text-xs">
+                          {update.type || 'general'}
                         </Badge>
-                        <span className="text-xs text-gray-500">
-                          {new Date(update.created_at).toLocaleDateString()}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-green-600">✓ Published</span>
+                          {update.pinToTop && (
+                            <span className="text-xs text-gi-primary">📌 Pinned</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-600 line-clamp-2">
-                      {update.description}
-                    </p>
-                    <div className="flex items-center justify-between mt-2">
-                      <Badge variant="outline" className="text-xs">
-                        {update.type || 'general'}
-                      </Badge>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs text-green-600">✓ Published</span>
-                        {update.pinToTop && (
-                          <span className="text-xs text-gi-primary">📌 Pinned</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </ScrollArea>
           ) : (
@@ -2070,9 +2152,16 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab("management")}
                 size="sm"
                 variant={activeTab === "management" ? "default" : "ghost"}
-                className={`p-2 ${activeTab === "management" ? "bg-gi-primary text-white" : ""}`}
+                className={`p-2 relative ${activeTab === "management" ? "bg-gi-primary text-white" : ""}`}
               >
                 <Settings className="w-4 h-4" />
+                {newUpdateCount > 0 && (
+                  <Badge 
+                    className="absolute -top-1 -right-1 h-4 min-w-4 flex items-center justify-center p-0.5 bg-red-500 text-white text-[10px]"
+                  >
+                    {newUpdateCount}
+                  </Badge>
+                )}
               </Button>
               <Button
                 onClick={refreshAllData}
@@ -2238,10 +2327,19 @@ export default function AdminDashboard() {
             <Button
               variant={activeTab === "management" ? "default" : "ghost"}
               onClick={() => setActiveTab("management")}
-              className="flex-1"
+              className="flex-1 relative"
+              data-testid="button-tab-management"
             >
               <Settings className="w-4 h-4 mr-2" />
               Management
+              {newUpdateCount > 0 && (
+                <Badge 
+                  className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-1 bg-red-500 text-white text-xs"
+                  data-testid="badge-new-updates"
+                >
+                  {newUpdateCount}
+                </Badge>
+              )}
             </Button>
             <Button 
               variant={activeTab === 'skip-requests' ? 'default' : 'ghost'} 
@@ -2545,6 +2643,61 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Update</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this update? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {updateToDelete && (
+            <div className="py-4">
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <h4 className="font-medium text-sm mb-1">{updateToDelete.title}</h4>
+                <p className="text-xs text-gray-600 line-clamp-2">{updateToDelete.description}</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setUpdateToDelete(null);
+              }}
+              disabled={deleteUpdateMutation.isPending}
+              data-testid="button-cancel-delete"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (updateToDelete) {
+                  deleteUpdateMutation.mutate(updateToDelete.id);
+                }
+              }}
+              disabled={deleteUpdateMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteUpdateMutation.isPending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Update
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
     </ErrorBoundary>
   );
