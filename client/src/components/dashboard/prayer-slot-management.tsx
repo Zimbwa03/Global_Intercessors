@@ -829,48 +829,16 @@ export function PrayerSlotManagement({ userEmail }: PrayerSlotManagementProps) {
 
                     {/* 4. Remove Prayer Slot */}
                     {prayerSlot.status === 'active' && (
-                      <>
-                        <Button
-                          onClick={async () => {
-                            try {
-                              const response = await fetch('/api/zoom/confirm-attendance', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ userId: user?.id })
-                              });
-                              const data = await response.json();
-                              if (data.success) {
-                                toast({
-                                  title: "✅ Attendance Confirmed",
-                                  description: `Your attendance for ${data.date} has been recorded`,
-                                });
-                                refetch();
-                              }
-                            } catch (error) {
-                              toast({
-                                title: "Error",
-                                description: "Failed to confirm attendance",
-                                variant: "destructive"
-                              });
-                            }
-                          }}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white mb-2"
-                        >
-                          <Check className="w-4 h-4 mr-2" />
-                          Confirm Attendance (Just Attended Zoom)
-                        </Button>
-
-                        <Button
-                          onClick={() => removeSlotMutation.mutate()}
-                          disabled={removeSlotMutation.isPending}
-                          className={`bg-red-600 hover:bg-red-700 text-white font-poppins ${
-                            isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
-                          }`}
-                        >
-                          <XCircle className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                          {removeSlotMutation.isPending ? 'Removing...' : (isMobile ? 'Remove Slot' : 'Remove Prayer Slot')}
-                        </Button>
-                      </>
+                      <Button
+                        onClick={() => removeSlotMutation.mutate()}
+                        disabled={removeSlotMutation.isPending}
+                        className={`bg-red-600 hover:bg-red-700 text-white font-poppins ${
+                          isMobile ? 'h-10 px-4 py-2 text-sm' : 'h-12 px-6 py-3'
+                        }`}
+                      >
+                        <XCircle className={`mr-2 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                        {removeSlotMutation.isPending ? 'Removing...' : (isMobile ? 'Remove Slot' : 'Remove Prayer Slot')}
+                      </Button>
                     )}
                   </div>
                 </motion.div>
