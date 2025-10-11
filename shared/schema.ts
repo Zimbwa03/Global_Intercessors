@@ -101,6 +101,18 @@ export const whatsAppBotUsers = pgTable("whatsapp_bot_users", {
   personalReminderTime: text("personal_reminder_time"), // e.g., "07:00"
   personalReminderDays: text("personal_reminder_days"), // e.g., "Mon,Wed,Fri" or "Everyday"
   timezone: text("timezone").default("UTC"),
+  
+  // Meta WhatsApp Compliance Fields (2025)
+  optedIn: boolean("opted_in").notNull().default(false), // Explicit opt-in consent
+  optInTimestamp: timestamp("opt_in_timestamp"), // When user opted in
+  optInMethod: text("opt_in_method"), // "web_app", "whatsapp_command", etc.
+  lastInboundMessageAt: timestamp("last_inbound_message_at"), // For 24-hour session window
+  
+  // User Preferences for Message Types
+  devotionalEnabled: boolean("devotional_enabled").notNull().default(true), // Daily devotionals
+  remindersEnabled: boolean("reminders_enabled").notNull().default(true), // Prayer slot reminders
+  updatesEnabled: boolean("updates_enabled").notNull().default(true), // Admin updates
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

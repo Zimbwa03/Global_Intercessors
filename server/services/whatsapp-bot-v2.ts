@@ -248,6 +248,258 @@ export class WhatsAppPrayerBot {
     }
   }
 
+  // ==================== META WHATSAPP COMPLIANCE 2025 ====================
+  
+  // Send approved template message (Meta requirement for business-initiated messages)
+  private async sendTemplateMessage(
+    phoneNumber: string, 
+    templateName: string, 
+    parameters: string[]
+  ): Promise<boolean> {
+    console.log(`\n📤 SENDING TEMPLATE MESSAGE:`);
+    console.log(`📱 To: ${phoneNumber}`);
+    console.log(`📋 Template: ${templateName}`);
+    console.log(`📝 Parameters: ${parameters.join(', ')}`);
+
+    if (!this.config.phoneNumberId || !this.config.accessToken) {
+      console.log(`❌ WhatsApp credentials missing - SIMULATION MODE`);
+      return false;
+    }
+
+    try {
+      const response = await fetch(`https://graph.facebook.com/${this.config.apiVersion}/${this.config.phoneNumberId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.config.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: phoneNumber,
+          type: 'template',
+          template: {
+            name: templateName,
+            language: { code: 'en' },
+            components: [{
+              type: 'body',
+              parameters: parameters.map(text => ({ type: 'text', text }))
+            }]
+          }
+        })
+      });
+
+      if (response.ok) {
+        console.log('✅ Template message sent successfully');
+        await this.logMessage(phoneNumber, `[Template: ${templateName}]`, 'outbound');
+        return true;
+      } else {
+        const errorData = await response.text();
+        console.error('❌ Failed to send template message:', errorData);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error sending template message:', error);
+      return false;
+    }
+  }
+
+  // Send opt-in request to new users (Meta compliance requirement)
+  private async sendOptInRequest(phoneNumber: string): Promise<void> {
+    const message = `🕊️ *Welcome to Global Intercessors Prayer Platform!* 🕊️
+
+To receive:
+• 📖 Daily devotionals (6:00 AM)
+• 🔔 Prayer slot reminders
+• 📢 Important updates from leadership
+
+*Reply YES to opt-in and start receiving messages.*
+Reply NO to decline.
+
+By opting in, you consent to receive WhatsApp messages from Global Intercessors. You can opt-out anytime by replying STOP.
+
+*Global Intercessors - Standing in the Gap* 🙏`;
+
+    await this.sendWhatsAppMessage(phoneNumber, message);
+  }
+
+  // Check if user has opted in and is allowed to receive messages
+  private async canReceiveMessages(phoneNumber: string, checkServiceWindow: boolean = false): Promise<boolean> {
+    try {
+      const { data: user } = await supabase
+        .from('whatsapp_bot_users')
+        .select('opted_in, is_active, last_inbound_message_at')
+        .eq('whatsapp_number', phoneNumber)
+        .single();
+
+      if (!user) return false;
+      
+      const hasOptedIn = user.opted_in === true && user.is_active === true;
+      
+      if (!hasOptedIn) return false;
+      
+      // If checking service window, verify 24-hour window
+      if (checkServiceWindow) {
+        const withinWindow = await this.isWithinServiceWindow(phoneNumber);
+        return withinWindow;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error checking opt-in status:', error);
+      return false;
+    }
+  }
+
+  // Process opt-in (YES command)
+  private async processOptIn(phoneNumber: string): Promise<void> {
+    try {
+      const { data: existingUser } = await supabase
+        .from('whatsapp_bot_users')
+        .select('*')
+        .eq('whatsapp_number', phoneNumber)
+        .single();
+
+      if (existingUser) {
+        // Update existing user to opt-in
+        await supabase
+          .from('whatsapp_bot_users')
+          .update({
+            opted_in: true,
+            is_active: true,
+            opt_in_timestamp: new Date().toISOString(),
+            opt_in_method: 'whatsapp_command',
+            updated_at: new Date().toISOString()
+          })
+          .eq('whatsapp_number', phoneNumber);
+      }
+
+      const confirmMessage = `✅ *You're subscribed!* ✅
+
+You will now receive:
+• 📖 Daily devotionals at 6:00 AM
+• 🔔 Prayer slot reminders
+• 📢 Important updates
+
+🎛️ *Manage Your Preferences:*
+Reply *DEVOTIONAL OFF* to stop daily devotionals
+Reply *REMINDERS OFF* to stop prayer reminders
+Reply *UPDATES OFF* to stop admin updates
+Reply *STOP* to unsubscribe from all messages
+
+*Global Intercessors - Standing in the Gap* 🙏`;
+
+      await this.sendWhatsAppMessage(phoneNumber, confirmMessage);
+      await this.logInteraction(phoneNumber, 'opt_in', 'user_consented');
+    } catch (error) {
+      console.error('Error processing opt-in:', error);
+    }
+  }
+
+  // Process opt-out (STOP command)
+  private async processOptOut(phoneNumber: string): Promise<void> {
+    try {
+      await supabase
+        .from('whatsapp_bot_users')
+        .update({
+          opted_in: false,
+          is_active: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('whatsapp_number', phoneNumber);
+
+      const confirmMessage = `✅ *You have been unsubscribed.* ✅
+
+You will no longer receive:
+• Daily devotionals
+• Prayer slot reminders  
+• Admin updates
+
+To re-subscribe anytime, simply reply *YES*
+
+We'll miss you! May God bless you abundantly.
+
+*Global Intercessors - Standing in the Gap* 🙏`;
+
+      await this.sendWhatsAppMessage(phoneNumber, confirmMessage);
+      await this.logInteraction(phoneNumber, 'opt_out', 'user_unsubscribed');
+    } catch (error) {
+      console.error('Error processing opt-out:', error);
+    }
+  }
+
+  // Update user message preferences (DEVOTIONAL/REMINDERS/UPDATES ON/OFF)
+  private async updateUserPreference(phoneNumber: string, preferenceType: string, enabled: boolean): Promise<void> {
+    try {
+      const updateData: any = { updated_at: new Date().toISOString() };
+      
+      if (preferenceType === 'DEVOTIONAL') {
+        updateData.devotional_enabled = enabled;
+      } else if (preferenceType === 'REMINDERS') {
+        updateData.reminders_enabled = enabled;
+      } else if (preferenceType === 'UPDATES') {
+        updateData.updates_enabled = enabled;
+      }
+
+      await supabase
+        .from('whatsapp_bot_users')
+        .update(updateData)
+        .eq('whatsapp_number', phoneNumber);
+
+      const status = enabled ? 'ON' : 'OFF';
+      const messageType = preferenceType.toLowerCase();
+      const confirmMessage = `✅ *Preference Updated* ✅
+
+${preferenceType.charAt(0) + preferenceType.slice(1).toLowerCase()} messages are now *${status}*
+
+To view all preferences, reply *SETTINGS*
+
+*Global Intercessors - Standing in the Gap* 🙏`;
+
+      await this.sendWhatsAppMessage(phoneNumber, confirmMessage);
+    } catch (error) {
+      console.error('Error updating user preference:', error);
+    }
+  }
+
+  // Track last inbound message for 24-hour customer service window
+  private async trackInboundMessage(phoneNumber: string): Promise<void> {
+    try {
+      await supabase
+        .from('whatsapp_bot_users')
+        .update({
+          last_inbound_message_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('whatsapp_number', phoneNumber);
+    } catch (error) {
+      console.error('Error tracking inbound message:', error);
+    }
+  }
+
+  // Check if within 24-hour customer service window (can send regular messages)
+  private async isWithinServiceWindow(phoneNumber: string): Promise<boolean> {
+    try {
+      const { data: user } = await supabase
+        .from('whatsapp_bot_users')
+        .select('last_inbound_message_at')
+        .eq('whatsapp_number', phoneNumber)
+        .single();
+
+      if (!user || !user.last_inbound_message_at) return false;
+
+      const lastInbound = new Date(user.last_inbound_message_at);
+      const now = new Date();
+      const hoursSinceInbound = (now.getTime() - lastInbound.getTime()) / (1000 * 60 * 60);
+
+      return hoursSinceInbound < 24;
+    } catch (error) {
+      console.error('Error checking service window:', error);
+      return false;
+    }
+  }
+
+  // ==================== END META WHATSAPP COMPLIANCE ====================
+
   // Get complete user information using phone number to access user auth and database
   private async getCompleteUserInfo(phoneNumber: string): Promise<{
     name: string;
@@ -682,6 +934,21 @@ export class WhatsAppPrayerBot {
         return;
       }
 
+      // META COMPLIANCE: Check if user has opted in and enabled reminders
+      const { data: botUser } = await supabase
+        .from('whatsapp_bot_users')
+        .select('opted_in, reminders_enabled')
+        .eq('whatsapp_number', whatsappNumber)
+        .single();
+
+      if (!botUser || !botUser.opted_in || !botUser.reminders_enabled) {
+        console.log(`⚠️ User ${whatsappNumber} has not opted in or disabled reminders - skipping`);
+        return;
+      }
+
+      // META COMPLIANCE: Check 24-hour service window
+      const withinWindow = await this.isWithinServiceWindow(whatsappNumber);
+
       let timeText = '';
       let urgencyEmoji = '';
 
@@ -703,7 +970,9 @@ export class WhatsAppPrayerBot {
           urgencyEmoji = '⏰';
       }
 
-      const message = `🕊️ *Prayer Slot Reminder* 🕊️
+      if (withinWindow) {
+        // Within 24h window - can send regular message (free)
+        const message = `🕊️ *Prayer Slot Reminder* 🕊️
 
 Hello ${userName}! 
 
@@ -717,13 +986,18 @@ ${slot.zoom_link ? `🔗 Join Zoom: ${slot.zoom_link}` : ''}
 
 Reply *help* for more options.`;
 
-      const success = await this.sendWhatsAppMessage(whatsappNumber, message);
+        const success = await this.sendWhatsAppMessage(whatsappNumber, message);
 
-      if (success) {
-        console.log(`✅ ${timeText} prayer reminder sent to ${whatsappNumber} for slot ${slotTime}`);
-        await this.logInteraction(whatsappNumber, 'reminder', 'prayer_slot');
+        if (success) {
+          console.log(`✅ ${timeText} prayer reminder sent to ${whatsappNumber} for slot ${slotTime}`);
+          await this.logInteraction(whatsappNumber, 'reminder', 'prayer_slot');
+        } else {
+          console.log(`❌ Failed to send ${timeText} prayer reminder to ${whatsappNumber}`);
+        }
       } else {
-        console.log(`❌ Failed to send ${timeText} prayer reminder to ${whatsappNumber}`);
+        // Outside window - need approved template (skip for now)
+        console.log(`⚠️ User ${whatsappNumber} outside 24h window - skipping reminder until templates approved`);
+        // TODO: Once templates approved, use: await this.sendTemplateMessage(whatsappNumber, 'prayer_reminder', [userName, urgencyEmoji, slotTime, timeText, urgencyMessage, zoomLink]);
       }
     } catch (error) {
       console.error('❌ Error sending prayer slot reminder:', error);
@@ -733,27 +1007,38 @@ Reply *help* for more options.`;
   // Dynamic AI-generated morning declarations
   private async sendMorningDeclarations(): Promise<void> {
     try {
+      // META COMPLIANCE: Only send to users who have opted in AND enabled devotionals
       const { data: activeUsers } = await supabase
         .from('whatsapp_bot_users')
         .select('*')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .eq('opted_in', true)
+        .eq('devotional_enabled', true);
 
       if (!activeUsers || activeUsers.length === 0) {
-        console.log('⚠️ No active WhatsApp users found for morning declarations');
+        console.log('⚠️ No active WhatsApp users with devotional preference enabled');
         return;
       }
 
-      console.log(`🌅 Generating dynamic morning messages for ${activeUsers.length} users...`);
+      console.log(`🌅 Generating dynamic morning messages for ${activeUsers.length} opted-in users...`);
 
       for (const user of activeUsers) {
         try {
           const userName = await this.getUserName(user.user_id);
 
-          // Generate personalized AI morning message
-          const dynamicMessage = await this.generateDynamicMorningMessage(userName);
+          // META COMPLIANCE: Check 24-hour service window
+          const withinWindow = await this.isWithinServiceWindow(user.whatsapp_number);
 
-          await this.sendWhatsAppMessage(user.whatsapp_number, dynamicMessage);
-          await this.logInteraction(user.whatsapp_number, 'morning_declaration_ai', 'daily');
+          if (withinWindow) {
+            // Within 24h window - can send regular message (free)
+            const dynamicMessage = await this.generateDynamicMorningMessage(userName);
+            await this.sendWhatsAppMessage(user.whatsapp_number, dynamicMessage);
+            await this.logInteraction(user.whatsapp_number, 'morning_declaration_ai', 'daily');
+          } else {
+            // Outside window - need approved template (skip for now until templates approved)
+            console.log(`⚠️ User ${user.whatsapp_number} outside 24h window - skipping until templates approved`);
+            // TODO: Once templates approved, use: await this.sendTemplateMessage(user.whatsapp_number, 'daily_devotional', [userName, dayOfWeek, bibleVerse, prayerFocus]);
+          }
 
           // Rate limiting between users
           await new Promise(resolve => setTimeout(resolve, 2000));
@@ -878,15 +1163,20 @@ Your intercession matters! 💪
     try {
       console.log('📢 Broadcasting admin update to WhatsApp users:', updateTitle);
 
+      // META COMPLIANCE: Only send to users who have opted in AND enabled updates
       const { data: activeUsers } = await supabase
         .from('whatsapp_bot_users')
         .select('*')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .eq('opted_in', true)
+        .eq('updates_enabled', true);
 
       if (!activeUsers || activeUsers.length === 0) {
-        console.log('⚠️ No active WhatsApp users found for admin update broadcast');
+        console.log('⚠️ No active WhatsApp users with updates enabled');
         return;
       }
+
+      console.log(`📢 Broadcasting to ${activeUsers.length} opted-in users who have updates enabled`);
 
       // Generate AI-summarized update
       const summarizedUpdate = await this.generateUpdateSummary(updateTitle, updateContent);
@@ -895,7 +1185,12 @@ Your intercession matters! 💪
         try {
           const userName = await this.getUserName(user.user_id);
 
-          const message = `📢 *Important Update from Global Intercessors* 📢
+          // META COMPLIANCE: Check 24-hour service window
+          const withinWindow = await this.isWithinServiceWindow(user.whatsapp_number);
+
+          if (withinWindow) {
+            // Within 24h window - can send regular message (free)
+            const message = `📢 *Important Update from Global Intercessors* 📢
 
 Hello ${userName}!
 
@@ -909,8 +1204,13 @@ ${summarizedUpdate}
 
 *Global Intercessors - Standing in the Gap* 🙏`;
 
-          await this.sendWhatsAppMessage(user.whatsapp_number, message);
-          await this.logInteraction(user.whatsapp_number, 'admin_update', updateTitle);
+            await this.sendWhatsAppMessage(user.whatsapp_number, message);
+            await this.logInteraction(user.whatsapp_number, 'admin_update', updateTitle);
+          } else {
+            // Outside window - need approved template (skip for now)
+            console.log(`⚠️ User ${user.whatsapp_number} outside 24h window - skipping admin update until templates approved`);
+            // TODO: Once templates approved, use: await this.sendTemplateMessage(user.whatsapp_number, 'admin_update', [userName, updateTitle, summarizedUpdate]);
+          }
 
           // Rate limiting between users
           await new Promise(resolve => setTimeout(resolve, 1500));
@@ -1259,10 +1559,108 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
     // Log incoming message
     await this.logMessage(phoneNumber, messageText, 'inbound');
 
+    // Track inbound message for 24-hour customer service window (Meta compliance)
+    await this.trackInboundMessage(phoneNumber);
+
     try {
+      const command = messageText.toLowerCase().trim();
+
+      // ==================== META WHATSAPP COMPLIANCE COMMANDS ====================
+      // Process opt-in/opt-out and preferences FIRST (before authentication)
+      
+      // STOP command - highest priority (Meta requirement for immediate opt-out)
+      if (command === 'stop' || command === 'unsubscribe' || command === 'cancel') {
+        await this.processOptOut(phoneNumber);
+        return;
+      }
+
+      // YES/CONFIRM/JOIN command - opt-in
+      if (command === 'yes' || command === 'confirm' || command === 'join' || command === 'subscribe') {
+        await this.processOptIn(phoneNumber);
+        return;
+      }
+
+      // NO command - decline opt-in
+      if (command === 'no' || command === 'decline') {
+        const message = `No problem! You will not receive automated messages from Global Intercessors.
+
+If you change your mind, simply reply *YES* anytime.
+
+*Global Intercessors - Standing in the Gap* 🙏`;
+        await this.sendWhatsAppMessage(phoneNumber, message);
+        return;
+      }
+
+      // User preference management commands
+      if (command.includes('devotional')) {
+        if (command.includes('off') || command.includes('disable') || command.includes('stop')) {
+          await this.updateUserPreference(phoneNumber, 'DEVOTIONAL', false);
+          return;
+        } else if (command.includes('on') || command.includes('enable') || command.includes('start')) {
+          await this.updateUserPreference(phoneNumber, 'DEVOTIONAL', true);
+          return;
+        }
+      }
+
+      if (command.includes('reminder')) {
+        if (command.includes('off') || command.includes('disable') || command.includes('stop')) {
+          await this.updateUserPreference(phoneNumber, 'REMINDERS', false);
+          return;
+        } else if (command.includes('on') || command.includes('enable') || command.includes('start')) {
+          await this.updateUserPreference(phoneNumber, 'REMINDERS', true);
+          return;
+        }
+      }
+
+      if (command.includes('update')) {
+        if (command.includes('off') || command.includes('disable') || command.includes('stop')) {
+          await this.updateUserPreference(phoneNumber, 'UPDATES', false);
+          return;
+        } else if (command.includes('on') || command.includes('enable') || command.includes('start')) {
+          await this.updateUserPreference(phoneNumber, 'UPDATES', true);
+          return;
+        }
+      }
+
+      // SETTINGS command - show current preferences
+      if (command === 'settings' || command === 'preferences') {
+        const { data: user } = await supabase
+          .from('whatsapp_bot_users')
+          .select('*')
+          .eq('whatsapp_number', phoneNumber)
+          .single();
+
+        if (user) {
+          const devotionalStatus = user.devotional_enabled ? '✅ ON' : '❌ OFF';
+          const remindersStatus = user.reminders_enabled ? '✅ ON' : '❌ OFF';
+          const updatesStatus = user.updates_enabled ? '✅ ON' : '❌ OFF';
+          const optedInStatus = user.opted_in ? '✅ Subscribed' : '❌ Not subscribed';
+
+          const settingsMessage = `⚙️ *Your Message Preferences* ⚙️
+
+📊 *Status:* ${optedInStatus}
+
+📖 *Daily Devotionals:* ${devotionalStatus}
+🔔 *Prayer Reminders:* ${remindersStatus}
+📢 *Admin Updates:* ${updatesStatus}
+
+*To change:*
+• Reply *DEVOTIONAL OFF* or *DEVOTIONAL ON*
+• Reply *REMINDERS OFF* or *REMINDERS ON*
+• Reply *UPDATES OFF* or *UPDATES ON*
+• Reply *STOP* to unsubscribe from all
+
+*Global Intercessors - Standing in the Gap* 🙏`;
+
+          await this.sendWhatsAppMessage(phoneNumber, settingsMessage);
+          return;
+        }
+      }
+
+      // ==================== END COMPLIANCE COMMANDS ====================
+
       // First, check if user is authenticated
       const authStatus = await this.isUserAuthenticated(phoneNumber);
-      const command = messageText.toLowerCase().trim();
 
       // Handle authentication for non-authenticated users
       if (!authStatus.authenticated) {
