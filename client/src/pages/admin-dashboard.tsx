@@ -249,7 +249,7 @@ export default function AdminDashboard() {
       }
     },
     refetchOnWindowFocus: false,
-    refetchInterval: 30000, // Fixed interval to prevent flickering
+    refetchInterval: false,
     staleTime: 10000
   });
 
@@ -299,6 +299,10 @@ export default function AdminDashboard() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
 
+  // Check if any dialog is open to prevent refetching during user interaction
+  const isAnyDialogOpen = fastUpdateOpen || urgentNoticeOpen || prayerRequestOpen || 
+                          eventUpdateOpen || maintenanceOpen || zoomLinkOpen;
+
   // Fetch data allocation
   const { data: dataAllocation = [], isLoading: dataAllocationLoading, refetch: refetchDataAllocation } = useQuery({
     queryKey: ['admin-data-allocation', dataAllocationFilter.min, dataAllocationFilter.max],
@@ -309,7 +313,7 @@ export default function AdminDashboard() {
     },
     enabled: !!adminUser && activeTab === 'data-allocation',
     refetchOnWindowFocus: false,
-    refetchInterval: 30000, // Fixed interval to prevent flickering
+    refetchInterval: isAnyDialogOpen ? false : 30000,
     staleTime: 15000
   });
 
@@ -384,7 +388,7 @@ export default function AdminDashboard() {
     },
     enabled: !!adminUser,
     refetchOnWindowFocus: false,
-    refetchInterval: 30000, // Fixed interval to prevent flickering
+    refetchInterval: isAnyDialogOpen ? false : 30000,
     staleTime: 20000,
     gcTime: 300000, // 5 minutes
   });
@@ -412,7 +416,7 @@ export default function AdminDashboard() {
     },
     enabled: !!adminUser,
     refetchOnWindowFocus: false,
-    refetchInterval: 30000, // Fixed interval to prevent flickering
+    refetchInterval: isAnyDialogOpen ? false : 30000,
     staleTime: 20000,
     gcTime: 300000, // 5 minutes
   });
@@ -437,7 +441,7 @@ export default function AdminDashboard() {
     },
     enabled: !!adminUser,
     refetchOnWindowFocus: false,
-    refetchInterval: 30000, // Fixed interval to prevent flickering
+    refetchInterval: isAnyDialogOpen ? false : 30000,
     staleTime: 20000,
     gcTime: 300000, // 5 minutes
   });
@@ -465,7 +469,7 @@ export default function AdminDashboard() {
     },
     enabled: !!adminUser,
     refetchOnWindowFocus: false,
-    refetchInterval: 30000, // Fixed interval to prevent flickering
+    refetchInterval: isAnyDialogOpen ? false : 30000,
     staleTime: 20000,
     gcTime: 300000, // 5 minutes
   });
@@ -495,7 +499,7 @@ export default function AdminDashboard() {
     },
     enabled: !!adminUser,
     refetchOnWindowFocus: false,
-    refetchInterval: 30000, // Fixed interval to prevent flickering
+    refetchInterval: isAnyDialogOpen ? false : 30000,
     staleTime: 20000,
     gcTime: 300000, // 5 minutes
   });
@@ -522,7 +526,7 @@ export default function AdminDashboard() {
     },
     enabled: !!adminUser,
     refetchOnWindowFocus: false,
-    refetchInterval: 30000, // Fixed interval to prevent flickering
+    refetchInterval: isAnyDialogOpen ? false : 30000,
     staleTime: 20000,
     gcTime: 300000, // 5 minutes
   });
