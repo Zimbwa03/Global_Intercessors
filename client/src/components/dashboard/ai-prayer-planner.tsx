@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Copy, Volume2, RefreshCw } from "lucide-react";
+import { Heart, Copy, Volume2, RefreshCw, Save, CheckCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { supabase } from "@/lib/supabase";
+import { format } from "date-fns";
 
 interface PrayerPoint {
   title: string;
@@ -39,6 +41,16 @@ export function AIPrayerPlanner() {
   const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState("");
   const [prayerPlan, setPrayerPlan] = useState<PrayerPlanResponse | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
+
+  // Get current user
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    })();
+  }, []);
 
   const plannerMutation = useMutation({
     mutationFn: async (category: string) => {
@@ -52,6 +64,7 @@ export function AIPrayerPlanner() {
     },
     onSuccess: (data) => {
       setPrayerPlan(data);
+      setIsSaved(false); // Reset saved status for new plan
       toast({
         title: "Prayer Plan Generated",
         description: `Generated ${data.totalPoints} prayer points for ${data.category}`
@@ -110,6 +123,50 @@ export function AIPrayerPlanner() {
       speechSynthesis.speak(utterance);
     }
   };
+
+  // Save prayer points to database
+  const savePrayerPointsMutation = useMutation({
+    mutationFn: async () => {
+      if (!prayerPlan || !userId) throw new Error("Missing data");
+      
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const categoryLabel = prayerCategories.find(c => c.value === selectedCategory)?.label || selectedCategory;
+      
+      // Save each prayer point
+      const savePromises = prayerPlan.prayerPoints.map((point, index) => 
+        fetch('/api/prayer-planner/points', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: point.title,
+            content: `${point.content}\n\n📖 ${point.reference}: "${point.bibleVerse}"\n\n💡 ${point.explanation}`,
+            notes: point.explanation,
+            category: selectedCategory,
+            date: today,
+            userId: userId,
+            isCompleted: false
+          })
+        })
+      );
+      
+      await Promise.all(savePromises);
+      return { count: prayerPlan.prayerPoints.length, category: categoryLabel };
+    },
+    onSuccess: (data) => {
+      setIsSaved(true);
+      toast({
+        title: "✅ Prayer Points Saved!",
+        description: `Successfully saved ${data.count} prayer points for ${data.category} to your prayer plan.`
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save prayer points. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
 
   return (
     <div className="space-y-6">
@@ -170,12 +227,43 @@ export function AIPrayerPlanner() {
                 <Heart className="w-5 h-5 text-gi-primary" />
                 Prayer Points for {prayerCategories.find(c => c.value === selectedCategory)?.label}
               </CardTitle>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Badge variant="secondary">{prayerPlan.totalPoints} Points</Badge>
+                {isSaved && (
+                  <Badge variant="default" className="bg-green-500">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Saved
+                  </Badge>
+                )}
+                <Button
+                  size="sm"
+                  variant={isSaved ? "outline" : "default"}
+                  onClick={() => savePrayerPointsMutation.mutate()}
+                  disabled={savePrayerPointsMutation.isPending || isSaved || !userId}
+                  data-testid="button-save-prayer-plan"
+                >
+                  {savePrayerPointsMutation.isPending ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent mr-2" />
+                      Saving...
+                    </>
+                  ) : isSaved ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Saved
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save to Prayer Plan
+                    </>
+                  )}
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={copyAllPrayerPoints}
+                  data-testid="button-copy-all-prayer-points"
                 >
                   <Copy className="w-4 h-4 mr-2" />
                   Copy All

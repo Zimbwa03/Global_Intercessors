@@ -131,19 +131,25 @@ export function PrayerPlanner() {
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('👤 Prayer Planner - User loaded:', user?.id);
       setUserId(user?.id || null);
     })();
   }, []);
 
   // Fetch daily prayer plan
-  const { data: dailyPlan, refetch } = useQuery({
+  const { data: dailyPlan, refetch, isLoading } = useQuery({
     queryKey: ['daily-prayer-plan', userId, selectedDate],
     queryFn: async () => {
+      console.log('🔍 Fetching prayer plan for:', { userId, selectedDate });
       const response = await fetch(`/api/prayer-planner/daily?date=${selectedDate}&userId=${userId}`);
       if (!response.ok) throw new Error('Failed to fetch prayer plan');
-      return response.json() as Promise<DailyPrayerPlan>;
+      const data = await response.json() as DailyPrayerPlan;
+      console.log('📋 Prayer plan loaded:', data);
+      return data;
     },
-    enabled: !!userId
+    enabled: !!userId,
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0 // Don't cache data
   });
 
   // Create new prayer point
