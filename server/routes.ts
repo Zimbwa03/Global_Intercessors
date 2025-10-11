@@ -7,6 +7,7 @@ import { zoomAPIService } from "./services/zoom-api-service.js";
 import axios from "axios";
 import * as htmlPdf from 'html-pdf-node';
 import { execSync } from 'child_process';
+import { randomUUID } from 'crypto';
 
 // Set Chromium path for Puppeteer BEFORE html-pdf-node loads
 try {
@@ -1833,8 +1834,8 @@ Respond as a wise, compassionate spiritual advisor with biblical wisdom.`;
       const prayerPointMatch = cleanResponse.match(/Prayer Point:?\s*(.+?)(?:\n|$)/i);
       const extractedPrayerPoint = prayerPointMatch ? prayerPointMatch[1].trim() : null;
 
-      // Generate session ID if not provided
-      const currentSessionId = sessionId || `session_${Date.now()}_${user.id}`;
+      // Generate session ID if not provided (use UUID format)
+      const currentSessionId = sessionId || randomUUID();
 
       // Store user message in chat history
       try {
