@@ -16,10 +16,11 @@ Preferred communication style: Simple, everyday language.
   - **Prayer Request** (Purple): Community prayer requests with notification system
   - **Event Updates** (Blue): Event announcements with image upload capability (file name included in description)
   - **System Maintenance** (Orange): Maintenance notices with 1-week expiry
-  - **Zoom Link Management** (Gold): Update Zoom meeting links for prayer sessions
+  - **Zoom Link Management** (Gold): Update Zoom meeting links for prayer sessions with automatic WhatsApp broadcast
 - **Professional UI**: Each category has branded gradient backgrounds, hover effects, and dedicated Dialog popups
 - **Smart Interactions**: Clear/Send buttons, form validation, loading states with disabled buttons and spinning icons
 - **Cache Management**: Fixed TanStack Query cache invalidation (`['admin-updates']` key) for instant UI refresh after posting
+- **WhatsApp Integration**: All admin updates automatically broadcast via WhatsApp to users with registered bot numbers using singleton pattern to prevent duplicate cron jobs
 - **Schema Enhancement**: Added `imageUrl` field to updates table for future image storage (pending database migration)
 
 ### AI Model Updates
