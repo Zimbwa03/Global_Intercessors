@@ -33,6 +33,7 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminRole, setNewAdminRole] = useState<'admin' | 'super_admin'>('admin');
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
 
   // Check if current user can create the selected role
   const canCreateRole = (targetRole: string) => {
@@ -55,7 +56,9 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
     },
     enabled: isOpen, // Only fetch when dialog is open
     refetchOnWindowFocus: false, // Prevent unnecessary refetches
-    staleTime: 30000, // Keep data fresh for 30 seconds
+    refetchOnMount: false, // Prevent refetch on mount
+    refetchInterval: false, // Disable automatic refetching
+    staleTime: Infinity, // Keep data fresh indefinitely while dialog is open
   });
 
   // Create new admin mutation
@@ -211,9 +214,14 @@ export function AdminManagement({ currentAdminEmail, currentAdminRole, isOpen, o
                       type="email"
                       placeholder="Enter intercessor's email"
                       value={newAdminEmail}
-                      onChange={(e) => setNewAdminEmail(e.target.value)}
+                      onChange={(e) => {
+                        setNewAdminEmail(e.target.value);
+                        setIsTyping(true);
+                      }}
+                      onBlur={() => setIsTyping(false)}
                       required
                       className="mt-1"
+                      autoComplete="off"
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       User must already be registered as an intercessor
