@@ -206,8 +206,13 @@ export default function AdminDashboard() {
           const goingDown = currentY > lastScrollYRef.current;
           const was = lastScrollYRef.current;
           lastScrollYRef.current = currentY;
+          
+          // Check if any dialog is open by looking for Dialog overlay
+          const isDialogOpen = document.querySelector('[role="dialog"]') !== null;
+          
           // Suppress UI hide/show while typing on mobile to prevent input blur/keyboard closing
-          if (isMobileRef.current && isInputFocusedRef.current) {
+          // Also suppress when any dialog is open to prevent flickering
+          if ((isMobileRef.current && isInputFocusedRef.current) || isDialogOpen) {
             ticking = false;
             return;
           }
