@@ -140,12 +140,26 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
       // Calculate sessions this month
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
-      const thisMonthSessions = attendanceData.filter((record: any) => {
+      const thisMonthRecords = attendanceData.filter((record: any) => {
         const recordDate = new Date(record.date || record.created_at);
         return recordDate.getMonth() === currentMonth && 
-               recordDate.getFullYear() === currentYear &&
-               (record.attended || record.status === 'attended');
-      }).length;
+               recordDate.getFullYear() === currentYear;
+      });
+      
+      const thisMonthAttended = thisMonthRecords.filter((record: any) => 
+        record.attended || record.status === 'attended'
+      ).length;
+      
+      const thisMonthTotal = thisMonthRecords.length;
+
+      // Calculate overall attendance rate
+      const totalAttended = attendanceData.filter((record: any) => 
+        record.attended || record.status === 'attended'
+      ).length;
+      const totalRecords = attendanceData.length;
+      const attendanceRate = totalRecords > 0 
+        ? Math.round((totalAttended / totalRecords) * 100) 
+        : 0;
 
       // Calculate day streak
       let dayStreak = 0;
@@ -171,7 +185,9 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
       }
 
       return {
-        sessionsThisMonth: thisMonthSessions,
+        sessionsThisMonth: thisMonthAttended,
+        totalSessionsThisMonth: thisMonthTotal,
+        attendanceRate: attendanceRate,
         dayStreak: dayStreak
       };
     },
@@ -182,17 +198,15 @@ export function DashboardOverview({ userEmail }: DashboardOverviewProps) {
 
   // Use real Zoom data when available, fallback to presentation data
   const demoSlotData = PRESENTATION_MODE ? PresentationData.prayerSlot() : null;
-  const attendanceRateDisplay = zoomData?.analytics?.attendanceRate || 
-    (attendanceStats?.sessionsThisMonth && attendanceStats.sessionsThisMonth > 0
-      ? Math.round((attendanceStats.sessionsThisMonth / new Date().getDate()) * 100)
-      : (demoSlotData?.attendanceRate || 0));
+  const attendanceRateDisplay = attendanceStats?.attendanceRate ?? 
+    (zoomData?.analytics?.attendanceRate || (demoSlotData?.attendanceRate || 0));
   const dayStreakDisplay = attendanceStats?.dayStreak || (demoSlotData ? Math.min(30, Math.floor((demoSlotData.attendedSessions || 27) / 2) + 7) : 0);
   const sessionsAttendedDisplay = attendanceStats?.sessionsThisMonth || (demoSlotData?.attendedSessions || 0);
-  const totalSessionsDisplay = new Date().getDate() || (demoSlotData?.totalSessions || 0);
+  const totalSessionsDisplay = attendanceStats?.totalSessionsThisMonth || (demoSlotData?.totalSessions || 0);
 
   // Zoom statistics
   const zoomStats = {
-    totalMeetings: zoomData?.analytics?.totalMeetings || (PRESENTATION_MODE ? PresentationData.dashboard().totalMeetings : 0),
+    totalMeetings: zoomData?.analytics?.totalZoomMeetings || (PRESENTATION_MODE ? PresentationData.dashboard().totalZoomMeetings : 0),
     avgParticipants: zoomData?.analytics?.avgParticipants || (PRESENTATION_MODE ? PresentationData.dashboard().avgZoomParticipants : 0),
     totalParticipants: zoomData?.analytics?.totalParticipants || (PRESENTATION_MODE ? PresentationData.dashboard().totalIntercessors : 0),
     liveMeetings: zoomData?.liveMeetings || [],
