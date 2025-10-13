@@ -258,13 +258,23 @@ class ZoomAttendanceTracker {
         }
       );
 
+      // Log the full API response structure to understand the format
+      console.log('🔍 Full Zoom API response structure:', JSON.stringify(response.data, null, 2));
+      
       const meetings = response.data.meetings || [];
       console.log(`📊 Found ${meetings.length} past instances of prayer meeting`);
       
       if (meetings.length > 0) {
         console.log('📋 Sample meeting data:', JSON.stringify(meetings[0], null, 2));
+        console.log('📋 Meeting keys available:', Object.keys(meetings[0]));
         meetings.forEach((meeting: any, index: number) => {
-          console.log(`📅 Meeting ${index + 1}: ${meeting.start_time}`);
+          console.log(`📅 Meeting ${index + 1}:`, {
+            start_time: meeting.start_time,
+            uuid: meeting.uuid,
+            id: meeting.id,
+            hasId: !!meeting.id,
+            hasUuid: !!meeting.uuid
+          });
         });
       } else {
         console.log('⚠️ No past meeting instances found');
@@ -360,10 +370,21 @@ class ZoomAttendanceTracker {
   private async processMeetingAttendance(meeting: any) {
     try {
       // Validate meeting object has required fields
-      if (!meeting || !meeting.id || !meeting.uuid) {
-        console.log('⚠️ Skipping invalid meeting object - missing id or uuid');
+      if (!meeting) {
+        console.log('⚠️ Skipping null/undefined meeting object');
         return;
       }
+      
+      // Check if meeting has either id or uuid (Zoom API response variations)
+      const meetingIdentifier = meeting.uuid || meeting.id;
+      if (!meetingIdentifier) {
+        console.log('⚠️ Skipping invalid meeting object - missing both id and uuid');
+        console.log('   Available meeting fields:', Object.keys(meeting));
+        console.log('   Meeting data:', JSON.stringify(meeting, null, 2));
+        return;
+      }
+      
+      console.log(`✅ Processing meeting with identifier:`, meetingIdentifier);
 
       // Check if meeting is already processed
       const { data: existingMeeting } = await supabaseAdmin
