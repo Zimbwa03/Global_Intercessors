@@ -293,8 +293,18 @@ class ZoomAttendanceTracker {
   // Alternative method using meeting:read:list_past_participants:admin scope
   private async getPastParticipantsDirect() {
     try {
-      console.log(`🔍 Fetching past participants directly for meeting ${this.meetingId}`);
+      console.log(`⚠️ getPastParticipantsDirect requires meeting UUID, not meeting ID`);
+      console.log(`ℹ️ Cannot fetch past participants without meeting instances/UUIDs`);
+      console.log(`💡 Recommend: Grant meeting:read:list_past_instances:admin scope for full functionality`);
       
+      // This endpoint requires a meeting UUID, not meeting ID
+      // We can't use this.meetingId (which is just the meeting ID number)
+      // We need UUIDs from past meeting instances
+      // For now, return empty array and log recommendation
+      
+      return [];
+      
+      /* DISABLED: This won't work with meeting ID - requires UUID
       const response = await axios.get(
         `https://api.zoom.us/v2/past_meetings/${this.meetingId}/participants`,
         {
@@ -339,6 +349,7 @@ class ZoomAttendanceTracker {
       }
       
       return [];
+      */
     } catch (error: any) {
       console.error('❌ Error fetching past participants:', error.response?.data || error.message);
       return [];
@@ -348,6 +359,12 @@ class ZoomAttendanceTracker {
   // Process attendance for a specific meeting
   private async processMeetingAttendance(meeting: any) {
     try {
+      // Validate meeting object has required fields
+      if (!meeting || !meeting.id || !meeting.uuid) {
+        console.log('⚠️ Skipping invalid meeting object - missing id or uuid');
+        return;
+      }
+
       // Check if meeting is already processed
       const { data: existingMeeting } = await supabaseAdmin
         .from('zoom_meetings')
@@ -834,7 +851,7 @@ class ZoomAttendanceTracker {
 
       // Process each participant immediately
       for (const participant of participants) {
-        await this.processLiveParticipantAttendance(participant, meeting, activeSlots);
+        await this.processLiveParticipantAttendance(participant, activeSlots);
       }
 
     } catch (error) {
