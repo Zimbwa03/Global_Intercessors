@@ -8,6 +8,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
+### Attendance Rate Calculation Fix (October 13, 2025)
+- **Demo Data Disabled**: Set `ENHANCE_ZOOM_ANALYTICS = false` to show real attendance data instead of artificial minimums
+- **Corrected Calculation Logic**: Fixed incorrect formula that divided sessions by day of month (causing fixed ~83% displays)
+- **Proper Implementation**: Now calculates actual rate as `(totalAttended / totalRecords) * 100` across all user attendance records
+- **Accurate Display**: Dashboard shows real user statistics from database instead of demo/enhanced values
+- **Total Sessions Fix**: Monthly session count now shows actual records instead of current day of month
+
 ### Management Page Redesign (October 11, 2025)
 - **Category-Based Updates**: Redesigned Management Page with 6 categorized update buttons in professional grid layout
 - **Update Categories**:
