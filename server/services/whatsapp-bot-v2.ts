@@ -951,23 +951,28 @@ To view all preferences, reply *SETTINGS*
 
       let timeText = '';
       let urgencyEmoji = '';
+      let urgencyMessage = '';
 
       switch (minutesBefore) {
         case 30:
           timeText = '30 minutes';
           urgencyEmoji = '⏰';
+          urgencyMessage = 'May the Lord strengthen you as you stand in the gap for His people and purposes.';
           break;
         case 15:
           timeText = '15 minutes';
           urgencyEmoji = '🔔';
+          urgencyMessage = 'May the Lord strengthen you as you stand in the gap for His people and purposes.';
           break;
         case 5:
           timeText = '5 minutes';
           urgencyEmoji = '🚨';
+          urgencyMessage = 'URGENT: Your prayer slot is starting soon! Please prepare your heart and join your Zoom meeting.';
           break;
         default:
           timeText = `${minutesBefore} minutes`;
           urgencyEmoji = '⏰';
+          urgencyMessage = 'May the Lord strengthen you as you stand in the gap for His people and purposes.';
       }
 
       if (withinWindow) {
@@ -995,9 +1000,10 @@ Reply *help* for more options.`;
           console.log(`❌ Failed to send ${timeText} prayer reminder to ${whatsappNumber}`);
         }
       } else {
-        // Outside window - need approved template (skip for now)
-        console.log(`⚠️ User ${whatsappNumber} outside 24h window - skipping reminder until templates approved`);
-        // TODO: Once templates approved, use: await this.sendTemplateMessage(whatsappNumber, 'prayer_reminder', [userName, urgencyEmoji, slotTime, timeText, urgencyMessage, zoomLink]);
+        // Outside window - use approved Meta template
+        console.log(`📨 User ${whatsappNumber} outside 24h window - using approved template message`);
+        const zoomLink = slot.zoom_link || '';
+        await this.sendTemplateMessage(whatsappNumber, 'account_creation_cor', [userName, urgencyEmoji, slotTime, timeText, urgencyMessage, zoomLink]);
       }
     } catch (error) {
       console.error('❌ Error sending prayer slot reminder:', error);
@@ -1023,8 +1029,9 @@ Reply *help* for more options.`;
       console.log(`🌅 Generating dynamic morning messages for ${activeUsers.length} opted-in users...`);
 
       for (const user of activeUsers) {
+        let userName = 'Beloved Intercessor'; // Default fallback
         try {
-          const userName = await this.getUserName(user.user_id);
+          userName = await this.getUserName(user.user_id);
 
           // META COMPLIANCE: Check 24-hour service window
           const withinWindow = await this.isWithinServiceWindow(user.whatsapp_number);
@@ -1035,9 +1042,10 @@ Reply *help* for more options.`;
             await this.sendWhatsAppMessage(user.whatsapp_number, dynamicMessage);
             await this.logInteraction(user.whatsapp_number, 'morning_declaration_ai', 'daily');
           } else {
-            // Outside window - need approved template (skip for now until templates approved)
-            console.log(`⚠️ User ${user.whatsapp_number} outside 24h window - skipping until templates approved`);
-            // TODO: Once templates approved, use: await this.sendTemplateMessage(user.whatsapp_number, 'daily_devotional', [userName, dayOfWeek, bibleVerse, prayerFocus]);
+            // Outside window - use approved Meta template
+            console.log(`📨 User ${user.whatsapp_number} outside 24h window - using approved template message`);
+            const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+            await this.sendTemplateMessage(user.whatsapp_number, 'daily_devotional_utility', [userName, dayOfWeek]);
           }
 
           // Rate limiting between users
@@ -1207,9 +1215,9 @@ ${summarizedUpdate}
             await this.sendWhatsAppMessage(user.whatsapp_number, message);
             await this.logInteraction(user.whatsapp_number, 'admin_update', updateTitle);
           } else {
-            // Outside window - need approved template (skip for now)
-            console.log(`⚠️ User ${user.whatsapp_number} outside 24h window - skipping admin update until templates approved`);
-            // TODO: Once templates approved, use: await this.sendTemplateMessage(user.whatsapp_number, 'admin_update', [userName, updateTitle, summarizedUpdate]);
+            // Outside window - use approved Meta template
+            console.log(`📨 User ${user.whatsapp_number} outside 24h window - using approved template message`);
+            await this.sendTemplateMessage(user.whatsapp_number, '_admin_update_utility', [userName, updateTitle, summarizedUpdate]);
           }
 
           // Rate limiting between users
