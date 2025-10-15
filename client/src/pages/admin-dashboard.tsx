@@ -1363,7 +1363,7 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Fast Update */}
               <Button
-                onClick={() => setFastUpdateOpen(true)}
+                onClick={() => setLocation("/admin/management/fast-update")}
                 className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-gi-primary to-gi-primary/80 hover:from-gi-primary/90 hover:to-gi-primary/70 text-white transition-all duration-300 hover:scale-105"
                 data-testid="button-fast-update"
               >
@@ -1376,7 +1376,7 @@ export default function AdminDashboard() {
 
               {/* Urgent Notice */}
               <Button
-                onClick={() => setUrgentNoticeOpen(true)}
+                onClick={() => setLocation("/admin/management/urgent-notice")}
                 className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white transition-all duration-300 hover:scale-105"
                 data-testid="button-urgent-notice"
               >
@@ -1389,7 +1389,7 @@ export default function AdminDashboard() {
 
               {/* Prayer Request */}
               <Button
-                onClick={() => setPrayerRequestOpen(true)}
+                onClick={() => setLocation("/admin/management/prayer-request")}
                 className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white transition-all duration-300 hover:scale-105"
                 data-testid="button-prayer-request"
               >
@@ -1402,7 +1402,7 @@ export default function AdminDashboard() {
 
               {/* Event Updates */}
               <Button
-                onClick={() => setEventUpdateOpen(true)}
+                onClick={() => setLocation("/admin/management/event-update")}
                 className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white transition-all duration-300 hover:scale-105"
                 data-testid="button-event-update"
               >
@@ -1415,7 +1415,7 @@ export default function AdminDashboard() {
 
               {/* System Maintenance */}
               <Button
-                onClick={() => setMaintenanceOpen(true)}
+                onClick={() => setLocation("/admin/management/system-maintenance")}
                 className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white transition-all duration-300 hover:scale-105"
                 data-testid="button-system-maintenance"
               >
@@ -1428,7 +1428,7 @@ export default function AdminDashboard() {
 
               {/* Zoom Link Management */}
               <Button
-                onClick={() => setZoomLinkOpen(true)}
+                onClick={() => setLocation("/admin/management/zoom-link")}
                 className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-gi-gold to-yellow-500 hover:from-gi-gold/90 hover:to-yellow-600 text-gi-primary transition-all duration-300 hover:scale-105"
                 data-testid="button-zoom-link"
               >
