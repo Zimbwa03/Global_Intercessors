@@ -377,39 +377,6 @@ export default function AdminDashboard() {
     };
   }, [setLocation, toast]);
 
-  // Calculate new updates count based on last viewed timestamp
-  useEffect(() => {
-    if (!updates || updates.length === 0) {
-      setNewUpdateCount(0);
-      return;
-    }
-
-    const lastViewedTimestamp = localStorage.getItem('lastViewedUpdates');
-    if (!lastViewedTimestamp) {
-      // If never viewed, all updates are new
-      setNewUpdateCount(updates.length);
-      return;
-    }
-
-    const lastViewed = new Date(lastViewedTimestamp);
-    const newUpdates = updates.filter(update => {
-      const updateDate = new Date(update.created_at);
-      return updateDate > lastViewed;
-    });
-
-    setNewUpdateCount(newUpdates.length);
-  }, [updates]);
-
-  // Mark updates as viewed when Management tab is clicked
-  useEffect(() => {
-    if (activeTab === 'management') {
-      // Update the last viewed timestamp
-      localStorage.setItem('lastViewedUpdates', new Date().toISOString());
-      // Reset the new update count after a short delay to show the badge first
-      setTimeout(() => setNewUpdateCount(0), 500);
-    }
-  }, [activeTab]);
-
   // Fetch prayer slots from Supabase
   const { data: prayerSlotsResponse, isLoading: slotsLoading, refetch: refetchSlots } = useQuery({
     queryKey: ["admin-prayer-slots"],
@@ -484,6 +451,39 @@ export default function AdminDashboard() {
   });
 
   const updates = useMemo(() => updatesResponse || [], [updatesResponse]);
+
+  // Calculate new updates count based on last viewed timestamp
+  useEffect(() => {
+    if (!updates || updates.length === 0) {
+      setNewUpdateCount(0);
+      return;
+    }
+
+    const lastViewedTimestamp = localStorage.getItem('lastViewedUpdates');
+    if (!lastViewedTimestamp) {
+      // If never viewed, all updates are new
+      setNewUpdateCount(updates.length);
+      return;
+    }
+
+    const lastViewed = new Date(lastViewedTimestamp);
+    const newUpdates = updates.filter(update => {
+      const updateDate = new Date(update.created_at);
+      return updateDate > lastViewed;
+    });
+
+    setNewUpdateCount(newUpdates.length);
+  }, [updates]);
+
+  // Mark updates as viewed when Management tab is clicked
+  useEffect(() => {
+    if (activeTab === 'management') {
+      // Update the last viewed timestamp
+      localStorage.setItem('lastViewedUpdates', new Date().toISOString());
+      // Reset the new update count after a short delay to show the badge first
+      setTimeout(() => setNewUpdateCount(0), 500);
+    }
+  }, [activeTab]);
 
   // Fetch user activities for intercessor tracking
   const { data: userActivitiesResponse, isLoading: activitiesLoading, refetch: refetchActivities } = useQuery({
