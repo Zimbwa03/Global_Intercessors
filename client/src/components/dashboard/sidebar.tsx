@@ -30,7 +30,6 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
     { id: "updates", label: "Updates", icon: "fas fa-bullhorn" },
     { id: "bible-chatbook", label: "Bible Chatbook", icon: "fas fa-book" },
     { id: "bible-search", label: "Bible Search", icon: "fas fa-search" },
-    { id: "scripture-coach", label: "Scripture Coach", icon: "fas fa-graduation-cap" },
     { id: "prayer-planner", label: "Prayer Planner", icon: "fas fa-calendar-check" },
   ];
 
@@ -77,10 +76,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
         {/* Mobile Navigation */}
         <nav className="flex-1 p-4 relative">
           <ul className="space-y-3">
-            {[
-              ...menuItems,
-              { id: "schedule", label: "Prayer Schedule", icon: "fas fa-calendar-alt" }
-            ].map((item) => (
+            {menuItems.map((item) => (
               <li key={item.id}>
                 <Button
                   onClick={() => {
@@ -246,7 +242,10 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
 
       {/* Logout */}
       <div className="p-4 border-t border-gi-gold/20">
-        <div className={`flex items-center ${isCollapsed ? 'justify-center px-2' : 'space-x-3 px-3'} py-2`}>
+        <div 
+          className={`flex items-center ${isCollapsed ? 'justify-center px-2' : 'space-x-3 px-3'} py-2 cursor-pointer hover:bg-gi-primary/30 rounded-lg transition-colors`}
+          onClick={() => onTabChange('profile')}
+        >
           <User className="h-5 w-5 text-gi-gold" />
           {!isCollapsed && (
             <div className="flex-1">
