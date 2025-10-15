@@ -8,6 +8,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
+### Admin Dashboard Bug Fixes (October 15, 2025)
+- **Zoom Attendance Tracker**: Fixed critical bug causing undefined errors when processing meetings older than 1 year
+- **Meeting Processing Logic**: Meetings now properly track data retrieval success/failure status
+  - Old meetings (>1 year) are NOT marked as processed, allowing retry when data becomes available
+  - Added success/failure flags to distinguish "no participants" from "cannot retrieve data"
+- **Error Handling**: Enhanced error logging with explicit warnings for missing API scopes and data retrieval failures
+- **React Hook Order Fix**: Resolved "Cannot access 'adminUser' before initialization" error by moving state declaration before dependent queries
+- **Admin Page Stability**: All admin dashboard components now load correctly without initialization errors
+
 ### Attendance Rate Calculation Fix (October 13, 2025)
 - **Demo Data Disabled**: Set `ENHANCE_ZOOM_ANALYTICS = false` to show real attendance data instead of artificial minimums
 - **Corrected Calculation Logic**: Fixed incorrect formula that divided sessions by day of month (causing fixed ~83% displays)

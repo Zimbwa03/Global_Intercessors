@@ -253,6 +253,9 @@ export default function AdminDashboard() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Admin user state - must be declared before queries that use it
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+
   // Fetch skip requests for admin
   const { data: skipRequests = [], refetch: refetchSkipRequests } = useQuery({
     queryKey: ['admin-skip-requests'],
@@ -274,8 +277,6 @@ export default function AdminDashboard() {
     refetchInterval: false,
     staleTime: 10000
   });
-
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [newUpdate, setNewUpdate] = useState({ 
     title: "", 
     description: "", 
