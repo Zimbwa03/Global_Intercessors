@@ -249,7 +249,7 @@ export class WhatsAppPrayerBot {
   }
 
   // ==================== META WHATSAPP COMPLIANCE 2025 ====================
-
+  
   // Send approved template message (Meta requirement for business-initiated messages)
   private async sendTemplateMessage(
     phoneNumber: string, 
@@ -332,17 +332,17 @@ By opting in, you consent to receive WhatsApp messages from Global Intercessors.
         .single();
 
       if (!user) return false;
-
+      
       const hasOptedIn = user.opted_in === true && user.is_active === true;
-
+      
       if (!hasOptedIn) return false;
-
+      
       // If checking service window, verify 24-hour window
       if (checkServiceWindow) {
         const withinWindow = await this.isWithinServiceWindow(phoneNumber);
         return withinWindow;
       }
-
+      
       return true;
     } catch (error) {
       console.error('Error checking opt-in status:', error);
@@ -431,7 +431,7 @@ We'll miss you! May God bless you abundantly.
   private async updateUserPreference(phoneNumber: string, preferenceType: string, enabled: boolean): Promise<void> {
     try {
       const updateData: any = { updated_at: new Date().toISOString() };
-
+      
       if (preferenceType === 'DEVOTIONAL') {
         updateData.devotional_enabled = enabled;
       } else if (preferenceType === 'REMINDERS') {
@@ -1575,7 +1575,7 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
 
       // ==================== META WHATSAPP COMPLIANCE COMMANDS ====================
       // Process opt-in/opt-out and preferences FIRST (before authentication)
-
+      
       // STOP command - highest priority (Meta requirement for immediate opt-out)
       if (command === 'stop' || command === 'unsubscribe' || command === 'cancel') {
         await this.processOptOut(phoneNumber);
@@ -1732,8 +1732,8 @@ If you change your mind, simply reply *YES* anytime.
       // Handle button responses and commands
       if (command === 'continue' || command === 'start' || command === '/start' || command === 'hi' || command === 'hello') {
         await this.handleStartCommand(phoneNumber, userName);
-      } else if (command === 'devotions') {
-        await this.handleDevotionsMenu(phoneNumber, userName);
+      } else if (command === 'devotionals' || command === '/devotionals') {
+        await this.handleDevotionalsMenuCommand(phoneNumber, userName);
       } else if (command === 'scripture_coach' || command === '/scripture') {
         await this.handleScriptureCoachCommand(phoneNumber, userName);
       } else if (command === 'reminders' || command === '/reminders') {
@@ -1752,8 +1752,8 @@ If you change your mind, simply reply *YES* anytime.
         await this.handleJoinZoom(phoneNumber);
       } else if (command === 'gi_app') {
         await this.handleGiApp(phoneNumber);
-      } else if (command === 'settings') {
-        await this.handleSettings(phoneNumber, userName);
+      } else if (command === 'about') {
+        await this.handleAbout(phoneNumber, userName);
       } else if (command === 'retry_login') {
         await this.sendLoginPrompt(phoneNumber);
       } else if (command === 'help_login') {
@@ -1791,8 +1791,6 @@ If you change your mind, simply reply *YES* anytime.
       // Bible Quiz functionality removed - replaced with ScriptureCoach system
       } else if (command.startsWith('remind ')) { // Handle reminder commands
         await this.handleReminderCommand(phoneNumber, messageText, userInfo.userDetails);
-      } else if (command === 'manage_updates' || command === 'notification_settings' || command === 'devotion_preferences' || command === 'about_bot') {
-        await this.handleSettingsOption(phoneNumber, userName, command);
       } else {
         await this.handleUnknownCommand(phoneNumber, userName, messageText);
       }
@@ -1804,21 +1802,46 @@ If you change your mind, simply reply *YES* anytime.
     }
   }
 
-  // Main menu handler
   private async handleStartCommand(phoneNumber: string, userName: string): Promise<void> {
-    const welcomeMessage = `🙏 *Welcome to Global Intercessors, ${userName}!*\n\n` +
-      `Your spiritual journey companion is here to support you in prayer, worship, and growth.\n\n` +
-      `📖 *What would you like to do today?*`;
-
-    await this.sendInteractiveMessage(phoneNumber, welcomeMessage, [
-      { id: 'devotions', title: '📖 Devotions' },
-      { id: 'prayer_reminder', title: '⏰ Prayer Reminder' },
-      { id: 'join_zoom', title: '🎥 Join Zoom' },
-      { id: 'gi_app', title: '📱 GI App' },
-      { id: 'settings', title: '⚙️ Settings' }
-    ]);
-
     await this.logInteraction(phoneNumber, 'command', 'start');
+
+    // Get complete user information from database
+    const userInfo = await this.getCompleteUserInfo(phoneNumber);
+
+    const welcomeMessage = `🙏 Hello, ${userInfo.name}!
+Welcome to Global Intercessors Prayer Bot! 🙌
+${userInfo.slotInfo}
+
+I'm your personal prayer companion, here to strengthen your walk with God through:
+
+📖 AI-Powered Devotionals – Daily scriptures with fresh, Spirit-led insights
+// Bible Quiz functionality removed - replaced with ScriptureCoach system  
+⏰ Smart Prayer Reminders – Never miss your intercession time
+🌍 Global Prayer Updates – Join intercessors around the world in united prayer
+✨ Fresh Messages – Daily AI-generated declarations & prayer points
+📊 Personal Dashboard – Track and celebrate your spiritual growth
+
+*"The effective, fervent prayer of the righteous man avails much."* – James 5:16
+
+Choose an option below to begin your spiritual journey:`;
+
+          const buttons = [
+        { id: 'devotionals', title: '📖 Devotionals' },
+        { id: 'scripture_coach', title: '📚 ScriptureCoach' },
+        { id: 'reminders', title: '⏰ Reminders' }
+      ];
+
+    await this.sendInteractiveMessage(phoneNumber, welcomeMessage, buttons);
+
+    // Send secondary quick-access buttons as a separate interactive message
+    const quickAccessMessage = `🔗 Quick Access`;
+    const quickButtons = [
+      { id: 'join_zoom', title: '🎥 Join Zoom' },
+      { id: 'gi_app', title: '🌐 GI App' },
+      { id: 'about', title: 'ℹ️ About' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, quickAccessMessage, quickButtons);
   }
 
   private async handleHelpCommand(phoneNumber: string, userName: string): Promise<void> {
@@ -1866,22 +1889,30 @@ Hello ${userName}! Here are the available commands:
     await this.sendWhatsAppMessage(phoneNumber, helpMessage);
   }
 
-  private async handleDevotionsMenu(phoneNumber: string, userName: string): Promise<void> {
-    await this.logInteraction(phoneNumber, 'command', 'devotions_menu');
+  private async handleDevotionalsCommand(phoneNumber: string, userName: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'command', 'devotionals');
 
-    const welcomeMessage = `📚 *${userName}, Welcome to Devotions* 📚
+    const devotionalsMessage = `📖 *Daily Devotionals* 📖
 
-*"Your word is a lamp for my feet, a light on my path."* - Psalm 119:105
+Welcome ${userName} to your spiritual growth journey!
 
-Choose your spiritual nourishment for today:`;
+🔥 Experience fresh, AI-powered devotionals featuring:
+✨ Daily scripture with Spirit-led insights
+🙏 Personalized prayer points for your intercession
+⚔️ Prophetic declarations for breakthrough
+🌍 Global prayer focuses connecting you with believers worldwide
+
+*"Your word is a lamp to my feet and a light to my path."* - Psalm 119:105
+
+Choose your devotional experience:`;
 
     const buttons = [
-      { id: 'todays_word', title: "📖 Today's Word" },
-      { id: 'daily_declarations', title: '🔥 Daily Declarations' },
-      { id: 'bible_study', title: '📚 Bible Study' }
+      { id: 'daily_devotional', title: '📅 Today\'s Devotional' },
+      { id: 'fresh_word', title: '✨ Fresh Prophetic Word' },
+      { id: 'scripture_insight', title: '🔍 Scripture Insight' }
     ];
 
-    await this.sendInteractiveMessage(phoneNumber, welcomeMessage, buttons);
+    await this.sendInteractiveMessage(phoneNumber, devotionalsMessage, buttons);
   }
 
   // Bible Quiz functionality removed - replaced with ScriptureCoach system
@@ -2096,25 +2127,7 @@ Global Intercessors is a worldwide prayer movement that maintains 24/7 prayer co
     await this.logInteraction(phoneNumber, 'button_action', 'gi_app');
   }
 
-  // Settings handler - manage updates, notifications, and preferences
-  private async handleSettings(phoneNumber: string, userName: string): Promise<void> {
-    const settingsMessage = `⚙️ *Settings & Preferences*\n\n` +
-      `${userName}, manage your Global Intercessors experience:\n\n` +
-      `Configure your notifications, updates, and devotional preferences.`;
-
-    await this.sendInteractiveMessage(phoneNumber, settingsMessage, [
-      { id: 'manage_updates', title: '📢 Manage Updates' },
-      { id: 'notification_settings', title: '🔔 Notifications' },
-      { id: 'devotion_preferences', title: '📖 Devotion Preferences' },
-      { id: 'about_bot', title: 'ℹ️ About Bot' },
-      { id: 'back', title: '🔙 Back to Menu' }
-    ]);
-
-    await this.logInteraction(phoneNumber, 'menu', 'settings');
-  }
-
-  // About bot info (moved to Settings submenu)
-  private async handleAboutBot(phoneNumber: string, userName: string): Promise<void> {
+  private async handleAbout(phoneNumber: string, userName: string): Promise<void> {
     const aboutMessage = `ℹ️ *About Global Intercessors Bot* ℹ️\n\n` +
 `Hello ${userName}! This WhatsApp bot is your personal prayer companion, designed to help you stay consistent and strong in intercession.\n\n` +
 `💠 *What the Bot Does*\n` +
@@ -2127,47 +2140,719 @@ Global Intercessors is a worldwide prayer movement that maintains 24/7 prayer co
 `"The effective, fervent prayer of the righteous man avails much." — James 5:16`;
 
     await this.sendWhatsAppMessage(phoneNumber, aboutMessage);
-    await this.logInteraction(phoneNumber, 'info', 'about_bot');
+    await this.logInteraction(phoneNumber, 'button_action', 'about');
   }
 
-  // Settings options handler
-  private async handleSettingsOption(phoneNumber: string, userName: string, option: string): Promise<void> {
-    if (option === 'manage_updates') {
-      const updatesMessage = `📢 *Manage Updates & Notifications*\n\n` +
-        `${userName}, control what updates you receive:\n\n` +
-        `• Fast Updates - Urgent prayer needs\n` +
-        `• Urgent Notices - Critical announcements\n` +
-        `• Event Updates - Ministry events\n` +
-        `• Prayer Requests - Community requests\n` +
-        `• System Maintenance - Technical updates\n\n` +
-        `All active intercessors receive important updates automatically.`;
+  // New devotional menu handler
+  private async handleDevotionalsMenuCommand(phoneNumber: string, userName: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'command', 'devotionals_menu');
 
-      await this.sendInteractiveMessage(phoneNumber, updatesMessage, [
-        { id: 'view_recent_updates', title: '📋 View Recent' },
-        { id: 'back', title: '🔙 Back to Settings' }
-      ]);
-    } else if (option === 'notification_settings') {
-      const notifMessage = `🔔 *Notification Preferences*\n\n` +
-        `${userName}, your reminder settings:\n\n` +
-        `✅ Prayer slot reminders: Active\n` +
-        `✅ Daily devotionals: Active\n` +
-        `✅ WhatsApp updates: Active\n\n` +
-        `Reminders are sent 30min, 15min, and 5min before your prayer slot.`;
+    const welcomeMessage = `📚 *${userName}, Welcome to Devotions* 📚
 
-      await this.sendWhatsAppMessage(phoneNumber, notifMessage);
-    } else if (option === 'devotion_preferences') {
-      const devotionPrefMessage = `📖 *Devotion Preferences*\n\n` +
-        `${userName}, customize your devotional experience:\n\n` +
-        `Current language: English & Shona (Bilingual)\n\n` +
-        `You can request fresh content anytime using the buttons in the devotional messages.`;
+*"Your word is a lamp for my feet, a light on my path."* - Psalm 119:105
 
-      await this.sendWhatsAppMessage(phoneNumber, devotionPrefMessage);
+Choose your spiritual nourishment for today:`;
+
+    const buttons = [
+      { id: 'todays_word', title: "📖 Today's Word" },
+      { id: 'daily_declarations', title: '🔥 Daily Declarations' },
+      { id: 'bible_study', title: '📚 Bible Study' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, welcomeMessage, buttons);
+  }
+
+  // Handle devotional content generation
+  private async handleDevotionalContent(phoneNumber: string, userName: string, type: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', type);
+
+    if (type === 'todays_word') {
+      await this.generateTodaysWord(phoneNumber, userName);
+    } else if (type === 'daily_declarations') {
+      await this.generateDailyDeclarations(phoneNumber, userName);
+    } else if (type === 'bible_study') {
+      await this.initiateBibleStudy(phoneNumber, userName);
+    }
+  }
+
+  // Generate Today's Word using Gemini (preferred) with DeepSeek fallback
+  private async generateTodaysWord(phoneNumber: string, userName: string): Promise<void> {
+    try {
+      // Add timestamp for truly unique content generation
+      const timestamp = Date.now();
+      const randomTopics = ['Divine Authority', 'Breakthrough Power', 'Spiritual Warfare', 'Intercession Fire', 'Kingdom Victory', 'Prophetic Prayer', 'Heavenly Strategy', 'Miraculous Faith', 'Prayer Shield', 'Revival Fire'];
+      const randomTopic = randomTopics[Math.floor(Math.random() * randomTopics.length)];
+
+      const prompt = `Generate a unique "Today's Word" devotional (ID: ${timestamp}) with focus on "${randomTopic}" for WhatsApp. Structure exactly as follows:
+
+**Topic:** [Compelling spiritual theme - 3-4 words, different from "${randomTopic}"]
+
+**Scripture:** [Book Chapter:Verse]
+"[Write the COMPLETE Bible verse text - not just reference]"
+
+**Deep Insight:**
+[2-3 sentences explaining the verse's meaning for today's intercessor, focusing on practical application and spiritual empowerment]
+
+**Prayer Declaration:**
+"Father, [specific prayer based on the verse - 2 sentences]. In Jesus' name, Amen."
+
+Make it spiritually rich, encouraging, and practical for prayer warriors. Generate fresh, unique content every time.`;
+
+      // Prefer Gemini for more variety and uniqueness
+      const content = await this.generateAIContentDevotional(prompt);
+
+      const firstName = userName.split(' ')[0];
+      const todaysWordMessage = `📖 *Today's Word* 📖
+
+${content}
+
+🙏 *May this strengthen your intercession today, ${firstName}!*
+
+*"The effective prayer of the righteous has great power." - James 5:16*`;
+
+      const buttons = [
+        { id: 'get_fresh_word', title: '✨ Get Fresh Word' },
+        { id: 'daily_declarations', title: '🔥 Declarations' },
+        { id: 'back', title: '⬅️ Back' }
+      ];
+
+      console.log(`📏 Enhanced Today's Word message length: ${todaysWordMessage.length} characters`);
+      await this.sendInteractiveMessage(phoneNumber, todaysWordMessage, buttons);
+
+    } catch (error) {
+      console.error('Error generating Today\'s Word:', error);
+
+      // Enhanced fallback message with full verse
+      const firstName = userName.split(' ')[0];
+      const fallbackMessage = `📖 *Today's Word* 📖
+
+**Topic:** Unshakable Faith
+
+**Scripture:** Hebrews 12:28
+"Therefore, since we are receiving a kingdom that cannot be shaken, let us be thankful, and so worship God acceptably with reverence and awe."
+
+**Deep Insight:**
+God's kingdom stands firm when everything else crumbles. As intercessors, we pray from this unshakeable foundation. Your prayers today are rooted in eternal victory, not temporary circumstances.
+
+**Prayer Declaration:**
+"Father, anchor my heart in Your unchanging kingdom. Let my prayers flow from Your unshakeable throne. In Jesus' name, Amen."
+
+🙏 *May this strengthen your intercession today, ${firstName}!*
+
+*"The effective prayer of the righteous has great power." - James 5:16*`;
+
+      const buttons = [
+        { id: 'get_fresh_word', title: '✨ Get Fresh Word' },
+        { id: 'daily_declarations', title: '🔥 Declarations' },
+        { id: 'back', title: '⬅️ Back' }
+      ];
+
+      console.log(`📏 Enhanced fallback message length: ${fallbackMessage.length} characters`);
+      await this.sendInteractiveMessage(phoneNumber, fallbackMessage, buttons);
+    }
+  }
+
+  // Generate Daily Declarations using Gemini (preferred) with DeepSeek fallback
+  private async generateDailyDeclarations(phoneNumber: string, userName: string): Promise<void> {
+    try {
+      // Add timestamp and variety for unique content
+      const timestamp = Date.now();
+      const focusThemes = ['Kingdom Authority', 'Spiritual Breakthrough', 'Divine Favor', 'Prayer Power', 'Victorious Living', 'Supernatural Strength', 'Heavenly Wisdom', 'Revival Fire', 'Prophetic Authority', 'Divine Protection'];
+      const randomFocus = focusThemes[Math.floor(Math.random() * focusThemes.length)];
+
+      // Ask for fewer, tighter declarations to keep message size small
+      const prompt = `Generate 5 powerful daily declarations for Christian intercessors (ID: ${timestamp}) with focus on "${randomFocus}".
+Keep it very concise and optimized for WhatsApp. HARD LENGTH LIMITS:
+- Each declaration line <= 120 characters total
+- Verse snippet <= 12 words (or provide reference only)
+- Total output <= 1100 characters
+
+Structure:
+
+**Focus:** [Theme related to "${randomFocus}"]
+
+1️⃣ I DECLARE: [Short, specific statement]
+📖 [Book Chapter:Verse] - "[very short verse snippet (<= 12 words)]" OR just [Book Chapter:Verse]
+
+2️⃣ I DECLARE: [Short statement]
+📖 [Reference OR very short snippet]
+
+3️⃣ I DECLARE: [Short statement]
+📖 [Reference OR very short snippet]
+
+4️⃣ I DECLARE: [Short statement]
+📖 [Reference OR very short snippet]
+
+5️⃣ I DECLARE: [Short statement]
+📖 [Reference OR very short snippet]
+
+Make each declaration powerful and unique. If output exceeds limits, shorten further.`;
+
+      const content = await this.generateAIContentDevotional(prompt);
+
+      const firstName = userName.split(' ')[0];
+      const declarationsMessage = `🔥 *Daily Declarations* 🔥
+
+*${firstName}, speak these over your life:*
+
+${content}
+
+💪 *Declare with bold faith!*
+
+*"Let the redeemed SAY SO!" - Psalm 107:2*`;
+
+      // If message is too long for an interactive body, chunk into multiple text messages and then send a small interactive menu
+      const MAX_LEN = 1400; // conservative limit for interactive body
+      if (declarationsMessage.length > MAX_LEN) {
+        console.log(`⚠️ Declarations too long (${declarationsMessage.length}), chunking into parts`);
+        const header = `🔥 Daily Declarations 🔥\n\n${firstName}, speak these over your life:\n\n`;
+        const footer = `\n\n💪 Declare with bold faith!\n\n"Let the redeemed SAY SO!" - Psalm 107:2`;
+
+        // Split on blank lines to keep declarations intact
+        const blocks = content.split(/\n\s*\n/).filter(Boolean);
+        const parts: string[] = [];
+        let current = header;
+        for (const b of blocks) {
+          if ((current + b + '\n\n').length > 900) { // keep parts comfortably small
+            parts.push(current.trim());
+            current = b + '\n\n';
+          } else {
+            current += b + '\n\n';
+          }
+        }
+        if (current.trim().length) parts.push((current + footer).trim());
+
+        // Send parts as text messages
+        for (let idx = 0; idx < parts.length; idx++) {
+          const part = parts[idx];
+          const label = parts.length > 1 ? ` (Part ${idx + 1}/${parts.length})` : '';
+          const body = idx === parts.length - 1 ? part : part + `\n${label}`;
+          await this.sendWhatsAppMessage(phoneNumber, body);
+        }
+
+        // Send a small interactive menu after the content
+        await this.sendInteractiveMessage(phoneNumber, 'Select an option:', [
+          { id: 'generate_another', title: '🔄 Fresh Declarations' },
+          { id: 'todays_word', title: '📖 Today\'s Word' },
+          { id: 'back', title: '⬅️ Back' }
+        ]);
+        return;
+      }
+
+      const buttons = [
+        { id: 'generate_another', title: '🔄 Fresh Declarations' },
+        { id: 'todays_word', title: '📖 Today\'s Word' },
+        { id: 'back', title: '⬅️ Back' }
+      ];
+
+      console.log(`📏 Declarations message length: ${declarationsMessage.length} characters`);
+      await this.sendInteractiveMessage(phoneNumber, declarationsMessage, buttons);
+
+    } catch (error) {
+      console.error('Error generating Daily Declarations:', error);
+      console.error('Error details:', (error as Error).message || 'Unknown error');
+
+      // Concise fallback message
+      const firstName = userName.split(' ')[0];
+      const fallbackMessage = `🔥 *Daily Declarations* 🔥
+
+*${firstName}, speak these over your life:*
+
+**Focus:** Kingdom Authority
+
+1️⃣ I DECLARE: God's power flows through my prayers!
+📖 Matthew 6:13
+
+2️⃣ I DECLARE: Every chain is broken in Jesus' name!
+📖 Isaiah 61:1
+
+3️⃣ I DECLARE: Divine favor surrounds me like a shield!
+📖 Psalm 5:12
+
+4️⃣ I DECLARE: I walk in spiritual authority today!
+📖 Luke 10:19
+
+5️⃣ I DECLARE: My prayers align with God's will!
+📖 1 John 5:14
+
+💪 *Declare with bold faith!*
+
+*"Let the redeemed SAY SO!" - Psalm 107:2*`;
+
+      const buttons = [
+        { id: 'generate_another', title: '🔄 Fresh Declarations' },
+        { id: 'todays_word', title: '📖 Today\'s Word' },
+        { id: 'back', title: '⬅️ Back' }
+      ];
+
+      console.log(`📏 Fallback declarations length: ${fallbackMessage.length} characters`);
+
+      try {
+        await this.sendInteractiveMessage(phoneNumber, fallbackMessage, buttons);
+        console.log('✅ Fallback declarations sent successfully');
+      } catch (sendError) {
+        console.error('❌ Failed to send fallback declarations:', sendError);
+        // Send a simple text message as last resort
+        await this.sendWhatsAppMessage(phoneNumber, `🔥 Daily Declarations ready! Please try again or type "declarations" for your daily spiritual power boost, ${firstName}!`);
+      }
+    }
+  }
+
+  // Handle content regeneration
+  private async handleGenerateContent(phoneNumber: string, userName: string, command: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', command);
+
+    if (command === 'get_fresh_word') {
+      await this.generateTodaysWord(phoneNumber, userName);
+    } else if (command === 'generate_another') {
+      await this.generateDailyDeclarations(phoneNumber, userName);
+    }
+  }
+
+  // AI content generation helper
+  private async generateAIContent(prompt: string): Promise<string> {
+    try {
+      console.log('🤖 Attempting AI content generation...');
+
+      // Check if API key is available
+      const apiKey = process.env.DEEPSEEK_API_KEY || process.env.AI_API_KEY;
+      if (!apiKey) {
+        console.error('❌ No AI API key configured');
+        throw new Error('AI service unavailable - no API key');
+      }
+
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a Christian devotional writer specializing in powerful, biblically-grounded content for intercessors and prayer warriors. Your writing is inspiring, scripturally sound, and spiritually empowering. Keep responses concise and formatted for WhatsApp messaging.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 800,
+          temperature: 0.8
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ DeepSeek API error: ${response.status} - ${errorText}`);
+        throw new Error(`DeepSeek API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content;
+
+      if (!content) {
+        console.error('❌ No content returned from AI');
+        throw new Error('No content returned from AI service');
+      }
+
+      console.log('✅ AI content generated successfully');
+      return content;
+
+    } catch (error) {
+      console.error('❌ AI content generation failed:', error);
+      throw error;
+    }
+  }
+
+  // Prefer Gemini for Devotions/Declarations; fallback to DeepSeek
+  private async generateAIContentDevotional(prompt: string): Promise<string> {
+    // Try Gemini first if available
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (geminiKey) {
+      try {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`;
+        const body = {
+          contents: [
+            {
+              role: 'system',
+              parts: [
+                {
+                  text:
+                    'You are a Christian devotional writer for WhatsApp. Write concise, biblically grounded, inspiring content for prayer warriors. Avoid markdown symbols like ** or _; keep text clean. Keep under 1400 characters.'
+                }
+              ]
+            },
+            {
+              role: 'user',
+              parts: [{ text: prompt }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.9,
+            topP: 0.95,
+            maxOutputTokens: 800
+          }
+        } as any;
+
+        const resp = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        if (resp.ok) {
+          const data: any = await resp.json();
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text && typeof text === 'string') return text;
+          throw new Error('Gemini returned no text');
+        } else {
+          const t = await resp.text();
+          throw new Error(`Gemini error ${resp.status}: ${t}`);
+        }
+      } catch (e) {
+        console.error('❌ Gemini generation failed, falling back to DeepSeek:', e);
+      }
     }
 
-    await this.logInteraction(phoneNumber, 'settings', option);
+    // Fallback to DeepSeek
+    return await this.generateAIContent(prompt);
   }
 
-  // Bible study topic selection handler
+  // Specific button interaction handlers
+  private async handleSpecificDevotional(phoneNumber: string, userName: string, type: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', type);
+
+    let content = '';
+    if (type === 'daily_devotional') {
+      content = `📖 *Today's Devotional* 📖
+
+Hello ${userName}!
+
+🔥 *"For the eyes of the LORD run to and fro throughout the whole earth, to show Himself strong on behalf of those whose heart is loyal to Him."* - 2 Chronicles 16:9
+
+💡 **Reflection:** God is actively seeking hearts completely devoted to Him. Your prayers today are part of His mighty work across the earth.
+
+⚔️ **Declaration:** "Lord, I position my heart in complete loyalty to You. Use my prayers to demonstrate Your strength in every nation!"
+
+🌍 **Intercession Focus:** Pray for spiritual awakening in unreached nations and for God's strength to be revealed through global intercession.`;
+    } else if (type === 'fresh_word') {
+      content = `✨ *Fresh Prophetic Word* ✨
+
+Beloved ${userName},
+
+🔥 **The Spirit speaks:** "I am raising up a generation of intercessors who will not be silent! Your prayers are creating pathways for My glory to flow in dark places."
+
+⚔️ **Prophetic Declaration:** "I decree that every prayer offered in faith is breaking chains and opening prison doors. The sound of intercession is the sound of victory!"
+
+🌟 **Personal Activation:** Step into your calling as a watchman on the walls. Your prayers today will shift atmospheres!`;
+    } else {
+      content = `🔍 *Scripture Insight* 🔍
+
+Deep dive, ${userName}!
+
+📖 *"The effectual fervent prayer of the righteous man availeth much."* - James 5:17
+
+🎯 **Hebrew Insight:** The word "effectual" means "energized by divine power." Your prayers aren't just words - they're spiritual forces!
+
+💪 **Application:** Today, pray with the understanding that each word carries divine energy to accomplish God's purposes.
+
+🔥 **Challenge:** Spend 5 extra minutes in prayer today, knowing your words are charged with heaven's power!`;
+    }
+
+    const buttons = [
+      { id: 'devotionals', title: '📖 More Devotionals' },
+      { id: 'back', title: '⬅️ Back to Menu' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, content, buttons);
+  }
+
+  // Bible Quiz functionality removed - replaced with ScriptureCoach system
+
+  private async handleReminderSettings(phoneNumber: string, userName: string, setting: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', setting);
+
+    let message = '';
+    let timing = '30min';
+    let minutes = 30;
+
+    if (setting === 'reminder_30min') {
+      timing = '30min';
+      minutes = 30;
+      message = `⏰ *30-Minute Reminders Set!* ⏰
+
+Perfect choice, ${userName}!
+
+✅ You'll receive prayer reminders 30 minutes before your slot
+📱 Gentle notifications to prepare your heart
+🙏 Time to transition into prayer mindset
+⚔️ Spiritual preparation for powerful intercession`;
+    } else if (setting === 'reminder_15min') {
+      timing = '15min';
+      minutes = 15;
+      message = `⏰ *15-Minute Reminders Set!* ⏰
+
+Great timing, ${userName}!
+
+✅ You'll receive prayer reminders 15 minutes before your slot
+⚡ Quick transition into prayer mode
+🎯 Last-minute spiritual focus
+🔥 Immediate intercession readiness`;
+    } else {
+      message = `⚙️ *Custom Reminder Settings* ⚙️
+
+Customize your experience, ${userName}!
+
+🔧 Available options:
+• Reminder timing (5, 10, 15, 30, 60 minutes)
+• Multiple reminders per slot
+• Personalized message content
+• Prayer focus themes
+
+📞 Contact support to set up your custom preferences!`;
+    }
+
+    // Apply reminder timing via AdvancedReminderSystem against the user's active slot
+    try {
+      const userInfo = await this.getCompleteUserInfo(phoneNumber);
+      if (setting === 'reminder_custom') {
+        // For now, keep the informational message only for custom
+      } else {
+        const ok = await this.reminderSystem.updateReminderSettings(userInfo.userId, minutes);
+        if (!ok) {
+          message = `❌ Failed to update reminder settings. Please try again or use "remind ${minutes}".`;
+        }
+      }
+    } catch (e) {
+      message = `❌ Error updating reminder settings. Please try again.`;
+    }
+
+    const buttons = [
+      { id: 'reminders', title: '⏰ Reminder Options' },
+      { id: 'back', title: '⬅️ Back to Menu' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, message, buttons);
+  }
+
+  private async handleSpecificUpdates(phoneNumber: string, userName: string, type: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', type);
+
+    let content = '';
+    if (type === 'global_updates') {
+      content = `🌍 *Global Prayer Updates* 🌍
+
+Current prayer focuses, ${userName}:
+
+🚨 **Urgent:** Middle East peace negotiations
+🔥 **Revival:** South Korea experiencing youth awakening
+⛪ **Persecution:** Iranian believers need protection
+🌾 **Harvest:** 10,000 new believers in Nigeria this month
+💼 **Economics:** Pray for job provision in Argentina
+👨‍👩‍👧‍👦 **Families:** Reconciliation movement in Philippines
+
+*"The earth will be filled with the knowledge of the glory of the LORD."* - Habakkuk 2:14`;
+    } else {
+      content = `🙏 *Current Prayer Requests* 🙏
+
+Join in prayer, ${userName}:
+
+💒 **Church Leaders:** Wisdom for pastors navigating cultural challenges
+🏥 **Healing:** Medical missions in remote African villages  
+🎓 **Education:** Christian schools facing financial difficulties
+🌪️ **Disasters:** Recovery efforts in storm-affected regions
+💔 **Broken Hearts:** Emotional healing for trauma survivors
+🕊️ **Peace:** Conflict resolution in divided communities
+
+*"The prayer of a righteous person is powerful and effective."* - James 5:16`;
+    }
+
+    const buttons = [
+      { id: 'updates', title: '🌍 More Updates' },
+      { id: 'back', title: '⬅️ Back to Menu' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, content, buttons);
+  }
+
+  private async handleSpecificMessages(phoneNumber: string, userName: string, type: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', type);
+
+    let content = '';
+    if (type === 'warfare_declaration') {
+      content = `⚔️ *Warfare Declarations* ⚔️
+
+Speak with authority, ${userName}!
+
+💥 **I DECREE:**
+• Every chain of darkness is broken in Jesus' name!
+• The gates of hell shall not prevail against God's church!
+• Divine breakthrough is manifesting in every area of my life!
+
+🔥 **I DECLARE:**
+• God's kingdom advances through my prayers!
+• Angels are released to accomplish His will!
+• Victory belongs to the Lord!
+
+*"No weapon formed against you shall prosper!"* - Isaiah 54:17`;
+    } else if (type === 'prophetic_word') {
+      content = `📜 *Prophetic Insights* 📜
+
+Heaven speaks, ${userName}:
+
+🔮 **The Lord says:** "I am shifting seasons rapidly now. What seemed impossible yesterday becomes your testimony tomorrow."
+
+✨ **Prophetic Vision:** "I see doors opening that man cannot shut. Your faithfulness in prayer has positioned you for divine appointments."
+
+🌟 **Personal Word:** "The intercession flowing through you is creating wells of revival in dry places. Keep digging deeper!"
+
+*"For My thoughts are not your thoughts."* - Isaiah 55:8`;
+    } else {
+      content = `🙏 *Targeted Prayer Points* 🙏
+
+Intercession focus, ${userName}:
+
+🎯 **For Nations:**
+• Pray for governmental leaders to seek godly wisdom
+• Intercede for religious freedom worldwide
+
+🎯 **For Churches:**
+• Unity among believers across denominational lines
+• Fresh outpouring of the Holy Spirit
+
+🎯 **For Families:**
+• Protection over marriages and children
+• Generational curses broken
+
+*"I sought for a man among them who would make a wall."* - Ezekiel 22:30`;
+    }
+
+    const buttons = [
+      { id: 'messages', title: '✨ More Messages' },
+      { id: 'back', title: '⬅️ Back to Menu' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, content, buttons);
+  }
+
+  private async handleSpecificDashboard(phoneNumber: string, userName: string, type: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'button_action', type);
+
+    const prayerSlot = await this.getUserPrayerSlot(phoneNumber);
+    let content = '';
+
+    if (type === 'prayer_stats') {
+      content = `📈 *Prayer Statistics* 📈
+
+Your intercession journey, ${userName}:
+
+⏰ **Prayer Slot:** ${prayerSlot || 'Not assigned'}
+📅 **Days Active:** Building consistency!
+🎯 **Prayer Focus:** Global intercession
+⚡ **Impact Level:** Growing stronger
+🌍 **Global Rank:** Rising intercessor
+
+📊 **This Month:**
+• Prayers offered: Countless blessings
+• Breakthrough reports: Testimonies flowing
+• Unity with global intercessors: Connected
+
+*"Pray without ceasing!"* - 1 Thessalonians 5:17`;
+    } else if (type === 'growth_report') {
+      content = `🌱 *Spiritual Growth Report* 🌱
+
+Your development, ${userName}:
+
+📚 **Biblical Knowledge:** Expanding daily
+🔥 **Faith Level:** Stronger than yesterday
+💪 **Prayer Endurance:** Building stamina
+🎯 **Prophetic Sensitivity:** Hearing heaven
+🌟 **Leadership Capacity:** Emerging calling
+
+📈 **Growth Areas:**
+• Intercession intensity: Rising
+• Scriptural insight: Deepening
+• Spiritual authority: Increasing
+
+*"Grow in grace and knowledge of our Lord."* - 2 Peter 3:18`;
+    } else {
+      content = `🏆 *Your Achievements* 🏆
+
+Celebrating progress, ${userName}:
+
+🥇 **Badges Earned:**
+• Faithful Intercessor
+• Prayer Warrior
+• Global Connector
+
+⭐ **Milestones Reached:**
+• 30-day prayer streak: In progress
+// Bible Quiz functionality removed - replaced with ScriptureCoach system
+• Revival catalyst: Active
+
+🎖️ **Special Recognition:**
+• Part of 24/7 global prayer coverage
+• Contributing to worldwide revival
+
+*"Well done, good and faithful servant!"* - Matthew 25:23`;
+    }
+
+    const buttons = [
+      { id: 'dashboard', title: '📊 Main Dashboard' },
+      { id: 'back', title: '⬅️ Back to Menu' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, content, buttons);
+  }
+
+  private async handleUnknownCommand(phoneNumber: string, userName: string, messageText: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'unknown_command', messageText);
+
+    const unknownMessage = `🤖 I didn't understand "${messageText}", ${userName}.
+
+Let me help you get back on track! Here are your options:`;
+
+    const buttons = [
+      { id: 'devotionals', title: '📖 Devotionals' },
+      { id: 'scripture_coach', title: '📚 ScriptureCoach' },
+      { id: 'help', title: '❓ Help' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, unknownMessage, buttons);
+  }
+
+  // Bible Study Feature Implementation
+  private async initiateBibleStudy(phoneNumber: string, userName: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'bible_study', 'initiate');
+
+    // Initialize session
+    this.bibleStudySessions.set(phoneNumber, {
+      inSession: true,
+      topic: null,
+      conversationHistory: []
+    });
+
+    const firstName = userName.split(' ')[0];
+    const welcomeMessage = `📚 *Welcome to Bible Study, ${firstName}!* 📚
+
+I'm your personal Bible Study Instructor, here to guide you through God's Word with depth and spiritual insight.
+
+*"All Scripture is God-breathed and is useful for teaching, rebuking, correcting and training in righteousness."* - 2 Timothy 3:16
+
+What topic would you like to explore today? You can choose your own or let me select one for you:`;
+
+    const buttons = [
+      { id: 'type_topic', title: '✏️ Type a Topic' },
+      { id: 'random_topic', title: '🎲 Random Topic' },
+      { id: 'back', title: '⬅️ Back to Menu' }
+    ];
+
+    await this.sendInteractiveMessage(phoneNumber, welcomeMessage, buttons);
+  }
+
   private async handleBibleStudyTopicSelection(phoneNumber: string, userName: string, selection: string): Promise<void> {
     await this.logInteraction(phoneNumber, 'bible_study', 'topic_selection');
 
