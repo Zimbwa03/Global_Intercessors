@@ -158,7 +158,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [hideMobileFooter, setHideMobileFooter] = useState(false);
   const [hideDesktopHeaderButtons, setHideDesktopHeaderButtons] = useState(false);
-  const [isAdminManagementOpen, setIsAdminManagementOpen] = useState(false);
+  
   const lastScrollYRef = useRef(0);
   const isMobileRef = useRef(isMobile);
   // Keep mobile flag in a ref to avoid re-subscribing listeners unnecessarily
@@ -276,36 +276,19 @@ export default function AdminDashboard() {
   const [sortOrder, setSortOrder] = useState<'highest' | 'lowest' | 'alphabetical'>('highest');
   const [dataAllocationFilter, setDataAllocationFilter] = useState({ min: 0, max: 100 });
 
-  // State for categorized update dialogs
-  const [fastUpdateOpen, setFastUpdateOpen] = useState(false);
-  const [urgentNoticeOpen, setUrgentNoticeOpen] = useState(false);
-  const [prayerRequestOpen, setPrayerRequestOpen] = useState(false);
-  const [eventUpdateOpen, setEventUpdateOpen] = useState(false);
-  const [maintenanceOpen, setMaintenanceOpen] = useState(false);
-  const [zoomLinkOpen, setZoomLinkOpen] = useState(false);
+  // State for delete dialog and updates
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [updateToDelete, setUpdateToDelete] = useState<any>(null);
   const [newUpdateCount, setNewUpdateCount] = useState(0);
 
-  const [fastingTitle, setFastingTitle] = useState("3 Days & 3 Nights Fasting Program - August");
-  const [fastingStartDate, setFastingStartDate] = useState<Date>();
-  const [fastingEndDate, setFastingEndDate] = useState<Date>();
-  const [fastingDescription, setFastingDescription] = useState("");
-
-  const [urgentMessage, setUrgentMessage] = useState("");
-  const [prayerRequestMessage, setPrayerRequestMessage] = useState("");
-  const [eventMessage, setEventMessage] = useState("");
-  const [eventImage, setEventImage] = useState<File | null>(null);
-  const [maintenanceMessage, setMaintenanceMessage] = useState("");
-  const [zoomLinkUpdate, setZoomLinkUpdate] = useState("");
+  
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
 
-  // Check if any dialog is open to prevent refetching during user interaction
-  const isAnyDialogOpen = fastUpdateOpen || urgentNoticeOpen || prayerRequestOpen || 
-                          eventUpdateOpen || maintenanceOpen || zoomLinkOpen || deleteDialogOpen;
+  // Check if delete dialog is open to prevent refetching during user interaction
+  const isAnyDialogOpen = deleteDialogOpen;
 
   // Fetch data allocation
   const { data: dataAllocation = [], isLoading: dataAllocationLoading, refetch: refetchDataAllocation } = useQuery({
@@ -1356,7 +1339,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Fast Update */}
             <Button
-              onClick={() => setFastUpdateOpen(true)}
+              onClick={() => setLocation("/admin/management/fast-update")}
               className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-gi-primary to-gi-primary/80 hover:from-gi-primary/90 hover:to-gi-primary/70 text-white transition-all duration-300 hover:scale-105"
               data-testid="button-fast-update"
             >
@@ -1369,7 +1352,7 @@ export default function AdminDashboard() {
 
             {/* Urgent Notice */}
             <Button
-              onClick={() => setUrgentNoticeOpen(true)}
+              onClick={() => setLocation("/admin/management/urgent-notice")}
               className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white transition-all duration-300 hover:scale-105"
               data-testid="button-urgent-notice"
             >
@@ -1382,7 +1365,7 @@ export default function AdminDashboard() {
 
             {/* Prayer Request */}
             <Button
-              onClick={() => setPrayerRequestOpen(true)}
+              onClick={() => setLocation("/admin/management/prayer-request")}
               className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white transition-all duration-300 hover:scale-105"
               data-testid="button-prayer-request"
             >
@@ -1395,7 +1378,7 @@ export default function AdminDashboard() {
 
             {/* Event Updates */}
             <Button
-              onClick={() => setEventUpdateOpen(true)}
+              onClick={() => setLocation("/admin/management/event-update")}
               className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white transition-all duration-300 hover:scale-105"
               data-testid="button-event-update"
             >
@@ -1408,7 +1391,7 @@ export default function AdminDashboard() {
 
             {/* System Maintenance */}
             <Button
-              onClick={() => setMaintenanceOpen(true)}
+              onClick={() => setLocation("/admin/management/system-maintenance")}
               className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white transition-all duration-300 hover:scale-105"
               data-testid="button-system-maintenance"
             >
@@ -1421,7 +1404,7 @@ export default function AdminDashboard() {
 
             {/* Zoom Link Management */}
             <Button
-              onClick={() => setZoomLinkOpen(true)}
+              onClick={() => setLocation("/admin/management/zoom-link")}
               className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-gi-gold to-yellow-500 hover:from-gi-gold/90 hover:to-yellow-600 text-gi-primary transition-all duration-300 hover:scale-105"
               data-testid="button-zoom-link"
             >
@@ -1435,8 +1418,10 @@ export default function AdminDashboard() {
         </CardContent>
       </AnimatedCard>
 
-      {/* Fast Update Dialog */}
-      <Dialog open={fastUpdateOpen} onOpenChange={setFastUpdateOpen}>
+      {/* Dialogs removed - now using dedicated pages */}
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -2124,15 +2109,7 @@ export default function AdminDashboard() {
   return (
     <ErrorBoundary>
     <div className="min-h-screen bg-gray-50">
-      {/* Admin Management Dialog */}
-      {adminUser && (
-        <AdminManagement
-          currentAdminEmail={adminUser.email}
-          currentAdminRole={adminUser.role}
-          isOpen={isAdminManagementOpen}
-          onClose={() => setIsAdminManagementOpen(false)}
-        />
-      )}
+      
       {/* Mobile Header */}
       {isMobile && (
         <div className="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3">
@@ -2150,7 +2127,7 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-center space-x-2">
               <Button
-                onClick={() => setIsAdminManagementOpen(true)}
+                onClick={() => setLocation("/admin/management/add-admin")}
                 size="sm"
                 variant="ghost"
                 className="p-2"
@@ -2216,7 +2193,7 @@ export default function AdminDashboard() {
             <div className={`flex items-center space-x-4 transition-opacity duration-200 ${hideDesktopHeaderButtons ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
               <span className="text-sm">Welcome, {adminUser.email}</span>
               <Button
-                onClick={() => setIsAdminManagementOpen(true)}
+                onClick={() => setLocation("/admin/management/add-admin")}
                 variant="outline"
                 size="sm"
                 className="text-gi-primary border-white hover:bg-gi-primary/50"

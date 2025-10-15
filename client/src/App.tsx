@@ -13,6 +13,13 @@ import CreateAdmin from "@/pages/create-admin";
 import BibleChatPage from './pages/bible-chat';
 import PrayerPlanner from './pages/prayer-planner';
 import SchedulePage from './pages/schedule';
+import ZoomLinkManagement from './pages/management/zoom-link-management';
+import FastUpdate from './pages/management/fast-update';
+import UrgentNotice from './pages/management/urgent-notice';
+import PrayerRequest from './pages/management/prayer-request';
+import EventUpdate from './pages/management/event-update';
+import SystemMaintenance from './pages/management/system-maintenance';
+import AddAdminPage from './pages/management/add-admin';
 
 function Router() {
   return (
@@ -23,6 +30,13 @@ function Router() {
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/management/zoom-link" component={ZoomLinkManagement} />
+      <Route path="/admin/management/fast-update" component={FastUpdate} />
+      <Route path="/admin/management/urgent-notice" component={UrgentNotice} />
+      <Route path="/admin/management/prayer-request" component={PrayerRequest} />
+      <Route path="/admin/management/event-update" component={EventUpdate} />
+      <Route path="/admin/management/system-maintenance" component={SystemMaintenance} />
+      <Route path="/admin/management/add-admin" component={AddAdminPage} />
       <Route path="/create-admin" component={CreateAdmin} />
       <Route path="/bible-chat" component={BibleChatPage} />
       <Route path="/prayer-planner" component={PrayerPlanner} />
