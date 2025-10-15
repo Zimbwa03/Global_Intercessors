@@ -672,10 +672,19 @@ export default function AdminDashboard() {
 
   const deleteUpdateMutation = useMutation({
     mutationFn: async (updateId: number) => {
-      const response = await apiRequest(`/api/admin/updates/${updateId}`, {
+      const response = await fetch(`/api/admin/updates/${updateId}`, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-      return response;
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to delete update");
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({ 
