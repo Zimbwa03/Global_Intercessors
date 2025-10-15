@@ -384,13 +384,17 @@ class ZoomAttendanceTracker {
         return;
       }
       
+      // Ensure we have a proper ID for database storage
+      const meetingId = meeting.id ? String(meeting.id) : String(meeting.uuid);
+      const meetingUuid = meeting.uuid || String(meeting.id);
+      
       console.log(`✅ Processing meeting with identifier:`, meetingIdentifier);
 
       // Check if meeting is already processed
       const { data: existingMeeting } = await supabaseAdmin
         .from('zoom_meetings')
         .select('*')
-        .eq('meeting_id', meeting.id)
+        .eq('meeting_id', meetingId)
         .single();
 
       if (existingMeeting?.processed) {
@@ -399,14 +403,14 @@ class ZoomAttendanceTracker {
 
       // Get meeting participants (either from embedded data or API call)
       let participants = meeting.participants || [];
-      if (participants.length === 0 && meeting.uuid) {
-        participants = await this.getMeetingParticipants(meeting.uuid);
+      if (participants.length === 0 && meetingUuid) {
+        participants = await this.getMeetingParticipants(meetingUuid);
       }
 
       // Store meeting data
       const meetingData = {
-        meeting_id: meeting.id.toString(),
-        meeting_uuid: meeting.uuid,
+        meeting_id: meetingId,
+        meeting_uuid: meetingUuid,
         topic: meeting.topic || 'Global Intercessors Prayer',
         start_time: new Date(meeting.start_time),
         end_time: meeting.end_time ? new Date(meeting.end_time) : null,
@@ -446,8 +450,27 @@ class ZoomAttendanceTracker {
       );
 
       return response.data.participants || [];
-    } catch (error) {
-      console.error('Error fetching meeting participants:', error);
+    } catch (error: any) {
+      // Handle specific Zoom API errors
+      if (error.response?.status === 400 && error.response?.data?.code === 12702) {
+        // Meeting too old to access (older than 1 year)
+        console.log(`⏰ Meeting ${meetingUuid} is too old to retrieve participants (older than 1 year)`);
+        return [];
+      }
+      
+      if (error.response?.status === 404) {
+        // Meeting not found
+        console.log(`🔍 Meeting ${meetingUuid} not found`);
+        return [];
+      }
+      
+      // Log other errors for debugging
+      console.error(`❌ Error fetching participants for meeting ${meetingUuid}:`, {
+        status: error.response?.status,
+        code: error.response?.data?.code,
+        message: error.response?.data?.message || error.message
+      });
+      
       return [];
     }
   }
