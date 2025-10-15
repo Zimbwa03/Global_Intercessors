@@ -1342,7 +1342,7 @@ export default function AdminDashboard() {
     </div>
   );
 
-  const ManagementTab = useMemo(() => () => (
+  const ManagementTab = () => (
     <div className="space-y-6">
       {/* Categorized Update Buttons */}
       <AnimatedCard animationType="fadeIn" delay={0.1}>
@@ -2070,7 +2070,7 @@ export default function AdminDashboard() {
         </CardContent>
       </AnimatedCard>
     </div>
-  ), [updates, createUpdateMutation.isPending, deleteUpdateMutation.isPending, updateToDelete]);
+  );
 
 
   const renderTabContent = () => {
