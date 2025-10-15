@@ -207,10 +207,10 @@ export default function AdminDashboard() {
           const goingDown = currentY > lastScrollYRef.current;
           const was = lastScrollYRef.current;
           lastScrollYRef.current = currentY;
-          
+
           // Check if any dialog is open by looking for Dialog overlay
           const isDialogOpen = document.querySelector('[role="dialog"]') !== null;
-          
+
           // Suppress UI hide/show while typing on mobile to prevent input blur/keyboard closing
           // Also suppress when any dialog is open to prevent flickering
           if ((isMobileRef.current && isInputFocusedRef.current) || isDialogOpen) {
@@ -275,7 +275,7 @@ export default function AdminDashboard() {
   const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'excellent' | 'good' | 'needs-improvement'>('all');
   const [sortOrder, setSortOrder] = useState<'highest' | 'lowest' | 'alphabetical'>('highest');
   const [dataAllocationFilter, setDataAllocationFilter] = useState({ min: 0, max: 100 });
-  
+
   // State for categorized update dialogs
   const [fastUpdateOpen, setFastUpdateOpen] = useState(false);
   const [urgentNoticeOpen, setUrgentNoticeOpen] = useState(false);
@@ -286,19 +286,19 @@ export default function AdminDashboard() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [updateToDelete, setUpdateToDelete] = useState<any>(null);
   const [newUpdateCount, setNewUpdateCount] = useState(0);
-  
+
   const [fastingTitle, setFastingTitle] = useState("3 Days & 3 Nights Fasting Program - August");
   const [fastingStartDate, setFastingStartDate] = useState<Date>();
   const [fastingEndDate, setFastingEndDate] = useState<Date>();
   const [fastingDescription, setFastingDescription] = useState("");
-  
+
   const [urgentMessage, setUrgentMessage] = useState("");
   const [prayerRequestMessage, setPrayerRequestMessage] = useState("");
   const [eventMessage, setEventMessage] = useState("");
   const [eventImage, setEventImage] = useState<File | null>(null);
   const [maintenanceMessage, setMaintenanceMessage] = useState("");
   const [zoomLinkUpdate, setZoomLinkUpdate] = useState("");
-  
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
@@ -324,7 +324,7 @@ export default function AdminDashboard() {
   // Check admin authentication
   useEffect(() => {
     let isMounted = true;
-    
+
     const checkAdminAuth = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -371,7 +371,7 @@ export default function AdminDashboard() {
     };
 
     checkAdminAuth();
-    
+
     return () => {
       isMounted = false;
     };
@@ -678,12 +678,12 @@ export default function AdminDashboard() {
           "Content-Type": "application/json",
         },
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || "Failed to delete update");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -1342,7 +1342,7 @@ export default function AdminDashboard() {
     </div>
   );
 
-  const ManagementTab = () => (
+  const ManagementTab = useMemo(() => () => (
     <div className="space-y-6">
       {/* Categorized Update Buttons */}
       <AnimatedCard animationType="fadeIn" delay={0.1}>
@@ -1459,7 +1459,7 @@ export default function AdminDashboard() {
                 data-testid="input-fasting-title"
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Start Date *</Label>
@@ -1484,7 +1484,7 @@ export default function AdminDashboard() {
                   </PopoverContent>
                 </Popover>
               </div>
-              
+
               <div>
                 <Label>End Date *</Label>
                 <Popover>
@@ -2070,7 +2070,8 @@ export default function AdminDashboard() {
         </CardContent>
       </AnimatedCard>
     </div>
-  );
+  ), [updates, createUpdateMutation.isPending, deleteUpdateMutation.isPending, updateToDelete]);
+
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -2091,7 +2092,7 @@ export default function AdminDashboard() {
     }
   };
 
-  
+
 
   class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error?: any }> {
     constructor(props: any) {
