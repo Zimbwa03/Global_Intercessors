@@ -158,7 +158,27 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [hideMobileFooter, setHideMobileFooter] = useState(false);
   const [hideDesktopHeaderButtons, setHideDesktopHeaderButtons] = useState(false);
-  
+
+  // State for dialogs and form data (these are now removed as dialogs are replaced by pages)
+  const [fastingTitle, setFastingTitle] = useState("3 Days & 3 Nights Fasting Program - August");
+  const [fastingStartDate, setFastingStartDate] = useState<Date | undefined>(undefined);
+  const [fastingEndDate, setFastingEndDate] = useState<Date | undefined>(undefined);
+  const [fastingDescription, setFastingDescription] = useState("");
+  const [urgentMessage, setUrgentMessage] = useState("");
+  const [prayerRequestMessage, setPrayerRequestMessage] = useState("");
+  const [eventMessage, setEventMessage] = useState("");
+  const [eventImage, setEventImage] = useState<File | null>(null);
+  const [maintenanceMessage, setMaintenanceMessage] = useState("");
+  const [zoomLinkUpdate, setZoomLinkUpdate] = useState("");
+
+  // State for dialog open/close status
+  const [fastUpdateOpen, setFastUpdateOpen] = useState(false);
+  const [urgentNoticeOpen, setUrgentNoticeOpen] = useState(false);
+  const [prayerRequestOpen, setPrayerRequestOpen] = useState(false);
+  const [eventUpdateOpen, setEventUpdateOpen] = useState(false);
+  const [maintenanceOpen, setMaintenanceOpen] = useState(false);
+  const [zoomLinkOpen, setZoomLinkOpen] = useState(false);
+
   const lastScrollYRef = useRef(0);
   const isMobileRef = useRef(isMobile);
   // Keep mobile flag in a ref to avoid re-subscribing listeners unnecessarily
@@ -249,6 +269,7 @@ export default function AdminDashboard() {
         return [] as any[];
       }
     },
+    enabled: !!adminUser,
     refetchOnWindowFocus: false,
     refetchInterval: false,
     staleTime: 10000
@@ -281,14 +302,14 @@ export default function AdminDashboard() {
   const [updateToDelete, setUpdateToDelete] = useState<any>(null);
   const [newUpdateCount, setNewUpdateCount] = useState(0);
 
-  
+
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
 
   // Check if delete dialog is open to prevent refetching during user interaction
-  const isAnyDialogOpen = deleteDialogOpen;
+  const isAnyDialogOpen = deleteDialogOpen || fastUpdateOpen || urgentNoticeOpen || prayerRequestOpen || eventUpdateOpen || maintenanceOpen || zoomLinkOpen;
 
   // Fetch data allocation
   const { data: dataAllocation = [], isLoading: dataAllocationLoading, refetch: refetchDataAllocation } = useQuery({
@@ -826,6 +847,7 @@ export default function AdminDashboard() {
     refetchUpdates();
     refetchActivities();
     refetchSkipRequests();
+    refetchDataAllocation(); // Also refresh data allocation
     toast({ title: "Data Refreshed", description: "All data has been refreshed" });
   };
 
@@ -1325,737 +1347,737 @@ export default function AdminDashboard() {
     </div>
   );
 
-  const ManagementTab = () => (
-    <div className="space-y-6">
-      {/* Categorized Update Buttons */}
-      <AnimatedCard animationType="fadeIn" delay={0.1}>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Settings className="w-5 h-5 mr-2" />
-            Global Updates Management
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Fast Update */}
-            <Button
-              onClick={() => setLocation("/admin/management/fast-update")}
-              className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-gi-primary to-gi-primary/80 hover:from-gi-primary/90 hover:to-gi-primary/70 text-white transition-all duration-300 hover:scale-105"
-              data-testid="button-fast-update"
-            >
-              <Zap className="w-8 h-8" />
-              <div className="text-center">
-                <div className="font-bold text-lg">Fast Update</div>
-                <div className="text-xs opacity-90">Fasting Program Announcement</div>
-              </div>
-            </Button>
+  const ManagementTab = () => {
+    return (
+      <div className="space-y-6">
+        {/* Categorized Update Buttons */}
+        <AnimatedCard animationType="fadeIn" delay={0.1}>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Settings className="w-5 h-5 mr-2" />
+              Global Updates Management
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Fast Update */}
+              <Button
+                onClick={() => setFastUpdateOpen(true)}
+                className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-gi-primary to-gi-primary/80 hover:from-gi-primary/90 hover:to-gi-primary/70 text-white transition-all duration-300 hover:scale-105"
+                data-testid="button-fast-update"
+              >
+                <Zap className="w-8 h-8" />
+                <div className="text-center">
+                  <div className="font-bold text-lg">Fast Update</div>
+                  <div className="text-xs opacity-90">Fasting Program Announcement</div>
+                </div>
+              </Button>
 
-            {/* Urgent Notice */}
-            <Button
-              onClick={() => setLocation("/admin/management/urgent-notice")}
-              className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white transition-all duration-300 hover:scale-105"
-              data-testid="button-urgent-notice"
-            >
-              <Bell className="w-8 h-8" />
-              <div className="text-center">
-                <div className="font-bold text-lg">Urgent Notice</div>
-                <div className="text-xs opacity-90">Critical Announcements</div>
-              </div>
-            </Button>
+              {/* Urgent Notice */}
+              <Button
+                onClick={() => setUrgentNoticeOpen(true)}
+                className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white transition-all duration-300 hover:scale-105"
+                data-testid="button-urgent-notice"
+              >
+                <Bell className="w-8 h-8" />
+                <div className="text-center">
+                  <div className="font-bold text-lg">Urgent Notice</div>
+                  <div className="text-xs opacity-90">Critical Announcements</div>
+                </div>
+              </Button>
 
-            {/* Prayer Request */}
-            <Button
-              onClick={() => setLocation("/admin/management/prayer-request")}
-              className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white transition-all duration-300 hover:scale-105"
-              data-testid="button-prayer-request"
-            >
-              <Heart className="w-8 h-8" />
-              <div className="text-center">
-                <div className="font-bold text-lg">Prayer Request</div>
-                <div className="text-xs opacity-90">Community Prayer Needs</div>
-              </div>
-            </Button>
+              {/* Prayer Request */}
+              <Button
+                onClick={() => setPrayerRequestOpen(true)}
+                className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white transition-all duration-300 hover:scale-105"
+                data-testid="button-prayer-request"
+              >
+                <Heart className="w-8 h-8" />
+                <div className="text-center">
+                  <div className="font-bold text-lg">Prayer Request</div>
+                  <div className="text-xs opacity-90">Community Prayer Needs</div>
+                </div>
+              </Button>
 
-            {/* Event Updates */}
-            <Button
-              onClick={() => setLocation("/admin/management/event-update")}
-              className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white transition-all duration-300 hover:scale-105"
-              data-testid="button-event-update"
-            >
-              <ImagePlus className="w-8 h-8" />
-              <div className="text-center">
-                <div className="font-bold text-lg">Event Updates</div>
-                <div className="text-xs opacity-90">With Image Upload</div>
-              </div>
-            </Button>
+              {/* Event Updates */}
+              <Button
+                onClick={() => setEventUpdateOpen(true)}
+                className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white transition-all duration-300 hover:scale-105"
+                data-testid="button-event-update"
+              >
+                <ImagePlus className="w-8 h-8" />
+                <div className="text-center">
+                  <div className="font-bold text-lg">Event Updates</div>
+                  <div className="text-xs opacity-90">With Image Upload</div>
+                </div>
+              </Button>
 
-            {/* System Maintenance */}
-            <Button
-              onClick={() => setLocation("/admin/management/system-maintenance")}
-              className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white transition-all duration-300 hover:scale-105"
-              data-testid="button-system-maintenance"
-            >
-              <Wrench className="w-8 h-8" />
-              <div className="text-center">
-                <div className="font-bold text-lg">System Maintenance</div>
-                <div className="text-xs opacity-90">Technical Updates</div>
-              </div>
-            </Button>
+              {/* System Maintenance */}
+              <Button
+                onClick={() => setMaintenanceOpen(true)}
+                className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white transition-all duration-300 hover:scale-105"
+                data-testid="button-system-maintenance"
+              >
+                <Wrench className="w-8 h-8" />
+                <div className="text-center">
+                  <div className="font-bold text-lg">System Maintenance</div>
+                  <div className="text-xs opacity-90">Technical Updates</div>
+                </div>
+              </Button>
 
-            {/* Zoom Link Management */}
-            <Button
-              onClick={() => setLocation("/admin/management/zoom-link")}
-              className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-gi-gold to-yellow-500 hover:from-gi-gold/90 hover:to-yellow-600 text-gi-primary transition-all duration-300 hover:scale-105"
-              data-testid="button-zoom-link"
-            >
-              <LinkIcon className="w-8 h-8" />
-              <div className="text-center">
-                <div className="font-bold text-lg">Zoom Link</div>
-                <div className="text-xs opacity-90">Meeting Link Update</div>
-              </div>
-            </Button>
-          </div>
-        </CardContent>
-      </AnimatedCard>
-
-      {/* Dialogs removed - now using dedicated pages */}
-      
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5 text-gi-primary" />
-              Fast Update - Fasting Program
-            </DialogTitle>
-            <DialogDescription>
-              Update fasting program details and dates
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="fasting-title">Program Title *</Label>
-              <Input
-                id="fasting-title"
-                value={fastingTitle}
-                onChange={(e) => setFastingTitle(e.target.value)}
-                placeholder="e.g., 3 Days & 3 Nights Fasting Program - August"
-                className="mt-1"
-                data-testid="input-fasting-title"
-              />
+              {/* Zoom Link Management */}
+              <Button
+                onClick={() => setZoomLinkOpen(true)}
+                className="h-32 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-gi-gold to-yellow-500 hover:from-gi-gold/90 hover:to-yellow-600 text-gi-primary transition-all duration-300 hover:scale-105"
+                data-testid="button-zoom-link"
+              >
+                <LinkIcon className="w-8 h-8" />
+                <div className="text-center">
+                  <div className="font-bold text-lg">Zoom Link</div>
+                  <div className="text-xs opacity-90">Meeting Link Update</div>
+                </div>
+              </Button>
             </div>
+          </CardContent>
+        </AnimatedCard>
 
-            <div className="grid grid-cols-2 gap-4">
+        {/* Fast Update Dialog */}
+        <Dialog open={fastUpdateOpen} onOpenChange={setFastUpdateOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-gi-primary" />
+                Fast Update - Fasting Program
+              </DialogTitle>
+              <DialogDescription>
+                Update fasting program details and dates
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
               <div>
-                <Label>Start Date *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={`w-full mt-1 justify-start text-left font-normal ${!fastingStartDate && "text-muted-foreground"}`}
-                      data-testid="button-select-start-date"
-                    >
-                      <CalendarDays className="mr-2 h-4 w-4" />
-                      {fastingStartDate ? format(fastingStartDate, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={fastingStartDate}
-                      onSelect={setFastingStartDate}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Label htmlFor="fasting-title">Program Title *</Label>
+                <Input
+                  id="fasting-title"
+                  value={fastingTitle}
+                  onChange={(e) => setFastingTitle(e.target.value)}
+                  placeholder="e.g., 3 Days & 3 Nights Fasting Program - August"
+                  className="mt-1"
+                  data-testid="input-fasting-title"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Start Date *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={`w-full mt-1 justify-start text-left font-normal ${!fastingStartDate && "text-muted-foreground"}`}
+                        data-testid="button-select-start-date"
+                      >
+                        <CalendarDays className="mr-2 h-4 w-4" />
+                        {fastingStartDate ? format(fastingStartDate, "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={fastingStartDate}
+                        onSelect={setFastingStartDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div>
+                  <Label>End Date *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={`w-full mt-1 justify-start text-left font-normal ${!fastingEndDate && "text-muted-foreground"}`}
+                        data-testid="button-select-end-date"
+                      >
+                        <CalendarDays className="mr-2 h-4 w-4" />
+                        {fastingEndDate ? format(fastingEndDate, "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={fastingEndDate}
+                        onSelect={setFastingEndDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
 
               <div>
-                <Label>End Date *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={`w-full mt-1 justify-start text-left font-normal ${!fastingEndDate && "text-muted-foreground"}`}
-                      data-testid="button-select-end-date"
-                    >
-                      <CalendarDays className="mr-2 h-4 w-4" />
-                      {fastingEndDate ? format(fastingEndDate, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={fastingEndDate}
-                      onSelect={setFastingEndDate}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Label htmlFor="fasting-description">Program Description *</Label>
+                <Textarea
+                  id="fasting-description"
+                  value={fastingDescription}
+                  onChange={(e) => setFastingDescription(e.target.value)}
+                  placeholder="Join believers worldwide in a powerful 3-day fasting period for breakthrough and revival..."
+                  rows={5}
+                  className="mt-1"
+                  data-testid="textarea-fasting-description"
+                />
               </div>
             </div>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setFastingTitle("3 Days & 3 Nights Fasting Program - August");
+                  setFastingStartDate(undefined);
+                  setFastingEndDate(undefined);
+                  setFastingDescription("");
+                }}
+                data-testid="button-clear-fast"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Clear
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!fastingTitle || !fastingStartDate || !fastingEndDate || !fastingDescription) {
+                    toast({ title: "Error", description: "Please fill all fields", variant: "destructive" });
+                    return;
+                  }
+                  const dateRange = `${format(fastingStartDate, "MMMM d")}-${format(fastingEndDate, "d, yyyy")}`;
+                  const fullDescription = `${fastingDescription}\n\n📅 Dates: ${dateRange}`;
+                  createUpdateMutation.mutate({
+                    title: fastingTitle,
+                    description: fullDescription,
+                    type: "fast",
+                    priority: "high",
+                    schedule: "immediate",
+                    expiry: "never",
+                    sendNotification: true,
+                    sendEmail: true,
+                    pinToTop: true
+                  });
+                  setFastUpdateOpen(false);
+                  setFastingTitle("3 Days & 3 Nights Fasting Program - August");
+                  setFastingStartDate(undefined);
+                  setFastingEndDate(undefined);
+                  setFastingDescription("");
+                }}
+                className="bg-gi-primary hover:bg-gi-primary/90"
+                data-testid="button-send-fast"
+                disabled={createUpdateMutation.isPending}
+              >
+                {createUpdateMutation.isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Send Update
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-            <div>
-              <Label htmlFor="fasting-description">Program Description *</Label>
+        {/* Urgent Notice Dialog */}
+        <Dialog open={urgentNoticeOpen} onOpenChange={setUrgentNoticeOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-red-600" />
+                Urgent Notice
+              </DialogTitle>
+              <DialogDescription>
+                Send critical announcement to all users
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
               <Textarea
-                id="fasting-description"
-                value={fastingDescription}
-                onChange={(e) => setFastingDescription(e.target.value)}
-                placeholder="Join believers worldwide in a powerful 3-day fasting period for breakthrough and revival..."
-                rows={5}
-                className="mt-1"
-                data-testid="textarea-fasting-description"
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setFastingTitle("3 Days & 3 Nights Fasting Program - August");
-                setFastingStartDate(undefined);
-                setFastingEndDate(undefined);
-                setFastingDescription("");
-              }}
-              data-testid="button-clear-fast"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Clear
-            </Button>
-            <Button
-              onClick={() => {
-                if (!fastingTitle || !fastingStartDate || !fastingEndDate || !fastingDescription) {
-                  toast({ title: "Error", description: "Please fill all fields", variant: "destructive" });
-                  return;
-                }
-                const dateRange = `${format(fastingStartDate, "MMMM d")}-${format(fastingEndDate, "d, yyyy")}`;
-                const fullDescription = `${fastingDescription}\n\n📅 Dates: ${dateRange}`;
-                createUpdateMutation.mutate({
-                  title: fastingTitle,
-                  description: fullDescription,
-                  type: "fast",
-                  priority: "high",
-                  schedule: "immediate",
-                  expiry: "never",
-                  sendNotification: true,
-                  sendEmail: true,
-                  pinToTop: true
-                });
-                setFastUpdateOpen(false);
-                setFastingTitle("3 Days & 3 Nights Fasting Program - August");
-                setFastingStartDate(undefined);
-                setFastingEndDate(undefined);
-                setFastingDescription("");
-              }}
-              className="bg-gi-primary hover:bg-gi-primary/90"
-              data-testid="button-send-fast"
-              disabled={createUpdateMutation.isPending}
-            >
-              {createUpdateMutation.isPending ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Send Update
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Urgent Notice Dialog */}
-      <Dialog open={urgentNoticeOpen} onOpenChange={setUrgentNoticeOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5 text-red-600" />
-              Urgent Notice
-            </DialogTitle>
-            <DialogDescription>
-              Send critical announcement to all users
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Textarea
-              value={urgentMessage}
-              onChange={(e) => setUrgentMessage(e.target.value)}
-              placeholder="Enter urgent notice message..."
-              rows={6}
-              data-testid="textarea-urgent-message"
-            />
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setUrgentMessage("")} data-testid="button-clear-urgent">
-              <X className="w-4 h-4 mr-2" />
-              Clear
-            </Button>
-            <Button
-              onClick={() => {
-                if (!urgentMessage.trim()) {
-                  toast({ title: "Error", description: "Please enter a message", variant: "destructive" });
-                  return;
-                }
-                createUpdateMutation.mutate({
-                  title: "Urgent Notice",
-                  description: urgentMessage,
-                  type: "urgent",
-                  priority: "critical",
-                  schedule: "immediate",
-                  expiry: "never",
-                  sendNotification: true,
-                  sendEmail: true,
-                  pinToTop: true
-                });
-                setUrgentMessage("");
-                setUrgentNoticeOpen(false);
-              }}
-              className="bg-red-600 hover:bg-red-700"
-              data-testid="button-send-urgent"
-              disabled={createUpdateMutation.isPending}
-            >
-              {createUpdateMutation.isPending ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Send
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Prayer Request Dialog */}
-      <Dialog open={prayerRequestOpen} onOpenChange={setPrayerRequestOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Heart className="w-5 h-5 text-purple-600" />
-              Prayer Request
-            </DialogTitle>
-            <DialogDescription>
-              Share prayer needs with the community
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Textarea
-              value={prayerRequestMessage}
-              onChange={(e) => setPrayerRequestMessage(e.target.value)}
-              placeholder="Enter prayer request..."
-              rows={6}
-              data-testid="textarea-prayer-request"
-            />
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setPrayerRequestMessage("")} data-testid="button-clear-prayer">
-              <X className="w-4 h-4 mr-2" />
-              Clear
-            </Button>
-            <Button
-              onClick={() => {
-                if (!prayerRequestMessage.trim()) {
-                  toast({ title: "Error", description: "Please enter a prayer request", variant: "destructive" });
-                  return;
-                }
-                createUpdateMutation.mutate({
-                  title: "Prayer Request",
-                  description: prayerRequestMessage,
-                  type: "prayer",
-                  priority: "high",
-                  schedule: "immediate",
-                  expiry: "never",
-                  sendNotification: true,
-                  sendEmail: false,
-                  pinToTop: false
-                });
-                setPrayerRequestMessage("");
-                setPrayerRequestOpen(false);
-              }}
-              className="bg-purple-600 hover:bg-purple-700"
-              data-testid="button-send-prayer"
-              disabled={createUpdateMutation.isPending}
-            >
-              {createUpdateMutation.isPending ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Send
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Event Update Dialog */}
-      <Dialog open={eventUpdateOpen} onOpenChange={setEventUpdateOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ImagePlus className="w-5 h-5 text-blue-600" />
-              Event Update
-            </DialogTitle>
-            <DialogDescription>
-              Post event update with optional image flyer
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="event-image">Event Flyer (Optional)</Label>
-              <Input
-                id="event-image"
-                type="file"
-                accept="image/*"
-                onChange={(e) => setEventImage(e.target.files?.[0] || null)}
-                className="mt-1"
-                data-testid="input-event-image"
-              />
-            </div>
-            <div>
-              <Label htmlFor="event-message">Event Message *</Label>
-              <Textarea
-                id="event-message"
-                value={eventMessage}
-                onChange={(e) => setEventMessage(e.target.value)}
-                placeholder="Enter event details..."
+                value={urgentMessage}
+                onChange={(e) => setUrgentMessage(e.target.value)}
+                placeholder="Enter urgent notice message..."
                 rows={6}
-                data-testid="textarea-event-message"
+                data-testid="textarea-urgent-message"
               />
             </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setEventMessage("");
-                setEventImage(null);
-              }}
-              data-testid="button-clear-event"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Clear
-            </Button>
-            <Button
-              onClick={() => {
-                if (!eventMessage.trim()) {
-                  toast({ title: "Error", description: "Please enter event details", variant: "destructive" });
-                  return;
-                }
-                const description = eventImage 
-                  ? `${eventMessage}\n\n${eventImage.name ? `📎 Attachment: ${eventImage.name}` : ''}`
-                  : eventMessage;
-                createUpdateMutation.mutate({
-                  title: "Event Update",
-                  description,
-                  type: "event",
-                  priority: "normal",
-                  schedule: "immediate",
-                  expiry: "never",
-                  sendNotification: true,
-                  sendEmail: false,
-                  pinToTop: false
-                });
-                setEventMessage("");
-                setEventImage(null);
-                setEventUpdateOpen(false);
-              }}
-              className="bg-blue-600 hover:bg-blue-700"
-              data-testid="button-send-event"
-              disabled={createUpdateMutation.isPending}
-            >
-              {createUpdateMutation.isPending ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Send
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setUrgentMessage("")} data-testid="button-clear-urgent">
+                <X className="w-4 h-4 mr-2" />
+                Clear
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!urgentMessage.trim()) {
+                    toast({ title: "Error", description: "Please enter a message", variant: "destructive" });
+                    return;
+                  }
+                  createUpdateMutation.mutate({
+                    title: "Urgent Notice",
+                    description: urgentMessage,
+                    type: "urgent",
+                    priority: "critical",
+                    schedule: "immediate",
+                    expiry: "never",
+                    sendNotification: true,
+                    sendEmail: true,
+                    pinToTop: true
+                  });
+                  setUrgentMessage("");
+                  setUrgentNoticeOpen(false);
+                }}
+                className="bg-red-600 hover:bg-red-700"
+                data-testid="button-send-urgent"
+                disabled={createUpdateMutation.isPending}
+              >
+                {createUpdateMutation.isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Send
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      {/* System Maintenance Dialog */}
-      <Dialog open={maintenanceOpen} onOpenChange={setMaintenanceOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Wrench className="w-5 h-5 text-orange-600" />
-              System Maintenance
-            </DialogTitle>
-            <DialogDescription>
-              Notify users about system updates or downtime
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Textarea
-              value={maintenanceMessage}
-              onChange={(e) => setMaintenanceMessage(e.target.value)}
-              placeholder="Enter maintenance notice..."
-              rows={6}
-              data-testid="textarea-maintenance"
-            />
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setMaintenanceMessage("")} data-testid="button-clear-maintenance">
-              <X className="w-4 h-4 mr-2" />
-              Clear
-            </Button>
-            <Button
-              onClick={() => {
-                if (!maintenanceMessage.trim()) {
-                  toast({ title: "Error", description: "Please enter maintenance details", variant: "destructive" });
-                  return;
-                }
-                createUpdateMutation.mutate({
-                  title: "System Maintenance",
-                  description: maintenanceMessage,
-                  type: "maintenance",
-                  priority: "normal",
-                  schedule: "immediate",
-                  expiry: "1week",
-                  sendNotification: true,
-                  sendEmail: false,
-                  pinToTop: false
-                });
-                setMaintenanceMessage("");
-                setMaintenanceOpen(false);
-              }}
-              className="bg-orange-600 hover:bg-orange-700"
-              data-testid="button-send-maintenance"
-              disabled={createUpdateMutation.isPending}
-            >
-              {createUpdateMutation.isPending ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Send
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        {/* Prayer Request Dialog */}
+        <Dialog open={prayerRequestOpen} onOpenChange={setPrayerRequestOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Heart className="w-5 h-5 text-purple-600" />
+                Prayer Request
+              </DialogTitle>
+              <DialogDescription>
+                Share prayer needs with the community
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Textarea
+                value={prayerRequestMessage}
+                onChange={(e) => setPrayerRequestMessage(e.target.value)}
+                placeholder="Enter prayer request..."
+                rows={6}
+                data-testid="textarea-prayer-request"
+              />
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setPrayerRequestMessage("")} data-testid="button-clear-prayer">
+                <X className="w-4 h-4 mr-2" />
+                Clear
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!prayerRequestMessage.trim()) {
+                    toast({ title: "Error", description: "Please enter a prayer request", variant: "destructive" });
+                    return;
+                  }
+                  createUpdateMutation.mutate({
+                    title: "Prayer Request",
+                    description: prayerRequestMessage,
+                    type: "prayer",
+                    priority: "high",
+                    schedule: "immediate",
+                    expiry: "never",
+                    sendNotification: true,
+                    sendEmail: false,
+                    pinToTop: false
+                  });
+                  setPrayerRequestMessage("");
+                  setPrayerRequestOpen(false);
+                }}
+                className="bg-purple-600 hover:bg-purple-700"
+                data-testid="button-send-prayer"
+                disabled={createUpdateMutation.isPending}
+              >
+                {createUpdateMutation.isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Send
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      {/* Zoom Link Dialog */}
-      <Dialog open={zoomLinkOpen} onOpenChange={setZoomLinkOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <LinkIcon className="w-5 h-5 text-gi-gold" />
-              Zoom Link Management
-            </DialogTitle>
-            <DialogDescription>
-              Update the meeting link for prayer sessions
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            {currentZoomLink && typeof currentZoomLink === 'object' && 'zoomLink' in currentZoomLink && (
-              <div className="mb-4 p-3 bg-gi-primary/10 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Current Link:</p>
-                <p className="text-gi-primary font-mono text-sm break-all">{(currentZoomLink as any).zoomLink}</p>
+        {/* Event Update Dialog */}
+        <Dialog open={eventUpdateOpen} onOpenChange={setEventUpdateOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ImagePlus className="w-5 h-5 text-blue-600" />
+                Event Update
+              </DialogTitle>
+              <DialogDescription>
+                Post event update with optional image flyer
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="event-image">Event Flyer (Optional)</Label>
+                <Input
+                  id="event-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setEventImage(e.target.files?.[0] || null)}
+                  className="mt-1"
+                  data-testid="input-event-image"
+                />
+              </div>
+              <div>
+                <Label htmlFor="event-message">Event Message *</Label>
+                <Textarea
+                  id="event-message"
+                  value={eventMessage}
+                  onChange={(e) => setEventMessage(e.target.value)}
+                  placeholder="Enter event details..."
+                  rows={6}
+                  data-testid="textarea-event-message"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEventMessage("");
+                  setEventImage(null);
+                }}
+                data-testid="button-clear-event"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Clear
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!eventMessage.trim()) {
+                    toast({ title: "Error", description: "Please enter event details", variant: "destructive" });
+                    return;
+                  }
+                  const description = eventImage 
+                    ? `${eventMessage}\n\n📎 Attachment: ${eventImage.name}`
+                    : eventMessage;
+                  createUpdateMutation.mutate({
+                    title: "Event Update",
+                    description,
+                    type: "event",
+                    priority: "normal",
+                    schedule: "immediate",
+                    expiry: "never",
+                    sendNotification: true,
+                    sendEmail: false,
+                    pinToTop: false
+                  });
+                  setEventMessage("");
+                  setEventImage(null);
+                  setEventUpdateOpen(false);
+                }}
+                className="bg-blue-600 hover:bg-blue-700"
+                data-testid="button-send-event"
+                disabled={createUpdateMutation.isPending}
+              >
+                {createUpdateMutation.isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Send
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* System Maintenance Dialog */}
+        <Dialog open={maintenanceOpen} onOpenChange={setMaintenanceOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Wrench className="w-5 h-5 text-orange-600" />
+                System Maintenance
+              </DialogTitle>
+              <DialogDescription>
+                Notify users about system updates or downtime
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Textarea
+                value={maintenanceMessage}
+                onChange={(e) => setMaintenanceMessage(e.target.value)}
+                placeholder="Enter maintenance notice..."
+                rows={6}
+                data-testid="textarea-maintenance"
+              />
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setMaintenanceMessage("")} data-testid="button-clear-maintenance">
+                <X className="w-4 h-4 mr-2" />
+                Clear
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!maintenanceMessage.trim()) {
+                    toast({ title: "Error", description: "Please enter maintenance details", variant: "destructive" });
+                    return;
+                  }
+                  createUpdateMutation.mutate({
+                    title: "System Maintenance",
+                    description: maintenanceMessage,
+                    type: "maintenance",
+                    priority: "normal",
+                    schedule: "immediate",
+                    expiry: "1week",
+                    sendNotification: true,
+                    sendEmail: false,
+                    pinToTop: false
+                  });
+                  setMaintenanceMessage("");
+                  setMaintenanceOpen(false);
+                }}
+                className="bg-orange-600 hover:bg-orange-700"
+                data-testid="button-send-maintenance"
+                disabled={createUpdateMutation.isPending}
+              >
+                {createUpdateMutation.isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Send
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Zoom Link Dialog */}
+        <Dialog open={zoomLinkOpen} onOpenChange={setZoomLinkOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <LinkIcon className="w-5 h-5 text-gi-gold" />
+                Zoom Link Management
+              </DialogTitle>
+              <DialogDescription>
+                Update the meeting link for prayer sessions
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              {currentZoomLink && typeof currentZoomLink === 'object' && 'zoomLink' in currentZoomLink && (
+                <div className="mb-4 p-3 bg-gi-primary/10 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">Current Link:</p>
+                  <p className="text-gi-primary font-mono text-sm break-all">{(currentZoomLink as any).zoomLink}</p>
+                </div>
+              )}
+              <div>
+                <Label htmlFor="zoom-link-input">New Zoom Link *</Label>
+                <Input
+                  id="zoom-link-input"
+                  value={zoomLinkUpdate}
+                  onChange={(e) => setZoomLinkUpdate(e.target.value)}
+                  placeholder="https://zoom.us/j/..."
+                  className="mt-1"
+                  data-testid="input-zoom-link"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setZoomLinkUpdate("")} data-testid="button-clear-zoom">
+                <X className="w-4 h-4 mr-2" />
+                Clear
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!zoomLinkUpdate.trim()) {
+                    toast({ title: "Error", description: "Please enter a Zoom link", variant: "destructive" });
+                    return;
+                  }
+                  updateZoomLinkMutation.mutate(zoomLinkUpdate);
+                  setZoomLinkUpdate("");
+                  setZoomLinkOpen(false);
+                }}
+                className="bg-gi-gold hover:bg-gi-gold/90 text-gi-primary"
+                data-testid="button-send-zoom"
+                disabled={updateZoomLinkMutation.isPending}
+              >
+                {updateZoomLinkMutation.isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Update Link
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Recent Updates Preview */}
+        <AnimatedCard animationType="fadeIn" delay={0.2}>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center">
+                <BarChart3 className="w-5 h-5 mr-2" />
+                Recent Updates
+              </span>
+              <Badge variant="secondary">{updates.length} Published</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {updatesLoading ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-gi-primary border-t-transparent mx-auto mb-2"></div>
+                <p className="text-sm text-gray-600">Loading updates...</p>
+              </div>
+            ) : updates.length > 0 ? (
+              <ScrollArea className="h-64">
+                <div className="space-y-3">
+                  {updates.slice(0, 10).map((update) => {
+                    const canDelete = !update.title.toLowerCase().includes('register for fasting');
+                    return (
+                      <div key={update.id} className="border rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-medium text-sm flex-1">{update.title}</h4>
+                          <div className="flex items-center space-x-2">
+                            <Badge 
+                              variant={update.priority === 'critical' ? 'destructive' : 
+                                      update.priority === 'high' ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {update.priority || 'normal'}
+                            </Badge>
+                            <span className="text-xs text-gray-500">
+                              {new Date(update.created_at).toLocaleDateString()}
+                            </span>
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => {
+                                  setUpdateToDelete(update);
+                                  setDeleteDialogOpen(true);
+                                }}
+                                data-testid={`button-delete-update-${update.id}`}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-600 line-clamp-2">
+                          {update.description}
+                        </p>
+                        <div className="flex items-center justify-between mt-2">
+                          <Badge variant="outline" className="text-xs">
+                            {update.type || 'general'}
+                          </Badge>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-green-600">✓ Published</span>
+                            {update.pinToTop && (
+                              <span className="text-xs text-gi-primary">📌 Pinned</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p className="text-sm">No updates posted yet</p>
+                <p className="text-xs mt-1">Use the buttons above to post your first update</p>
               </div>
             )}
-            <div>
-              <Label htmlFor="zoom-link-input">New Zoom Link *</Label>
-              <Input
-                id="zoom-link-input"
-                value={zoomLinkUpdate}
-                onChange={(e) => setZoomLinkUpdate(e.target.value)}
-                placeholder="https://zoom.us/j/..."
-                className="mt-1"
-                data-testid="input-zoom-link"
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setZoomLinkUpdate("")} data-testid="button-clear-zoom">
-              <X className="w-4 h-4 mr-2" />
-              Clear
-            </Button>
-            <Button
-              onClick={() => {
-                if (!zoomLinkUpdate.trim()) {
-                  toast({ title: "Error", description: "Please enter a Zoom link", variant: "destructive" });
-                  return;
-                }
-                updateZoomLinkMutation.mutate(zoomLinkUpdate);
-                setZoomLinkUpdate("");
-                setZoomLinkOpen(false);
-              }}
-              className="bg-gi-gold hover:bg-gi-gold/90 text-gi-primary"
-              data-testid="button-send-zoom"
-              disabled={updateZoomLinkMutation.isPending}
-            >
-              {updateZoomLinkMutation.isPending ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Updating...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Update Link
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </AnimatedCard>
 
-      {/* Recent Updates Preview */}
-      <AnimatedCard animationType="fadeIn" delay={0.2}>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center">
-              <BarChart3 className="w-5 h-5 mr-2" />
-              Recent Updates
-            </span>
-            <Badge variant="secondary">{updates.length} Published</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {updatesLoading ? (
-            <div className="text-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-2 border-gi-primary border-t-transparent mx-auto mb-2"></div>
-              <p className="text-sm text-gray-600">Loading updates...</p>
-            </div>
-          ) : updates.length > 0 ? (
-            <ScrollArea className="h-64">
-              <div className="space-y-3">
-                {updates.slice(0, 10).map((update) => {
-                  const canDelete = !update.title.toLowerCase().includes('register for fasting');
-                  return (
-                    <div key={update.id} className="border rounded-lg p-3 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-medium text-sm flex-1">{update.title}</h4>
-                        <div className="flex items-center space-x-2">
-                          <Badge 
-                            variant={update.priority === 'critical' ? 'destructive' : 
-                                    update.priority === 'high' ? 'default' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {update.priority || 'normal'}
-                          </Badge>
-                          <span className="text-xs text-gray-500">
-                            {new Date(update.created_at).toLocaleDateString()}
-                          </span>
-                          {canDelete && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => {
-                                setUpdateToDelete(update);
-                                setDeleteDialogOpen(true);
-                              }}
-                              data-testid={`button-delete-update-${update.id}`}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-xs text-gray-600 line-clamp-2">
-                        {update.description}
-                      </p>
-                      <div className="flex items-center justify-between mt-2">
-                        <Badge variant="outline" className="text-xs">
-                          {update.type || 'general'}
-                        </Badge>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs text-green-600">✓ Published</span>
-                          {update.pinToTop && (
-                            <span className="text-xs text-gi-primary">📌 Pinned</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+        {/* System Analytics */}
+        <AnimatedCard animationType="fadeIn" delay={0.3}>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <TrendingUp className="w-5 h-5 mr-2" />
+              System Analytics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="p-3 bg-gi-primary/10 rounded-lg">
+                <div className="text-2xl font-bold text-gi-primary">{prayerSlots.length}</div>
+                <div className="text-xs text-gray-600">Prayer Slots</div>
               </div>
-            </ScrollArea>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <p className="text-sm">No updates posted yet</p>
-              <p className="text-xs mt-1">Use the buttons above to post your first update</p>
+              <div className="p-3 bg-green-50 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">{userActivities.length}</div>
+                <div className="text-xs text-gray-600">Active Users</div>
+              </div>
+              <div className="p-3 bg-purple-50 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">{fastingRegistrations.length}</div>
+                <div className="text-xs text-gray-600">Fasting Participants</div>
+              </div>
+              <div className="p-3 bg-orange-50 rounded-lg">
+                <div className="text-2xl font-bold text-orange-600">{updates.length}</div>
+                <div className="text-xs text-gray-600">Published Updates</div>
+              </div>
             </div>
-          )}
-        </CardContent>
-      </AnimatedCard>
-
-      {/* System Analytics */}
-      <AnimatedCard animationType="fadeIn" delay={0.3}>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <TrendingUp className="w-5 h-5 mr-2" />
-            System Analytics
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div className="p-3 bg-gi-primary/10 rounded-lg">
-              <div className="text-2xl font-bold text-gi-primary">{prayerSlots.length}</div>
-              <div className="text-xs text-gray-600">Prayer Slots</div>
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <h4 className="text-sm font-medium mb-2">Quick Actions</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" size="sm" onClick={() => refetchSlots()}>
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  Refresh Slots
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => refetchActivities()}>
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  Refresh Activities
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => refetchFasting()}>
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  Refresh Fasting
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => refetchUpdates()}>
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  Refresh Updates
+                </Button>
+              </div>
             </div>
-            <div className="p-3 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">{userActivities.length}</div>
-              <div className="text-xs text-gray-600">Active Users</div>
-            </div>
-            <div className="p-3 bg-purple-50 rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">{fastingRegistrations.length}</div>
-              <div className="text-xs text-gray-600">Fasting Participants</div>
-            </div>
-            <div className="p-3 bg-orange-50 rounded-lg">
-              <div className="text-2xl font-bold text-orange-600">{updates.length}</div>
-              <div className="text-xs text-gray-600">Published Updates</div>
-            </div>
-          </div>
-          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-            <h4 className="text-sm font-medium mb-2">Quick Actions</h4>
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" size="sm" onClick={() => refetchSlots()}>
-                <RefreshCw className="w-3 h-3 mr-1" />
-                Refresh Slots
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => refetchActivities()}>
-                <RefreshCw className="w-3 h-3 mr-1" />
-                Refresh Activities
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => refetchFasting()}>
-                <RefreshCw className="w-3 h-3 mr-1" />
-                Refresh Fasting
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => refetchUpdates()}>
-                <RefreshCw className="w-3 h-3 mr-1" />
-                Refresh Updates
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </AnimatedCard>
-    </div>
-  );
+          </CardContent>
+        </AnimatedCard>
+      </div>
+    );
+  };
 
 
   const renderTabContent = () => {
@@ -2109,7 +2131,7 @@ export default function AdminDashboard() {
   return (
     <ErrorBoundary>
     <div className="min-h-screen bg-gray-50">
-      
+
       {/* Mobile Header */}
       {isMobile && (
         <div className="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3">
