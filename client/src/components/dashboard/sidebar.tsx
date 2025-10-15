@@ -258,7 +258,7 @@ export function Sidebar({ activeTab, onTabChange, onSignOut, userEmail, userProf
         <Button
           onClick={onSignOut}
           variant="ghost"
-          className={`w-full ${isCollapsed ? 'justify-center' : 'justify-start space-x-3'} text-gi-white hover:bg-red-600/20`}
+          className={`w-full ${isCollapsed ? 'justify-center' : 'justify-start space-x-3'} text-gi-white hover:bg-red-600/20 hover:text-red-300`}
           title="Sign Out"
         >
           <LogOut className="h-5 w-5" />
