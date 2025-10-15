@@ -427,6 +427,23 @@ We'll miss you! May God bless you abundantly.
     }
   }
 
+  // Helper to ensure user is opted in and active
+  private async ensureUserOptedIn(phoneNumber: string): Promise<void> {
+    try {
+      await supabase
+        .from('whatsapp_bot_users')
+        .update({
+          opted_in: true,
+          is_active: true,
+          opt_in_timestamp: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('whatsapp_number', phoneNumber);
+    } catch (error) {
+      console.error('Error ensuring user opt-in:', error);
+    }
+  }
+
   // Update user message preferences (DEVOTIONAL/REMINDERS/UPDATES ON/OFF)
   private async updateUserPreference(phoneNumber: string, preferenceType: string, enabled: boolean): Promise<void> {
     try {
@@ -1605,6 +1622,8 @@ If you change your mind, simply reply *YES* anytime.
           await this.updateUserPreference(phoneNumber, 'DEVOTIONAL', false);
           return;
         } else if (command.includes('on') || command.includes('enable') || command.includes('start')) {
+          // Ensure user is opted in when enabling any feature
+          await this.ensureUserOptedIn(phoneNumber);
           await this.updateUserPreference(phoneNumber, 'DEVOTIONAL', true);
           return;
         }
@@ -1615,6 +1634,8 @@ If you change your mind, simply reply *YES* anytime.
           await this.updateUserPreference(phoneNumber, 'REMINDERS', false);
           return;
         } else if (command.includes('on') || command.includes('enable') || command.includes('start')) {
+          // Ensure user is opted in when enabling any feature
+          await this.ensureUserOptedIn(phoneNumber);
           await this.updateUserPreference(phoneNumber, 'REMINDERS', true);
           return;
         }
@@ -1625,6 +1646,8 @@ If you change your mind, simply reply *YES* anytime.
           await this.updateUserPreference(phoneNumber, 'UPDATES', false);
           return;
         } else if (command.includes('on') || command.includes('enable') || command.includes('start')) {
+          // Ensure user is opted in when enabling any feature
+          await this.ensureUserOptedIn(phoneNumber);
           await this.updateUserPreference(phoneNumber, 'UPDATES', true);
           return;
         }
@@ -1642,7 +1665,7 @@ If you change your mind, simply reply *YES* anytime.
           const devotionalStatus = user.devotional_enabled ? '✅ ON' : '❌ OFF';
           const remindersStatus = user.reminders_enabled ? '✅ ON' : '❌ OFF';
           const updatesStatus = user.updates_enabled ? '✅ ON' : '❌ OFF';
-          const optedInStatus = user.opted_in ? '✅ Subscribed' : '❌ Not subscribed';
+          const optedInStatus = (user.opted_in && user.is_active) ? '✅ Subscribed' : '❌ Not subscribed';
 
           const settingsMessage = `⚙️ *Your Message Preferences* ⚙️
 
@@ -1661,6 +1684,41 @@ If you change your mind, simply reply *YES* anytime.
 *Global Intercessors - Standing in the Gap* 🙏`;
 
           await this.sendWhatsAppMessage(phoneNumber, settingsMessage);
+          return;
+        } else {
+          // User doesn't exist, create them with default settings
+          await supabase
+            .from('whatsapp_bot_users')
+            .insert({
+              whatsapp_number: phoneNumber,
+              user_id: `whatsapp_${phoneNumber}`,
+              is_active: true,
+              opted_in: true,
+              opt_in_timestamp: new Date().toISOString(),
+              devotional_enabled: true,
+              reminders_enabled: true,
+              updates_enabled: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          const welcomeMessage = `⚙️ *Welcome! Your Preferences Set Up* ⚙️
+
+📊 *Status:* ✅ Subscribed
+
+📖 *Daily Devotionals:* ✅ ON
+🔔 *Prayer Reminders:* ✅ ON
+📢 *Admin Updates:* ✅ ON
+
+*To change:*
+• Reply *DEVOTIONAL OFF* or *DEVOTIONAL ON*
+• Reply *REMINDERS OFF* or *REMINDERS ON*
+• Reply *UPDATES OFF* or *UPDATES ON*
+• Reply *STOP* to unsubscribe from all
+
+*Global Intercessors - Standing in the Gap* 🙏`;
+
+          await this.sendWhatsAppMessage(phoneNumber, welcomeMessage);
           return;
         }
       }
