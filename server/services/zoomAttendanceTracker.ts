@@ -303,14 +303,16 @@ class ZoomAttendanceTracker {
   // Alternative method using meeting:read:list_past_participants:admin scope
   private async getPastParticipantsDirect() {
     try {
-      console.log(`⚠️ getPastParticipantsDirect requires meeting UUID, not meeting ID`);
-      console.log(`ℹ️ Cannot fetch past participants without meeting instances/UUIDs`);
-      console.log(`💡 Recommend: Grant meeting:read:list_past_instances:admin scope for full functionality`);
+      console.error(`❌ CRITICAL: Cannot fetch meeting data - missing required Zoom API scope`);
+      console.error(`⚠️ getPastParticipantsDirect requires meeting UUID, not meeting ID`);
+      console.error(`ℹ️ Cannot fetch past participants without meeting instances/UUIDs`);
+      console.error(`💡 REQUIRED: Grant meeting:read:list_past_instances:admin scope for full functionality`);
+      console.error(`📊 Returning empty array - attendance tracking will be incomplete until scope is added`);
       
       // This endpoint requires a meeting UUID, not meeting ID
       // We can't use this.meetingId (which is just the meeting ID number)
       // We need UUIDs from past meeting instances
-      // For now, return empty array and log recommendation
+      // Return empty array - this represents a data retrieval failure
       
       return [];
       
@@ -403,9 +405,17 @@ class ZoomAttendanceTracker {
 
       // Get meeting participants (either from embedded data or API call)
       let participants = meeting.participants || [];
+      let canRetrieveParticipants = true;
+      
       if (participants.length === 0 && meetingUuid) {
-        participants = await this.getMeetingParticipants(meetingUuid);
+        const result = await this.getMeetingParticipants(meetingUuid);
+        participants = result.participants;
+        canRetrieveParticipants = result.success;
       }
+
+      // Only mark as processed if we successfully retrieved participant data
+      // or if participants were already embedded
+      const shouldProcess = canRetrieveParticipants || (meeting.participants && meeting.participants.length > 0);
 
       // Store meeting data
       const meetingData = {
@@ -416,16 +426,18 @@ class ZoomAttendanceTracker {
         end_time: meeting.end_time ? new Date(meeting.end_time) : null,
         duration: meeting.duration || 30,
         participant_count: participants.length,
-        processed: true
+        processed: shouldProcess
       };
 
       await supabaseAdmin
         .from('zoom_meetings')
         .upsert(meetingData, { onConflict: 'meeting_id' });
 
-      // Process each participant
-      for (const participant of participants) {
-        await this.processParticipantAttendance(participant, meeting);
+      // Process each participant only if we have data
+      if (participants.length > 0) {
+        for (const participant of participants) {
+          await this.processParticipantAttendance(participant, meeting);
+        }
       }
 
     } catch (error) {
@@ -434,7 +446,7 @@ class ZoomAttendanceTracker {
   }
 
   // Get participants for a specific meeting
-  private async getMeetingParticipants(meetingUuid: string): Promise<ZoomParticipant[]> {
+  private async getMeetingParticipants(meetingUuid: string): Promise<{ participants: ZoomParticipant[], success: boolean }> {
     try {
       const response = await axios.get(
         `https://api.zoom.us/v2/past_meetings/${meetingUuid}/participants`,
@@ -449,19 +461,22 @@ class ZoomAttendanceTracker {
         }
       );
 
-      return response.data.participants || [];
+      return { 
+        participants: response.data.participants || [], 
+        success: true 
+      };
     } catch (error: any) {
       // Handle specific Zoom API errors
       if (error.response?.status === 400 && error.response?.data?.code === 12702) {
-        // Meeting too old to access (older than 1 year)
-        console.log(`⏰ Meeting ${meetingUuid} is too old to retrieve participants (older than 1 year)`);
-        return [];
+        // Meeting too old to access (older than 1 year) - cannot retrieve data
+        console.log(`⏰ Meeting ${meetingUuid} is too old to retrieve participants (older than 1 year) - will retry later`);
+        return { participants: [], success: false };
       }
       
       if (error.response?.status === 404) {
-        // Meeting not found
-        console.log(`🔍 Meeting ${meetingUuid} not found`);
-        return [];
+        // Meeting not found - cannot retrieve data
+        console.log(`🔍 Meeting ${meetingUuid} not found - will retry later`);
+        return { participants: [], success: false };
       }
       
       // Log other errors for debugging
@@ -471,7 +486,7 @@ class ZoomAttendanceTracker {
         message: error.response?.data?.message || error.message
       });
       
-      return [];
+      return { participants: [], success: false };
     }
   }
 
