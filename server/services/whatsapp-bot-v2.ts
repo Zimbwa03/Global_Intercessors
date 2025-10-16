@@ -1616,41 +1616,40 @@ If you change your mind, simply reply *YES* anytime.
         return;
       }
 
-      // User preference management commands
-      if (command.includes('devotional')) {
-        if (command.includes('off') || command.includes('disable') || command.includes('stop')) {
-          await this.updateUserPreference(phoneNumber, 'DEVOTIONAL', false);
-          return;
-        } else if (command.includes('on') || command.includes('enable') || command.includes('start')) {
-          // Ensure user is opted in when enabling any feature
-          await this.ensureUserOptedIn(phoneNumber);
-          await this.updateUserPreference(phoneNumber, 'DEVOTIONAL', true);
-          return;
-        }
+      // User preference management commands - check for BOTH keywords with word boundaries
+      // Supports: "DEVOTIONAL OFF", "disable devotionals", "turn the devotionals off", etc.
+      // Prevents false matches: bare "devotional" or "devotionals" button clicks won't match
+      if (command.match(/\b(off|disable|stop)\b/) && command.match(/\bdevotional(s)?\b/)) {
+        await this.updateUserPreference(phoneNumber, 'DEVOTIONAL', false);
+        return;
+      }
+      if (command.match(/\b(on|enable|start)\b/) && command.match(/\bdevotional(s)?\b/)) {
+        // Ensure user is opted in when enabling any feature
+        await this.ensureUserOptedIn(phoneNumber);
+        await this.updateUserPreference(phoneNumber, 'DEVOTIONAL', true);
+        return;
       }
 
-      if (command.includes('reminder')) {
-        if (command.includes('off') || command.includes('disable') || command.includes('stop')) {
-          await this.updateUserPreference(phoneNumber, 'REMINDERS', false);
-          return;
-        } else if (command.includes('on') || command.includes('enable') || command.includes('start')) {
-          // Ensure user is opted in when enabling any feature
-          await this.ensureUserOptedIn(phoneNumber);
-          await this.updateUserPreference(phoneNumber, 'REMINDERS', true);
-          return;
-        }
+      if (command.match(/\b(off|disable|stop)\b/) && command.match(/\breminder(s)?\b/)) {
+        await this.updateUserPreference(phoneNumber, 'REMINDERS', false);
+        return;
+      }
+      if (command.match(/\b(on|enable|start)\b/) && command.match(/\breminder(s)?\b/)) {
+        // Ensure user is opted in when enabling any feature
+        await this.ensureUserOptedIn(phoneNumber);
+        await this.updateUserPreference(phoneNumber, 'REMINDERS', true);
+        return;
       }
 
-      if (command.includes('update')) {
-        if (command.includes('off') || command.includes('disable') || command.includes('stop')) {
-          await this.updateUserPreference(phoneNumber, 'UPDATES', false);
-          return;
-        } else if (command.includes('on') || command.includes('enable') || command.includes('start')) {
-          // Ensure user is opted in when enabling any feature
-          await this.ensureUserOptedIn(phoneNumber);
-          await this.updateUserPreference(phoneNumber, 'UPDATES', true);
-          return;
-        }
+      if (command.match(/\b(off|disable|stop)\b/) && command.match(/\bupdate(s)?\b/)) {
+        await this.updateUserPreference(phoneNumber, 'UPDATES', false);
+        return;
+      }
+      if (command.match(/\b(on|enable|start)\b/) && command.match(/\bupdate(s)?\b/)) {
+        // Ensure user is opted in when enabling any feature
+        await this.ensureUserOptedIn(phoneNumber);
+        await this.updateUserPreference(phoneNumber, 'UPDATES', true);
+        return;
       }
 
       // SETTINGS command - show current preferences
@@ -1810,8 +1809,8 @@ If you change your mind, simply reply *YES* anytime.
         await this.handleJoinZoom(phoneNumber);
       } else if (command === 'gi_app') {
         await this.handleGiApp(phoneNumber);
-      } else if (command === 'about') {
-        await this.handleAbout(phoneNumber, userName);
+      } else if (command === 'settings' || command === 'preferences') {
+        await this.handleSettingsCommand(phoneNumber);
       } else if (command === 'retry_login') {
         await this.sendLoginPrompt(phoneNumber);
       } else if (command === 'help_login') {
@@ -1896,7 +1895,7 @@ Choose an option below to begin your spiritual journey:`;
     const quickButtons = [
       { id: 'join_zoom', title: '🎥 Join Zoom' },
       { id: 'gi_app', title: '🌐 GI App' },
-      { id: 'about', title: 'ℹ️ About' }
+      { id: 'settings', title: '⚙️ Settings' }
     ];
 
     await this.sendInteractiveMessage(phoneNumber, quickAccessMessage, quickButtons);
@@ -2183,6 +2182,75 @@ Global Intercessors is a worldwide prayer movement that maintains 24/7 prayer co
     const message = `🌐 *Global Intercessors Web App*\n\nOpen the app:\n${url}`;
     await this.sendWhatsAppMessage(phoneNumber, message);
     await this.logInteraction(phoneNumber, 'button_action', 'gi_app');
+  }
+
+  private async handleSettingsCommand(phoneNumber: string): Promise<void> {
+    await this.logInteraction(phoneNumber, 'command', 'settings');
+
+    const { data: user } = await supabase
+      .from('whatsapp_bot_users')
+      .select('*')
+      .eq('whatsapp_number', phoneNumber)
+      .single();
+
+    if (user) {
+      const devotionalStatus = user.devotional_enabled ? '✅ ON' : '❌ OFF';
+      const remindersStatus = user.reminders_enabled ? '✅ ON' : '❌ OFF';
+      const updatesStatus = user.updates_enabled ? '✅ ON' : '❌ OFF';
+      const optedInStatus = (user.opted_in && user.is_active) ? '✅ Subscribed' : '❌ Not subscribed';
+
+      const settingsMessage = `⚙️ *Your Message Preferences* ⚙️
+
+📊 *Status:* ${optedInStatus}
+
+📖 *Daily Devotionals:* ${devotionalStatus}
+🔔 *Prayer Reminders:* ${remindersStatus}
+📢 *Admin Updates:* ${updatesStatus}
+
+*To change:*
+• Reply *DEVOTIONAL OFF* or *DEVOTIONAL ON*
+• Reply *REMINDERS OFF* or *REMINDERS ON*
+• Reply *UPDATES OFF* or *UPDATES ON*
+• Reply *STOP* to unsubscribe from all
+
+*Global Intercessors - Standing in the Gap* 🙏`;
+
+      await this.sendWhatsAppMessage(phoneNumber, settingsMessage);
+    } else {
+      // User doesn't exist, create them with default settings
+      await supabase
+        .from('whatsapp_bot_users')
+        .insert({
+          whatsapp_number: phoneNumber,
+          user_id: `whatsapp_${phoneNumber}`,
+          is_active: true,
+          opted_in: true,
+          opt_in_timestamp: new Date().toISOString(),
+          devotional_enabled: true,
+          reminders_enabled: true,
+          updates_enabled: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      const welcomeMessage = `⚙️ *Welcome! Your Preferences Set Up* ⚙️
+
+📊 *Status:* ✅ Subscribed
+
+📖 *Daily Devotionals:* ✅ ON
+🔔 *Prayer Reminders:* ✅ ON
+📢 *Admin Updates:* ✅ ON
+
+*To change:*
+• Reply *DEVOTIONAL OFF* or *DEVOTIONAL ON*
+• Reply *REMINDERS OFF* or *REMINDERS ON*
+• Reply *UPDATES OFF* or *UPDATES ON*
+• Reply *STOP* to unsubscribe from all
+
+*Global Intercessors - Standing in the Gap* 🙏`;
+
+      await this.sendWhatsAppMessage(phoneNumber, welcomeMessage);
+    }
   }
 
   private async handleAbout(phoneNumber: string, userName: string): Promise<void> {
