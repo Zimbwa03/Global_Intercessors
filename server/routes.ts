@@ -1534,6 +1534,10 @@ _Type 'menu' anytime to explore our prayer bot features._`;
       console.log('Updating fasting program details...');
 
       const {
+        title,
+        description,
+        startDate,
+        endDate,
         program_title,
         program_subtitle,
         program_description,
@@ -1548,12 +1552,18 @@ _Type 'menu' anytime to explore our prayer bot features._`;
         location_details
       } = req.body;
 
+      // Use the new format if provided (from Fast Update), otherwise use old format
+      const finalTitle = title || program_title;
+      const finalDescription = description || program_description;
+      const finalStartDate = startDate || start_date;
+      const finalEndDate = endDate || end_date;
+
       const { data, error } = await supabaseAdmin.rpc('update_fasting_program_details', {
-        p_program_title: program_title,
+        p_program_title: finalTitle,
         p_program_subtitle: program_subtitle,
-        p_program_description: program_description,
-        p_start_date: start_date,
-        p_end_date: end_date,
+        p_program_description: finalDescription,
+        p_start_date: finalStartDate,
+        p_end_date: finalEndDate,
         p_registration_open_date: registration_open_date,
         p_registration_close_date: registration_close_date,
         p_max_participants: max_participants,
@@ -1566,6 +1576,58 @@ _Type 'menu' anytime to explore our prayer bot features._`;
       if (error) {
         console.error("Error updating fasting program details:", error);
         return res.status(500).json({ error: "Failed to update fasting program details" });
+      }
+
+      // Now update or create the user-facing update card
+      try {
+        // First, try to find existing fasting update
+        const { data: existingUpdates } = await supabaseAdmin
+          .from('updates')
+          .select('id')
+          .ilike('title', '%fasting%program%')
+          .eq('type', 'announcement')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (existingUpdates && existingUpdates.length > 0) {
+          // Update existing card
+          const { error: updateError } = await supabaseAdmin
+            .from('updates')
+            .update({
+              title: finalTitle,
+              description: finalDescription,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingUpdates[0].id);
+
+          if (updateError) {
+            console.error("Error updating fasting update card:", updateError);
+          } else {
+            console.log('✅ Updated existing fasting update card');
+          }
+        } else {
+          // Create new card
+          const { error: insertError } = await supabaseAdmin
+            .from('updates')
+            .insert({
+              title: finalTitle,
+              description: finalDescription,
+              type: 'announcement',
+              priority: 'high',
+              pin_to_top: true,
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (insertError) {
+            console.error("Error creating fasting update card:", insertError);
+          } else {
+            console.log('✅ Created new fasting update card');
+          }
+        }
+      } catch (updateCardError) {
+        console.error("Error managing update card:", updateCardError);
       }
 
       console.log('Fasting program details updated successfully');

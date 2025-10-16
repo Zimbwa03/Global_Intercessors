@@ -78,9 +78,13 @@ export default function FastUpdate() {
     }
     const dateRange = `${format(fastingStartDate, "MMMM d")}-${format(fastingEndDate, "d, yyyy")}`;
     const fullDescription = `${fastingDescription}\n\n📅 Dates: ${dateRange}`;
+    
+    // Update the fasting program details AND the user-facing update card
     updateFastingProgramMutation.mutate({
       title: fastingTitle,
       description: fullDescription,
+      startDate: fastingStartDate.toISOString(),
+      endDate: fastingEndDate.toISOString(),
     });
   };
 
