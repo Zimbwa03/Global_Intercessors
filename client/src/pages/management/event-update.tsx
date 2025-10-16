@@ -16,6 +16,7 @@ export default function EventUpdate() {
   const queryClient = useQueryClient();
   const [eventMessage, setEventMessage] = useState("");
   const [eventImage, setEventImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const createUpdateMutation = useMutation({
     mutationFn: async (updateData: any) => {
@@ -33,31 +34,50 @@ export default function EventUpdate() {
       queryClient.invalidateQueries({ queryKey: ['admin-updates'] });
       setEventMessage("");
       setEventImage(null);
+      setImagePreview(null);
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setEventImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventMessage.trim()) {
       toast({ title: "Error", description: "Please enter event details", variant: "destructive" });
       return;
     }
-    const description = eventImage 
-      ? `${eventMessage}\n\n${eventImage.name ? `📎 Attachment: ${eventImage.name}` : ''}`
-      : eventMessage;
+
+    let imageData = null;
+    if (eventImage && imagePreview) {
+      imageData = imagePreview; // base64 encoded image
+    }
+
     createUpdateMutation.mutate({
       title: "Event Update",
-      description,
+      description: eventMessage,
       type: "event",
       priority: "normal",
       schedule: "immediate",
       expiry: "never",
       sendNotification: true,
       sendEmail: false,
-      pinToTop: false
+      pinToTop: false,
+      imageUrl: imageData
     });
   };
 
@@ -91,9 +111,14 @@ export default function EventUpdate() {
                   name="event-image"
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setEventImage(e.target.files?.[0] || null)}
+                  onChange={handleImageChange}
                   className="mt-2"
                 />
+                {imagePreview && (
+                  <div className="mt-4">
+                    <img src={imagePreview} alt="Event preview" className="max-w-full h-auto rounded-lg border" />
+                  </div>
+                )}
               </div>
 
               <div>
@@ -116,6 +141,7 @@ export default function EventUpdate() {
                   onClick={() => {
                     setEventMessage("");
                     setEventImage(null);
+                    setImagePreview(null);
                   }}
                 >
                   Clear

@@ -249,11 +249,11 @@ export class WhatsAppPrayerBot {
   }
 
   // ==================== META WHATSAPP COMPLIANCE 2025 ====================
-  
+
   // Send approved template message (Meta requirement for business-initiated messages)
   private async sendTemplateMessage(
-    phoneNumber: string, 
-    templateName: string, 
+    phoneNumber: string,
+    templateName: string,
     parameters: string[]
   ): Promise<boolean> {
     console.log(`\n📤 SENDING TEMPLATE MESSAGE:`);
@@ -332,17 +332,17 @@ By opting in, you consent to receive WhatsApp messages from Global Intercessors.
         .single();
 
       if (!user) return false;
-      
+
       const hasOptedIn = user.opted_in === true && user.is_active === true;
-      
+
       if (!hasOptedIn) return false;
-      
+
       // If checking service window, verify 24-hour window
       if (checkServiceWindow) {
         const withinWindow = await this.isWithinServiceWindow(phoneNumber);
         return withinWindow;
       }
-      
+
       return true;
     } catch (error) {
       console.error('Error checking opt-in status:', error);
@@ -448,7 +448,7 @@ We'll miss you! May God bless you abundantly.
   private async updateUserPreference(phoneNumber: string, preferenceType: string, enabled: boolean): Promise<void> {
     try {
       const updateData: any = { updated_at: new Date().toISOString() };
-      
+
       if (preferenceType === 'DEVOTIONAL') {
         updateData.devotional_enabled = enabled;
       } else if (preferenceType === 'REMINDERS') {
@@ -557,7 +557,7 @@ To view all preferences, reply *SETTINGS*
           throw new Error(`Could not find user profile for ID: ${userId}`);
         }
       } else {
-        // Try phone search with multiple formats 
+        // Try phone search with multiple formats
         const phoneVariants = [
           phoneNumber,
           `+${phoneNumber}`,
@@ -571,10 +571,10 @@ To view all preferences, reply *SETTINGS*
             .select('*')
             .eq('phone_number', phoneVariant);
 
-          console.log(`📞 Phone search for ${phoneVariant}:`, { 
-            success: !phoneSearchError, 
+          console.log(`📞 Phone search for ${phoneVariant}:`, {
+            success: !phoneSearchError,
             count: profilesByPhone?.length || 0,
-            error: phoneSearchError?.message 
+            error: phoneSearchError?.message
           });
 
           if (profilesByPhone && profilesByPhone.length > 0) {
@@ -611,10 +611,10 @@ To view all preferences, reply *SETTINGS*
           .eq('id', userId)
           .single();
 
-        console.log('👤 User profile lookup:', { 
-          success: !profileError, 
-          profile: userProfile, 
-          error: profileError?.message 
+        console.log('👤 User profile lookup:', {
+          success: !profileError,
+          profile: userProfile,
+          error: profileError?.message
         });
 
         authUser = userProfile;
@@ -628,15 +628,15 @@ To view all preferences, reply *SETTINGS*
         .eq('status', 'active')
         .single();
 
-      console.log('🕊️ Prayer slot lookup for user:', { 
+      console.log('🕊️ Prayer slot lookup for user:', {
         userId,
         userName: authUser ? (authUser.fullName || authUser.full_name || 'Unknown') : 'Unknown',
-        success: !slotError, 
-        slot: prayerSlot, 
-        error: slotError?.message 
+        success: !slotError,
+        slot: prayerSlot,
+        error: slotError?.message
       });
 
-      // Build user information from auth data  
+      // Build user information from auth data
       const fullName = authUser?.full_name || authUser?.fullName || '';
       const firstName = fullName.split(' ')[0] || '';
       const lastName = fullName.split(' ').slice(1).join(' ') || '';
@@ -813,9 +813,9 @@ To view all preferences, reply *SETTINGS*
   // Prayer slot reminders
   public async checkPrayerSlotReminders(): Promise<void> {
     const now = new Date();
-    const currentTime = now.toLocaleTimeString('en-GB', { 
-      hour12: false, 
-      timeZone: 'Africa/Harare' 
+    const currentTime = now.toLocaleTimeString('en-GB', {
+      hour12: false,
+      timeZone: 'Africa/Harare'
     });
 
     console.log(`🔍 [${currentTime}] Checking prayer slot reminders...`);
@@ -996,7 +996,7 @@ To view all preferences, reply *SETTINGS*
         // Within 24h window - can send regular message (free)
         const message = `🕊️ *Prayer Slot Reminder* 🕊️
 
-Hello ${userName}! 
+Hello ${userName}!
 
 ${urgencyEmoji} Your prayer slot (${slotTime}) begins in ${timeText}.
 
@@ -1097,10 +1097,10 @@ Reply *help* for more options.`;
       }
 
       const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-      const currentDate = new Date().toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+      const currentDate = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
       });
 
       const prompt = `Generate a personalized morning devotional message for ${userName}, a Global Intercessor, for ${dayOfWeek}, ${currentDate}.
@@ -1183,74 +1183,112 @@ Your intercession matters! 💪
     }
   }
 
-  // Admin update broadcasting
-  public async broadcastAdminUpdate(updateTitle: string, updateContent: string): Promise<void> {
+  // Admin update broadcasting with AI summarization and image support
+  async broadcastAdminUpdate(updateTitle: string, updateContent: string, imageUrl?: string | null): Promise<void> {
     try {
-      console.log('📢 Broadcasting admin update to WhatsApp users:', updateTitle);
+      // Summarize the update using AI
+      const summarizedContent = await this.summarizeAdminUpdate(updateTitle, updateContent);
 
-      // META COMPLIANCE: Only send to users who have opted in AND enabled updates
-      const { data: activeUsers } = await supabase
+      // Get all active WhatsApp bot users
+      const { data: botUsers, error } = await supabase
         .from('whatsapp_bot_users')
-        .select('*')
-        .eq('is_active', true)
-        .eq('opted_in', true)
-        .eq('updates_enabled', true);
+        .select('whatsapp_number, user_id')
+        .eq('is_active', true);
 
-      if (!activeUsers || activeUsers.length === 0) {
-        console.log('⚠️ No active WhatsApp users with updates enabled');
+      if (error) {
+        console.error('Error fetching bot users:', error);
         return;
       }
 
-      console.log(`📢 Broadcasting to ${activeUsers.length} opted-in users who have updates enabled`);
+      const message = `📢 Important Update from Global Intercessors
 
-      // Generate AI-summarized update
-      const summarizedUpdate = await this.generateUpdateSummary(updateTitle, updateContent);
+${updateTitle}
 
-      for (const user of activeUsers) {
-        try {
-          const userName = await this.getUserName(user.user_id);
+${summarizedContent}
 
-          // META COMPLIANCE: Check 24-hour service window
-          const withinWindow = await this.isWithinServiceWindow(user.whatsapp_number);
+Visit the platform for full details.
 
-          if (withinWindow) {
-            // Within 24h window - can send regular message (free)
-            const message = `📢 *Important Update from Global Intercessors* 📢
+God bless! 🙏`;
 
-Hello ${userName}!
+      // Send to all users
+      for (const user of botUsers || []) {
+        let success = false;
 
-🎯 **${updateTitle}**
-
-${summarizedUpdate}
-
-💡 *This update was sent by your Global Intercessors leadership team.*
-
-🌐 *Visit the Global Intercessors app for full details.*
-
-*Global Intercessors - Standing in the Gap* 🙏`;
-
-            await this.sendWhatsAppMessage(user.whatsapp_number, message);
-            await this.logInteraction(user.whatsapp_number, 'admin_update', updateTitle);
-          } else {
-            // Outside window - use approved Meta template
-            console.log(`📨 User ${user.whatsapp_number} outside 24h window - using approved template message`);
-            await this.sendTemplateMessage(user.whatsapp_number, '_admin_update_utility', [userName, updateTitle, summarizedUpdate]);
-          }
-
-          // Rate limiting between users
-          await new Promise(resolve => setTimeout(resolve, 1500));
-        } catch (error) {
-          console.error(`❌ Error sending update to user ${user.whatsapp_number}:`, error);
+        // If there's an image, send it as media message
+        if (imageUrl) {
+          success = await this.sendWhatsAppImage(user.whatsapp_number, imageUrl, message);
+        } else {
+          success = await this.sendWhatsAppMessage(user.whatsapp_number, message);
         }
+
+        // Log the message
+        const { error: logError } = await supabase
+          .from('whatsapp_messages')
+          .insert({
+            recipient_number: user.whatsapp_number,
+            message_type: 'admin_update',
+            message_content: message,
+            status: success ? 'sent' : 'failed',
+            sent_at: success ? new Date().toISOString() : null
+          });
+
+        if (logError) {
+          console.warn('Error logging message:', logError);
+        }
+
+        // Small delay between messages
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
-      console.log(`✅ Admin update broadcast sent to ${activeUsers.length} WhatsApp users`);
+      console.log(`Admin update broadcast to ${botUsers?.length || 0} users`);
     } catch (error) {
-      console.error('❌ Error broadcasting admin update:', error);
+      console.error('Error broadcasting admin update:', error);
     }
   }
 
-  private async generateUpdateSummary(title: string, content: string): Promise<string> {
+  // Send WhatsApp image message
+  private async sendWhatsAppImage(phoneNumber: string, imageUrl: string, caption: string): Promise<boolean> {
+    if (!this.config.phoneNumberId || !this.config.accessToken) {
+      console.log(`❌ WhatsApp credentials missing - cannot send image to ${phoneNumber}`);
+      return false;
+    }
+
+    try {
+      const response = await fetch(`https://graph.facebook.com/${this.config.apiVersion}/${this.config.phoneNumberId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.config.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: phoneNumber,
+          type: 'image',
+          image: {
+            link: imageUrl.startsWith('data:') ? undefined : imageUrl,
+            caption: caption
+          }
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        console.log(`✅ WhatsApp image sent successfully to ${phoneNumber}`);
+        return true;
+      } else {
+        console.error('WhatsApp image API error:', result);
+        // Fallback to text message
+        return await this.sendWhatsAppMessage(phoneNumber, caption);
+      }
+    } catch (error) {
+      console.error('Error sending WhatsApp image:', error);
+      // Fallback to text message
+      return await this.sendWhatsAppMessage(phoneNumber, caption);
+    }
+  }
+
+  private async summarizeAdminUpdate(title: string, content: string): Promise<string> {
     try {
       const deepSeekApiKey = process.env.DEEPSEEK_API_KEY;
       if (!deepSeekApiKey) {
@@ -1354,9 +1392,9 @@ Requirements:
 
       if (error || !data.user) {
         console.log(`❌ Authentication failed for ${email}:`, error?.message);
-        return { 
-          success: false, 
-          message: "Login failed. The email or password you provided was incorrect. Please try again, or visit the Global Intercessors web app if you need to reset your password. Remember to delete your password message after trying again." 
+        return {
+          success: false,
+          message: "Login failed. The email or password you provided was incorrect. Please try again, or visit the Global Intercessors web app if you need to reset your password. Remember to delete your password message after trying again."
         };
       }
 
@@ -1372,8 +1410,8 @@ Requirements:
 
       if (profileError || !userProfile) {
         console.log(`❌ No user profile found for user ${userId}`);
-        return { 
-          success: false, 
+        return {
+          success: false,
           message: `🔒 Authentication successful, but your phone number ${phoneNumber} is not saved in your Global Intercessors profile.
 
 📱 To continue using the WhatsApp bot:
@@ -1384,7 +1422,7 @@ Requirements:
 4️⃣ Save your profile
 5️⃣ Return here and try logging in again
 
-This ensures secure connection between your account and WhatsApp bot access.` 
+This ensures secure connection between your account and WhatsApp bot access.`
         };
       }
 
@@ -1393,19 +1431,19 @@ This ensures secure connection between your account and WhatsApp bot access.`
 
       if (!registeredWhatsAppNumber) {
         console.log(`❌ No WhatsApp number registered for user ${userId}`);
-        return { 
-          success: false, 
+        return {
+          success: false,
           message: `🔒 Authentication successful, but no WhatsApp number is registered in your Global Intercessors profile.
 
 📱 To continue using the WhatsApp bot:
 
 1️⃣ Open the Global Intercessors web application
-2️⃣ Go to your User Profile settings  
+2️⃣ Go to your User Profile settings
 3️⃣ Add your WhatsApp number: ${phoneNumber}
 4️⃣ Save your profile
 5️⃣ Return here and try logging in again
 
-This ensures secure access to your account.` 
+This ensures secure access to your account.`
         };
       }
 
@@ -1416,8 +1454,8 @@ This ensures secure access to your account.`
 
       if (currentPhoneNormalized !== registeredPhoneNormalized) {
         console.log(`❌ Phone number mismatch for user ${userId}. Current: ${phoneNumber}, Registered: ${registeredWhatsAppNumber}`);
-        return { 
-          success: false, 
+        return {
+          success: false,
           message: `🚫 **Access Denied - Unregistered Phone Number**
 
 Your login credentials are correct, but this phone number (${phoneNumber}) is not registered in your Global Intercessors account.
@@ -1434,7 +1472,7 @@ Your login credentials are correct, but this phone number (${phoneNumber}) is no
 4️⃣ Save your profile
 5️⃣ Return here and login again
 
-**Or use your registered phone number: ${registeredWhatsAppNumber}**` 
+**Or use your registered phone number: ${registeredWhatsAppNumber}`
         };
       }
 
@@ -1477,9 +1515,9 @@ Your login credentials are correct, but this phone number (${phoneNumber}) is no
       if (upsertError) {
         console.error('Error creating WhatsApp bot user record:', upsertError);
         console.error('Error details:', JSON.stringify(upsertError, null, 2));
-        return { 
-          success: false, 
-          message: "Authentication was successful, but we couldn't link your WhatsApp account. Please try again." 
+        return {
+          success: false,
+          message: "Authentication was successful, but we couldn't link your WhatsApp account. Please try again."
         };
       }
 
@@ -1488,17 +1526,17 @@ Your login credentials are correct, but this phone number (${phoneNumber}) is no
 
       const userName = userProfile.fullName || userProfile.full_name || 'Beloved Intercessor';
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         userId: userId,
-        message: `Login successful! Welcome, ${userName}! You are now connected to your Global Intercessors account. You can now access your prayer slot reminders, daily scriptures, and more. Remember to delete your password message for security. How can I assist you today?` 
+        message: `Login successful! Welcome, ${userName}! You are now connected to your Global Intercessors account. You can now access your prayer slot reminders, daily scriptures, and more. Remember to delete your password message for security. How can I assist you today?`
       };
 
     } catch (error) {
       console.error('Error in authentication process:', error);
-      return { 
-        success: false, 
-        message: "An error occurred during login. Please try again later." 
+      return {
+        success: false,
+        message: "An error occurred during login. Please try again later."
       };
     }
   }
@@ -1592,7 +1630,7 @@ If you don't have an account yet, please sign up at the Global Intercessors web 
 
       // ==================== META WHATSAPP COMPLIANCE COMMANDS ====================
       // Process opt-in/opt-out and preferences FIRST (before authentication)
-      
+
       // STOP command - highest priority (Meta requirement for immediate opt-out)
       if (command === 'stop' || command === 'unsubscribe' || command === 'cancel') {
         await this.processOptOut(phoneNumber);
@@ -1830,7 +1868,7 @@ If you change your mind, simply reply *YES* anytime.
         await this.handleEndBibleStudy(phoneNumber, userName);
       } else if (command === 'daily_devotional' || command === 'fresh_word' || command === 'scripture_insight') {
         await this.handleSpecificDevotional(phoneNumber, userName, command);
-      } else if (command === 'scripture_plan' || command === 'scripture_memorize' || command === 'scripture_quiz' || 
+      } else if (command === 'scripture_plan' || command === 'scripture_memorize' || command === 'scripture_quiz' ||
                  command === 'scripture_review' || command === 'scripture_stats' || command === 'daily_review' ||
                  command === 'verse_packs' || command === 'create_memory_card' || command === 'todays_reading' ||
                  command.startsWith('plan_') || command.startsWith('pack_') || command.startsWith('quiz_') ||
@@ -1853,7 +1891,7 @@ If you change your mind, simply reply *YES* anytime.
       }
     } catch (error) {
       console.error('❌ Error handling message:', error);
-      await this.sendWhatsAppMessage(phoneNumber, 
+      await this.sendWhatsAppMessage(phoneNumber,
         `🤖 I apologize, but I encountered an error processing your message. Please try again or reply *help* for assistance.`
       );
     }
@@ -1872,7 +1910,7 @@ ${userInfo.slotInfo}
 I'm your personal prayer companion, here to strengthen your walk with God through:
 
 📖 AI-Powered Devotionals – Daily scriptures with fresh, Spirit-led insights
-// Bible Quiz functionality removed - replaced with ScriptureCoach system  
+// Bible Quiz functionality removed - replaced with ScriptureCoach system
 ⏰ Smart Prayer Reminders – Never miss your intercession time
 🌍 Global Prayer Updates – Join intercessors around the world in united prayer
 ✨ Fresh Messages – Daily AI-generated declarations & prayer points
@@ -1984,7 +2022,7 @@ Choose your devotional experience:`;
 
     const reminderMessage = `⏰ *Smart Prayer Reminders* ⏰
 
-Activated for ${userName}! 
+Activated for ${userName}!
 
 ✅ You will receive gentle reminders 30 minutes before your prayer slot
 📱 Customizable notification preferences
@@ -2016,7 +2054,7 @@ Stay connected, ${userName}!
 
 🌎 Join intercessors worldwide in united prayer for:
 🔥 Global revival movements
-🕊️ Peace in nations facing conflict  
+🕊️ Peace in nations facing conflict
 ⛪ Church growth in restricted regions
 👨‍👩‍👧‍👦 Family restoration worldwide
 🏥 Healing for the nations
@@ -2080,7 +2118,7 @@ Spiritual Progress Report for ${userName}
 📚 Bible knowledge: Expanding wisdom
 🌟 Global impact: Making a difference
 
-*"Being confident of this very thing, that He who has begun a good work in you will complete it."* - Philippians 1:6
+*"The Lord bless you and keep you!"* - Numbers 6:24
 
 View your detailed progress:`;
 
@@ -2352,7 +2390,7 @@ ${content}
       const firstName = userName.split(' ')[0];
       const fallbackMessage = `📖 *Today's Word* 📖
 
-**Topic:** Unshakable Faith
+**Topic:** Unshakeable Faith
 
 **Scripture:** Hebrews 12:28
 "Therefore, since we are receiving a kingdom that cannot be shaken, let us be thankful, and so worship God acceptably with reverence and awe."
@@ -2787,7 +2825,7 @@ Current prayer focuses, ${userName}:
 Join in prayer, ${userName}:
 
 💒 **Church Leaders:** Wisdom for pastors navigating cultural challenges
-🏥 **Healing:** Medical missions in remote African villages  
+🏥 **Healing:** Medical missions in remote African villages
 🎓 **Education:** Christian schools facing financial difficulties
 🌪️ **Disasters:** Recovery efforts in storm-affected regions
 💔 **Broken Hearts:** Emotional healing for trauma survivors
@@ -2934,22 +2972,6 @@ Celebrating progress, ${userName}:
     await this.sendInteractiveMessage(phoneNumber, content, buttons);
   }
 
-  private async handleUnknownCommand(phoneNumber: string, userName: string, messageText: string): Promise<void> {
-    await this.logInteraction(phoneNumber, 'unknown_command', messageText);
-
-    const unknownMessage = `🤖 I didn't understand "${messageText}", ${userName}.
-
-Let me help you get back on track! Here are your options:`;
-
-    const buttons = [
-      { id: 'devotionals', title: '📖 Devotionals' },
-      { id: 'scripture_coach', title: '📚 ScriptureCoach' },
-      { id: 'help', title: '❓ Help' }
-    ];
-
-    await this.sendInteractiveMessage(phoneNumber, unknownMessage, buttons);
-  }
-
   // Bible Study Feature Implementation
   private async initiateBibleStudy(phoneNumber: string, userName: string): Promise<void> {
     await this.logInteraction(phoneNumber, 'bible_study', 'initiate');
@@ -3001,7 +3023,7 @@ Please type the Bible topic you'd like to study today.
 
 *Examples:*
 • Faith
-• Love  
+• Love
 • Prayer
 • Forgiveness
 • The Holy Spirit
@@ -3018,8 +3040,8 @@ Type */endstudy* anytime to end the session.`;
       await this.sendWhatsAppMessage(phoneNumber, message);
     } else if (selection === 'random_topic') {
       const topics = [
-        'Faith', 'Love', 'Grace', 'Hope', 'Prayer', 'Forgiveness', 
-        'The Holy Spirit', 'Discipleship', 'Wisdom', 'Peace', 
+        'Faith', 'Love', 'Grace', 'Hope', 'Prayer', 'Forgiveness',
+        'The Holy Spirit', 'Discipleship', 'Wisdom', 'Peace',
         'Joy', 'Redemption', 'Sacrifice', 'The Kingdom of God',
         'Humility', 'Worship', 'Thanksgiving', 'Perseverance',
         'Obedience', 'Trust', 'Salvation', 'Righteousness',
@@ -3055,7 +3077,7 @@ Type */endstudy* anytime to end the session.`;
 
       // If no topic set yet and user says "yes", this means they're ready to start with a random topic
       if (!session.topic && userMessage.toLowerCase() === 'yes') {
-        await this.sendWhatsAppMessage(phoneNumber, 
+        await this.sendWhatsAppMessage(phoneNumber,
           `📚 Please first select a topic by clicking "Type a Topic" or "Random Topic" from the menu.`);
         return;
       }
@@ -3081,7 +3103,7 @@ Type */endstudy* anytime to end the session.`;
 
       // Update conversation history
       session.conversationHistory.push({
-        role: 'assistant', 
+        role: 'assistant',
         content: aiResponse
       });
 
@@ -3094,7 +3116,7 @@ Type */endstudy* anytime to end the session.`;
 
     } catch (error) {
       console.error('Error in Bible Study conversation:', error);
-      await this.sendWhatsAppMessage(phoneNumber, 
+      await this.sendWhatsAppMessage(phoneNumber,
         `📚 I apologize, but I encountered a technical issue. Let's continue our study. Please repeat your last message or ask another question about our topic: **${session.topic}**`
       );
     }
@@ -3103,7 +3125,7 @@ Type */endstudy* anytime to end the session.`;
   private buildBibleStudyPrompt(session: any, userName: string): string {
     const firstName = userName.split(' ')[0];
 
-    return `You are a Professional, Knowledgeable, and Spiritually Discerning Bible Study Instructor conducting a WhatsApp Bible study session with ${firstName} on the topic of "${session.topic}". 
+    return `You are a Professional, Knowledgeable, and Spiritually Discerning Bible Study Instructor conducting a WhatsApp Bible study session with ${firstName} on the topic of "${session.topic}".
 
 **Core Directives:**
 1. **Persona Adherence:** Maintain a respectful, patient, encouraging, structured, contextual, application-oriented, and theologically neutral tone. Your language should be clear, concise, and accessible for WhatsApp messaging.
@@ -3112,7 +3134,7 @@ Type */endstudy* anytime to end the session.`;
 
 3. **Methodical Approach:** Use effective Bible study techniques:
    - **Observation:** Ask what the text says
-   - **Interpretation:** Guide understanding of original context  
+   - **Interpretation:** Guide understanding of original context
    - **Correlation:** Connect with other relevant scriptures
    - **Application:** Prompt personal life application
 
@@ -3127,7 +3149,7 @@ Type */endstudy* anytime to end the session.`;
 **Current Topic:** ${session.topic}
 **Session Stage:** ${session.conversationHistory.length === 0 ? 'Beginning - provide opening question/verse' : 'Ongoing conversation'}
 
-**Instructions:** 
+**Instructions:**
 - If this is the beginning, start with a foundational verse about ${session.topic} and an engaging opening question
 - If ongoing, respond thoughtfully to the user's input and guide them deeper into the topic
 - Include relevant scripture references
@@ -3328,7 +3350,7 @@ Remember, the journey of faith is continuous. Feel free to start another study s
       await this.sendInteractiveMessage(phoneNumber, message, buttons);
     } catch (error) {
       console.error('Error handling ScriptureCoach command:', error);
-      await this.sendWhatsAppMessage(phoneNumber, 
+      await this.sendWhatsAppMessage(phoneNumber,
         `🚧 ${userName}, Scripture Coach is temporarily unavailable while we enhance your experience. Please try again in a moment!\n\n*"Be still, and know that I am God." - Psalm 46:10*`
       );
     }
@@ -3414,8 +3436,8 @@ Remember, the journey of faith is continuous. Feel free to start another study s
       await this.sendInteractiveMessage(phoneNumber, result.message, result.buttons);
     } catch (error) {
       console.error('Error handling ScriptureCoach button:', error);
-      await this.sendWhatsAppMessage(phoneNumber, 
-        `❌ Sorry ${userName}, I encountered an error. Please try again.`
+      await this.sendWhatsAppMessage(phoneNumber,
+        `Sorry ${userName}, I encountered an error. Please try again.`
       );
     }
   }
