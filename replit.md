@@ -8,6 +8,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
+### Event Updates Image Upload Feature (October 16, 2025)
+- **Image Upload Implementation**: Event Update posts now support image attachments with full base64 encoding/storage pipeline
+- **Frontend Enhancement**: Event Update form converts uploaded images to base64 data URLs and includes them in the admin update payload
+- **Database Integration**: imageUrl field in updates table stores base64-encoded images for display across all platforms
+- **UI Display**: Updates & Announcements component renders attached images above description text with responsive sizing (max-height: 384px)
+- **WhatsApp Integration**: Bot now sends images via Meta's media upload API:
+  - Converts base64 to binary buffer
+  - Uploads to WhatsApp media endpoint to obtain media ID
+  - Sends image message with caption using media ID
+  - Graceful fallback to text-only when credentials missing
+- **Complete Flow**: Upload image in Event Update → Store as base64 → Display in web app → Send via WhatsApp with automated broadcast
+- **Status**: ✅ Fully functional - architect reviewed and approved with no blocking issues
+
 ### WhatsApp Bot Command Routing Fix (October 16, 2025)
 - **Devotional Menu Fix**: Fixed critical bug where "Devotional" button incorrectly triggered preference toggle instead of showing 3-option menu (Today's Word, Daily Declarations, Bible Study)
 - **Command Parsing Logic**: Implemented independent keyword matching with word boundaries to separate menu navigation from preference commands
