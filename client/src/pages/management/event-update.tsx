@@ -19,22 +19,35 @@ export default function EventUpdate() {
 
   const createUpdateMutation = useMutation({
     mutationFn: async (updateData: any) => {
+      console.log('Sending update data:', { 
+        ...updateData, 
+        imageUrl: updateData.imageUrl ? 'base64 image present' : 'no image' 
+      });
+      
       const response = await fetch('/api/admin/updates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(updateData),
       });
-      if (!response.ok) throw new Error("Failed to create update");
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Server error:', errorData);
+        throw new Error(errorData.error || errorData.details || "Failed to create update");
+      }
+      
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Update created successfully:', data);
       toast({ title: "Success", description: "Event update posted successfully" });
       queryClient.invalidateQueries({ queryKey: ['admin-updates'] });
       setEventMessage("");
       setEventImage(null);
     },
     onError: (error: Error) => {
+      console.error('Mutation error:', error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
@@ -53,11 +66,15 @@ export default function EventUpdate() {
       try {
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            resolve(result);
+          };
           reader.onerror = reject;
           reader.readAsDataURL(eventImage);
         });
         imageUrl = base64;
+        console.log('Image converted to base64, size:', base64.length);
       } catch (error) {
         console.error("Error reading image:", error);
         toast({ title: "Error", description: "Failed to process image", variant: "destructive" });
@@ -65,6 +82,8 @@ export default function EventUpdate() {
       }
     }
 
+    console.log('Submitting event update with image:', !!imageUrl);
+    
     createUpdateMutation.mutate({
       title: "Event Update",
       description: eventMessage,

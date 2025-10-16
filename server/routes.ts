@@ -1305,6 +1305,13 @@ _Type 'menu' anytime to explore our prayer bot features._`;
         return res.status(400).json({ error: "Title and description are required" });
       }
 
+      console.log('📝 Creating admin update:', { 
+        title, 
+        type, 
+        hasImage: !!imageUrl,
+        imageSize: imageUrl ? imageUrl.length : 0
+      });
+
       // Direct insert with service role (including imageUrl)
       const { data: directData, error: directError } = await supabaseAdmin
         .from('updates')
@@ -1327,14 +1334,14 @@ _Type 'menu' anytime to explore our prayer bot features._`;
         .single();
 
       if (directError) {
-        console.error("Database insert failed:", directError);
+        console.error("❌ Database insert failed:", directError);
         return res.status(500).json({ 
           error: "Failed to create update",
           details: directError.message 
         });
       }
 
-      console.log(`Admin update posted: "${title}"${imageUrl ? ' (with image)' : ''}`);
+      console.log(`✅ Admin update posted: "${title}"${imageUrl ? ' (with image)' : ''}`);
 
       // Send WhatsApp notifications if requested
       if (sendNotification) {
@@ -1356,10 +1363,10 @@ _Type 'menu' anytime to explore our prayer bot features._`;
       res.json({
         success: true,
         message: "Update posted successfully and is live on user dashboards",
-        data: data
+        data: directData
       });
     } catch (error) {
-      console.error("Error in admin updates endpoint:", error);
+      console.error("❌ Error in admin updates endpoint:", error);
       res.status(500).json({ 
         error: "Failed to create update",
         details: error instanceof Error ? error.message : 'Unknown error'
