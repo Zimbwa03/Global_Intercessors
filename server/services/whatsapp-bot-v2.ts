@@ -190,6 +190,89 @@ export class WhatsAppPrayerBot {
     }
   }
 
+  // Send image with optional caption via WhatsApp
+  private async sendWhatsAppImage(phoneNumber: string, base64Image: string, caption?: string): Promise<boolean> {
+    console.log(`\n📤 SENDING IMAGE:`);
+    console.log(`📱 To: ${phoneNumber}`);
+    console.log(`📷 Image size: ${Math.round(base64Image.length / 1024)}KB`);
+
+    if (!this.config.phoneNumberId || !this.config.accessToken) {
+      console.log(`❌ WhatsApp credentials missing - SIMULATION MODE`);
+      return false;
+    }
+
+    try {
+      // Extract base64 data and mime type
+      const matches = base64Image.match(/^data:(.+);base64,(.+)$/);
+      if (!matches) {
+        console.error('❌ Invalid base64 image format');
+        return false;
+      }
+
+      const mimeType = matches[1];
+      const base64Data = matches[2];
+      const buffer = Buffer.from(base64Data, 'base64');
+
+      // Step 1: Upload image to WhatsApp media endpoint
+      const FormData = (await import('form-data')).default;
+      const formData = new FormData();
+      formData.append('messaging_product', 'whatsapp');
+      formData.append('file', buffer, {
+        filename: 'image.jpg',
+        contentType: mimeType
+      });
+
+      const uploadResponse = await fetch(`https://graph.facebook.com/${this.config.apiVersion}/${this.config.phoneNumberId}/media`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.config.accessToken}`,
+        },
+        body: formData
+      });
+
+      if (!uploadResponse.ok) {
+        const error = await uploadResponse.text();
+        console.error('❌ Failed to upload image:', error);
+        return false;
+      }
+
+      const uploadData = await uploadResponse.json();
+      const mediaId = uploadData.id;
+      console.log(`✅ Image uploaded, Media ID: ${mediaId}`);
+
+      // Step 2: Send image message with media ID
+      const messageResponse = await fetch(`https://graph.facebook.com/${this.config.apiVersion}/${this.config.phoneNumberId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.config.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: phoneNumber,
+          type: 'image',
+          image: {
+            id: mediaId,
+            caption: caption ? this.sanitizeForWhatsApp(caption) : undefined
+          }
+        })
+      });
+
+      if (messageResponse.ok) {
+        console.log('✅ Image message sent successfully');
+        await this.logMessage(phoneNumber, `[Image] ${caption || 'No caption'}`, 'outbound');
+        return true;
+      } else {
+        const errorData = await messageResponse.text();
+        console.error('❌ Failed to send image message:', errorData);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error sending WhatsApp image:', error);
+      return false;
+    }
+  }
+
   // Send interactive message with buttons
   private async sendInteractiveMessage(phoneNumber: string, text: string, buttons: { id: string, title: string }[]): Promise<boolean> {
     const sanitizedText = this.sanitizeForWhatsApp(text);
@@ -1220,10 +1303,10 @@ Your intercession matters! 💪
     }
   }
 
-  // Admin update broadcasting
-  public async broadcastAdminUpdate(updateTitle: string, updateContent: string): Promise<void> {
+  // Admin update broadcasting with optional image support
+  public async broadcastAdminUpdate(updateTitle: string, updateContent: string, imageUrl?: string | null): Promise<void> {
     try {
-      console.log('📢 Broadcasting admin update to WhatsApp users:', updateTitle);
+      console.log('📢 Broadcasting admin update to WhatsApp users:', updateTitle, imageUrl ? '(with image)' : '');
 
       // META COMPLIANCE: Only send to users who have opted in AND enabled updates
       const { data: activeUsers } = await supabase
@@ -1266,7 +1349,14 @@ ${summarizedUpdate}
 
 *Global Intercessors - Standing in the Gap* 🙏`;
 
-            await this.sendWhatsAppMessage(user.whatsapp_number, message);
+            // Send image if provided
+            if (imageUrl && imageUrl.startsWith('data:image')) {
+              // Send image first, then caption
+              await this.sendWhatsAppImage(user.whatsapp_number, imageUrl, message);
+            } else {
+              // Send text message only
+              await this.sendWhatsAppMessage(user.whatsapp_number, message);
+            }
             await this.logInteraction(user.whatsapp_number, 'admin_update', updateTitle);
           } else {
             // Outside window - use approved Meta template

@@ -17,6 +17,7 @@ interface Announcement {
   subtitle?: string;
   registrationStatus?: string;
   registrationCloses?: string | null;
+  imageUrl?: string | null;
 }
 
 interface DatabaseUpdate {
@@ -27,6 +28,7 @@ interface DatabaseUpdate {
   priority: string;
   pin_to_top: boolean;
   created_at: string;
+  image_url?: string | null;
 }
 
 export function UpdatesAnnouncements() {
@@ -80,7 +82,8 @@ export function UpdatesAnnouncements() {
       }),
       registrationRequired: false,
       priority: update.priority,
-      pin_to_top: update.pin_to_top
+      pin_to_top: update.pin_to_top,
+      imageUrl: update.image_url
     }));
   };
 
@@ -150,6 +153,16 @@ export function UpdatesAnnouncements() {
               </div>
             </CardHeader>
             <CardContent>
+              {announcement.imageUrl && (
+                <div className="mb-4 rounded-lg overflow-hidden">
+                  <img 
+                    src={announcement.imageUrl} 
+                    alt={announcement.title}
+                    className="w-full h-auto max-h-96 object-cover"
+                    data-testid={`image-update-${announcement.id}`}
+                  />
+                </div>
+              )}
               <p className="text-gray-600 mb-4 leading-relaxed">{announcement.description}</p>
 
               {announcement.registrationRequired && announcement.id === "fasting-program" && (

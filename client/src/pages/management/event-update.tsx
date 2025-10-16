@@ -39,25 +39,43 @@ export default function EventUpdate() {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventMessage.trim()) {
       toast({ title: "Error", description: "Please enter event details", variant: "destructive" });
       return;
     }
-    const description = eventImage 
-      ? `${eventMessage}\n\n${eventImage.name ? `📎 Attachment: ${eventImage.name}` : ''}`
-      : eventMessage;
+
+    let imageUrl: string | null = null;
+
+    // Convert image to base64 if provided
+    if (eventImage) {
+      try {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(eventImage);
+        });
+        imageUrl = base64;
+      } catch (error) {
+        console.error("Error reading image:", error);
+        toast({ title: "Error", description: "Failed to process image", variant: "destructive" });
+        return;
+      }
+    }
+
     createUpdateMutation.mutate({
       title: "Event Update",
-      description,
+      description: eventMessage,
       type: "event",
       priority: "normal",
       schedule: "immediate",
       expiry: "never",
       sendNotification: true,
       sendEmail: false,
-      pinToTop: false
+      pinToTop: false,
+      imageUrl: imageUrl
     });
   };
 

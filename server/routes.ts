@@ -1297,72 +1297,51 @@ _Type 'menu' anytime to explore our prayer bot features._`;
         expiry = 'never',
         sendNotification = false,
         sendEmail = false,
-        pinToTop = false
+        pinToTop = false,
+        imageUrl = null
       } = req.body;
 
       if (!title || !description) {
         return res.status(400).json({ error: "Title and description are required" });
       }
 
-      // Use the database function created by the SQL script
-      const { data, error } = await supabaseAdmin.rpc('create_admin_update', {
-        p_title: title.trim(),
-        p_description: description.trim(),
-        p_type: type,
-        p_priority: priority,
-        p_schedule: schedule,
-        p_expiry: expiry,
-        p_send_notification: sendNotification,
-        p_send_email: sendEmail,
-        p_pin_to_top: pinToTop
-      });
+      // Direct insert with service role (including imageUrl)
+      const { data: directData, error: directError } = await supabaseAdmin
+        .from('updates')
+        .insert([{
+          title: title.trim(),
+          description: description.trim(),
+          type,
+          priority,
+          schedule,
+          expiry,
+          send_notification: sendNotification,
+          send_email: sendEmail,
+          pin_to_top: pinToTop,
+          image_url: imageUrl,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
 
-      if (error) {
-        console.error("Database function failed, trying direct insert:", error);
-
-        // Fallback to direct insert with service role
-        const { data: directData, error: directError } = await supabaseAdmin
-          .from('updates')
-          .insert([{
-            title: title.trim(),
-            description: description.trim(),
-            type,
-            priority,
-            schedule,
-            expiry,
-            send_notification: sendNotification,
-            send_email: sendEmail,
-            pin_to_top: pinToTop,
-            is_active: true,
-            date: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }])
-          .select()
-          .single();
-
-        if (directError) {
-          console.error("Direct insert also failed:", directError);
-          return res.status(500).json({ 
-            error: "Failed to create update",
-            details: "Please run the SQL script in Supabase first" 
-          });
-        }
-
-        console.log(`Admin update posted: "${title}"`);
-        return res.json({ 
-          success: true, 
-          message: "Update posted successfully and is live on user dashboards",
-          data: directData
+      if (directError) {
+        console.error("Database insert failed:", directError);
+        return res.status(500).json({ 
+          error: "Failed to create update",
+          details: directError.message 
         });
       }
+
+      console.log(`Admin update posted: "${title}"${imageUrl ? ' (with image)' : ''}`);
 
       // Send WhatsApp notifications if requested
       if (sendNotification) {
         console.log('📱 Sending WhatsApp notification for update:', title);
         try {
-          // Use the singleton WhatsApp bot instance
-          await whatsAppBot.broadcastAdminUpdate(title.trim(), description.trim());
+          // Use the singleton WhatsApp bot instance with image support
+          await whatsAppBot.broadcastAdminUpdate(title.trim(), description.trim(), imageUrl);
           console.log('✅ WhatsApp broadcast sent successfully');
         } catch (error) {
           console.error('❌ Error sending WhatsApp broadcast:', error);
