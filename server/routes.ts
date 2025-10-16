@@ -1362,8 +1362,7 @@ _Type 'menu' anytime to explore our prayer bot features._`;
         console.log('📱 Sending WhatsApp notification for update:', title);
         try {
           // Use the singleton WhatsApp bot instance
-          const imageUrl = req.body.imageUrl || null;
-          await whatsAppBot.broadcastAdminUpdate(title.trim(), description.trim(), imageUrl);
+          await whatsAppBot.broadcastAdminUpdate(title.trim(), description.trim());
           console.log('✅ WhatsApp broadcast sent successfully');
         } catch (error) {
           console.error('❌ Error sending WhatsApp broadcast:', error);

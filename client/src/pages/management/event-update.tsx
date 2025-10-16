@@ -16,7 +16,6 @@ export default function EventUpdate() {
   const queryClient = useQueryClient();
   const [eventMessage, setEventMessage] = useState("");
   const [eventImage, setEventImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const createUpdateMutation = useMutation({
     mutationFn: async (updateData: any) => {
@@ -34,50 +33,31 @@ export default function EventUpdate() {
       queryClient.invalidateQueries({ queryKey: ['admin-updates'] });
       setEventMessage("");
       setEventImage(null);
-      setImagePreview(null);
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setEventImage(file);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventMessage.trim()) {
       toast({ title: "Error", description: "Please enter event details", variant: "destructive" });
       return;
     }
-
-    let imageData = null;
-    if (eventImage && imagePreview) {
-      imageData = imagePreview; // base64 encoded image
-    }
-
+    const description = eventImage 
+      ? `${eventMessage}\n\n${eventImage.name ? `📎 Attachment: ${eventImage.name}` : ''}`
+      : eventMessage;
     createUpdateMutation.mutate({
       title: "Event Update",
-      description: eventMessage,
+      description,
       type: "event",
       priority: "normal",
       schedule: "immediate",
       expiry: "never",
       sendNotification: true,
       sendEmail: false,
-      pinToTop: false,
-      imageUrl: imageData
+      pinToTop: false
     });
   };
 
@@ -111,14 +91,9 @@ export default function EventUpdate() {
                   name="event-image"
                   type="file"
                   accept="image/*"
-                  onChange={handleImageChange}
+                  onChange={(e) => setEventImage(e.target.files?.[0] || null)}
                   className="mt-2"
                 />
-                {imagePreview && (
-                  <div className="mt-4">
-                    <img src={imagePreview} alt="Event preview" className="max-w-full h-auto rounded-lg border" />
-                  </div>
-                )}
               </div>
 
               <div>
@@ -141,7 +116,6 @@ export default function EventUpdate() {
                   onClick={() => {
                     setEventMessage("");
                     setEventImage(null);
-                    setImagePreview(null);
                   }}
                 >
                   Clear
