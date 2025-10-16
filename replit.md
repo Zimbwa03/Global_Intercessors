@@ -8,6 +8,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (October 2025)
 
+### WhatsApp Bot Command Routing Fix (October 16, 2025)
+- **Devotional Menu Fix**: Fixed critical bug where "Devotional" button incorrectly triggered preference toggle instead of showing 3-option menu (Today's Word, Daily Declarations, Bible Study)
+- **Command Parsing Logic**: Implemented independent keyword matching with word boundaries to separate menu navigation from preference commands
+  - Preference commands require BOTH a preference keyword (devotional/reminder/update) AND an action keyword (on/off/enable/disable/stop/start)
+  - Bare button clicks like "devotional" or "devotionals" now correctly route to menu (no action keyword = no preference toggle)
+  - Supports natural language: "disable devotionals", "turn the reminders off please", "stop daily updates", etc.
+- **Quick Access Menu Update**: Replaced "About" button with "Settings" button for easier access to message preferences
+- **Settings Command**: New handleSettingsCommand method shows current user preferences with ON/OFF status for devotionals, reminders, and updates
+- **Status**: Code changes complete and verified by architect - requires functional testing in WhatsApp to confirm end-to-end behavior
+
 ### Admin Dashboard Bug Fixes (October 15, 2025)
 - **Zoom Attendance Tracker**: Fixed critical bug causing undefined errors when processing meetings older than 1 year
 - **Meeting Processing Logic**: Meetings now properly track data retrieval success/failure status
