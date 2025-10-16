@@ -542,8 +542,6 @@ We'll miss you! May God bless you abundantly.
       if (selectError || !existingUser) {
         // User doesn't exist - they need to log in first
         console.log(`⚠️ No whatsapp_bot_users record found for ${phoneNumber}`);
-        console.log(`Select error:`, selectError);
-        
         const loginMessage = `⚠️ *Please Log In First*
 
 To manage your preferences, you need to log in to your Global Intercessors account.
@@ -567,14 +565,7 @@ Or reply *HELP* for assistance.`;
         updateData.reminders_enabled = enabled;
       } else if (preferenceType === 'UPDATES') {
         updateData.updates_enabled = enabled;
-      } else {
-        console.error(`❌ Invalid preference type: ${preferenceType}`);
-        const errorMessage = `❌ Invalid preference type. Please use DEVOTIONAL, REMINDERS, or UPDATES.`;
-        await this.sendWhatsAppMessage(phoneNumber, errorMessage);
-        return;
       }
-
-      console.log(`Attempting to update:`, updateData);
 
       const { error } = await supabase
         .from('whatsapp_bot_users')
@@ -583,14 +574,7 @@ Or reply *HELP* for assistance.`;
 
       if (error) {
         console.error('❌ Database error updating preference:', error);
-        console.error('Error details:', JSON.stringify(error, null, 2));
-        
-        const errorMessage = `❌ Sorry, there was an error updating your ${preferenceType.toLowerCase()} preferences.
-
-Error: ${error.message || 'Unknown database error'}
-
-Please try again or contact support.`;
-        
+        const errorMessage = `❌ Sorry, there was an error updating your preferences. Please try again or contact support.`;
         await this.sendWhatsAppMessage(phoneNumber, errorMessage);
         return;
       }
@@ -598,30 +582,18 @@ Please try again or contact support.`;
       console.log(`✅ Successfully updated ${preferenceType} to ${enabled} for ${phoneNumber}`);
 
       const status = enabled ? 'ON' : 'OFF';
-      const emoji = enabled ? '✅' : '🔕';
-      const action = enabled ? 'enabled' : 'disabled';
-      
-      const confirmMessage = `${emoji} *Preference Updated* ${emoji}
+      const confirmMessage = `✅ *Preference Updated* ✅
 
 ${preferenceType.charAt(0) + preferenceType.slice(1).toLowerCase()} messages are now *${status}*
-
-You have successfully ${action} ${preferenceType.toLowerCase()} notifications.
 
 To view all preferences, reply *SETTINGS*
 
 *Global Intercessors - Standing in the Gap* 🙏`;
 
       await this.sendWhatsAppMessage(phoneNumber, confirmMessage);
-    } catch (error: any) {
+    } catch (error) {
       console.error('❌ Error updating user preference:', error);
-      console.error('Error stack:', error?.stack);
-      
-      const errorMessage = `❌ An unexpected error occurred while updating your preferences.
-
-Error: ${error?.message || 'Unknown error'}
-
-Please try again later or contact support.`;
-      
+      const errorMessage = `❌ An unexpected error occurred. Please try again later.`;
       await this.sendWhatsAppMessage(phoneNumber, errorMessage);
     }
   }
@@ -1784,44 +1756,37 @@ If you change your mind, simply reply *YES* anytime.
       // User preference management commands - check for BOTH keywords with word boundaries
       // Supports: "DEVOTIONAL OFF", "disable devotionals", "turn the devotionals off", etc.
       // Prevents false matches: bare "devotional" or "devotionals" button clicks won't match
-      
-      // DEVOTIONAL commands
-      if (command.match(/\bdevotional(s)?\b/)) {
-        if (command.match(/\b(off|disable|stop)\b/)) {
-          await this.updateUserPreference(phoneNumber, 'DEVOTIONAL', false);
-          return;
-        }
-        if (command.match(/\b(on|enable|start)\b/)) {
-          await this.ensureUserOptedIn(phoneNumber);
-          await this.updateUserPreference(phoneNumber, 'DEVOTIONAL', true);
-          return;
-        }
+      if (command.match(/\b(off|disable|stop)\b/) && command.match(/\bdevotional(s)?\b/)) {
+        await this.updateUserPreference(phoneNumber, 'DEVOTIONAL', false);
+        return;
+      }
+      if (command.match(/\b(on|enable|start)\b/) && command.match(/\bdevotional(s)?\b/)) {
+        // Ensure user is opted in when enabling any feature
+        await this.ensureUserOptedIn(phoneNumber);
+        await this.updateUserPreference(phoneNumber, 'DEVOTIONAL', true);
+        return;
       }
 
-      // REMINDER commands
-      if (command.match(/\breminder(s)?\b/)) {
-        if (command.match(/\b(off|disable|stop)\b/)) {
-          await this.updateUserPreference(phoneNumber, 'REMINDERS', false);
-          return;
-        }
-        if (command.match(/\b(on|enable|start)\b/)) {
-          await this.ensureUserOptedIn(phoneNumber);
-          await this.updateUserPreference(phoneNumber, 'REMINDERS', true);
-          return;
-        }
+      if (command.match(/\b(off|disable|stop)\b/) && command.match(/\breminder(s)?\b/)) {
+        await this.updateUserPreference(phoneNumber, 'REMINDERS', false);
+        return;
+      }
+      if (command.match(/\b(on|enable|start)\b/) && command.match(/\breminder(s)?\b/)) {
+        // Ensure user is opted in when enabling any feature
+        await this.ensureUserOptedIn(phoneNumber);
+        await this.updateUserPreference(phoneNumber, 'REMINDERS', true);
+        return;
       }
 
-      // UPDATE commands
-      if (command.match(/\bupdate(s)?\b/)) {
-        if (command.match(/\b(off|disable|stop)\b/)) {
-          await this.updateUserPreference(phoneNumber, 'UPDATES', false);
-          return;
-        }
-        if (command.match(/\b(on|enable|start)\b/)) {
-          await this.ensureUserOptedIn(phoneNumber);
-          await this.updateUserPreference(phoneNumber, 'UPDATES', true);
-          return;
-        }
+      if (command.match(/\b(off|disable|stop)\b/) && command.match(/\bupdate(s)?\b/)) {
+        await this.updateUserPreference(phoneNumber, 'UPDATES', false);
+        return;
+      }
+      if (command.match(/\b(on|enable|start)\b/) && command.match(/\bupdate(s)?\b/)) {
+        // Ensure user is opted in when enabling any feature
+        await this.ensureUserOptedIn(phoneNumber);
+        await this.updateUserPreference(phoneNumber, 'UPDATES', true);
+        return;
       }
 
       // SETTINGS command - show current preferences
