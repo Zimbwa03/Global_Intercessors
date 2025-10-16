@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,7 @@ export default function FastUpdate() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-  
+
   const [fastingTitle, setFastingTitle] = useState("3 Days & 3 Nights Fasting Program - August");
   const [fastingStartDate, setFastingStartDate] = useState<Date>();
   const [fastingEndDate, setFastingEndDate] = useState<Date>();
@@ -47,6 +46,30 @@ export default function FastUpdate() {
     },
   });
 
+  const updateFastingProgramMutation = useMutation({
+    mutationFn: async (updateData: any) => {
+      const response = await fetch('/api/admin/fasting-program', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(updateData),
+      });
+      if (!response.ok) throw new Error("Failed to update fasting program");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Fasting program updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ['fasting-program-details'] });
+      setFastingTitle("3 Days & 3 Nights Fasting Program - August");
+      setFastingStartDate(undefined);
+      setFastingEndDate(undefined);
+      setFastingDescription("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!fastingTitle || !fastingStartDate || !fastingEndDate || !fastingDescription) {
@@ -55,16 +78,9 @@ export default function FastUpdate() {
     }
     const dateRange = `${format(fastingStartDate, "MMMM d")}-${format(fastingEndDate, "d, yyyy")}`;
     const fullDescription = `${fastingDescription}\n\n📅 Dates: ${dateRange}`;
-    createUpdateMutation.mutate({
+    updateFastingProgramMutation.mutate({
       title: fastingTitle,
       description: fullDescription,
-      type: "fast",
-      priority: "high",
-      schedule: "immediate",
-      expiry: "never",
-      sendNotification: true,
-      sendEmail: true,
-      pinToTop: true
     });
   };
 
@@ -180,17 +196,17 @@ export default function FastUpdate() {
                 <Button
                   type="submit"
                   className="bg-gi-primary hover:bg-gi-primary/90"
-                  disabled={createUpdateMutation.isPending}
+                  disabled={updateFastingProgramMutation.isPending}
                 >
-                  {createUpdateMutation.isPending ? (
+                  {updateFastingProgramMutation.isPending ? (
                     <>
                       <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Sending...
+                      Updating...
                     </>
                   ) : (
                     <>
                       <Send className="w-4 h-4 mr-2" />
-                      Send Update
+                      Update Fasting Program
                     </>
                   )}
                 </Button>
