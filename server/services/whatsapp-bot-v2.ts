@@ -447,6 +447,33 @@ We'll miss you! May God bless you abundantly.
   // Update user message preferences (DEVOTIONAL/REMINDERS/UPDATES ON/OFF)
   private async updateUserPreference(phoneNumber: string, preferenceType: string, enabled: boolean): Promise<void> {
     try {
+      console.log(`📝 Updating preference for ${phoneNumber}: ${preferenceType} = ${enabled}`);
+      
+      // First, check if user exists in whatsapp_bot_users
+      const { data: existingUser, error: selectError } = await supabase
+        .from('whatsapp_bot_users')
+        .select('*')
+        .eq('whatsapp_number', phoneNumber)
+        .single();
+
+      if (selectError || !existingUser) {
+        // User doesn't exist - they need to log in first
+        console.log(`⚠️ No whatsapp_bot_users record found for ${phoneNumber}`);
+        const loginMessage = `⚠️ *Please Log In First*
+
+To manage your preferences, you need to log in to your Global Intercessors account.
+
+📧 Reply with:
+Email: your_email@example.com
+Password: your_password
+
+Or reply *HELP* for assistance.`;
+        
+        await this.sendWhatsAppMessage(phoneNumber, loginMessage);
+        return;
+      }
+
+      // User exists, update their preference
       const updateData: any = { updated_at: new Date().toISOString() };
       
       if (preferenceType === 'DEVOTIONAL') {
@@ -457,13 +484,21 @@ We'll miss you! May God bless you abundantly.
         updateData.updates_enabled = enabled;
       }
 
-      await supabase
+      const { error } = await supabase
         .from('whatsapp_bot_users')
         .update(updateData)
         .eq('whatsapp_number', phoneNumber);
 
+      if (error) {
+        console.error('❌ Database error updating preference:', error);
+        const errorMessage = `❌ Sorry, there was an error updating your preferences. Please try again or contact support.`;
+        await this.sendWhatsAppMessage(phoneNumber, errorMessage);
+        return;
+      }
+
+      console.log(`✅ Successfully updated ${preferenceType} to ${enabled} for ${phoneNumber}`);
+
       const status = enabled ? 'ON' : 'OFF';
-      const messageType = preferenceType.toLowerCase();
       const confirmMessage = `✅ *Preference Updated* ✅
 
 ${preferenceType.charAt(0) + preferenceType.slice(1).toLowerCase()} messages are now *${status}*
@@ -474,7 +509,9 @@ To view all preferences, reply *SETTINGS*
 
       await this.sendWhatsAppMessage(phoneNumber, confirmMessage);
     } catch (error) {
-      console.error('Error updating user preference:', error);
+      console.error('❌ Error updating user preference:', error);
+      const errorMessage = `❌ An unexpected error occurred. Please try again later.`;
+      await this.sendWhatsAppMessage(phoneNumber, errorMessage);
     }
   }
 
@@ -1448,25 +1485,35 @@ Your login credentials are correct, but this phone number (${phoneNumber}) is no
       let upsertError = null;
 
       if (existingRecord) {
-        // Update existing record
+        // Update existing record - ensure user is opted in and active
+        // DO NOT reset preferences - preserve user's choices
         const { error: updateError } = await supabase
           .from('whatsapp_bot_users')
           .update({
             user_id: userId,
             is_active: true,
+            opted_in: true,
+            opt_in_timestamp: new Date().toISOString(),
+            opt_in_method: 'web_app_login',
             timezone: userProfile.timezone || 'UTC',
             updated_at: new Date().toISOString()
           })
           .eq('whatsapp_number', phoneNumber);
         upsertError = updateError;
       } else {
-        // Insert new record
+        // Insert new record - user is opted in via web app login with default preferences
         const { error: insertError } = await supabase
           .from('whatsapp_bot_users')
           .insert({
             user_id: userId,
             whatsapp_number: phoneNumber,
             is_active: true,
+            opted_in: true,
+            opt_in_timestamp: new Date().toISOString(),
+            opt_in_method: 'web_app_login',
+            devotional_enabled: true,
+            reminders_enabled: true,
+            updates_enabled: true,
             timezone: userProfile.timezone || 'UTC',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
