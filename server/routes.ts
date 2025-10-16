@@ -1312,12 +1312,13 @@ _Type 'menu' anytime to explore our prayer bot features._`;
         imageSize: imageUrl ? imageUrl.length : 0
       });
 
-      // Direct insert with service role (including imageUrl)
+      // Direct insert with service role (including imageUrl and date)
       const { data: directData, error: directError } = await supabaseAdmin
         .from('updates')
         .insert([{
           title: title.trim(),
           description: description.trim(),
+          date: new Date().toISOString(), // Add required date field
           type,
           priority,
           schedule,
